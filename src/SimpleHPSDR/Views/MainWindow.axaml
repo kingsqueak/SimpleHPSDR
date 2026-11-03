@@ -234,11 +234,6 @@
     </Grid>
 
     <!-- Panadapter controls -->
-    <!-- CPU readout at the right end of the panadapter controls row -->
-    <TextBlock Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
-                   Classes="cpu" FontSize="11" Grid.Row="3" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0"
-                   Classes.warn="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
-                   Classes.bad="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}" />
     <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="4" Margin="0,8,0,0">
       <Button Classes="seg" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}"
               ToolTip.Tip="CTUN: clicking the panadapter moves only the receive frequency; the display stays put (blue = on)" />
@@ -406,5 +401,10 @@
         </StackPanel>
       </WrapPanel>
     </Border>
+    <!-- CPU readout in the bottom-right corner -->
+    <TextBlock Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
+                   Classes="cpu" FontSize="11" Grid.Row="5" HorizontalAlignment="Right" Margin="0,4,4,0"
+                   Classes.warn="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
+                   Classes.bad="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}" />
   </Grid>
 </Window>
