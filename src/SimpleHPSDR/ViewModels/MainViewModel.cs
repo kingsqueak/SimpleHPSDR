@@ -93,6 +93,54 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    // Waterfall resolution (engine display FFT size) and speed (a row every N
+    // display frames at 30 frames/s). Both live in the engine's display settings.
+    private static readonly int[] FftSizes = [4096, 8192, 16_384, 32_768, 65_536, 131_072];
+    private static readonly int[] WaterfallPeriods = [1, 2, 3, 5, 10];
+    private const int DefaultFftSize = 16_384;
+    public ObservableCollection<Choice> Resolutions { get; } = [];
+    public ObservableCollection<Choice> WaterfallSpeeds { get; } = [];
+    [ObservableProperty] private string _resolutionLabel = "";
+    [ObservableProperty] private string _speedLabel = "";
+
+    private static string SpeedText(int period) => $"{30 / period}/s";
+
+    private async Task LoadDisplayTuningAsync()
+    {
+        int fft = DefaultFftSize, period = 1;
+        try
+        {
+            var t = await _client!.GetDisplayTuningAsync();
+            fft = t.RxDisplayFftSize ?? DefaultFftSize;
+            period = t.WaterfallUpdatePeriod;
+        }
+        catch (Exception) { }
+        Resolutions.Clear();
+        foreach (var n in FftSizes)
+            Resolutions.Add(new Choice($"{n / 1024}k", n, c => _ = SelectResolutionAsync((int)c.Value)));
+        WaterfallSpeeds.Clear();
+        foreach (var p in WaterfallPeriods)
+            WaterfallSpeeds.Add(new Choice(SpeedText(p), p, c => _ = SelectSpeedAsync((int)c.Value)));
+        Mark(Resolutions, fft);
+        Mark(WaterfallSpeeds, period);
+        ResolutionLabel = $"{fft / 1024}k";
+        SpeedLabel = SpeedText(period);
+    }
+
+    private async Task SelectResolutionAsync(int fft) => await Try(async () =>
+    {
+        await _client!.SetDisplayTuningAsync(fftSize: fft);
+        Mark(Resolutions, fft);
+        ResolutionLabel = $"{fft / 1024}k";
+    });
+
+    private async Task SelectSpeedAsync(int period) => await Try(async () =>
+    {
+        await _client!.SetDisplayTuningAsync(waterfallPeriod: period);
+        Mark(WaterfallSpeeds, period);
+        SpeedLabel = SpeedText(period);
+    });
+
     // Panadapter zoom, cycled by the Zoom button. At 192 kHz, 16x is a 12 kHz span.
     private static readonly int[] ZoomLevels = [1, 2, 4, 8, 16];
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ZoomLabel))]
@@ -354,6 +402,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var state = await client.GetStateAsync();
         await ApplyStateAsync(state);
         LoadSpanRates(radio.Protocol2, state.SampleRate);
+        await LoadDisplayTuningAsync();
         await LoadTransmitAsync(state);
         LoadPureSignal(state);
         await LoadMonitorAsync();

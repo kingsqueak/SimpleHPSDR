@@ -180,6 +180,26 @@
       <Slider Minimum="-130" Maximum="0" Value="{Binding SpecMaxDb}" Width="130" VerticalAlignment="Center"
               TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Top of the panadapter trace (dB)" />
       <TextBlock Text="{Binding SpecMaxDb, StringFormat={}{0:0} dB}" Width="56" VerticalAlignment="Center" FontSize="12" />
+      <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Display resolution (FFT size): bigger shows finer detail, at more CPU">
+        <StackPanel Spacing="-1">
+          <TextBlock Text="Res" FontSize="12" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ResolutionLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+        </StackPanel>
+        <Button.Flyout>
+          <MenuFlyout ItemsSource="{Binding Resolutions}" Placement="BottomEdgeAlignedLeft"
+                      ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+        </Button.Flyout>
+      </Button>
+      <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Waterfall speed (rows per second)">
+        <StackPanel Spacing="-1">
+          <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding SpeedLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+        </StackPanel>
+        <Button.Flyout>
+          <MenuFlyout ItemsSource="{Binding WaterfallSpeeds}" Placement="BottomEdgeAlignedLeft"
+                      ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+        </Button.Flyout>
+      </Button>
     </StackPanel>
 
     <!-- Transmit -->

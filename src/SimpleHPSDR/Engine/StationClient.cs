@@ -195,6 +195,20 @@ public sealed class StationClient : IDisposable
     public Task SetMuteAsync(bool muted) => PostAsync("api/audio/mute", new { muted });
     /// <summary>Receiver sample rate, which is the panadapter span; changes live.</summary>
     public Task SetSampleRateAsync(int hz) => PostAsync("api/sampleRate", new SampleRateSetRequest(hz));
+    public sealed record DisplayTuning(int? RxDisplayFftSize, int WaterfallUpdatePeriod);
+
+    public async Task<DisplayTuning> GetDisplayTuningAsync() =>
+        (await _http.GetFromJsonAsync<DisplayTuning>("api/display-settings", Json))!;
+
+    /// <summary>Display FFT size (panadapter/waterfall resolution) and the
+    /// waterfall row period in display frames. Null leaves a field alone.</summary>
+    public async Task SetDisplayTuningAsync(int? fftSize = null, int? waterfallPeriod = null)
+    {
+        using var r = await _http.PutAsJsonAsync("api/display-settings",
+            new { rxDisplayFftSize = fftSize, waterfallUpdatePeriod = waterfallPeriod }, Json);
+        await ThrowIfFailed(r);
+    }
+
     public Task SetZoomAsync(int level) => PostAsync("api/rx/zoom", new { level });
     /// <summary>CTUN: panadapter clicks move only the receive frequency; the
     /// radio's centre (NCO) stays, so the display doesn't jump.</summary>

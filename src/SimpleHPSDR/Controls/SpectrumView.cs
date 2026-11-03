@@ -64,8 +64,10 @@ public sealed class SpectrumView : Control
     public SpectrumView()
     {
         ClipToBounds = true;
-        // Nearest-neighbour keeps waterfall rows from bleeding across the ring seam.
-        RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.None);
+        // Smooth scaling: 2048 bins onto ~1200 pixels with nearest-neighbour
+        // drops bins and looks gritty. Each ring slice is clipped to its own
+        // rectangle so rows can't blend across the ring seam.
+        RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.HighQuality);
         Cursor = new Cursor(StandardCursorType.Cross);
     }
 
@@ -268,6 +270,7 @@ public sealed class SpectrumView : Control
         // the newest row lands at the top of the waterfall.
         var src = new Rect(0, firstRow, _wfWidth, count);
         var dst = new Rect(0, r.Top + offsetRows * rowH, r.Width, count * rowH);
+        using (ctx.PushClip(dst))
         using (ctx.PushTransform(Matrix.CreateTranslation(0, -dst.Center.Y)
                                  * Matrix.CreateScale(1, -1)
                                  * Matrix.CreateTranslation(0, dst.Center.Y)))
