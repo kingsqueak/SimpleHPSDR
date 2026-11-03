@@ -19,8 +19,12 @@
     <!-- Top: radio, frequency, meter -->
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,10">
       <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-        <Button Classes="flat" Content="{Binding RadioLabel}" Command="{Binding ChooseRadioCommand}"
-                ToolTip.Tip="Choose a radio" />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="flat" Content="{Binding RadioLabel}" Command="{Binding ChooseRadioCommand}"
+                  ToolTip.Tip="Choose a radio" />
+          <Button Classes="flat" Content="Configuration" Command="{Binding OpenSettingsCommand}"
+                  IsEnabled="{Binding IsConnected}" />
+        </StackPanel>
         <TextBlock Text="{Binding Status}" Classes="label" FontSize="11" MaxWidth="300"
                    TextTrimming="CharacterEllipsis" Margin="2,0,0,0" />
       </StackPanel>

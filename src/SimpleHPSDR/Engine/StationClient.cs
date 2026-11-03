@@ -82,6 +82,15 @@ public sealed class StationClient : IDisposable
     public Task SetTuneDriveAsync(int percent) => PostAsync("api/tx/tune-drive", new TuneDriveSetRequest(percent));
     public Task SetMicGainAsync(int db) => PostAsync("api/mic-gain", new MicGainSetRequest(db));
 
+    public async Task<PaSettingsDto> GetPaSettingsAsync() =>
+        (await _http.GetFromJsonAsync<PaSettingsDto>("api/pa-settings", Json))!;
+
+    public async Task SetPaSettingsAsync(PaSettingsSetRequest req)
+    {
+        using var r = await _http.PutAsJsonAsync("api/pa-settings", req, Json);
+        await ThrowIfFailed(r);
+    }
+
     public async Task<AudioDevices> GetAudioDevicesAsync() =>
         (await _http.GetFromJsonAsync<AudioDevices>("api/audio/devices", Json))!;
 

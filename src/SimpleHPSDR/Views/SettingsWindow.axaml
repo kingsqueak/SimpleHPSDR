@@ -1,0 +1,63 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        x:Class="SimpleHPSDR.Views.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Title="Configuration" Width="560" Height="640" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="*,Auto" Margin="16">
+    <TabControl>
+      <TabItem Header="PA">
+        <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="12" Margin="0,12,0,0">
+          <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                     Text="PA gain is how much the amplifier adds on each band. It sets how hard the radio is driven for a given power: a higher value means less drive for the same setting. Measure into a dummy load and adjust until the power meter matches." />
+
+          <Border Grid.Row="1" Classes="panel">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <CheckBox Content="PA enabled" IsChecked="{Binding PaEnabled}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Rated power" Classes="label" FontSize="12" />
+                <NumericUpDown Value="{Binding PaMaxPowerWatts}" Minimum="0" Maximum="2000" Increment="1"
+                               FormatString="0" Width="120" />
+                <TextBlock Text="W" Classes="label" FontSize="12" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Grid Grid.Row="2" ColumnDefinitions="80,160,*" Margin="12,0">
+            <TextBlock Text="BAND" Classes="label" />
+            <TextBlock Grid.Column="1" Text="PA GAIN (dB)" Classes="label" />
+            <TextBlock Grid.Column="2" Text="DISABLE PA" Classes="label" />
+          </Grid>
+
+          <Border Grid.Row="3" Classes="panel">
+            <ScrollViewer>
+              <ItemsControl ItemsSource="{Binding PaBands}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:PaBandRow">
+                    <Grid ColumnDefinitions="80,160,*" Margin="2,3">
+                      <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                      <NumericUpDown Grid.Column="1" Value="{Binding PaGainDb}" Minimum="0" Maximum="80"
+                                     Increment="0.1" FormatString="0.0" Width="140" HorizontalAlignment="Left" />
+                      <CheckBox Grid.Column="2" IsChecked="{Binding DisablePa}" VerticalAlignment="Center"
+                                ToolTip.Tip="Bypass the PA on this band (low-power exciter only)" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </TabItem>
+    </TabControl>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+      <TextBlock Text="{Binding Status}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Classes="flat" Content="Revert" Command="{Binding RevertCommand}" />
+        <Button Classes="flat accent" Content="Save" Command="{Binding SaveCommand}" />
+        <Button Classes="flat" Content="Close" Name="CloseButton" />
+      </StackPanel>
+    </Grid>
+  </Grid>
+</Window>

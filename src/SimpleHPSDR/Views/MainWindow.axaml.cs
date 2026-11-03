@@ -29,6 +29,7 @@ public partial class MainWindow : Window
         base.OnDataContextChanged(e);
         if (Vm is not { } vm) return;
         vm.ShowRadioPicker = picker => new RadioPickerWindow { DataContext = picker }.PickAsync(this);
+        vm.ShowSettings = settings => new SettingsWindow { DataContext = settings }.ShowDialog(this);
         vm.Display += f =>
         {
             Spectrum.VfoHz = vm.VfoHz;

@@ -62,6 +62,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string AfGainText => $"{AfGainDb:0} dB";
     public string AttenText => AttOffsetDb > 0 ? $"{AttenDb:0}+{AttOffsetDb} dB" : $"{AttenDb:0} dB";
 
+    /// <summary>Set by the window: shows the settings dialog.</summary>
+    public Func<SettingsViewModel, Task>? ShowSettings { get; set; }
+
+    [RelayCommand]
+    private async Task OpenSettingsAsync()
+    {
+        if (_client is null || ShowSettings is null) return;
+        var settings = new SettingsViewModel(_client);
+        settings.PaMaxPowerSaved += SetPowerScale;
+        _ = settings.LoadAsync();
+        await ShowSettings(settings);
+    }
+
     /// <summary>Set by the window: shows the radio picker and returns the choice.</summary>
     public Func<RadioPickerViewModel, Task<RadioChoice?>>? ShowRadioPicker { get; set; }
     public event Action<DisplayFrame>? Display;

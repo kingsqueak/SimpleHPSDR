@@ -42,6 +42,12 @@ public sealed partial class MainViewModel
     public bool IsTransmitting => MoxOn || TunOn;
     public double PowerScaleWatts { get; private set; } = 100;
 
+    private void SetPowerScale(int ratedWatts)
+    {
+        PowerScaleWatts = ratedWatts > 0 ? ratedWatts : 100;
+        OnPropertyChanged(nameof(PowerScaleWatts));
+    }
+
     private void WireTransmit(StationClient client)
     {
         _driveSender = new Latest<int>(p => client.SetDriveAsync(p));
@@ -97,6 +103,8 @@ public sealed partial class MainViewModel
             _applyingTx = false;
         }
         await LoadMicSourcesAsync();
+        try { SetPowerScale((await _client!.GetPaSettingsAsync()).Global.PaMaxPowerWatts); }
+        catch (Exception) { }
     }
 
     private async Task LoadMicSourcesAsync()
