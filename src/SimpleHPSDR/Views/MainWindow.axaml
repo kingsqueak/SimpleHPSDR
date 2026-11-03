@@ -189,7 +189,8 @@
 
     <!-- Spectrum and waterfall -->
     <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True">
-      <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}" />
+      <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
+                      PanFraction="{Binding PanFraction}" />
     </Border>
 
     <!-- Panadapter controls -->

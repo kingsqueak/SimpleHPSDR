@@ -21,7 +21,18 @@ public sealed record SliceMark(int Rx, long Hz, int LowHz, int HighHz, string Ta
 public sealed class SpectrumView : Control
 {
     private const int WaterfallRows = 512;
-    private const double PanFraction = 0.38;
+    // Split between spectrum (top) and waterfall, moved with the drag bar.
+    public static readonly StyledProperty<double> PanFractionProperty =
+        AvaloniaProperty.Register<SpectrumView, double>(nameof(PanFraction), 0.38,
+            defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
+    public double PanFraction { get => GetValue(PanFractionProperty); set => SetValue(PanFractionProperty, value); }
+    private const double MinPanFraction = 0.15, MaxPanFraction = 0.85;
+    private const double GripHalfHeight = 4;   // pointer distance that grabs the bar
+    private static readonly IBrush GripBrush = new SolidColorBrush(Color.Parse("#2A2F3A"));
+    private static readonly IBrush GripDots = new SolidColorBrush(Color.Parse("#7D8696"));
+    private bool _dragging;
+    private static readonly Cursor CrossCursor = new(StandardCursorType.Cross);
+    private static readonly Cursor ResizeCursor = new(StandardCursorType.SizeNorthSouth);
 
     public static readonly StyledProperty<double> SpecMinDbProperty =
         AvaloniaProperty.Register<SpectrumView, double>(nameof(SpecMinDb), -130);
@@ -33,7 +44,7 @@ public sealed class SpectrumView : Control
     /// <summary>dB at the top of the panadapter trace.</summary>
     public double SpecMaxDb { get => GetValue(SpecMaxDbProperty); set => SetValue(SpecMaxDbProperty, value); }
 
-    static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty);
+    static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty, PanFractionProperty);
     // Trace averaging per frame (30 frames/s): 0.35 settles in about 0.2 s.
     private const float TraceAlpha = 0.35f;
 
@@ -82,7 +93,7 @@ public sealed class SpectrumView : Control
         // drops bins and looks gritty. Each ring slice is clipped to its own
         // rectangle so rows can't blend across the ring seam.
         RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.HighQuality);
-        Cursor = new Cursor(StandardCursorType.Cross);
+        Cursor = CrossCursor;
     }
 
     public void PushFrame(DisplayFrame f)
@@ -175,6 +186,42 @@ public sealed class SpectrumView : Control
         DrawTrace(ctx, panRect);
         DrawWaterfall(ctx, wfRect);
         DrawTuning(ctx, b);
+        DrawGrip(ctx, b, panH);
+    }
+
+    private double SplitY => Math.Round(Bounds.Height * PanFraction);
+
+    // The drag bar between spectrum and waterfall: a thin band with a grip.
+    private void DrawGrip(DrawingContext ctx, Rect b, double y)
+    {
+        ctx.FillRectangle(GripBrush, new Rect(0, y - 1.5, b.Width, 3));
+        double cx = b.Width / 2;
+        for (int i = -2; i <= 2; i++)
+            ctx.FillRectangle(GripDots, new Rect(cx + i * 6 - 1, y - 1, 2, 2));
+    }
+
+    private bool OverGrip(Point p) => Math.Abs(p.Y - SplitY) <= GripHalfHeight;
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        var p = e.GetPosition(this);
+        if (_dragging)
+        {
+            PanFraction = Math.Clamp(p.Y / Math.Max(1, Bounds.Height), MinPanFraction, MaxPanFraction);
+            e.Handled = true;
+            return;
+        }
+        Cursor = OverGrip(p) ? ResizeCursor : CrossCursor;
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        if (!_dragging) return;
+        _dragging = false;
+        e.Pointer.Capture(null);
+        e.Handled = true;
     }
 
     private double HzToX(long hz, double width)
@@ -348,6 +395,13 @@ public sealed class SpectrumView : Control
         base.OnPointerPressed(e);
         var point = e.GetCurrentPoint(this);
         var pos = e.GetPosition(this);
+        if (point.Properties.IsLeftButtonPressed && OverGrip(pos))
+        {
+            _dragging = true;
+            e.Pointer.Capture(this);
+            e.Handled = true;
+            return;
+        }
         var hz = XToHz(pos.X, Bounds.Width);
         if (point.Properties.IsRightButtonPressed)
         {

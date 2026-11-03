@@ -154,6 +154,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private double _specMinDb;
     [ObservableProperty] private double _specMaxDb;
     [ObservableProperty] private bool _autoSpectrum;
+    [ObservableProperty] private double _panFraction;
+
+    partial void OnPanFractionChanged(double value)
+    {
+        _settings.PanFraction = value;
+        _settings.Save();
+    }
     private bool _applyingAutoRange;
     private const double AutoRangeDb = 50;
     private DateTime _lastAutoRange;
@@ -292,6 +299,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _specMinDb = _settings.SpecMinDb;
         _specMaxDb = _settings.SpecMaxDb;
         _autoSpectrum = _settings.AutoSpectrum;
+        _panFraction = _settings.PanFraction;
     }
 
     // ---- startup and connection ---------------------------------------

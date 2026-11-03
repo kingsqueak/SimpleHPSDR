@@ -30,6 +30,8 @@ public sealed class Settings
     public double SpecMaxDb { get; set; } = -60;
     /// <summary>Spec Min/Max follow the noise floor.</summary>
     public bool AutoSpectrum { get; set; } = true;
+    /// <summary>Spectrum share of the panadapter height (rest is waterfall).</summary>
+    public double PanFraction { get; set; } = 0.38;
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
 
