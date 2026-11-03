@@ -39,7 +39,8 @@ public sealed class StationClient : IDisposable
     private CancellationTokenSource? _wsCts;
 
     public event Action<DisplayFrame>? Display;
-    public event Action<float>? SignalDbm;
+    /// <summary>Receiver index and its signal (dBm).</summary>
+    public event Action<int, float>? SignalDbm;
     public event Action<VfoStateFrame>? Vfo;
     public event Action<MoxStateFrame>? MoxState;
     public event Action<TxMetersV2Frame>? TxMeters;
@@ -222,10 +223,15 @@ public sealed class StationClient : IDisposable
         await ThrowIfFailed(r);
     }
 
-    public Task SetVfoAsync(long hz) => PostAsync("api/vfo", new VfoSetRequest(hz));
-    public Task SetModeAsync(RxMode mode) => PostAsync("api/mode", new ModeSetRequest(mode));
-    public Task SetFilterAsync(int low, int high, string? preset) =>
-        PostAsync("api/filter", new FilterSetRequest(low, high, preset));
+    // Receiver 0 is RX1 (slice A), 1 is RX2 (slice B).
+    public Task SetVfoAsync(long hz, int rx = 0) => PostAsync("api/vfo", new VfoSetRequest(hz, rx));
+    public Task SetModeAsync(RxMode mode, int rx = 0) => PostAsync("api/mode", new ModeSetRequest(mode, rx));
+    public Task SetReceiverAsync(int rx, ReceiverSetRequest req) => PostAsync($"api/receivers/{rx}", req);
+    public Task SetReceiverMuteAsync(int rx, bool muted) => PostAsync($"api/receivers/{rx}/mute", new MuteSetRequest(muted));
+    /// <summary>Which receiver transmits: TX uses its frequency, mode and filter.</summary>
+    public Task SetTxReceiverAsync(int rx) => PostAsync("api/tx/receiver", new TxReceiverSetRequest(rx));
+    public Task SetFilterAsync(int low, int high, string? preset, int rx = 0) =>
+        PostAsync("api/filter", new FilterSetRequest(low, high, preset, rx));
     public Task SetAfGainAsync(double db) => PostAsync("api/rx/afGain", new RxAfGainSetRequest(db));
     public Task SetAttenuatorAsync(int db) => PostAsync("api/attenuator", new AttenuatorSetRequest(db));
     public Task SetAutoAttAsync(bool on) => PostAsync("api/auto-att", new AutoAttSetRequest(on));
@@ -339,7 +345,7 @@ public sealed class StationClient : IDisposable
                     break;
                 case MsgType.RxMetersV2:
                     var m = RxMetersV2Frame.Deserialize(msg);
-                    if (m.RxId == 0) SignalDbm?.Invoke(m.SignalAv);
+                    SignalDbm?.Invoke(m.RxId, m.SignalAv);
                     break;
                 case MsgType.VfoState:
                     Vfo?.Invoke(VfoStateFrame.Deserialize(msg));

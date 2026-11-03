@@ -1,0 +1,157 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleHPSDR.Controls;
+using Zeus.Contracts;
+
+namespace SimpleHPSDR.ViewModels;
+
+/// <summary>
+/// Slices on the panadapter: A is the engine's receiver 0 (RX1), B is
+/// receiver 1 (RX2). The active slice is the one the VFO, band, mode, filter,
+/// AF and tuning act on; the TX slice is the engine's TX receiver, whose
+/// frequency, mode and filter transmit (TX on B while listening on A is split).
+/// Both play mixed, each can be muted.
+/// </summary>
+public sealed partial class MainViewModel
+{
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(ActiveSliceLabel))] [NotifyPropertyChangedFor(nameof(SplitText))]
+    private int _activeRx;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SplitText))]
+    private int _txRx;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))]
+    private bool _sliceBEnabled;
+
+    public bool HasSliceB => SliceBEnabled;
+    public string ActiveSliceLabel => ActiveRx == 0 ? "A" : "B";
+    /// <summary>Shown under the VFO slice letter when transmit is on the other slice.</summary>
+    public string SplitText => SliceBEnabled && TxRx != ActiveRx ? $"TX {(TxRx == 0 ? "A" : "B")}" : "";
+
+    // Last known state of each slice, for drawing the one that isn't active.
+    private ReceiverDto? _sliceA, _sliceB;
+    private bool _muteA, _muteB;
+
+    /// <summary>Marks for the panadapter: both slices' passbands and tags.</summary>
+    public IReadOnlyList<SliceMark> SliceMarks()
+    {
+        var marks = new List<SliceMark>(2);
+        if (!SliceBEnabled)
+            return [new SliceMark(0, VfoHz, FilterLowHz, FilterHighHz, "A", true, true, false)];
+        var a = ActiveRx == 0 ? (VfoHz, FilterLowHz, FilterHighHz)
+            : (_sliceA?.VfoHz ?? 0, _sliceA?.FilterLowHz ?? 0, _sliceA?.FilterHighHz ?? 0);
+        var b = ActiveRx == 1 ? (VfoHz, FilterLowHz, FilterHighHz)
+            : (_sliceB?.VfoHz ?? 0, _sliceB?.FilterLowHz ?? 0, _sliceB?.FilterHighHz ?? 0);
+        marks.Add(new SliceMark(0, a.Item1, a.Item2, a.Item3, "A", ActiveRx == 0, TxRx == 0, _muteA));
+        marks.Add(new SliceMark(1, b.Item1, b.Item2, b.Item3, "B", ActiveRx == 1, TxRx == 1, _muteB));
+        return marks;
+    }
+
+    /// <summary>From engine state (connect and the 1 s poll).</summary>
+    private void UpdateSlices(StateDto s)
+    {
+        _sliceA = s.Receivers?.FirstOrDefault(r => r.Index == 0);
+        _sliceB = s.Receivers?.FirstOrDefault(r => r.Index == 1);
+        _muteA = _sliceA?.Muted ?? false;
+        _muteB = _sliceB?.Muted ?? false;
+        SliceBEnabled = _sliceB?.Enabled ?? false;
+        TxRx = SliceBEnabled ? s.TxReceiverIndex : 0;
+        if (!SliceBEnabled && ActiveRx != 0) _ = MakeActiveAsync(0);
+    }
+
+    /// <summary>The engine's view of the active slice.</summary>
+    private (long Hz, RxMode Mode, int Low, int High, string? Preset, double Af) ActiveOf(StateDto s)
+    {
+        if (ActiveRx == 1 && s.Receivers?.FirstOrDefault(r => r.Index == 1) is { } b)
+            return (b.VfoHz, b.Mode, b.FilterLowHz, b.FilterHighHz, b.FilterPresetName, b.AfGainDb);
+        return (s.VfoHz, s.Mode, s.FilterLowHz, s.FilterHighHz, s.FilterPresetName, s.RxAfGainDb);
+    }
+
+    /// <summary>Point the VFO, band, mode, filter and AF at slice A (0) or B (1).</summary>
+    public async Task MakeActiveAsync(int rx)
+    {
+        if (!IsConnected || (rx == 1 && !SliceBEnabled)) return;
+        ActiveRx = rx;
+        await Try(async () =>
+        {
+            var s = await _client!.GetStateAsync();
+            UpdateSlices(s);
+            var a = ActiveOf(s);
+            _applyingState = true;
+            try
+            {
+                SetVfoLocal(a.Hz);
+                FilterLowHz = a.Low;
+                FilterHighHz = a.High;
+                AfGainDb = a.Af;
+                await SetModeLocalAsync(a.Mode, a.Preset);
+            }
+            finally
+            {
+                _applyingState = false;
+            }
+        });
+    }
+
+    /// <summary>Turn on slice B at a frequency, in the active slice's mode and
+    /// filter, and make it active.</summary>
+    public async Task AddSliceBAsync(long hz)
+    {
+        if (!IsConnected) return;
+        await Try(async () =>
+        {
+            await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
+                Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
+                AfGainDb: AfGainDb));
+            SliceBEnabled = true;
+            await MakeActiveAsync(1);
+            Status = $"Slice B on {hz / 1e6:0.000000} MHz.";
+        });
+    }
+
+    /// <summary>Move slice B to a frequency without changing which slice is active.</summary>
+    public async Task MoveSliceBAsync(long hz)
+    {
+        if (ActiveRx == 1) { TuneTo(hz); return; }
+        await Try(() => _client!.SetVfoAsync(hz, 1));
+    }
+
+    public async Task RemoveSliceBAsync()
+    {
+        if (!IsConnected || !SliceBEnabled) return;
+        await Try(async () =>
+        {
+            if (TxRx == 1) await _client!.SetTxReceiverAsync(0);   // TX back to A first
+            if (ActiveRx == 1) await MakeActiveAsync(0);
+            await _client!.SetReceiverAsync(1, new ReceiverSetRequest(Enabled: false));
+            SliceBEnabled = false;
+            TxRx = 0;
+            Status = "Slice B removed.";
+        });
+    }
+
+    /// <summary>Transmit on slice A (0) or B (1): its frequency, mode and filter.</summary>
+    public async Task TransmitOnAsync(int rx)
+    {
+        if (!IsConnected) return;
+        if (IsTransmitting)
+        {
+            Status = "Unkey before moving transmit to another slice.";
+            return;
+        }
+        await Try(async () =>
+        {
+            await _client!.SetTxReceiverAsync(rx);
+            TxRx = rx;
+            Status = $"Transmit on slice {(rx == 0 ? "A" : "B")}.";
+        });
+    }
+
+    public async Task SetSliceMuteAsync(int rx, bool muted)
+    {
+        await Try(async () =>
+        {
+            await _client!.SetReceiverMuteAsync(rx, muted);
+            if (rx == 0) _muteA = muted; else _muteB = muted;
+        });
+    }
+
+    public bool IsSliceMuted(int rx) => rx == 0 ? _muteA : _muteB;
+}

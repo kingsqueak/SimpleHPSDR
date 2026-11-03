@@ -75,6 +75,17 @@
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
                 ToolTip.Tip="Click to type a frequency (kHz or MHz); wheel tunes by the step">
           <StackPanel Orientation="Horizontal" Spacing="8">
+            <!-- Active slice letter, and where transmit is when it's the other slice -->
+            <StackPanel VerticalAlignment="Center" IsVisible="{Binding HasSliceB}" Spacing="0">
+              <Border CornerRadius="4" Padding="6,0" HorizontalAlignment="Center"
+                      Classes.sliceA="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=A}"
+                      Classes.sliceB="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=B}"
+                      ToolTip.Tip="Active slice: the VFO, band, mode, filter and AF act on it">
+                <TextBlock Text="{Binding ActiveSliceLabel}" FontSize="16" FontWeight="Bold" Foreground="White" />
+              </Border>
+              <TextBlock Text="{Binding SplitText}" FontSize="9" Foreground="#FF6B6B" HorizontalAlignment="Center"
+                         ToolTip.Tip="Transmit is on the other slice (split)" />
+            </StackPanel>
             <!-- Click the frequency to type one in its place -->
             <Panel MinWidth="230">
               <TextBlock Text="{Binding FrequencyText}" FontFamily="{StaticResource MonoFont}"

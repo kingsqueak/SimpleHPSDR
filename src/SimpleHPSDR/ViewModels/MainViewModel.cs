@@ -269,8 +269,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public MainViewModel()
     {
-        _vfoSender = new Latest<long>(hz => _client!.SetVfoAsync(hz));
-        _afSender = new Latest<double>(db => _client!.SetAfGainAsync(db));
+        _vfoSender = new Latest<long>(hz => _client!.SetVfoAsync(hz, ActiveRx));
+        _afSender = new Latest<double>(db => ActiveRx == 0
+            ? _client!.SetAfGainAsync(db)
+            : _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(AfGainDb: db)));
         _attSender = new Latest<int>(db => _client!.SetAttenuatorAsync(db));
 
         foreach (var b in SimpleHPSDR.Band.All)
@@ -328,8 +330,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         _client = new StationClient(_engine.BaseUri);
         _client.Display += QueueFrame;
-        _client.SignalDbm += dbm =>
+        _client.SignalDbm += (rx, dbm) =>
         {
+            if (rx != ActiveRx) return;
             _latestDbm = dbm;
             if (Interlocked.Exchange(ref _meterScheduled, 1) == 0)
                 Dispatcher.UIThread.Post(() =>
@@ -343,7 +346,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         WireMonitor(_client);
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
-            if (v.Receiver == 0 && !_vfoSender.Busy) SetVfoLocal(v.VfoHz);
+            if (v.Receiver == ActiveRx) { if (!_vfoSender.Busy) SetVfoLocal(v.VfoHz); }
+            else if (v.Receiver == 0 && _sliceA is { } a) _sliceA = a with { VfoHz = v.VfoHz };
+            else if (v.Receiver == 1 && _sliceB is { } b) _sliceB = b with { VfoHz = v.VfoHz };
         });
         _client.StreamClosed += reason => Dispatcher.UIThread.Post(() =>
         {
@@ -441,6 +446,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
         var state = await client.GetStateAsync();
         await ApplyStateAsync(state);
+        ActiveRx = 0;
+        UpdateSlices(state);
         LoadSpanRates(radio.Protocol2, state.SampleRate);
         await LoadDisplayTuningAsync();
         await LoadAntennasAsync();
@@ -595,11 +602,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task SelectModeAsync(RxMode mode)
     {
         if (!IsConnected) return;
-        await Try(() => _client!.SetModeAsync(mode));
+        await Try(() => _client!.SetModeAsync(mode, ActiveRx));
         var s = await _client!.GetStateAsync();
-        FilterLowHz = s.FilterLowHz;
-        FilterHighHz = s.FilterHighHz;
-        await SetModeLocalAsync(s.Mode, s.FilterPresetName);
+        var a = ActiveOf(s);
+        FilterLowHz = a.Low;
+        FilterHighHz = a.High;
+        await SetModeLocalAsync(a.Mode, a.Preset);
     }
 
     private async Task SetModeLocalAsync(RxMode mode, string? presetName)
@@ -630,7 +638,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var p = slot.Preset;
         FilterLowHz = p.LowHz;
         FilterHighHz = p.HighHz;
-        await Try(() => _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName));
+        await Try(() => _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName, ActiveRx));
     }
 
     /// <summary>Store an edited slot in the engine (per mode); if it's the
@@ -734,6 +742,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // oldest frame goes.
     private void QueueFrame(DisplayFrame f)
     {
+        // RX2 (and further receivers) stream their own spectrum too; the
+        // panadapter shows RX1's, with slice B drawn on it.
+        if (f.RxId != 0) return;
         _frames.Enqueue(f);
         while (_frames.Count > 8 && _frames.TryDequeue(out _)) UiStats.FrameDropped();
         if (Interlocked.Exchange(ref _framesScheduled, 1) == 0)
@@ -761,13 +772,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
             PollPureSignal(s);
+            UpdateSlices(s);
             // The engine can change mode itself (it remembers a mode per
             // frequency range), so follow it, filters included.
-            if (s.Mode != Mode)
+            var a = ActiveOf(s);
+            if (a.Mode != Mode)
             {
-                FilterLowHz = s.FilterLowHz;
-                FilterHighHz = s.FilterHighHz;
-                await SetModeLocalAsync(s.Mode, s.FilterPresetName);
+                FilterLowHz = a.Low;
+                FilterHighHz = a.High;
+                await SetModeLocalAsync(a.Mode, a.Preset);
             }
         }
         catch (Exception) { }

@@ -89,6 +89,10 @@
     <Setter Property="HorizontalContentAlignment" Value="Left" />
   </Style>
 
+  <!-- Active slice letter beside the VFO: A red, B amber (matches the panadapter) -->
+  <Style Selector="Border.sliceA"><Setter Property="Background" Value="#F25F5C" /></Style>
+  <Style Selector="Border.sliceB"><Setter Property="Background" Value="#F5A524" /></Style>
+
   <!-- CPU readout: green below 25%, yellow 25-50%, red above 50% -->
   <Style Selector="TextBlock.cpu"><Setter Property="Foreground" Value="#3DD68C" /></Style>
   <Style Selector="TextBlock.cpu.warn"><Setter Property="Foreground" Value="#F5C542" /></Style>

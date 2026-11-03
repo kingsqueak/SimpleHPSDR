@@ -8,6 +8,11 @@ using Zeus.Contracts;
 
 namespace SimpleHPSDR.Controls;
 
+/// <summary>One slice to draw: its receiver, dial, passband edges (offsets
+/// from the dial), tag, and whether it's the active, transmitting or muted one.</summary>
+public sealed record SliceMark(int Rx, long Hz, int LowHz, int HighHz, string Tag,
+    bool Active, bool Transmit, bool Muted);
+
 /// <summary>
 /// Panadapter (top) and scrolling waterfall (bottom) drawn from the engine's
 /// display frames. Click to tune; the wheel tunes by the step via
@@ -39,7 +44,12 @@ public sealed class SpectrumView : Control
     private static readonly IBrush TraceFill = new SolidColorBrush(Color.Parse("#333B82F6"));
     private static readonly IPen TracePen = new Pen(new SolidColorBrush(Color.Parse("#7FB2FF")), 1.2);
     private static readonly IBrush PassbandBrush = new SolidColorBrush(Color.Parse("#26FFFFFF"));
-    private static readonly IPen VfoPen = new Pen(new SolidColorBrush(Color.Parse("#F25F5C")), 1.5);
+    private static readonly IBrush PassbandInactive = new SolidColorBrush(Color.Parse("#14FFFFFF"));
+    // Slice colours: A red, B amber.
+    private static readonly Color[] SliceColors = [Color.Parse("#F25F5C"), Color.Parse("#F5A524")];
+    private static readonly IBrush TxBrush = new SolidColorBrush(Color.Parse("#E5484D"));
+    private static readonly Typeface TagFace = new("Inter", FontStyle.Normal, FontWeight.SemiBold);
+    private readonly List<(Rect Box, int Rx)> _tagBoxes = [];
     private static readonly Typeface LabelFace = new("Inter");
 
     private WriteableBitmap? _waterfall;
@@ -54,9 +64,13 @@ public sealed class SpectrumView : Control
     /// <summary>Smoothed noise floor estimate (dB), for automatic ranging.</summary>
     public double NoiseFloorDb => _floorDb;
 
-    public long VfoHz { get; set; }
-    public int FilterLowHz { get; set; }
-    public int FilterHighHz { get; set; }
+    /// <summary>Slices to draw (A, and B when on).</summary>
+    public IReadOnlyList<SliceMark> Slices { get; set; } = [];
+
+    /// <summary>A slice's tag was clicked: make it active.</summary>
+    public event Action<int>? SliceClicked;
+    /// <summary>Right-click: the frequency under the pointer.</summary>
+    public event Action<long>? MenuRequested;
 
     public event Action<long>? TuneRequested;
     public event Action<int>? WheelTune;
@@ -174,7 +188,7 @@ public sealed class SpectrumView : Control
     private long XToHz(double x, double width)
     {
         int bins = _pan?.Length ?? _wfWidth;
-        if (bins == 0) return VfoHz;
+        if (bins == 0) return _centerHz;
         double bin = x * bins / width;
         return _centerHz + (long)Math.Round((bin - bins / 2.0) * _hzPerPixel);
     }
@@ -279,19 +293,77 @@ public sealed class SpectrumView : Control
 
     private void DrawTuning(DrawingContext ctx, Rect b)
     {
-        double vx = HzToX(VfoHz, b.Width);
-        if (vx < 0) return;
-        double lx = HzToX(VfoHz + FilterLowHz, b.Width);
-        double hx = HzToX(VfoHz + FilterHighHz, b.Width);
-        ctx.FillRectangle(PassbandBrush, new Rect(Math.Min(lx, hx), 0, Math.Max(1, Math.Abs(hx - lx)), b.Height));
-        ctx.DrawLine(VfoPen, new Point(vx, 0), new Point(vx, b.Height));
+        _tagBoxes.Clear();
+        if (_hzPerPixel <= 0) return;
+        // Inactive slice first, so the active one draws on top.
+        foreach (var s in Slices.OrderBy(s => s.Active))
+        {
+            var color = SliceColors[Math.Clamp(s.Rx, 0, SliceColors.Length - 1)];
+            double vx = HzToX(s.Hz, b.Width);
+            bool visible = vx >= 0 && vx <= b.Width;
+            if (visible)
+            {
+                double lx = HzToX(s.Hz + s.LowHz, b.Width);
+                double hx = HzToX(s.Hz + s.HighHz, b.Width);
+                ctx.FillRectangle(s.Active ? PassbandBrush : PassbandInactive,
+                    new Rect(Math.Min(lx, hx), 0, Math.Max(1, Math.Abs(hx - lx)), b.Height));
+                var pen = new Pen(new SolidColorBrush(color, s.Active ? 1 : 0.7), s.Active ? 1.5 : 1,
+                    s.Active ? null : new DashStyle([4, 3], 0));
+                ctx.DrawLine(pen, new Point(vx, 0), new Point(vx, b.Height));
+            }
+            if (Slices.Count > 1) DrawTag(ctx, b, s, color, visible ? vx : -1);
+        }
+    }
+
+    // A tag at the top of the slice's line: "A" / "B", "TX" on the
+    // transmitting slice, filled when active, "M" when muted. Off-screen
+    // slices get their tag at the edge with an arrow.
+    private void DrawTag(DrawingContext ctx, Rect b, SliceMark s, Color color, double vx)
+    {
+        string text = s.Tag + (s.Transmit ? " TX" : "") + (s.Muted ? " M" : "");
+        bool left = false, right = false;
+        if (vx < 0)
+        {
+            right = s.Hz > _centerHz;
+            left = !right;
+            text = (left ? "◀ " : "") + text + (right ? " ▶" : "");
+        }
+        var ft = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture,
+            FlowDirection.LeftToRight, TagFace, 11, s.Active ? Brushes.White : new SolidColorBrush(color));
+        double w = ft.Width + 10, h = 16;
+        double x = vx >= 0 ? vx - w / 2 : left ? 2 : b.Width - w - 2;
+        x = Math.Clamp(x, 0, Math.Max(0, b.Width - w));
+        const double y = 16;   // just below the frequency labels
+        var box = new Rect(x, y, w, h);
+        if (s.Active) ctx.FillRectangle(new SolidColorBrush(color), box, 4);
+        else ctx.DrawRectangle(new SolidColorBrush(Color.Parse("#CC0B0D11")), new Pen(new SolidColorBrush(color), 1), box, 4, 4);
+        if (s.Transmit)
+            ctx.FillRectangle(TxBrush, new Rect(box.Right - 3, box.Top + 3, 2, h - 6));
+        ctx.DrawText(ft, new Point(x + 5, y + (h - ft.Height) / 2));
+        _tagBoxes.Add((box, s.Rx));
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-        var hz = XToHz(e.GetPosition(this).X, Bounds.Width);
+        var point = e.GetCurrentPoint(this);
+        var pos = e.GetPosition(this);
+        var hz = XToHz(pos.X, Bounds.Width);
+        if (point.Properties.IsRightButtonPressed)
+        {
+            MenuRequested?.Invoke(hz);
+            e.Handled = true;
+            return;
+        }
+        if (!point.Properties.IsLeftButtonPressed) return;
+        // A click on a slice tag selects the slice instead of tuning.
+        foreach (var (box, rx) in _tagBoxes)
+            if (box.Contains(pos))
+            {
+                SliceClicked?.Invoke(rx);
+                e.Handled = true;
+                return;
+            }
         TuneRequested?.Invoke(hz);
         e.Handled = true;
     }
