@@ -181,7 +181,14 @@
                   VerticalAlignment="Center" ToolTip.Tip="ADC overload">
             <TextBlock Text="OVL" FontSize="11" FontWeight="SemiBold" Foreground="White" />
           </Border>
-          <ToggleButton Classes="seg" Content="Preamp" IsChecked="{Binding PreampOn}" />
+          <Button Classes="seg" Classes.lit="{Binding PreampOn}" Command="{Binding CyclePreCommand}"
+                        Padding="8,2" MinWidth="44" Margin="0" VerticalAlignment="Center"
+                        ToolTip.Tip="Front end: preamp on → 0 dB → −10 → −20 → −30 dB (attenuator). Blue = preamp on.">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="Pre" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding PreLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+          </Button>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
           <TextBlock Text="NB" Classes="label" />

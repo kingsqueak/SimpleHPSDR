@@ -38,7 +38,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int _filterHighHz;
     [ObservableProperty] private double _afGainDb;
     [ObservableProperty] private double _attenDb;
-    [ObservableProperty] private bool _preampOn;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(PreLabel))]
+    private bool _preampOn;
     [ObservableProperty] private bool _autoAtt;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(AttenText))]
     private int _attOffsetDb;
@@ -65,6 +66,38 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public int StepHz => _settings.TuneStepHz;
     public string FrequencyText => VfoHz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.');
     public string AfGainText => $"{AfGainDb:0} dB";
+    // Thetis-style front-end steps: the G2 has one preamp switch, so the
+    // other steps are step-attenuator presets.
+    private static readonly int[] PreAttenSteps = [0, 10, 20, 30];
+
+    /// <summary>Second line of the Pre button: "on", "0 dB", or the attenuation.</summary>
+    public string PreLabel => PreampOn ? "on" : AttenDb < 0.5 ? "0 dB" : $"−{AttenDb:0}";
+
+    /// <summary>preamp on → 0 dB → −10 → −20 → −30 → preamp on. From an
+    /// in-between attenuation, go to the next step down.</summary>
+    [RelayCommand]
+    private void CyclePre()
+    {
+        if (!IsConnected) return;
+        if (PreampOn)
+        {
+            PreampOn = false;
+            AttenDb = 0;
+            return;
+        }
+        int att = (int)Math.Round(AttenDb);
+        int next = PreAttenSteps.FirstOrDefault(s => s > att, -1);
+        if (next < 0)
+        {
+            AttenDb = 0;
+            PreampOn = true;
+        }
+        else
+        {
+            AttenDb = next;
+        }
+    }
+
     public string AttenText => AttOffsetDb > 0 ? $"{AttenDb:0}+{AttOffsetDb} dB" : $"{AttenDb:0} dB";
 
     /// <summary>Set by the window: shows the settings dialog.</summary>
@@ -383,6 +416,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnAttenDbChanged(double value)
     {
         OnPropertyChanged(nameof(AttenText));
+        OnPropertyChanged(nameof(PreLabel));
         if (!_applyingState && IsConnected) _attSender.Send((int)Math.Round(value));
     }
 

@@ -50,6 +50,25 @@
     <Setter Property="Foreground" Value="White" />
   </Style>
 
+  <!-- A plain button in the segmented look, for buttons whose lit state
+       comes from the model rather than from being clicked (e.g. Pre). -->
+  <Style Selector="Button.seg">
+    <Setter Property="Background" Value="{StaticResource ControlBg}" />
+    <Setter Property="Foreground" Value="{StaticResource TextMain}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Button.seg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource ControlHover}" />
+    <Setter Property="Foreground" Value="{StaticResource TextMain}" />
+  </Style>
+  <Style Selector="Button.seg.lit /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource Accent}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
   <!-- Transmit buttons go red when keyed; the frequency does too. -->
   <Style Selector="ToggleButton.tx:checked /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#E5484D" />
