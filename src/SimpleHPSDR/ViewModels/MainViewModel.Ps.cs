@@ -18,6 +18,13 @@ public sealed partial class MainViewModel
     /// never collects its top bin and stalls.</summary>
     public double MeasuredTxPeak { get; private set; }
 
+    // The engine's MaxTxEnvelope is a peak held for 2 s, and key-on carries a
+    // transient (0.310 against a steady 0.284 on a G2), so only readings from
+    // this long after key-down describe the steady signal.
+    private static readonly TimeSpan PeakSettle = TimeSpan.FromSeconds(2.2);
+    private long _keyDownTicks;              // UTC ticks of the latest key-down, 0 when unkeyed
+    private int _psFramesSinceKey;
+
     private DateTime? _keyedSince;
     private bool _rekeyToApply;
     private bool _hwPeakAdjustedThisTx;
@@ -35,7 +42,13 @@ public sealed partial class MainViewModel
         client.PsMeters += f =>
         {
             _latestPs = f;
-            if (f.MaxTxEnvelope > 0) MeasuredTxPeak = f.MaxTxEnvelope;
+            long keyDown = Interlocked.Read(ref _keyDownTicks);
+            if (keyDown != 0)
+            {
+                Interlocked.Increment(ref _psFramesSinceKey);
+                if (f.MaxTxEnvelope > 0 && DateTime.UtcNow.Ticks - keyDown >= PeakSettle.Ticks)
+                    MeasuredTxPeak = f.MaxTxEnvelope;
+            }
             if (Interlocked.Exchange(ref _psScheduled, 1) == 0)
                 Dispatcher.UIThread.Post(() =>
                 {
@@ -85,7 +98,7 @@ public sealed partial class MainViewModel
         bool stuck = s.PsCalibrationStalled
                      || (_latestPs.CalState == CalStateCollect && !_latestPs.Correcting
                          && keyedFor > TimeSpan.FromSeconds(3));
-        if (keyedFor < TimeSpan.FromSeconds(1.5)
+        if (keyedFor < PeakSettle + TimeSpan.FromSeconds(0.3)
             || HwPeakTarget(s.PsHwPeak, stuck) is not { } target) return;
 
         _hwPeakAdjustedThisTx = true;
@@ -128,24 +141,29 @@ public sealed partial class MainViewModel
     // 128-181 is right, lower means too little sample, higher too much.
     private void UpdatePsStatus()
     {
-        if (!PsOn)
-        {
-            _keyedSince = null;
-            (PsStatus, PsLevel, PsFeedbackText) = ("PS off", "off", "");
-            return;
-        }
         if (IsTransmitting)
         {
             // A fresh key-down after an adjustment runs with the new value.
-            if (_keyedSince is null) _rekeyToApply = false;
+            if (_keyedSince is null)
+            {
+                _rekeyToApply = false;
+                _psFramesSinceKey = 0;
+                Interlocked.Exchange(ref _keyDownTicks, DateTime.UtcNow.Ticks);
+            }
             _keyedSince ??= DateTime.UtcNow;
         }
         else
         {
             _keyedSince = null;
             _hwPeakAdjustedThisTx = false;
+            Interlocked.Exchange(ref _keyDownTicks, 0);
         }
 
+        if (!PsOn)
+        {
+            (PsStatus, PsLevel, PsFeedbackText) = ("PS off", "off", "");
+            return;
+        }
         var f = _latestPs;
         int fb = (int)Math.Round(f.FeedbackLevel);
         PsFeedbackText = IsTransmitting ? $"FB {fb}" : "";

@@ -54,6 +54,7 @@ public sealed partial class MainViewModel
             TunOn = f.TunOn;
             _applyingTx = false;
             if (!IsTransmitting) ResetTxMeters();
+            UpdatePsStatus();   // also tracks key-down time for PureSignal
         });
         client.TxMeters += f =>
         {

@@ -52,6 +52,13 @@ public sealed partial class MainViewModel
 
             for (int cycle = 1; cycle <= PsCalCycles; cycle++)
             {
+                // Start from a clean slate so any "Correcting" seen in this
+                // burst is a fresh fit at the current drive, not the flag left
+                // over from an earlier calibration. Applied at once (unkeyed).
+                await client.ResetPsAsync();
+                _latestPs = default;
+                await Task.Delay(150, cts.Token);
+
                 Status = $"PS CAL: cycle {cycle} of {PsCalCycles}, keying 2-TONE…";
                 await client.SetTwoToneAsync(true);
                 var outcome = await WatchCalibrationAsync(cts.Token);
@@ -108,14 +115,17 @@ public sealed partial class MainViewModel
 
     private async Task<CalOutcome> WatchCalibrationAsync(CancellationToken ct)
     {
-        var until = DateTime.UtcNow + PsCalKeyWindow;
+        var start = DateTime.UtcNow;
+        var until = start + PsCalKeyWindow;
         while (DateTime.UtcNow < until)
         {
             await Task.Delay(100, ct);
-            if (_latestPs.Correcting) return CalOutcome.Correcting;
+            // Only frames from this key-down count.
+            bool fresh = _psFramesSinceKey >= 2 && DateTime.UtcNow - start >= TimeSpan.FromSeconds(0.4);
+            if (fresh && _latestPs.Correcting) return CalOutcome.Correcting;
             if (IsTransmitting && _latestTx.Swr > PsCalMaxSwr && _latestTx.FwdWatts > 1) return CalOutcome.HighSwr;
         }
-        return _latestPs.Correcting ? CalOutcome.Correcting : CalOutcome.StillCollecting;
+        return _psFramesSinceKey >= 2 && _latestPs.Correcting ? CalOutcome.Correcting : CalOutcome.StillCollecting;
     }
 
     /// <summary>Any key action by the operator ends a running PS CAL.</summary>
