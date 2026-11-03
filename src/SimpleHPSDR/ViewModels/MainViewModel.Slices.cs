@@ -91,6 +91,7 @@ public sealed partial class MainViewModel
         _muteB = _sliceB?.Muted ?? false;
         SliceBEnabled = _sliceB?.Enabled ?? false;
         FullDuplex = s.FullDuplexMultiRxEnabled;
+        UpdateAgc(s);
         // Follow the engine's slice AF unless the operator just moved a slider.
         if (DateTime.UtcNow - _sliceAfMovedAt > TimeSpan.FromSeconds(2))
         {
@@ -148,7 +149,7 @@ public sealed partial class MainViewModel
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
                 Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
                 AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
-                ZoomLevel: ZoomLevel));
+                ZoomLevel: ZoomLevel, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto));
             SliceBEnabled = true;
             SetSliceAfLocal(1, 0);
             await MakeActiveAsync(1);

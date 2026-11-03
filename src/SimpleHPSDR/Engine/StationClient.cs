@@ -230,6 +230,10 @@ public sealed class StationClient : IDisposable
     public Task SetReceiverMuteAsync(int rx, bool muted) => PostAsync($"api/receivers/{rx}/mute", new MuteSetRequest(muted));
     /// <summary>Which receiver transmits: TX uses its frequency, mode and filter.</summary>
     public Task SetTxReceiverAsync(int rx) => PostAsync("api/tx/receiver", new TxReceiverSetRequest(rx));
+    /// <summary>AGC mode (speed) for RX1; slice B takes its own via SetReceiverAsync.</summary>
+    public Task SetAgcAsync(AgcConfig agc) => PostAsync("api/rx/agc", new AgcSetRequest(agc));
+    /// <summary>Auto AGC: the engine adjusts the AGC gain to conditions.</summary>
+    public Task SetAutoAgcAsync(bool on) => PostAsync("api/auto-agc", new AutoAgcSetRequest(on));
     /// <summary>DUP: keep the receivers in the audio mix while transmitting.</summary>
     public Task SetFullDuplexAsync(bool on) => PostAsync("api/radio/full-duplex-multi-rx", new FullDuplexMultiRxSetRequest(on));
     public Task SetFilterAsync(int low, int high, string? preset, int rx = 0) =>

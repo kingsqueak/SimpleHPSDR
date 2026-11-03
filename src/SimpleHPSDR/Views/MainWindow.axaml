@@ -271,6 +271,8 @@
 
     <!-- Transmit -->
     <Border Grid.Row="4" Classes="panel" Margin="0,10,0,0">
+      <!-- The CPU readout overlays the bottom-right corner, taking no width -->
+      <Grid>
       <WrapPanel ItemSpacing="24" LineSpacing="8">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <ToggleButton Classes="seg tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="64"
@@ -336,16 +338,10 @@
           <Slider Minimum="-60" Maximum="0" Value="{Binding MonitorVolumeDb}" Width="90" VerticalAlignment="Center"
                   ToolTip.Tip="Monitor volume" />
           <TextBlock Text="{Binding MonitorVolumeDb, StringFormat={}{0:0} dB}" Width="44" VerticalAlignment="Center" FontSize="12" />
-        </StackPanel>
-      </WrapPanel>
-    </Border>
-
-    <!-- Bottom controls -->
-    <Border Grid.Row="5" Classes="panel" Margin="0,10,0,0">
-      <Grid ColumnDefinitions="*,Auto">
-        <WrapPanel ItemSpacing="24" LineSpacing="8">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <ToggleButton Classes="seg" IsChecked="{Binding AutoAtt}" Padding="8,2" MinWidth="0" Margin="0"
+          <Button Classes="seg" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}"
+                  VerticalAlignment="Center" Margin="12,0,0,0"
+                  ToolTip.Tip="Full duplex: keep hearing the receivers while transmitting (needs a separate RX antenna or a cross-band slice). Blue = on, grey = off." />
+          <ToggleButton Classes="seg" IsChecked="{Binding AutoAtt}" Padding="8,2" MinWidth="0" Margin="12,0,0,0"
                         VerticalAlignment="Center"
                         ToolTip.Tip="Automatic attenuation: adds attenuation when the ADC overloads (blue = on)">
             <StackPanel Spacing="-3">
@@ -369,13 +365,30 @@
               <TextBlock Text="{Binding PreLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
             </StackPanel>
           </Button>
-          <Button Classes="seg" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}"
-                  VerticalAlignment="Center" Margin="4,0,0,0"
-                  ToolTip.Tip="Full duplex: keep hearing the receivers while transmitting (needs a separate RX antenna or a cross-band slice). Blue = on, grey = off." />
+          <Button Classes="seg" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}"
+                  Padding="8,2" MinWidth="44" Margin="12,0,0,0" VerticalAlignment="Center"
+                  ToolTip.Tip="AGC: blue = auto (the engine sets the AGC gain), grey = manual (choose the speed)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="AGC" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding AgcSubLabel}" FontSize="8"
+                         HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+          </Button>
+          <Button Classes="seg" Padding="8,2" VerticalAlignment="Center" IsVisible="{Binding AgcManual}"
+                  ToolTip.Tip="AGC speed (manual)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding AgcSpeedLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding AgcSpeedChoices}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
         </StackPanel>
       </WrapPanel>
-        <TextBlock Grid.Column="1" Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
-                   Classes="cpu" FontSize="11" VerticalAlignment="Bottom" Margin="12,0,0,0"
+        <TextBlock Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
+                   Classes="cpu" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                    Classes.warn="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
                    Classes.bad="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}" />
       </Grid>
