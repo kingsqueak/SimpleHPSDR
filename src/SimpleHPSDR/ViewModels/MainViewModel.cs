@@ -315,7 +315,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         VfoHz = hz;
         var band = SimpleHPSDR.Band.Find(hz);
         foreach (var c in Bands) c.IsSelected = ReferenceEquals(c.Value, band);
+        OnPropertyChanged(nameof(BandLabel));
     }
+
+    /// <summary>Text of the blue Band button: the band the VFO is in, or
+    /// "GEN" (general coverage) outside the ham bands.</summary>
+    public string BandLabel => Bands.FirstOrDefault(c => c.IsSelected) is { } b ? $"{b.Label} m" : "GEN";
+
+    /// <summary>Text of the blue Mode button.</summary>
+    public string ModeLabel => Mode.ToString();
 
     public void TuneTo(long hz)
     {
@@ -389,6 +397,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Mode = mode;
         OnPropertyChanged(nameof(Mode));
         Mark(Modes, mode);
+        OnPropertyChanged(nameof(ModeLabel));
 
         Filters.Clear();
         FilterPreset[] presets = [];
@@ -487,8 +496,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    // Auto-ATT and the overload flag change inside the engine; no frame
-    // carries them, so poll.
+    // Auto-ATT, the overload flag and engine-side mode changes have no
+    // frame of their own, so poll.
     private async Task PollStateAsync()
     {
         if (!IsConnected || _client is null) return;
@@ -498,6 +507,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
             PollPureSignal(s);
+            // The engine can change mode itself (it remembers a mode per
+            // frequency range), so follow it, filters included.
+            if (s.Mode != Mode)
+            {
+                FilterLowHz = s.FilterLowHz;
+                FilterHighHz = s.FilterHighHz;
+                await SetModeLocalAsync(s.Mode, s.FilterPresetName);
+            }
         }
         catch (Exception) { }
     }

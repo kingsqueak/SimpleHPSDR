@@ -7,6 +7,13 @@
         Title="SimpleHPSDR" Width="1200" Height="760" MinWidth="900" MinHeight="560">
 
   <Window.Resources>
+    <!-- Menu items for a dropdown of Choice objects (step, band, mode) -->
+    <ControlTheme x:Key="ChoiceMenuItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:Choice">
+      <Setter Property="Header" Value="{Binding Label}" />
+      <Setter Property="Command" Value="{Binding Select}" />
+      <Setter Property="ToggleType" Value="Radio" />
+      <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=OneWay}" />
+    </ControlTheme>
     <DataTemplate x:Key="SegButton" x:DataType="vm:Choice">
       <ToggleButton Classes="seg" Content="{Binding Label}"
                     IsChecked="{Binding IsSelected, Mode=OneWay}"
@@ -46,16 +53,8 @@
             <TextBlock Text="{Binding StepLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
           </StackPanel>
           <Button.Flyout>
-            <MenuFlyout ItemsSource="{Binding TuneSteps}" Placement="BottomEdgeAlignedLeft">
-              <MenuFlyout.ItemContainerTheme>
-                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:Choice">
-                  <Setter Property="Header" Value="{Binding Label}" />
-                  <Setter Property="Command" Value="{Binding Select}" />
-                  <Setter Property="ToggleType" Value="Radio" />
-                  <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=OneWay}" />
-                </ControlTheme>
-              </MenuFlyout.ItemContainerTheme>
-            </MenuFlyout>
+            <MenuFlyout ItemsSource="{Binding TuneSteps}" Placement="BottomEdgeAlignedLeft"
+                        ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
           </Button.Flyout>
         </Button>
       </StackPanel>
@@ -82,17 +81,25 @@
 
     <!-- Band / mode / filter rows -->
     <Border Grid.Row="1" Classes="panel" Margin="0,0,0,10">
-      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="12">
+      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
         <TextBlock Grid.Row="0" Text="BAND" Classes="label" />
-        <ItemsControl Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Bands}" ItemTemplate="{StaticResource SegButton}">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-        </ItemsControl>
-        <TextBlock Grid.Row="1" Text="MODE" Classes="label" />
-        <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Modes}" ItemTemplate="{StaticResource SegButton}">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-        </ItemsControl>
-        <TextBlock Grid.Row="2" Text="FILTER" Classes="label" />
-        <ItemsControl Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Filters}" ItemTemplate="{StaticResource SegButton}">
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="12">
+          <Button Classes="seg lit" Content="{Binding BandLabel}" MinWidth="64" ToolTip.Tip="Choose a band">
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding Bands}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
+          <TextBlock Text="MODE" Classes="label" Margin="12,0,0,0" />
+          <Button Classes="seg lit" Content="{Binding ModeLabel}" MinWidth="64" ToolTip.Tip="Choose a mode">
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding Modes}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
+        <TextBlock Grid.Row="1" Text="FILTER" Classes="label" />
+        <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Filters}" ItemTemplate="{StaticResource SegButton}">
           <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         </ItemsControl>
       </Grid>
