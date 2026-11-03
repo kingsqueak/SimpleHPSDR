@@ -46,7 +46,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _muted;
     [ObservableProperty] private double _signalDbm = -140;
     [ObservableProperty] private string _sUnits = "S0";
-    [ObservableProperty] private double _peakDbm = -140;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(PeakSUnits))]
+    private double _peakDbm = -140;
+    public string PeakSUnits => ToSUnits(PeakDbm);
     private DateTime _peakAt;
     private static readonly TimeSpan PeakHold = TimeSpan.FromSeconds(3);
     [ObservableProperty] private string _frequencyEntry = "";
@@ -478,11 +480,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         double k = dbm > SignalDbm ? 0.6 : 0.2;
         dbm = (float)(SignalDbm + (dbm - SignalDbm) * k);
         SignalDbm = dbm;
-        // S9 = -73 dBm, 6 dB per S-unit below it.
-        SUnits = dbm >= -73
-            ? $"S9+{Math.Max(0, Math.Round(dbm + 73)):0}"
-            : $"S{Math.Clamp((int)Math.Round(9 + (dbm + 73) / 6), 0, 9)}";
+        SUnits = ToSUnits(dbm);
     }
+
+    // S9 = -73 dBm, 6 dB per S-unit below it.
+    private static string ToSUnits(double dbm) => dbm >= -73
+        ? $"S9+{Math.Max(0, Math.Round(dbm + 73)):0}"
+        : $"S{Math.Clamp((int)Math.Round(9 + (dbm + 73) / 6), 0, 9)}";
 
     // ---- helpers --------------------------------------------------------
 
