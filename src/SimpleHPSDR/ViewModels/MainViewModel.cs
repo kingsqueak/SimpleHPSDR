@@ -71,6 +71,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_client is null || ShowSettings is null) return;
         var settings = new SettingsViewModel(_client);
         settings.PaMaxPowerSaved += SetPowerScale;
+        settings.AudioSaved += () => _ = LoadMicSourcesAsync();
         _ = settings.LoadAsync();
         await ShowSettings(settings);
     }

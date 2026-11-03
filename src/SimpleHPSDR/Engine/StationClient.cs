@@ -9,7 +9,11 @@ namespace SimpleHPSDR.Engine;
 
 public sealed record FilterPreset(string SlotName, string Label, int LowHz, int HighHz);
 public sealed record AudioDevice(string Id, string Name, bool IsDefault);
-public sealed record AudioDevices(string? InputDeviceId, string? OutputDeviceId, AudioDevice[] Inputs);
+public sealed record AudioDevices(
+    string? InputDeviceId, string? OutputDeviceId, AudioDevice[] Inputs, AudioDevice[] Outputs,
+    int InputChannels, int? InputChannel, int InputSampleRate, bool OutputOpen, string? Error);
+public sealed record NativeAudioStatus(bool OutputOpen, bool Muted, NativeAudioDiagnostics? Diagnostics);
+public sealed record NativeAudioDiagnostics(long UnderrunSamplesTotal, int OutputSampleRateHz, int RingDepthSamples);
 
 /// <summary>A connect attempt the engine refused, with its reason.</summary>
 public sealed class StationException(string message, HttpStatusCode status) : Exception(message)
@@ -99,10 +103,20 @@ public sealed class StationClient : IDisposable
     public async Task SetHostInputAsync(string? inputId)
     {
         var current = await GetAudioDevicesAsync();
+        await SetAudioDevicesAsync(inputId, current.OutputDeviceId, null);
+    }
+
+    /// <summary>Null device ids mean the system default; a null channel keeps
+    /// the current one, -1 mixes all channels, 0.. picks one.</summary>
+    public async Task SetAudioDevicesAsync(string? inputId, string? outputId, int? inputChannel)
+    {
         using var r = await _http.PutAsJsonAsync("api/audio/devices",
-            new { inputDeviceId = inputId, outputDeviceId = current.OutputDeviceId }, Json);
+            new { inputDeviceId = inputId, outputDeviceId = outputId, inputChannel }, Json);
         await ThrowIfFailed(r);
     }
+
+    public async Task<NativeAudioStatus> GetNativeAudioStatusAsync() =>
+        (await _http.GetFromJsonAsync<NativeAudioStatus>("api/audio/native", Json))!;
 
     public async Task<AudioFrontEndDto> GetRadioAudioAsync() =>
         (await _http.GetFromJsonAsync<AudioFrontEndDto>("api/radio/audio", Json))!;
