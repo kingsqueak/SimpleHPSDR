@@ -194,6 +194,9 @@ public sealed class StationClient : IDisposable
     public Task SetPreampAsync(bool on) => PostAsync("api/preamp", new PreampSetRequest(on));
     public Task SetMuteAsync(bool muted) => PostAsync("api/audio/mute", new { muted });
     public Task SetZoomAsync(int level) => PostAsync("api/rx/zoom", new { level });
+    /// <summary>CTUN: panadapter clicks move only the receive frequency; the
+    /// radio's centre (NCO) stays, so the display doesn't jump.</summary>
+    public Task SetCtunAsync(bool on) => PostAsync("api/radio/ctun", new CtunSetRequest(on));
 
     public Task WriteFilterPresetAsync(RxMode mode, string slot, int lowHz, int highHz, string label) =>
         PostAsync("api/filter/presets", new FilterPresetWriteRequest(mode, slot, lowHz, highHz, label));

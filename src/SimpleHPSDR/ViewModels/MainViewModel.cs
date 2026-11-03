@@ -60,7 +60,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<FilterSlot> Filters { get; } = [];
     private static readonly string[] FilterSlotNames = ["F1", "F2", "F3", "F4", "F5"];
     public ObservableCollection<Choice> TuneSteps { get; } = [];
-    public ObservableCollection<Choice> Zooms { get; } = [];
+    // Panadapter zoom, cycled by the Zoom button. At 192 kHz, 16x is a 12 kHz span.
+    private static readonly int[] ZoomLevels = [1, 2, 4, 8, 16];
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(ZoomLabel))]
+    private int _zoomLevel = 1;
+    public string ZoomLabel => $"{ZoomLevel}×";
+
+    [ObservableProperty] private bool _ctunOn;
     public ObservableCollection<Choice> NoiseBlankers { get; } = [];
     public ObservableCollection<Choice> NoiseReductions { get; } = [];
 
@@ -134,8 +140,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Modes.Add(new Choice(m.ToString(), m, c => _ = SelectModeAsync((RxMode)c.Value)));
         foreach (var s in Steps)
             TuneSteps.Add(new Choice(s >= 1000 ? $"{s / 1000}k" : $"{s}", s, c => SelectStep((int)c.Value)));
-        foreach (var z in new[] { 1, 2, 4, 8 })
-            Zooms.Add(new Choice($"{z}×", z, c => _ = SelectZoomAsync((int)c.Value)));
         foreach (var nb in new[] { NbMode.Nb1, NbMode.Nb2 })
             NoiseBlankers.Add(new Choice(nb.ToString().ToUpperInvariant(), nb,
                 c => _ = SelectNbAsync(c.IsSelected ? NbMode.Off : (NbMode)c.Value)));
@@ -144,7 +148,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             NoiseReductions.Add(new Choice(label, mode,
                 c => _ = SelectNrAsync(c.IsSelected ? NrMode.Off : (NrMode)c.Value)));
         Mark(TuneSteps, _settings.TuneStepHz);
-        Mark(Zooms, 1);
     }
 
     // ---- startup and connection ---------------------------------------
@@ -301,7 +304,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
             Muted = s.Rx1Muted;
-            Mark(Zooms, s.ZoomLevel);
+            ZoomLevel = s.ZoomLevel;
+            CtunOn = s.CtunEnabled;
             await SetModeLocalAsync(s.Mode, s.FilterPresetName);
         }
         finally
@@ -375,11 +379,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StepLabel));
     }
 
-    private async Task SelectZoomAsync(int level)
+    /// <summary>1x → 2x → 4x → 8x → 16x → 1x.</summary>
+    [RelayCommand]
+    private async Task CycleZoomAsync()
     {
         if (!IsConnected) return;
-        Mark(Zooms, level);
-        await Try(() => _client!.SetZoomAsync(level));
+        int i = Array.IndexOf(ZoomLevels, ZoomLevel);
+        int next = ZoomLevels[(i + 1) % ZoomLevels.Length];
+        ZoomLevel = next;
+        await Try(() => _client!.SetZoomAsync(next));
+    }
+
+    [RelayCommand]
+    private void ToggleCtun() => CtunOn = !CtunOn;
+
+    partial void OnCtunOnChanged(bool value)
+    {
+        if (!_applyingState && IsConnected) _ = Try(() => _client!.SetCtunAsync(value));
     }
 
     // ---- mode and filter ------------------------------------------------

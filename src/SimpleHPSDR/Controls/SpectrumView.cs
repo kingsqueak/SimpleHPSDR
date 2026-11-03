@@ -58,6 +58,10 @@ public sealed class SpectrumView : Control
     public void PushFrame(DisplayFrame f)
     {
         if (f.Width == 0) return;
+        // A new span (zoom) makes the old waterfall rows a different scale,
+        // so start the waterfall afresh. Retuning keeps them.
+        if (_hzPerPixel > 0 && Math.Abs(f.HzPerPixel / _hzPerPixel - 1) > 0.01)
+            ClearWaterfall();
         _centerHz = f.CenterHz;
         _hzPerPixel = f.HzPerPixel;
 
@@ -78,6 +82,14 @@ public sealed class SpectrumView : Control
             AddWaterfallRow(f.WfDb.Span);
 
         InvalidateVisual();
+    }
+
+    private unsafe void ClearWaterfall()
+    {
+        if (_waterfall is null) return;
+        using var fb = _waterfall.Lock();
+        new Span<uint>((void*)fb.Address, fb.RowBytes / 4 * WaterfallRows).Fill(Palette[0]);
+        _wfRow = 0;
     }
 
     public void Clear()
