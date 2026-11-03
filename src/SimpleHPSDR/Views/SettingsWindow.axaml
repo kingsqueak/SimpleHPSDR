@@ -3,7 +3,7 @@
         xmlns:vm="using:SimpleHPSDR.ViewModels"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="Configuration" Width="560" Height="640" MinHeight="480"
+        Title="Configuration" Width="640" Height="720" MinHeight="480"
         WindowStartupLocation="CenterOwner">
   <Grid RowDefinitions="*,Auto" Margin="16">
     <TabControl>
@@ -170,6 +170,177 @@
                 </StackPanel>
               </Grid>
             </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="TX Audio">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="The transmit audio chain, in WDSP order: equalizer, leveler, speech processor or CFC, phase rotator, ALC. Changes take effect when you save. To hear the result without transmitting, turn on MON in the main window." />
+
+            <Expander Header="TX filter" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                <TextBlock Text="Low cut" Classes="label" FontSize="12" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding TxLowCutHz}" Minimum="0" Maximum="1000" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="Hz" Classes="label" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="High cut" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding TxHighCutHz}" Minimum="1000" Maximum="6000" Increment="50" FormatString="0" Width="140" />
+                  <TextBlock Text="Hz  (applied to the current sideband)" Classes="label" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+
+            <Expander Header="Speech processor" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                <CheckBox Content="Compressor" IsChecked="{Binding CompressorEnabled}" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <Slider Minimum="0" Maximum="20" Value="{Binding CompressorGainDb}" Width="200" IsEnabled="{Binding CompressorEnabled}" />
+                  <TextBlock Text="{Binding CompressorGainDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" />
+                </StackPanel>
+                <CheckBox Grid.Row="1" Content="CESSB" IsChecked="{Binding CessbEnabled}"
+                          ToolTip.Tip="Controlled-envelope SSB: limits the overshoot the compressor causes. Only runs with the compressor on." />
+                <CheckBox Grid.Row="1" Grid.Column="1" Content="4 kHz profile (default 3 kHz)" IsChecked="{Binding CessbWide}"
+                          IsEnabled="{Binding CessbEnabled}" />
+              </Grid>
+            </Expander>
+
+            <Expander Header="Leveler and ALC" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+                <CheckBox Content="Leveler" IsChecked="{Binding LevelerEnabled}"
+                          ToolTip.Tip="Slow automatic gain that evens out your voice level" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="max gain" Classes="label" />
+                  <Slider Minimum="0" Maximum="20" Value="{Binding LevelerMaxGainDb}" Width="140" />
+                  <TextBlock Text="{Binding LevelerMaxGainDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" Width="56" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Leveler decay" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding LevelerDecayMs}" Minimum="1" Maximum="5000" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Text="ALC max gain" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding AlcMaxGainDb}" Minimum="0" Maximum="120" Increment="0.5" FormatString="0.0" Width="140" />
+                  <TextBlock Text="dB" Classes="label" />
+                </StackPanel>
+                <TextBlock Grid.Row="3" Text="ALC decay" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding AlcDecayMs}" Minimum="1" Maximum="50" Increment="1" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+
+            <Expander Header="Equalizer" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                  <CheckBox Content="Enabled" IsChecked="{Binding EqEnabled}" />
+                  <TextBlock Text="Preamp" Classes="label" />
+                  <Slider Minimum="-24" Maximum="24" Value="{Binding EqPreampDb}" Width="140" />
+                  <TextBlock Text="{Binding EqPreampDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding EqBands}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:EqBandRow">
+                      <StackPanel Width="40" Spacing="4">
+                        <TextBlock Text="{Binding GainDb, StringFormat={}{0:0}}" HorizontalAlignment="Center" FontSize="11" />
+                        <Slider Orientation="Vertical" Minimum="-24" Maximum="24" Value="{Binding GainDb}" Height="140"
+                                HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" Classes="label" FontSize="11" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Expander>
+
+            <Expander Header="CFC (continuous frequency compressor)" HorizontalAlignment="Stretch" IsVisible="{Binding HasCfc}">
+              <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                  <CheckBox Content="Enabled" IsChecked="{Binding CfcEnabled}" />
+                  <CheckBox Content="Post-EQ" IsChecked="{Binding CfcPostEqEnabled}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Pre-compression" Classes="label" />
+                  <Slider Minimum="0" Maximum="16" Value="{Binding CfcPreCompDb}" Width="120" />
+                  <TextBlock Text="{Binding CfcPreCompDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" Width="56" />
+                  <TextBlock Text="Pre-EQ gain" Classes="label" />
+                  <Slider Minimum="-24" Maximum="24" Value="{Binding CfcPrePeqDb}" Width="120" />
+                  <TextBlock Text="{Binding CfcPrePeqDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" />
+                </StackPanel>
+                <Grid ColumnDefinitions="60,*,*" Margin="0,4,0,0">
+                  <TextBlock Text="BAND" Classes="label" />
+                  <TextBlock Grid.Column="1" Text="COMPRESSION (dB)" Classes="label" />
+                  <TextBlock Grid.Column="2" Text="POST GAIN (dB)" Classes="label" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding CfcBands}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CfcBandRow">
+                      <Grid ColumnDefinitions="60,*,*" Margin="0,1">
+                        <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontSize="12" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                          <Slider Minimum="0" Maximum="16" Value="{Binding CompLevelDb}" Width="120" />
+                          <TextBlock Text="{Binding CompLevelDb, StringFormat={}{0:0.0}}" VerticalAlignment="Center" FontSize="11" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                          <Slider Minimum="-24" Maximum="24" Value="{Binding PostGainDb}" Width="120" />
+                          <TextBlock Text="{Binding PostGainDb, StringFormat={}{0:0.0}}" VerticalAlignment="Center" FontSize="11" />
+                        </StackPanel>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Expander>
+
+            <Expander Header="Noise gate (downward expander)" HorizontalAlignment="Stretch" IsVisible="{Binding HasDexp}">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                <CheckBox Content="Enabled" IsChecked="{Binding DexpEnabled}"
+                          ToolTip.Tip="Turns background noise down between words" />
+                <TextBlock Grid.Row="1" Text="Threshold" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <Slider Minimum="-80" Maximum="0" Value="{Binding DexpThresholdDbv}" Width="200" />
+                  <TextBlock Text="{Binding DexpThresholdDbv, StringFormat={}{0:0} dBV}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Text="Reduction" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <Slider Minimum="0" Maximum="30" Value="{Binding DexpExpansionDb}" Width="200" />
+                  <TextBlock Text="{Binding DexpExpansionDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="3" Text="Hold" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding DexpHoldMs}" Minimum="1" Maximum="2000" Increment="50" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" />
+                </StackPanel>
+                <TextBlock Grid.Row="4" Text="Release" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding DexpReleaseMs}" Minimum="2" Maximum="1000" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+
+            <Expander Header="Phase rotator" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                <CheckBox Content="Enabled" IsChecked="{Binding PhrotEnabled}"
+                          ToolTip.Tip="Evens out the lopsided peaks of a voice so more average power fits under the same peak" />
+                <CheckBox Grid.Column="1" Content="Reverse (invert mic polarity)" IsChecked="{Binding PhrotReverse}" />
+                <TextBlock Grid.Row="1" Text="Corner" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding PhrotCornerHz}" Minimum="20" Maximum="2000" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="Hz" Classes="label" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Text="Stages" Classes="label" FontSize="12" />
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding PhrotStages}" Minimum="1" Maximum="16" Increment="1"
+                               FormatString="0" Width="140" HorizontalAlignment="Left" />
+              </Grid>
+            </Expander>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

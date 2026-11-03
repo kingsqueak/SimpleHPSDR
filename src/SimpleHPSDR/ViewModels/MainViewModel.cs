@@ -135,6 +135,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _statePoll.Tick += async (_, _) => await PollStateAsync();
         WireTransmit(_client);
         WirePureSignal(_client);
+        WireMonitor(_client);
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
             if (v.Receiver == 0 && !_vfoSender.Busy) SetVfoLocal(v.VfoHz);
@@ -222,6 +223,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await ApplyStateAsync(state);
         await LoadTransmitAsync(state);
         LoadPureSignal(state);
+        await LoadMonitorAsync();
         await client.OpenStreamAsync();
         IsConnected = true;
         _statePoll.Start();

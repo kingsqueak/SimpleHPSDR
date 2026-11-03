@@ -9,6 +9,7 @@ namespace SimpleHPSDR.Engine;
 
 public sealed record FilterPreset(string SlotName, string Label, int LowHz, int HighHz);
 public sealed record AudioDevice(string Id, string Name, bool IsDefault);
+public sealed record MonitorState(bool Enabled, bool MonitorOnTransmit, double VolumeDb);
 public sealed record AudioDevices(
     string? InputDeviceId, string? OutputDeviceId, AudioDevice[] Inputs, AudioDevice[] Outputs,
     int InputChannels, int? InputChannel, int InputSampleRate, bool OutputOpen, string? Error);
@@ -87,6 +88,45 @@ public sealed class StationClient : IDisposable
     public Task SetTuneDriveAsync(int percent) => PostAsync("api/tx/tune-drive", new TuneDriveSetRequest(percent));
     public Task SetMicGainAsync(int db) => PostAsync("api/mic-gain", new MicGainSetRequest(db));
     public Task SetTwoToneAsync(bool on) => PostAsync("api/tx/twotone", new TwoToneSetRequest(on));
+
+    // ---- TX audio chain ----
+    /// <summary>Set the TX passband from positive low/high cuts. The engine
+    /// stores the signed pair as given, so lower-sideband modes must be sent
+    /// as (-high, -low) or the filter lands on the wrong sideband.</summary>
+    public Task SetTxFilterAsync(RxMode mode, int lowCutHz, int highCutHz)
+    {
+        bool lowerSideband = mode is RxMode.LSB or RxMode.DIGL or RxMode.CWL;
+        return PostAsync("api/tx-filter", lowerSideband
+            ? new TxFilterSetRequest(-highCutHz, -lowCutHz)
+            : new TxFilterSetRequest(lowCutHz, highCutHz));
+    }
+    public Task SetTxLevelingAsync(TxLevelingConfig cfg) => PostAsync("api/tx/leveling", new TxLevelingSetRequest(cfg));
+    public Task SetLevelerMaxGainAsync(double db) => PostAsync("api/tx/leveler-max-gain", new LevelerMaxGainSetRequest(db));
+    public Task SetTxEqAsync(LegacyTxEqConfig cfg) => PostAsync("api/tx/legacy-eq", cfg);
+    public Task SetCfcAsync(CfcConfig cfg) => PostAsync("api/tx/cfc", new CfcSetRequest(cfg));
+    public Task SetDexpAsync(DexpConfig cfg) => PostAsync("api/tx/dexp", new DexpSetRequest(cfg));
+    public Task SetPhaseRotatorAsync(TxPhaseRotatorConfig cfg) =>
+        PostAsync("api/tx/phase-rotator", new TxPhaseRotatorSetRequest(cfg));
+
+    // ---- TX monitor ----
+    // The engine demodulates the post-TXA signal (after EQ, leveler,
+    // compressor/CFC, ALC and TX filter) back to audio on the native output.
+    // "Enabled" is the preview while receiving; MonitorOnTransmit is while keyed.
+    public async Task<MonitorState> GetMonitorAsync() =>
+        (await _http.GetFromJsonAsync<MonitorState>("api/tx-audio-suite/preview", Json))!;
+
+    public async Task SetMonitorAsync(bool preview, bool onTransmit)
+    {
+        using var r = await _http.PutAsJsonAsync("api/tx-audio-suite/preview",
+            new { enabled = preview, monitorOnTransmit = onTransmit }, Json);
+        await ThrowIfFailed(r);
+    }
+
+    public async Task SetMonitorVolumeAsync(double db)
+    {
+        using var r = await _http.PutAsJsonAsync("api/tx-audio-suite/monitor-volume", new { volumeDb = db }, Json);
+        await ThrowIfFailed(r);
+    }
 
     // ---- PureSignal ----
     public Task SetPsAsync(bool enabled, bool auto = true, bool single = false) =>

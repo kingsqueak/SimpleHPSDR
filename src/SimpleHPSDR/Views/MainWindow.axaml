@@ -127,6 +127,15 @@
                        VerticalAlignment="Center" Foreground="#3DD68C" Background="#1F232C"
                        ToolTip.Tip="Mic level (dBFS)" />
         </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <ToggleButton Classes="seg" Content="MON" IsChecked="{Binding MonitorPreview}"
+                        ToolTip.Tip="Preview: hear your mic through the whole TX chain (EQ, leveler, processor, ALC, TX filter) without transmitting" />
+          <ToggleButton Classes="seg" Content="MON TX" IsChecked="{Binding MonitorOnTransmit}"
+                        ToolTip.Tip="Hear the processed TX audio while transmitting" />
+          <Slider Minimum="-60" Maximum="0" Value="{Binding MonitorVolumeDb}" Width="90" VerticalAlignment="Center"
+                  ToolTip.Tip="Monitor volume" />
+          <TextBlock Text="{Binding MonitorVolumeDb, StringFormat={}{0:0} dB}" Width="44" VerticalAlignment="Center" FontSize="12" />
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
           <TextBlock Text="PWR" Classes="label" />
           <ProgressBar Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}" Width="110" MinWidth="0" Height="8"
