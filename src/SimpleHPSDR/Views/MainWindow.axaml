@@ -93,6 +93,9 @@
         <StackPanel Orientation="Horizontal" Spacing="6">
           <ToggleButton Classes="seg" Content="PS" IsChecked="{Binding PsOn}"
                         ToolTip.Tip="PureSignal adaptive predistortion" />
+          <ToggleButton Classes="seg tx" Content="PS CAL" IsChecked="{Binding PsCalibrating, Mode=OneWay}"
+                        Command="{Binding CalibratePsCommand}"
+                        ToolTip.Tip="Key 2-TONE in up to four 3-second bursts until PureSignal calibrates, adjusting HW peak between bursts. Press again to cancel." />
           <Border Classes="ps" Classes.ok="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ok}"
                   Classes.warn="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
                   Classes.bad="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}"

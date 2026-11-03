@@ -76,7 +76,8 @@ public sealed partial class MainViewModel
     // the new value applies from the next key-down; the badge says so.
     private async Task MaybeLowerHwPeakAsync(StateDto s)
     {
-        if (!_settings.AutoHwPeak || !PsOn || _hwPeakAdjustedThisTx || _keyedSince is not { } since) return;
+        // PS CAL makes its own HW peak changes between bursts.
+        if (PsCalibrating || !_settings.AutoHwPeak || !PsOn || _hwPeakAdjustedThisTx || _keyedSince is not { } since) return;
         bool stuck = s.PsCalibrationStalled
                      || (_latestPs.CalState == CalStateCollect && !_latestPs.Correcting
                          && DateTime.UtcNow - since > TimeSpan.FromSeconds(3));
@@ -103,6 +104,7 @@ public sealed partial class MainViewModel
     partial void OnTwoToneOnChanged(bool value)
     {
         if (_applyingTx || !IsConnected) return;
+        CancelPsCalForOperatorKey();
         _ = KeyAsync(() => _client!.SetTwoToneAsync(value), value);
     }
 

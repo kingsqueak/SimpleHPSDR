@@ -133,12 +133,14 @@ public sealed partial class MainViewModel
     partial void OnMoxOnChanged(bool value)
     {
         if (_applyingTx || !IsConnected) return;
+        CancelPsCalForOperatorKey();
         _ = KeyAsync(() => _client!.SetMoxAsync(value), value);
     }
 
     partial void OnTunOnChanged(bool value)
     {
         if (_applyingTx || !IsConnected) return;
+        CancelPsCalForOperatorKey();
         _ = KeyAsync(() => _client!.SetTunAsync(value), value);
     }
 
