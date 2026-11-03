@@ -62,6 +62,37 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<FilterSlot> Filters { get; } = [];
     private static readonly string[] FilterSlotNames = ["F1", "F2", "F3", "F4", "F5"];
     public ObservableCollection<Choice> TuneSteps { get; } = [];
+    // Span = receiver sample rate. 768k and 1.5M are Protocol 2 only.
+    private static readonly int[] SpanRatesP1 = [48_000, 96_000, 192_000, 384_000];
+    private static readonly int[] SpanRatesP2 = [48_000, 96_000, 192_000, 384_000, 768_000, 1_536_000];
+    public ObservableCollection<Choice> SpanRates { get; } = [];
+    [ObservableProperty] private string _spanLabel = "";
+
+    private static string RateLabel(int hz) => hz >= 1_000_000 ? $"{hz / 1e6:0.#}M" : $"{hz / 1000}k";
+
+    private void LoadSpanRates(bool protocol2, int current)
+    {
+        SpanRates.Clear();
+        foreach (var r in protocol2 ? SpanRatesP2 : SpanRatesP1)
+            SpanRates.Add(new Choice(RateLabel(r), r, c => _ = SelectSpanAsync((int)c.Value)));
+        Mark(SpanRates, current);
+        SpanLabel = RateLabel(current);
+    }
+
+    private async Task SelectSpanAsync(int hz)
+    {
+        if (!IsConnected) return;
+        await Try(async () =>
+        {
+            await _client!.SetSampleRateAsync(hz);
+            Mark(SpanRates, hz);
+            SpanLabel = RateLabel(hz);
+            // Reconnects use this rate, so remember it.
+            _settings.SampleRate = hz;
+            _settings.Save();
+        });
+    }
+
     // Panadapter zoom, cycled by the Zoom button. At 192 kHz, 16x is a 12 kHz span.
     private static readonly int[] ZoomLevels = [1, 2, 4, 8, 16];
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ZoomLabel))]
@@ -267,6 +298,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
         var state = await client.GetStateAsync();
         await ApplyStateAsync(state);
+        LoadSpanRates(radio.Protocol2, state.SampleRate);
         await LoadTransmitAsync(state);
         LoadPureSignal(state);
         await LoadMonitorAsync();

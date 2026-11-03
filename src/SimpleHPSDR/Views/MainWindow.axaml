@@ -30,8 +30,19 @@
         <StackPanel Orientation="Horizontal" Spacing="6">
           <Button Classes="flat" Content="{Binding RadioLabel}" Command="{Binding ChooseRadioCommand}"
                   ToolTip.Tip="Choose a radio" />
-          <Button Classes="flat" Content="Configuration" Command="{Binding OpenSettingsCommand}"
-                  IsEnabled="{Binding IsConnected}" />
+          <Button Classes="flat" Content="Config" Command="{Binding OpenSettingsCommand}"
+                  IsEnabled="{Binding IsConnected}" ToolTip.Tip="Configuration" />
+          <Button Classes="seg" Padding="10,3" IsEnabled="{Binding IsConnected}" VerticalAlignment="Center"
+                  ToolTip.Tip="Panadapter span (receiver sample rate)">
+            <StackPanel Spacing="-1">
+              <TextBlock Text="Span" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding SpanLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding SpanRates}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
         </StackPanel>
         <TextBlock Text="{Binding Status}" Classes="label" FontSize="11" MaxWidth="300"
                    TextTrimming="CharacterEllipsis" Margin="2,0,0,0" />

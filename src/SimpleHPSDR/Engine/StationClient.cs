@@ -193,6 +193,8 @@ public sealed class StationClient : IDisposable
     public Task SetNrAsync(NrConfig nr) => PostAsync("api/rx/nr", new NrSetRequest(nr));
     public Task SetPreampAsync(bool on) => PostAsync("api/preamp", new PreampSetRequest(on));
     public Task SetMuteAsync(bool muted) => PostAsync("api/audio/mute", new { muted });
+    /// <summary>Receiver sample rate, which is the panadapter span; changes live.</summary>
+    public Task SetSampleRateAsync(int hz) => PostAsync("api/sampleRate", new SampleRateSetRequest(hz));
     public Task SetZoomAsync(int level) => PostAsync("api/rx/zoom", new { level });
     /// <summary>CTUN: panadapter clicks move only the receive frequency; the
     /// radio's centre (NCO) stays, so the display doesn't jump.</summary>
