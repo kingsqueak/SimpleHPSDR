@@ -259,6 +259,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
         _ = settings.LoadAsync();
         await ShowSettings(settings);
+        if (IsConnected) await LoadAntennasAsync();
     }
 
     /// <summary>Set by the window: shows the radio picker and returns the choice.</summary>
@@ -442,6 +443,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await ApplyStateAsync(state);
         LoadSpanRates(radio.Protocol2, state.SampleRate);
         await LoadDisplayTuningAsync();
+        await LoadAntennasAsync();
         await LoadTransmitAsync(state);
         LoadPureSignal(state);
         await LoadMonitorAsync();
@@ -499,6 +501,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var band = SimpleHPSDR.Band.Find(hz);
         foreach (var c in Bands) c.IsSelected = ReferenceEquals(c.Value, band);
         OnPropertyChanged(nameof(BandLabel));
+        ShowAntennasForBand();
     }
 
     /// <summary>Text of the blue Band button: the band the VFO is in, or

@@ -49,6 +49,29 @@
       </StackPanel>
 
       <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
+        <!-- TX and RX antenna for the current band, stacked to the VFO's height -->
+        <StackPanel Spacing="4" VerticalAlignment="Center">
+          <Button Classes="seg ant" IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="TX antenna for this band">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="TX" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding TxAntLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding TxAntennas}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
+          <Button Classes="seg ant" IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="RX antenna for this band">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="RX" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding RxAntLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding RxAntennas}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
                 ToolTip.Tip="Click to type a frequency (kHz or MHz); wheel tunes by the step">
           <StackPanel Orientation="Horizontal" Spacing="8">
