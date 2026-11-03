@@ -34,6 +34,7 @@ public partial class MainWindow : Window
         };
         FrequencyEntryBox.LostFocus += (_, _) => Vm?.CancelFrequencyEntry();
         Spectrum.TuneRequested += TuneA;
+        FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += ShowSliceMenu;
         Spectrum.WheelTune += steps =>
@@ -145,6 +146,8 @@ public partial class MainWindow : Window
         vm.ShowSettings = settings => new SettingsWindow { DataContext = settings }.ShowDialog(this);
         vm.Display += f =>
         {
+            if (f.RxId == vm.ActiveRx)
+                FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz);
             if (f.RxId == 1)
             {
                 if (!vm.ShowPanadapterB) return;
@@ -157,7 +160,7 @@ public partial class MainWindow : Window
             Spectrum.PushFrame(f);
             vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
         };
-        vm.DisplayReset += () => { Spectrum.Clear(); SpectrumB.Clear(); };
+        vm.DisplayReset += () => { Spectrum.Clear(); SpectrumB.Clear(); FilterScope.Clear(); };
         vm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx))

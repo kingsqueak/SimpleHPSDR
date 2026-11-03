@@ -153,7 +153,7 @@
 
     <!-- Band / mode / filter rows -->
     <Border Grid.Row="1" Classes="panel" Margin="0,0,0,10">
-      <Grid ColumnDefinitions="Auto,Auto,Auto,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
         <TextBlock Grid.Row="0" Text="BAND" Classes="label" />
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="12">
           <Button Classes="seg lit" Content="{Binding BandLabel}" MinWidth="64" ToolTip.Tip="Choose a band">
@@ -211,6 +211,9 @@
                       ToolTip.Tip="Noise blanker for impulse noise (click the lit one for off)">
           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         </ItemsControl>
+        <!-- Close-up of the received signal with the filter: drag its edges -->
+        <c:FilterScope Name="FilterScope" Grid.Column="4" Grid.RowSpan="2" Margin="12,0,0,0"
+                       ToolTip.Tip="6 kHz around the dial with the receive filter shaded. Drag an edge to set the low or high cut. Scale: audio frequency in Hz." />
         <TextBlock Grid.Row="1" Grid.Column="2" Text="NR" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
         <ItemsControl Grid.Row="1" Grid.Column="3" ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource SegButton}"
                       VerticalAlignment="Center"

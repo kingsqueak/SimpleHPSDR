@@ -679,6 +679,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    private Latest<(int Low, int High)>? _filterDragSender;
+
+    /// <summary>A passband edge dragged on the filter scope: a custom filter
+    /// for the active slice (no slot lit), shared and followed as usual.</summary>
+    public void DragFilter(int low, int high)
+    {
+        if (!IsConnected) return;
+        FilterLowHz = low;
+        FilterHighHz = high;
+        foreach (var f in Filters) f.IsSelected = false;
+        _filterDragSender ??= new Latest<(int Low, int High)>(async e =>
+        {
+            await _client!.SetFilterAsync(e.Low, e.High, null, ActiveRx);
+            await MirrorFilterAsync(e.Low, e.High, null);
+            await FollowRxFilterAsync();
+        });
+        _filterDragSender.Send((low, high));
+    }
+
     /// <summary>Store an edited slot in the engine (per mode); if it's the
     /// filter in use, apply the new edges at once.</summary>
     private async Task SaveFilterAsync(FilterSlot slot)
