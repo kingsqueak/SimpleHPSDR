@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleHPSDR.Engine;
 using Zeus.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
@@ -44,10 +45,11 @@ public sealed partial class SettingsViewModel
     /// can refresh its mic picker.</summary>
     public event Action? AudioSaved;
 
-    private async Task LoadAudioAsync()
-    {
-        var devices = await _client.GetAudioDevicesAsync();
+    private sealed record DeviceSelection(string? InputId, string? OutputId, int Channel);
+    private DeviceSelection? _devicesWas;
 
+    private void PopulateAudio(AudioDevices devices, AudioFrontEndDto radio)
+    {
         Outputs.Clear();
         Outputs.Add(new DeviceOption("System default", null));
         foreach (var d in devices.Outputs.DistinctBy(d => d.Id)) Outputs.Add(new DeviceOption(d.Name, d.Id));
@@ -62,28 +64,27 @@ public sealed partial class SettingsViewModel
         Channels.Add(new ChannelOption("Mix all channels", -1));
         for (int c = 0; c < devices.InputChannels; c++) Channels.Add(new ChannelOption($"Channel {c + 1}", c));
         SelectedChannel = Channels.FirstOrDefault(c => c.Value == (devices.InputChannel ?? -1)) ?? Channels[0];
+        _devicesWas = new DeviceSelection(SelectedInput.Id, SelectedOutput.Id, SelectedChannel.Value);
 
-        _radioAudio = await _client.GetRadioAudioAsync();
-        HasRadioAudio = _radioAudio.HasOnboardCodec;
-        HasMicBias = _radioAudio.HasMicBias;
-        HasLineIn = _radioAudio.HasRadioLineIn;
+        _radioAudio = radio;
+        HasRadioAudio = radio.HasOnboardCodec;
+        HasMicBias = radio.HasMicBias;
+        HasLineIn = radio.HasRadioLineIn;
         TxSources.Clear();
         TxSources.Add(new SourceOption("Computer microphone", TxAudioSource.Host));
         if (HasRadioAudio)
         {
             TxSources.Add(new SourceOption("Radio mic jack", TxAudioSource.RadioMic));
             if (HasLineIn) TxSources.Add(new SourceOption("Radio line in", TxAudioSource.RadioLineIn));
-            if (_radioAudio.HasBalancedXlr) TxSources.Add(new SourceOption("Radio XLR", TxAudioSource.RadioBalancedXlr));
+            if (radio.HasBalancedXlr) TxSources.Add(new SourceOption("Radio XLR", TxAudioSource.RadioBalancedXlr));
         }
-        SelectedTxSource = TxSources.FirstOrDefault(s => s.Source == _radioAudio.Source) ?? TxSources[0];
-        MicBoost = _radioAudio.MicBoost;
-        MicBias = _radioAudio.MicBias;
-        LineInGain = _radioAudio.LineInGain;
-
-        await RefreshAudioStatusAsync(devices);
+        SelectedTxSource = TxSources.FirstOrDefault(s => s.Source == radio.Source) ?? TxSources[0];
+        MicBoost = radio.MicBoost;
+        MicBias = radio.MicBias;
+        LineInGain = radio.LineInGain;
     }
 
-    private async Task RefreshAudioStatusAsync(Engine.AudioDevices? devices = null)
+    private async Task RefreshAudioStatusAsync(AudioDevices? devices = null)
     {
         devices ??= await _client.GetAudioDevicesAsync();
         var native = await _client.GetNativeAudioStatusAsync();
@@ -95,12 +96,34 @@ public sealed partial class SettingsViewModel
               $" · mic {devices.InputSampleRate / 1000.0:0.#} kHz, {devices.InputChannels} ch";
     }
 
-    private async Task SaveAudioAsync()
+    // Reopening devices interrupts audio, so only touch them when a device or
+    // channel actually changed; the radio's codec settings go separately.
+    private async Task ApplyAudioAsync()
     {
-        await _client.SetAudioDevicesAsync(SelectedInput?.Id, SelectedOutput?.Id, SelectedChannel?.Value);
-        if (_radioAudio is { HasOnboardCodec: true } && SelectedTxSource is { } src)
-            await _client.SetRadioAudioAsync(new AudioFrontEndSetRequest(
-                src.Source, MicBoost, MicBias, (int)Math.Round(LineInGain)));
+        var sel = new DeviceSelection(SelectedInput?.Id, SelectedOutput?.Id, SelectedChannel?.Value ?? -1);
+        bool changed = false;
+        if (sel != _devicesWas)
+        {
+            await _client.SetAudioDevicesAsync(sel.InputId, sel.OutputId, sel.Channel);
+            _devicesWas = sel;
+            changed = true;
+        }
+        if (_radioAudio is { HasOnboardCodec: true } was && SelectedTxSource is { } src)
+        {
+            var req = new AudioFrontEndSetRequest(src.Source, MicBoost, MicBias, (int)Math.Round(LineInGain));
+            if (req.Source != was.Source || req.MicBoost != was.MicBoost
+                || req.MicBias != was.MicBias || req.LineInGain != was.LineInGain)
+            {
+                await _client.SetRadioAudioAsync(req);
+                _radioAudio = was with
+                {
+                    Source = req.Source, MicBoost = req.MicBoost, MicBias = req.MicBias, LineInGain = req.LineInGain,
+                };
+                changed = true;
+            }
+        }
+        if (!changed) return;
+        await RefreshAudioStatusAsync();
         AudioSaved?.Invoke();
     }
 }

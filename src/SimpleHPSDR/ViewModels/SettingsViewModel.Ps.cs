@@ -61,9 +61,9 @@ public sealed partial class SettingsViewModel
         ? $"Your last transmission peaked at {MeasuredTxPeak:0.0000}. HW peak must not be above that, or calibration stalls."
         : "Turn PS on and transmit 2-TONE once; the measured peak will show here.";
 
-    private async Task LoadPureSignalAsync()
+    private void PopulatePureSignal(StateDto s)
     {
-        var s = _psLoaded = await _client.GetStateAsync();
+        _psLoaded = s;
         PsExternalFeedback = s.PsFeedbackSource == PsFeedbackSource.External;
         PsAutoAttenuate = s.PsAutoAttenuate;
         PsFeedbackAttenDb = s.PsTxFeedbackAttenuationDb;
@@ -75,20 +75,24 @@ public sealed partial class SettingsViewModel
         PsMonitor = s.PsMonitorEnabled;
     }
 
-    private async Task SavePureSignalAsync()
+    private async Task ApplyPureSignalAsync()
     {
         if (_psLoaded is not { } was) return;
         var source = PsExternalFeedback ? PsFeedbackSource.External : PsFeedbackSource.Internal;
         if (source != was.PsFeedbackSource)
             await _client.SetPsFeedbackSourceAsync(source);
         bool autoAttenuate = PsAutoAttenuate || PsExternalFeedback;
-        await _client.SetPsAdvancedAsync(new PsAdvancedSetRequest(
-            autoAttenuate, PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak));
+        if (autoAttenuate != was.PsAutoAttenuate || PsMoxDelaySec != was.PsMoxDelaySec
+            || PsLoopDelaySec != was.PsLoopDelaySec || PsAmpDelayNs != was.PsAmpDelayNs
+            || PsHwPeak != was.PsHwPeak)
+            await _client.SetPsAdvancedAsync(new PsAdvancedSetRequest(
+                autoAttenuate, PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak));
         // With auto-attenuate on, the engine manages the attenuator itself.
-        if (!PsAutoAttenuate && (int)Math.Round(PsFeedbackAttenDb) != was.PsTxFeedbackAttenuationDb)
+        if (!autoAttenuate && (int)Math.Round(PsFeedbackAttenDb) != was.PsTxFeedbackAttenuationDb)
             await _client.SetPsFeedbackAttenuationAsync((int)Math.Round(PsFeedbackAttenDb));
         if (PsMonitor != was.PsMonitorEnabled)
             await _client.SetPsMonitorAsync(PsMonitor);
+        _psLoaded = await _client.GetStateAsync();
     }
 
     [RelayCommand]

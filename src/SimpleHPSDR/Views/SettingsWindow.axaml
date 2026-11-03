@@ -178,7 +178,7 @@
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="The transmit audio chain, in WDSP order: equalizer, leveler, speech processor or CFC, phase rotator, ALC. Changes take effect when you save. To hear the result without transmitting, turn on MON in the main window." />
+                       Text="The transmit audio chain, in WDSP order: equalizer, leveler, speech processor or CFC, phase rotator, ALC. Changes apply as you make them. To hear the result without transmitting, turn on MON in the main window." />
 
             <Expander Header="TX filter" IsExpanded="True" HorizontalAlignment="Stretch">
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="8">
@@ -349,9 +349,9 @@
     <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
       <TextBlock Text="{Binding Status}" Classes="label" FontSize="12" TextWrapping="Wrap" />
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-        <Button Classes="flat" Content="Revert" Command="{Binding RevertCommand}" />
-        <Button Classes="flat accent" Content="Save" Command="{Binding SaveCommand}" />
-        <Button Classes="flat" Content="Close" Name="CloseButton" />
+        <Button Classes="flat" Content="Undo changes" Command="{Binding UndoCommand}"
+                ToolTip.Tip="Put every page back to how it was when this window opened" />
+        <Button Classes="flat accent" Content="Close" Name="CloseButton" />
       </StackPanel>
     </Grid>
   </Grid>

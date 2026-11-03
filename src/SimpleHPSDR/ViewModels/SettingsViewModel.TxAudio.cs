@@ -71,11 +71,9 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _phrotStages;
     [ObservableProperty] private bool _phrotReverse;
 
-    private Task LoadTxAudioAsync() => LoadTxAudioAsync(null);
-
-    private async Task LoadTxAudioAsync(StateDto? state)
+    private void PopulateTxAudio(StateDto s)
     {
-        var s = _txLoaded = state ?? await _client.GetStateAsync();
+        _txLoaded = s;
 
         TxLowCutHz = Math.Min(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
         TxHighCutHz = Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
@@ -96,7 +94,7 @@ public sealed partial class SettingsViewModel
         EqPreampDb = eq.PreampDb;
         EqBands.Clear();
         for (int i = 0; i < eq.FrequenciesHz.Length; i++)
-            EqBands.Add(new EqBandRow(eq.FrequenciesHz[i], eq.GainsDb[i]));
+            EqBands.Add(Watch(new EqBandRow(eq.FrequenciesHz[i], eq.GainsDb[i]), Group.TxAudio));
 
         HasCfc = s.Cfc is not null;
         CfcBands.Clear();
@@ -106,7 +104,7 @@ public sealed partial class SettingsViewModel
             CfcPostEqEnabled = cfc.PostEqEnabled;
             CfcPreCompDb = cfc.PreCompDb;
             CfcPrePeqDb = cfc.PrePeqDb;
-            foreach (var b in cfc.Bands) CfcBands.Add(new CfcBandRow(b));
+            foreach (var b in cfc.Bands) CfcBands.Add(Watch(new CfcBandRow(b), Group.TxAudio));
         }
 
         HasDexp = s.Dexp is not null;
@@ -126,8 +124,8 @@ public sealed partial class SettingsViewModel
         PhrotReverse = pr.Reverse;
     }
 
-    /// <summary>Send only the groups that changed, each as the engine's whole record.</summary>
-    private async Task SaveTxAudioAsync()
+    /// <summary>Send only the parts that changed, each as the engine's whole record.</summary>
+    private async Task ApplyTxAudioAsync()
     {
         if (_txLoaded is not { } was) return;
 
@@ -200,5 +198,6 @@ public sealed partial class SettingsViewModel
         };
         if (pr != prWas)
             await _client.SetPhaseRotatorAsync(pr);
+        _txLoaded = await _client.GetStateAsync();
     }
 }
