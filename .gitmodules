@@ -1,0 +1,3 @@
+[submodule "external/station-engine"]
+	path = external/station-engine
+	url = https://github.com/Zeus-SDR/station-engine.git

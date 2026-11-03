@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        x:Class="SimpleHPSDR.Views.RadioPickerWindow"
+        x:DataType="vm:RadioPickerViewModel"
+        Title="Choose a radio" Width="520" Height="480" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="18" RowSpacing="12">
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel Spacing="2">
+        <TextBlock Text="Choose a radio" FontSize="18" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Status}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+      </StackPanel>
+      <Button Grid.Column="1" Classes="flat" Content="Search again" Command="{Binding RefreshCommand}"
+              IsEnabled="{Binding !Searching}" VerticalAlignment="Top" />
+    </Grid>
+
+    <Border Grid.Row="1" Classes="panel" Padding="4">
+      <Panel>
+        <ListBox ItemsSource="{Binding Radios}" SelectedItem="{Binding Selected}" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:RadioEntry">
+              <Grid ColumnDefinitions="*,Auto" Margin="4,2">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding Subtitle}" Classes="label" FontSize="12" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="IN USE" IsVisible="{Binding Busy}" Foreground="#F2A93B"
+                           FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
+                           ToolTip.Tip="Another program is controlling this radio" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <ProgressBar IsIndeterminate="True" IsVisible="{Binding Searching}" VerticalAlignment="Top" Height="2" />
+      </Panel>
+    </Border>
+
+    <TextBlock Grid.Row="2" IsVisible="{Binding SelectedBusy}" TextWrapping="Wrap" FontSize="12" Foreground="#F2A93B"
+               Text="Another program is controlling this radio. Take over stops it there, including any transmission in progress." />
+
+    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="Or by address" Classes="label" FontSize="12" />
+      <TextBox Text="{Binding ManualIp}" PlaceholderText="192.168.1.20" Width="150" />
+      <ToggleButton Classes="seg" Content="Protocol 2" IsChecked="{Binding ManualP2}" />
+    </StackPanel>
+
+    <CheckBox Grid.Row="4" Content="Connect to this radio automatically next time" IsChecked="{Binding AutoConnect}" />
+
+    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Classes="flat" Content="Cancel" Command="{Binding CancelCommand}" />
+      <Button Classes="flat" Content="Take over" Command="{Binding TakeOverCommand}" IsVisible="{Binding SelectedBusy}" />
+      <Button Classes="flat accent" Content="Connect" Command="{Binding ConnectCommand}" IsDefault="True" />
+    </StackPanel>
+  </Grid>
+</Window>

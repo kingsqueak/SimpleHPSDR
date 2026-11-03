@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/SimpleHPSDR/SimpleHPSDR.csproj" />
+  <Project Path="external/station-engine/Zeus.Contracts/Zeus.Contracts.csproj" />
+</Solution>

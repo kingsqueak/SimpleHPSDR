@@ -1,0 +1,63 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <SolidColorBrush x:Key="AppBg" Color="#0F1115" />
+    <SolidColorBrush x:Key="PanelBg" Color="#171A21" />
+    <SolidColorBrush x:Key="ControlBg" Color="#1F232C" />
+    <SolidColorBrush x:Key="ControlHover" Color="#2A2F3A" />
+    <SolidColorBrush x:Key="Accent" Color="#3B82F6" />
+    <SolidColorBrush x:Key="TextMain" Color="#E6E8EB" />
+    <SolidColorBrush x:Key="TextMuted" Color="#8A93A3" />
+    <FontFamily x:Key="MonoFont">Menlo, Consolas, DejaVu Sans Mono, monospace</FontFamily>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{StaticResource AppBg}" />
+    <Setter Property="Foreground" Value="{StaticResource TextMain}" />
+    <Setter Property="FontFamily" Value="Inter" />
+  </Style>
+
+  <Style Selector="TextBlock.label">
+    <Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{StaticResource PanelBg}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="10,8" />
+  </Style>
+
+  <!-- Flat segmented buttons -->
+  <Style Selector="ToggleButton.seg">
+    <Setter Property="Background" Value="{StaticResource ControlBg}" />
+    <Setter Property="Foreground" Value="{StaticResource TextMain}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="9,5" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="MinWidth" Value="38" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ToggleButton.seg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource ControlHover}" />
+    <Setter Property="Foreground" Value="{StaticResource TextMain}" />
+  </Style>
+  <Style Selector="ToggleButton.seg:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource Accent}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
+  <Style Selector="Button.flat">
+    <Setter Property="Background" Value="{StaticResource ControlBg}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="12,6" />
+  </Style>
+  <Style Selector="Button.accent">
+    <Setter Property="Background" Value="{StaticResource Accent}" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+</Styles>
