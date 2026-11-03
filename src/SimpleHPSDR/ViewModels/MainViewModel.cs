@@ -293,9 +293,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public MainViewModel()
     {
         _vfoSender = new Latest<long>(hz => _client!.SetVfoAsync(hz, ActiveRx));
-        _afSender = new Latest<double>(db => ActiveRx == 0
-            ? _client!.SetAfGainAsync(db)
-            : _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(AfGainDb: db)));
+        // Main AF is the station-wide master; each slice has its own trim on top.
+        _afSender = new Latest<double>(db => _client!.SetAfGainAsync(db));
+        _sliceAfSenders = [.. Enumerable.Range(0, 2).Select(rx => new Latest<double>(
+            db => _client!.SetReceiverAsync(rx, new ReceiverSetRequest(AfGainDb: db))))];
         _attSender = new Latest<int>(db => _client!.SetAttenuatorAsync(db));
 
         foreach (var b in SimpleHPSDR.Band.All)

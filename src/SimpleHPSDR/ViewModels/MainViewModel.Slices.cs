@@ -28,6 +28,35 @@ public sealed partial class MainViewModel
     [ObservableProperty] private bool _fullDuplex;
 
     public bool HasSliceB => SliceBEnabled;
+
+    // Each slice's own AF, on top of the main (master) AF. Shown under the
+    // main AF while slice B is on.
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfAText))]
+    private double _sliceAfA;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfBText))]
+    private double _sliceAfB;
+    public string SliceAfAText => $"{SliceAfA:0} dB";
+    public string SliceAfBText => $"{SliceAfB:0} dB";
+    private readonly Latest<double>[] _sliceAfSenders;
+    private bool _applyingSliceAf;
+    private DateTime _sliceAfMovedAt;
+
+    private void SetSliceAfLocal(int rx, double db)
+    {
+        _applyingSliceAf = true;
+        if (rx == 0) SliceAfA = db; else SliceAfB = db;
+        _applyingSliceAf = false;
+    }
+
+    partial void OnSliceAfAChanged(double value) => SendSliceAf(0, value);
+    partial void OnSliceAfBChanged(double value) => SendSliceAf(1, value);
+
+    private void SendSliceAf(int rx, double db)
+    {
+        if (_applyingSliceAf || !IsConnected) return;
+        _sliceAfMovedAt = DateTime.UtcNow;
+        _sliceAfSenders[rx].Send(Math.Round(db));
+    }
     public string ActiveSliceLabel => ActiveRx == 0 ? "A" : "B";
     /// <summary>Shown under the VFO slice letter when transmit is on the other slice.</summary>
     public string SplitText => SliceBEnabled && TxRx != ActiveRx ? $"TX {(TxRx == 0 ? "A" : "B")}" : "";
@@ -60,6 +89,12 @@ public sealed partial class MainViewModel
         _muteB = _sliceB?.Muted ?? false;
         SliceBEnabled = _sliceB?.Enabled ?? false;
         FullDuplex = s.FullDuplexMultiRxEnabled;
+        // Follow the engine's slice AF unless the operator just moved a slider.
+        if (DateTime.UtcNow - _sliceAfMovedAt > TimeSpan.FromSeconds(2))
+        {
+            SetSliceAfLocal(0, s.Rx1AfGainDb);
+            SetSliceAfLocal(1, _sliceB?.AfGainDb ?? 0);
+        }
         // B's display frames are labelled with the primary's zoom, so B's own
         // zoom must match or its passband and signals land at different scales.
         if (SliceBEnabled && _sliceB!.ZoomLevel != s.ZoomLevel && IsConnected)
@@ -69,11 +104,11 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>The engine's view of the active slice.</summary>
-    private (long Hz, RxMode Mode, int Low, int High, string? Preset, double Af) ActiveOf(StateDto s)
+    private (long Hz, RxMode Mode, int Low, int High, string? Preset) ActiveOf(StateDto s)
     {
         if (ActiveRx == 1 && s.Receivers?.FirstOrDefault(r => r.Index == 1) is { } b)
-            return (b.VfoHz, b.Mode, b.FilterLowHz, b.FilterHighHz, b.FilterPresetName, b.AfGainDb);
-        return (s.VfoHz, s.Mode, s.FilterLowHz, s.FilterHighHz, s.FilterPresetName, s.RxAfGainDb);
+            return (b.VfoHz, b.Mode, b.FilterLowHz, b.FilterHighHz, b.FilterPresetName);
+        return (s.VfoHz, s.Mode, s.FilterLowHz, s.FilterHighHz, s.FilterPresetName);
     }
 
     /// <summary>Point the VFO, band, mode, filter and AF at slice A (0) or B (1).</summary>
@@ -92,7 +127,6 @@ public sealed partial class MainViewModel
                 SetVfoLocal(a.Hz);
                 FilterLowHz = a.Low;
                 FilterHighHz = a.High;
-                AfGainDb = a.Af;
                 await SetModeLocalAsync(a.Mode, a.Preset);
             }
             finally
@@ -111,9 +145,10 @@ public sealed partial class MainViewModel
         {
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
                 Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
-                AfGainDb: AfGainDb, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
+                AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
                 ZoomLevel: ZoomLevel));
             SliceBEnabled = true;
+            SetSliceAfLocal(1, 0);
             await MakeActiveAsync(1);
             Status = $"Slice B on {hz / 1e6:0.000000} MHz.";
         });
