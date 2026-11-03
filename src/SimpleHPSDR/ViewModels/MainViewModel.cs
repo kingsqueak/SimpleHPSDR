@@ -46,6 +46,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _muted;
     [ObservableProperty] private double _signalDbm = -140;
     [ObservableProperty] private string _sUnits = "S0";
+    [ObservableProperty] private double _peakDbm = -140;
+    private DateTime _peakAt;
+    private static readonly TimeSpan PeakHold = TimeSpan.FromSeconds(3);
     [ObservableProperty] private string _frequencyEntry = "";
 
     public ObservableCollection<Choice> Bands { get; } = [];
@@ -463,6 +466,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateMeter(float dbm)
     {
+        // Peak of the RMS reading, held 3 s, then it follows the signal again.
+        var now = DateTime.UtcNow;
+        if (dbm >= PeakDbm || now - _peakAt > PeakHold)
+        {
+            PeakDbm = dbm;
+            _peakAt = now;
+        }
+
         // Fast attack, slower release, like an analogue meter.
         double k = dbm > SignalDbm ? 0.6 : 0.2;
         dbm = (float)(SignalDbm + (dbm - SignalDbm) * k);

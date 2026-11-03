@@ -42,16 +42,22 @@
                  VerticalAlignment="Center" Name="FrequencyBox" />
       </StackPanel>
 
-      <Border Grid.Column="2" Classes="panel" Width="260" VerticalAlignment="Center">
+      <Border Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
           <TextBlock Text="SIGNAL" Classes="label" />
-          <TextBlock Grid.Column="1" FontFamily="{StaticResource MonoFont}" FontSize="13">
-            <Run Text="{Binding SUnits}" FontWeight="SemiBold" />
-            <Run Text="  " />
-            <Run Text="{Binding SignalDbm, StringFormat={}{0:0} dBm}" Foreground="{StaticResource TextMuted}" />
-          </TextBlock>
-          <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Minimum="-127" Maximum="-33" Value="{Binding SignalDbm}"
-                       Height="8" Margin="0,6,0,0" Foreground="{StaticResource Accent}" Background="#1F232C" />
+          <!-- Fixed-width slots so the readings don't shift as they change -->
+          <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <TextBlock Text="{Binding SUnits}" Width="62" Margin="12,0,0,0" FontFamily="{StaticResource MonoFont}" FontSize="13"
+                       FontWeight="SemiBold" TextAlignment="Left" />
+            <TextBlock Text="pk" Classes="label" FontSize="11" Margin="0,1,4,0" />
+            <TextBlock Text="{Binding PeakDbm, StringFormat={}{0:0}}" Width="40" FontFamily="{StaticResource MonoFont}"
+                       FontSize="13" TextAlignment="Right" ToolTip.Tip="Peak RMS, held 3 s (dBm)" />
+            <TextBlock Text="{Binding SignalDbm, StringFormat={}{0:0} dBm}" Width="80" FontFamily="{StaticResource MonoFont}"
+                       FontSize="13" TextAlignment="Right" Foreground="{StaticResource TextMuted}" />
+          </StackPanel>
+          <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}"
+                       Height="8" Margin="0,6,0,0"
+                       ToolTip.Tip="Blue below S4, green S4-S9, orange to S9+15, red from S9+20. White mark: peak, held 3 s." />
         </Grid>
       </Border>
     </Grid>
