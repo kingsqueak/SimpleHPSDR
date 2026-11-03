@@ -8,8 +8,20 @@ public sealed partial class SettingsViewModel
 {
     private StateDto? _psLoaded;
 
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(PsInternalFeedback))]
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PsInternalFeedback))]
+    [NotifyPropertyChangedFor(nameof(CanChangeAutoAttenuate))]
     private bool _psExternalFeedback;
+
+    /// <summary>An external amplifier's sample level moves with band, drive
+    /// and amplifier gain, so external feedback always uses automatic
+    /// attenuation.</summary>
+    public bool CanChangeAutoAttenuate => !PsExternalFeedback;
+
+    partial void OnPsExternalFeedbackChanged(bool value)
+    {
+        if (value) PsAutoAttenuate = true;
+    }
 
     // A real property for the other radio button: a negated binding ("!x")
     // only works one way, so the pair would fight and flip the source.
@@ -69,8 +81,9 @@ public sealed partial class SettingsViewModel
         var source = PsExternalFeedback ? PsFeedbackSource.External : PsFeedbackSource.Internal;
         if (source != was.PsFeedbackSource)
             await _client.SetPsFeedbackSourceAsync(source);
+        bool autoAttenuate = PsAutoAttenuate || PsExternalFeedback;
         await _client.SetPsAdvancedAsync(new PsAdvancedSetRequest(
-            PsAutoAttenuate, PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak));
+            autoAttenuate, PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak));
         // With auto-attenuate on, the engine manages the attenuator itself.
         if (!PsAutoAttenuate && (int)Math.Round(PsFeedbackAttenDb) != was.PsTxFeedbackAttenuationDb)
             await _client.SetPsFeedbackAttenuationAsync((int)Math.Round(PsFeedbackAttenDb));

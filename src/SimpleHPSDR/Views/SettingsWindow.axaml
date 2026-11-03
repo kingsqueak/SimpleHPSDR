@@ -109,12 +109,18 @@
                   <RadioButton Content="External (after an amplifier)" IsChecked="{Binding PsExternalFeedback}" GroupName="psfb" />
                 </StackPanel>
                 <TextBlock Grid.Row="1" Text="Feedback attenuation" Classes="label" FontSize="12" />
-                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                  <CheckBox Content="Automatic" IsChecked="{Binding PsAutoAttenuate}" />
-                  <Slider Minimum="0" Maximum="31" Value="{Binding PsFeedbackAttenDb}" Width="160"
-                          TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding !PsAutoAttenuate}" />
-                  <TextBlock Text="{Binding PsFeedbackAttenDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <CheckBox Content="Automatic" IsChecked="{Binding PsAutoAttenuate}"
+                              IsEnabled="{Binding CanChangeAutoAttenuate}" />
+                    <Slider Minimum="0" Maximum="31" Value="{Binding PsFeedbackAttenDb}" Width="160"
+                            TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding !PsAutoAttenuate}" />
+                    <TextBlock Text="{Binding PsFeedbackAttenDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap" IsVisible="{Binding PsExternalFeedback}"
+                             Text="External feedback always uses automatic attenuation: the amplifier's sample level changes with band, drive and amplifier gain. The radio can attenuate 0-31 dB; if feedback is still too high at 31 dB, add a fixed attenuator in the sample line." />
                 </StackPanel>
+
                 <TextBlock Grid.Row="2" Text="Monitor PA output" Classes="label" FontSize="12" />
                 <CheckBox Grid.Row="2" Grid.Column="1" Content="Show the corrected PA output on the display while transmitting"
                           IsChecked="{Binding PsMonitor}" />

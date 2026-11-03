@@ -44,6 +44,11 @@ public sealed partial class MainViewModel
     [ObservableProperty] private string _psLevel = "off";
     [ObservableProperty] private string _psFeedbackText = "";
 
+    private const int MaxFeedbackAttnDb = 31;      // radio's TX-feedback attenuator range 0..31
+    private int _psAttnDb;
+    private bool _psExternal;
+    private bool _psRangeWarned;
+
     private void WirePureSignal(StationClient client)
     {
         client.PsMeters += f =>
@@ -67,6 +72,8 @@ public sealed partial class MainViewModel
 
     private void LoadPureSignal(StateDto s)
     {
+        _psAttnDb = s.PsTxFeedbackAttenuationDb;
+        _psExternal = s.PsFeedbackSource == PsFeedbackSource.External;
         _applyingTx = true;
         PsOn = s.PsEnabled;
         TwoToneOn = s.TwoToneEnabled;
@@ -83,7 +90,10 @@ public sealed partial class MainViewModel
         PsOn = s.PsEnabled;
         _applyingTx = false;
         _psStalled = s.PsCalibrationStalled;
+        _psAttnDb = s.PsTxFeedbackAttenuationDb;
+        _psExternal = s.PsFeedbackSource == PsFeedbackSource.External;
         UpdatePsStatus();
+        WarnIfFeedbackOutOfRange();
         _ = MaybeAdjustHwPeakAsync(s);
     }
 
@@ -130,6 +140,24 @@ public sealed partial class MainViewModel
         return null;
     }
 
+    // Automatic attenuation keeps feedback in 128-181 only while the needed
+    // attenuation fits 0..31 dB. At either end it can't do more; say so,
+    // once per transmission, while correcting data is current.
+    private void WarnIfFeedbackOutOfRange()
+    {
+        if (!PsOn || _keyedSince is not { } since || _psRangeWarned
+            || DateTime.UtcNow - since < TimeSpan.FromSeconds(3)) return;
+        double fb = _latestPs.FeedbackLevel;
+        string source = _psExternal ? "amplifier sample" : "feedback";
+        if (fb > 181 && _psAttnDb >= MaxFeedbackAttnDb)
+            Status = $"PureSignal: {source} too strong (FB {fb:0}) even at {MaxFeedbackAttnDb} dB attenuation. Add a fixed attenuator in the sample line.";
+        else if (fb is > 0 and < 128 && _psAttnDb <= 0)
+            Status = $"PureSignal: {source} too weak (FB {fb:0}) with no attenuation. Check the sample cable and coupler.";
+        else
+            return;
+        _psRangeWarned = true;
+    }
+
     partial void OnPsOnChanged(bool value)
     {
         UpdatePsStatus();
@@ -163,6 +191,7 @@ public sealed partial class MainViewModel
         {
             _keyedSince = null;
             _hwPeakAdjustedThisTx = false;
+            _psRangeWarned = false;
             Interlocked.Exchange(ref _keyDownTicks, 0);
         }
 
@@ -173,7 +202,7 @@ public sealed partial class MainViewModel
         }
         var f = _latestPs;
         int fb = (int)Math.Round(f.FeedbackLevel);
-        PsFeedbackText = IsTransmitting ? $"FB {fb}" : "";
+        PsFeedbackText = IsTransmitting ? $"FB {fb} · {_psAttnDb} dB" : "";
         if (_rekeyToApply)
             (PsStatus, PsLevel) = ("Re-key to apply", "warn");
         else if (_psStalled)
