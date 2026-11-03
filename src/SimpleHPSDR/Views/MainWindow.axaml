@@ -290,6 +290,8 @@
 
     <!-- Transmit -->
     <Border Grid.Row="4" Classes="panel" Margin="0,10,0,0">
+      <!-- Transmit controls, then the AF row, which always starts its own line -->
+      <StackPanel Spacing="6">
       <WrapPanel ItemSpacing="24" LineSpacing="6">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <ToggleButton Classes="seg tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="64"
@@ -336,6 +338,8 @@
                        VerticalAlignment="Center" Foreground="#3DD68C" Background="#1F232C"
                        ToolTip.Tip="Mic level (dBFS)" />
         </StackPanel>
+      </WrapPanel>
+      <WrapPanel ItemSpacing="24" LineSpacing="6">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,18,0">
             <TextBlock Text="AF" Classes="label" />
@@ -411,6 +415,7 @@
           </StackPanel>
         </StackPanel>
       </WrapPanel>
+      </StackPanel>
     </Border>
   </Grid>
 </Window>
