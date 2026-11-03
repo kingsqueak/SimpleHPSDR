@@ -19,6 +19,7 @@ public sealed partial class MainViewModel
     public double MeasuredTxPeak { get; private set; }
 
     private DateTime? _keyedSince;
+    private bool _rekeyToApply;
     private bool _hwPeakAdjustedThisTx;
     private const byte CalStateCollect = 4;   // calcc LCOLLECT
 
@@ -69,8 +70,10 @@ public sealed partial class MainViewModel
     // Auto HW peak: calcc sorts samples into amplitude bins up to HW peak and
     // only calculates once the top bin has some. If the signal never gets
     // that high, calibration sits in LCOLLECT forever. When that happens
-    // while keyed, lower HW peak to just under the measured peak and restart
-    // calibration. Only ever lowers, at most once per transmission.
+    // while keyed, lower HW peak to just under the measured peak. Only ever
+    // lowers, at most once per transmission. The engine holds PureSignal
+    // changes until unkey (changing calcc mid-transmission can splatter), so
+    // the new value applies from the next key-down; the badge says so.
     private async Task MaybeLowerHwPeakAsync(StateDto s)
     {
         if (!_settings.AutoHwPeak || !PsOn || _hwPeakAdjustedThisTx || _keyedSince is not { } since) return;
@@ -84,8 +87,9 @@ public sealed partial class MainViewModel
         await Try(async () =>
         {
             await _client!.SetPsAdvancedAsync(new PsAdvancedSetRequest(HwPeak: target));
-            await _client.ResetPsAsync();
-            Status = $"PureSignal: HW peak lowered from {s.PsHwPeak:0.0000} to {target:0.0000} to match your signal";
+            _rekeyToApply = true;
+            UpdatePsStatus();
+            Status = $"PureSignal: HW peak {s.PsHwPeak:0.0000} → {target:0.0000} to match your signal. Unkey and key again to calibrate.";
         });
     }
 
@@ -112,13 +116,24 @@ public sealed partial class MainViewModel
             (PsStatus, PsLevel, PsFeedbackText) = ("PS off", "off", "");
             return;
         }
-        if (IsTransmitting) _keyedSince ??= DateTime.UtcNow;
-        else { _keyedSince = null; _hwPeakAdjustedThisTx = false; }
+        if (IsTransmitting)
+        {
+            // A fresh key-down after an adjustment runs with the new value.
+            if (_keyedSince is null) _rekeyToApply = false;
+            _keyedSince ??= DateTime.UtcNow;
+        }
+        else
+        {
+            _keyedSince = null;
+            _hwPeakAdjustedThisTx = false;
+        }
 
         var f = _latestPs;
         int fb = (int)Math.Round(f.FeedbackLevel);
         PsFeedbackText = IsTransmitting ? $"FB {fb}" : "";
-        if (_psStalled)
+        if (_rekeyToApply)
+            (PsStatus, PsLevel) = ("Re-key to apply", "warn");
+        else if (_psStalled)
             (PsStatus, PsLevel) = ("Stalled: HW peak", "bad");
         else if (f.Correcting)
             (PsStatus, PsLevel) = ("Correcting", fb is >= 128 and <= 181 ? "ok" : "warn");

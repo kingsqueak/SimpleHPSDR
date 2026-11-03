@@ -141,7 +141,7 @@
                 <StackPanel Grid.Row="4" Grid.Column="1" Spacing="6">
                   <CheckBox Content="Lower HW peak automatically if calibration stalls"
                             IsChecked="{Binding AutoHwPeak}"
-                            ToolTip.Tip="While keyed with PS on (2-TONE or voice), if calibration is stuck collecting, set HW peak to just under your signal's measured peak and restart calibration. Never raises it." />
+                            ToolTip.Tip="While keyed with PS on (2-TONE or voice), if calibration is stuck collecting, set HW peak to just under your signal's measured peak. It applies from the next key-down. Never raises it." />
                   <TextBlock Text="{Binding MeasuredTxPeakText}" Classes="label" FontSize="11" TextWrapping="Wrap" />
                 </StackPanel>
                 <TextBlock Grid.Row="1" Text="MOX delay" Classes="label" FontSize="12" />
