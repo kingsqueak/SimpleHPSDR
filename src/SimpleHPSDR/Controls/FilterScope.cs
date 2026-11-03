@@ -7,12 +7,13 @@ using Zeus.Contracts;
 namespace SimpleHPSDR.Controls;
 
 /// <summary>
-/// A close-up of the received signal: 6 kHz centred on the active slice's
-/// dial, cut from that slice's panadapter frames, with the receive filter
-/// shaded over it. Drag either edge of the shading to set the filter's low
-/// or high cut (10 Hz steps). The scale underneath marks audio frequency
-/// (distance from the dial) every 100 Hz, labelled every 500 Hz. The dB
-/// range follows what's inside the 6 kHz, so the signal fills the box.
+/// A close-up of the received signal as audio: 0 to 6000 Hz from the dial,
+/// left to right, whatever the sideband (on lower sideband the RF below the
+/// dial is shown mirrored). Cut from the active slice's panadapter frames,
+/// with the receive filter shaded over it. Drag either edge of the shading
+/// to set the filter's low or high cut (10 Hz steps). The scale marks every
+/// 100 Hz, labelled every 500 Hz. The dB range follows what's inside the
+/// 6 kHz, so the signal fills the box.
 /// </summary>
 public sealed class FilterScope : Control
 {
@@ -44,6 +45,7 @@ public sealed class FilterScope : Control
     private double _hzPerBin;
     private int _rx;
     private int _low, _high;
+    private int _side = 1;   // +1 upper sideband (RF above the dial), -1 lower
     private enum Edge { None, Low, High }
     private Edge _drag;
 
@@ -59,7 +61,13 @@ public sealed class FilterScope : Control
     {
         _rx = f.RxId;
         _dialHz = dialHz;
-        if (_drag == Edge.None) (_low, _high) = (low, high);
+        if (_drag == Edge.None)
+        {
+            (_low, _high) = (low, high);
+            // The filter says which side of the dial is heard; AM and the
+            // like (symmetric) show the upper side.
+            _side = low + high < 0 ? -1 : 1;
+        }
         if (f.Width == 0 || !f.BodyFlags.HasFlag(DisplayBodyFlags.PanValid)) return;
         var raw = f.PanDb.Span;
         if (_pan is null || _pan.Length != raw.Length || f.CenterHz != _centerHz)
@@ -78,8 +86,9 @@ public sealed class FilterScope : Control
         InvalidateVisual();
     }
 
-    private double X(double offsetHz) => Bounds.Width / 2 + offsetHz / SpanHz * Bounds.Width;
-    private double Offset(double x) => (x - Bounds.Width / 2) / Bounds.Width * SpanHz;
+    // x runs 0..6000 Hz of audio; RF offset from the dial = side x audio.
+    private double X(double offsetHz) => _side * offsetHz / SpanHz * Bounds.Width;
+    private double Offset(double x) => _side * x / Bounds.Width * SpanHz;
 
     public override void Render(DrawingContext ctx)
     {
@@ -100,7 +109,7 @@ public sealed class FilterScope : Control
 
         // Dial
         var dial = new Pen(new SolidColorBrush(DialColors[Math.Clamp(_rx, 0, 1)]), 1);
-        ctx.DrawLine(dial, new Point(X(0), 0), new Point(X(0), plot.Height));
+        ctx.DrawLine(dial, new Point(1, 0), new Point(1, plot.Height));
 
         DrawScale(ctx, b, plot.Bottom);
     }
@@ -151,18 +160,19 @@ public sealed class FilterScope : Control
         ctx.DrawGeometry(null, TracePen, line);
     }
 
-    // Audio frequency: the distance from the dial, either side.
+    // Audio frequency, 0 at the dial (left) to 6000 Hz (right).
     private void DrawScale(DrawingContext ctx, Rect b, double top)
     {
-        for (int hz = -(int)SpanHz / 2; hz <= SpanHz / 2; hz += 100)
+        for (int hz = 0; hz <= SpanHz; hz += 100)
         {
-            double x = X(hz);
+            double x = hz / SpanHz * b.Width;
             bool major = hz % 500 == 0;
             ctx.DrawLine(major ? MajorTickPen : TickPen, new Point(x, top), new Point(x, top + (major ? 4 : 2)));
-            if (!major || hz == 0 || Math.Abs(hz) == SpanHz / 2) continue;
-            var ft = new FormattedText(Math.Abs(hz).ToString(), System.Globalization.CultureInfo.InvariantCulture,
+            if (!major) continue;
+            var ft = new FormattedText(hz.ToString(), System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, LabelFace, 9, LabelBrush);
-            ctx.DrawText(ft, new Point(x - ft.Width / 2, top + 3));
+            double lx = Math.Clamp(x - ft.Width / 2, 2, b.Width - ft.Width - 2);
+            ctx.DrawText(ft, new Point(lx, top + 3));
         }
     }
 
@@ -188,8 +198,7 @@ public sealed class FilterScope : Control
             Cursor = new Cursor(EdgeAt(x) == Edge.None ? StandardCursorType.Arrow : StandardCursorType.SizeWestEast);
             return;
         }
-        int hz = (int)(Math.Round(Offset(x) / StepHz) * StepHz);
-        hz = (int)Math.Clamp(hz, -SpanHz / 2, SpanHz / 2);
+        int hz = (int)(Math.Round(Offset(Math.Clamp(x, 0, Bounds.Width)) / StepHz) * StepHz);
         if (_drag == Edge.Low) _low = (int)Math.Min(hz, _high - MinWidthHz);
         else _high = (int)Math.Max(hz, _low + MinWidthHz);
         InvalidateVisual();
