@@ -83,6 +83,17 @@ public sealed partial class MainViewModel
 
     private async Task LoadTransmitAsync(StateDto s)
     {
+        // The engine ships with no PTT release delay, which cuts off the end
+        // of every over (the TX processing holds ~210 ms of speech). Give it
+        // the app default once, on the first connect.
+        if (!_settings.ReleaseDelayDefaulted)
+        {
+            if (s.TxMoxTailDelayMs == 0)
+                await Try(() => _client!.SetTxTailDelayAsync(TxAudioProfile.DefaultReleaseDelayMs));
+            _settings.ReleaseDelayDefaulted = true;
+            _settings.Save();
+        }
+
         _applyingTx = true;
         try
         {

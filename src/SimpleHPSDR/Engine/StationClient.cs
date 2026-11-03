@@ -100,6 +100,9 @@ public sealed class StationClient : IDisposable
             ? new TxFilterSetRequest(-highCutHz, -lowCutHz)
             : new TxFilterSetRequest(lowCutHz, highCutHz));
     }
+    /// <summary>Hold the radio keyed this long after PTT release (any source)
+    /// while the audio still in the TX pipeline is flushed out.</summary>
+    public Task SetTxTailDelayAsync(int ms) => PostAsync("api/tx/tail-delay", new TxTailDelaySetRequest(ms));
     public Task SetTxLevelingAsync(TxLevelingConfig cfg) => PostAsync("api/tx/leveling", new TxLevelingSetRequest(cfg));
     public Task SetLevelerMaxGainAsync(double db) => PostAsync("api/tx/leveler-max-gain", new LevelerMaxGainSetRequest(db));
     public Task SetTxEqAsync(LegacyTxEqConfig cfg) => PostAsync("api/tx/legacy-eq", cfg);

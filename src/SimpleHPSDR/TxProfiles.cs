@@ -15,14 +15,20 @@ public sealed record TxAudioProfile(
     LegacyTxEqConfig Equalizer,
     CfcConfig Cfc,
     DexpConfig NoiseGate,
-    TxPhaseRotatorConfig PhaseRotator)
+    TxPhaseRotatorConfig PhaseRotator,
+    int? ReleaseDelayMs = null)   // null in profiles saved before it existed: leave as is
 {
     public const string DefaultName = "Default";
+
+    /// <summary>PTT release delay to start with: covers the ~210 ms the TX
+    /// processing holds with CFC at FFT 16384, with margin (user-tested).</summary>
+    public const int DefaultReleaseDelayMs = 275;
 
     /// <summary>The engine's own defaults: a clean, unprocessed starting point.</summary>
     public static TxAudioProfile Default { get; } = new(
         DefaultName, 150, 2850, new TxLevelingConfig(), 8.0,
-        LegacyTxEqConfig.Default, CfcConfig.Default, DexpConfig.Default, new TxPhaseRotatorConfig());
+        LegacyTxEqConfig.Default, CfcConfig.Default, DexpConfig.Default, new TxPhaseRotatorConfig(),
+        DefaultReleaseDelayMs);
 }
 
 /// <summary>

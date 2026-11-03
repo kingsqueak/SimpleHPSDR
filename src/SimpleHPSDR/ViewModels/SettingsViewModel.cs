@@ -47,6 +47,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(PsLoopDelaySec)] = Group.PureSignal, [nameof(PsAmpDelayNs)] = Group.PureSignal,
         [nameof(PsHwPeak)] = Group.PureSignal, [nameof(PsMonitor)] = Group.PureSignal,
 
+        [nameof(ReleaseDelayMs)] = Group.TxAudio, [nameof(CfcFftSize)] = Group.TxAudio,
         [nameof(TxLowCutHz)] = Group.TxAudio, [nameof(TxHighCutHz)] = Group.TxAudio,
         [nameof(CompressorEnabled)] = Group.TxAudio, [nameof(CompressorGainDb)] = Group.TxAudio,
         [nameof(CessbEnabled)] = Group.TxAudio, [nameof(CessbWide)] = Group.TxAudio,

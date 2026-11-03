@@ -19,6 +19,9 @@ public sealed class Settings
     public bool AutoHwPeak { get; set; } = true;
     /// <summary>The TX audio profile last loaded or saved.</summary>
     public string? LastTxProfile { get; set; }
+    /// <summary>Set once the engine's PTT release delay has been given the
+    /// app's default, so a deliberate 0 later is left alone.</summary>
+    public bool ReleaseDelayDefaulted { get; set; }
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
 

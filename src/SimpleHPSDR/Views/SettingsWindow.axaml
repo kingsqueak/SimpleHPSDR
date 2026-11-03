@@ -201,6 +201,18 @@
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
                        Text="The transmit audio chain, in WDSP order: equalizer, leveler, speech processor or CFC, phase rotator, ALC. Changes apply as you make them. To hear the result without transmitting, turn on MON in the main window." />
 
+            <Expander Header="PTT release delay" IsExpanded="True" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding ReleaseDelayMs}" Minimum="0" Maximum="1000" Increment="10"
+                                 FormatString="0" Width="140" />
+                  <TextBlock Text="ms after PTT release (any PTT: button, mic, footswitch)" Classes="label" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="Speech takes time to pass through the transmit processing (about 210 ms with CFC at FFT 16384, less with a smaller FFT or CFC off). The radio stays keyed this long after release so the end of your over isn't cut off." />
+              </StackPanel>
+            </Expander>
+
             <Expander Header="TX filter" IsExpanded="True" HorizontalAlignment="Stretch">
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="8">
                 <TextBlock Text="Low cut" Classes="label" FontSize="12" />
@@ -286,6 +298,9 @@
                 <StackPanel Orientation="Horizontal" Spacing="16">
                   <CheckBox Content="Enabled" IsChecked="{Binding CfcEnabled}" />
                   <CheckBox Content="Post-EQ" IsChecked="{Binding CfcPostEqEnabled}" />
+                  <TextBlock Text="FFT size" Classes="label" VerticalAlignment="Center" />
+                  <ComboBox ItemsSource="{Binding CfcFftSizes}" SelectedItem="{Binding CfcFftSize}" Width="110"
+                            ToolTip.Tip="Larger is finer frequency resolution but more delay; 16384 adds roughly 200 ms to your transmit audio" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="Pre-compression" Classes="label" />

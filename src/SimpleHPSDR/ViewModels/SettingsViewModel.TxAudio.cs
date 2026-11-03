@@ -27,6 +27,13 @@ public sealed partial class SettingsViewModel
 {
     private StateDto? _txLoaded;
 
+    // PTT release delay: the TX audio pipeline holds about 200 ms of speech
+    // with heavy processing (CFC at FFT 16384), so the radio must stay keyed
+    // that long after PTT release or the end of the over is cut off.
+    [ObservableProperty] private double _releaseDelayMs;
+    [ObservableProperty] private int _cfcFftSize = 16384;
+    public int[] CfcFftSizes { get; } = [2048, 4096, 8192, 16384];
+
     // TX filter (SSB cuts, positive Hz)
     [ObservableProperty] private double _txLowCutHz;
     [ObservableProperty] private double _txHighCutHz;
@@ -74,6 +81,7 @@ public sealed partial class SettingsViewModel
     private void PopulateTxAudio(StateDto s)
     {
         _txLoaded = s;
+        ReleaseDelayMs = s.TxMoxTailDelayMs;
 
         TxLowCutHz = Math.Min(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
         TxHighCutHz = Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
@@ -104,6 +112,7 @@ public sealed partial class SettingsViewModel
             CfcPostEqEnabled = cfc.PostEqEnabled;
             CfcPreCompDb = cfc.PreCompDb;
             CfcPrePeqDb = cfc.PrePeqDb;
+            CfcFftSize = cfc.FftSize;
             foreach (var b in cfc.Bands) CfcBands.Add(Watch(new CfcBandRow(b), Group.TxAudio));
         }
 
@@ -147,6 +156,7 @@ public sealed partial class SettingsViewModel
         PostEqEnabled = CfcPostEqEnabled,
         PreCompDb = Math.Round(CfcPreCompDb, 1),
         PrePeqDb = Math.Round(CfcPrePeqDb, 1),
+        FftSize = CfcFftSize,
         Bands = CfcBands.Count > 0 ? CfcBands.Select(b => b.ToBand()).ToArray() : (was.Cfc ?? CfcConfig.Default).Bands,
     };
 
@@ -176,6 +186,9 @@ public sealed partial class SettingsViewModel
     {
         if (_txLoaded is not { } was) return;
 
+        if ((int)Math.Round(ReleaseDelayMs) != was.TxMoxTailDelayMs)
+            await _client.SetTxTailDelayAsync((int)Math.Round(ReleaseDelayMs));
+
         int lo = (int)Math.Round(TxLowCutHz), hi = (int)Math.Round(TxHighCutHz);
         if ((lo, hi) != CutsOf(was))
             await _client.SetTxFilterAsync(was.Mode, lo, hi);
@@ -196,6 +209,7 @@ public sealed partial class SettingsViewModel
             var cfc = BuildCfc(was);
             if (cfc.Enabled != cfcWas.Enabled || cfc.PostEqEnabled != cfcWas.PostEqEnabled
                 || cfc.PreCompDb != cfcWas.PreCompDb || cfc.PrePeqDb != cfcWas.PrePeqDb
+                || cfc.FftSize != cfcWas.FftSize
                 || !cfc.Bands.SequenceEqual(cfcWas.Bands))
                 await _client.SetCfcAsync(cfc);
         }

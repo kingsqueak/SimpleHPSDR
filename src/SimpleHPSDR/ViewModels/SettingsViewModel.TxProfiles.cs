@@ -60,6 +60,8 @@ public sealed partial class SettingsViewModel
             await _client.SetCfcAsync(p.Cfc);
             await _client.SetDexpAsync(p.NoiseGate);
             await _client.SetPhaseRotatorAsync(p.PhaseRotator);
+            if (p.ReleaseDelayMs is int tail)
+                await _client.SetTxTailDelayAsync(tail);
 
             var state = await _client.GetStateAsync();
             _populating = true;
@@ -89,7 +91,7 @@ public sealed partial class SettingsViewModel
         return new TxAudioProfile(name,
             (int)Math.Round(TxLowCutHz), (int)Math.Round(TxHighCutHz),
             BuildLeveling(was), Math.Round(LevelerMaxGainDb, 1), BuildEq(),
-            BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was));
+            BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was), (int)Math.Round(ReleaseDelayMs));
     }
 
     [RelayCommand]
