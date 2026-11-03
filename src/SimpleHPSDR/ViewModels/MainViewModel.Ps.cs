@@ -23,7 +23,19 @@ public sealed partial class MainViewModel
     // this long after key-down describe the steady signal.
     private static readonly TimeSpan PeakSettle = TimeSpan.FromSeconds(2.2);
     private long _keyDownTicks;              // UTC ticks of the latest key-down, 0 when unkeyed
-    private int _psFramesSinceKey;
+
+    // A fresh fit is a not-correcting frame followed by a correcting one in
+    // the same key-down. The first frame after key-down repeats the engine's
+    // cached meters from the previous transmission (Correcting included), so
+    // a bare "Correcting" proves nothing.
+    private volatile bool _psSawNotCorrecting;
+    private volatile bool _psFreshFit;
+
+    private void ResetFreshFit()
+    {
+        _psSawNotCorrecting = false;
+        _psFreshFit = false;
+    }
 
     private DateTime? _keyedSince;
     private bool _rekeyToApply;
@@ -45,7 +57,8 @@ public sealed partial class MainViewModel
             long keyDown = Interlocked.Read(ref _keyDownTicks);
             if (keyDown != 0)
             {
-                Interlocked.Increment(ref _psFramesSinceKey);
+                if (!f.Correcting) _psSawNotCorrecting = true;
+                else if (_psSawNotCorrecting) _psFreshFit = true;
                 if (f.MaxTxEnvelope > 0 && DateTime.UtcNow.Ticks - keyDown >= PeakSettle.Ticks)
                     MeasuredTxPeak = f.MaxTxEnvelope;
             }
@@ -147,7 +160,7 @@ public sealed partial class MainViewModel
             if (_keyedSince is null)
             {
                 _rekeyToApply = false;
-                _psFramesSinceKey = 0;
+                ResetFreshFit();
                 Interlocked.Exchange(ref _keyDownTicks, DateTime.UtcNow.Ticks);
             }
             _keyedSince ??= DateTime.UtcNow;

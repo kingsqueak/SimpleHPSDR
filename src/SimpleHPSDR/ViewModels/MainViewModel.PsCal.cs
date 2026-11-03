@@ -57,6 +57,7 @@ public sealed partial class MainViewModel
                 // over from an earlier calibration. Applied at once (unkeyed).
                 await client.ResetPsAsync();
                 _latestPs = default;
+                ResetFreshFit();
                 await Task.Delay(150, cts.Token);
 
                 Status = $"PS CAL: cycle {cycle} of {PsCalCycles}, keying 2-TONE…";
@@ -120,12 +121,10 @@ public sealed partial class MainViewModel
         while (DateTime.UtcNow < until)
         {
             await Task.Delay(100, ct);
-            // Only frames from this key-down count.
-            bool fresh = _psFramesSinceKey >= 2 && DateTime.UtcNow - start >= TimeSpan.FromSeconds(0.4);
-            if (fresh && _latestPs.Correcting) return CalOutcome.Correcting;
+            if (_psFreshFit) return CalOutcome.Correcting;
             if (IsTransmitting && _latestTx.Swr > PsCalMaxSwr && _latestTx.FwdWatts > 1) return CalOutcome.HighSwr;
         }
-        return _psFramesSinceKey >= 2 && _latestPs.Correcting ? CalOutcome.Correcting : CalOutcome.StillCollecting;
+        return _psFreshFit ? CalOutcome.Correcting : CalOutcome.StillCollecting;
     }
 
     /// <summary>Any key action by the operator ends a running PS CAL.</summary>
