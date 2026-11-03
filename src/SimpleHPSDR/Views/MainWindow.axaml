@@ -171,7 +171,7 @@
       </Button>
       <Button Classes="seg" Classes.lit="{Binding AutoSpectrum}" Content="Auto" Margin="16,0,0,0"
               Command="{Binding ToggleAutoSpectrumCommand}"
-              ToolTip.Tip="Spec Min/Max follow the noise floor (blue = on); moving a slider turns it off" />
+              ToolTip.Tip="Spec Min/Max follow the noise floor, 50 dB range (blue = on); moving a slider turns it off" />
       <TextBlock Text="Spec Min" Classes="label" Margin="10,0,6,0" />
       <Slider Minimum="-160" Maximum="-40" Value="{Binding SpecMinDb}" Width="130" VerticalAlignment="Center"
               TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Bottom of the panadapter trace (dB)" />

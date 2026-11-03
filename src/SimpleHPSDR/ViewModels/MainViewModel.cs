@@ -107,6 +107,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private double _specMaxDb;
     [ObservableProperty] private bool _autoSpectrum;
     private bool _applyingAutoRange;
+    private const double AutoRangeDb = 50;
     private DateTime _lastAutoRange;
 
     partial void OnSpecMinDbChanged(double value)
@@ -139,15 +140,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ToggleAutoSpectrum() => AutoSpectrum = !AutoSpectrum;
 
-    /// <summary>With Auto on, put the floor 10 dB above the bottom with 70 dB
-    /// above it; a few times a second so the sliders don't jitter.</summary>
+    /// <summary>With Auto on, put the noise floor at the bottom with 50 dB above
+    /// it (bright waterfall, tall trace); a few times a second so the sliders
+    /// don't jitter.</summary>
     public void FollowNoiseFloor(double floorDb)
     {
         if (!AutoSpectrum || DateTime.UtcNow - _lastAutoRange < TimeSpan.FromMilliseconds(400)) return;
         _lastAutoRange = DateTime.UtcNow;
         _applyingAutoRange = true;
         SpecMinDb = Math.Round(floorDb);
-        SpecMaxDb = Math.Round(floorDb + 70);
+        SpecMaxDb = Math.Round(floorDb + AutoRangeDb);
         _applyingAutoRange = false;
     }
     public ObservableCollection<Choice> NoiseBlankers { get; } = [];
