@@ -1,16 +1,9 @@
-using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SimpleHPSDR.Engine;
 using Zeus.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
-
-/// <summary>A transmit audio source: a computer input device or one of the radio's jacks.</summary>
-public sealed record MicSource(string Label, TxAudioSource Source, string? DeviceId)
-{
-    public override string ToString() => Label;
-}
 
 public sealed partial class MainViewModel
 {
@@ -34,11 +27,10 @@ public sealed partial class MainViewModel
     [ObservableProperty] private double _fwdWatts;
     [ObservableProperty] private string _swrText = "—";
     [ObservableProperty] private string _alcText = "—";
-    [ObservableProperty] private MicSource? _selectedMicSource;
-    [ObservableProperty] private bool _micBoost;
-    [ObservableProperty] private bool _micBoostAvailable;
-
-    public ObservableCollection<MicSource> MicSources { get; } = [];
+    // "PC" for a computer (or ASIO) input, "HW" for one of the radio's jacks.
+    // The source itself is chosen in Configuration > Audio.
+    [ObservableProperty] private string _micSourceLabel = "PC";
+    [ObservableProperty] private string _micSourceDetail = "";
     public bool IsTransmitting => MoxOn || TunOn;
     public double PowerScaleWatts { get; private set; } = 100;
 
@@ -109,42 +101,32 @@ public sealed partial class MainViewModel
 
     private async Task LoadMicSourcesAsync()
     {
-        var client = _client!;
-        MicSources.Clear();
-        MicSource? current = null;
         try
         {
-            var devices = await client.GetAudioDevicesAsync();
-            foreach (var d in devices.Inputs.DistinctBy(d => d.Id))
+            var radio = await _client!.GetRadioAudioAsync();
+            if (radio.Source == TxAudioSource.Host)
             {
-                var m = new MicSource($"Computer: {d.Name}", TxAudioSource.Host, d.Id);
-                MicSources.Add(m);
+                var devices = await _client.GetAudioDevicesAsync();
+                var name = devices.Inputs.FirstOrDefault(d => d.Id == devices.InputDeviceId)?.Name
+                           ?? devices.Inputs.FirstOrDefault(d => d.IsDefault)?.Name ?? "system default";
+                MicSourceLabel = "PC";
+                MicSourceDetail = $"Computer mic: {name}";
             }
-            var radio = await client.GetRadioAudioAsync();
-            if (radio.HasOnboardCodec)
+            else
             {
-                MicSources.Add(new MicSource("Radio: mic jack", TxAudioSource.RadioMic, null));
-                if (radio.HasRadioLineIn) MicSources.Add(new MicSource("Radio: line in", TxAudioSource.RadioLineIn, null));
-                if (radio.HasBalancedXlr) MicSources.Add(new MicSource("Radio: XLR", TxAudioSource.RadioBalancedXlr, null));
+                MicSourceLabel = "HW";
+                MicSourceDetail = radio.Source switch
+                {
+                    TxAudioSource.RadioMic => "Radio mic jack" + (radio.MicBoost ? ", boost on" : ""),
+                    TxAudioSource.RadioLineIn => "Radio line in",
+                    TxAudioSource.RadioBalancedXlr => "Radio XLR input",
+                    _ => radio.Source.ToString(),
+                };
             }
-
-            current = radio.Source == TxAudioSource.Host
-                ? MicSources.FirstOrDefault(m => m.Source == TxAudioSource.Host && m.DeviceId == devices.InputDeviceId)
-                  ?? MicSources.FirstOrDefault(m => m.Source == TxAudioSource.Host
-                                                    && devices.Inputs.Any(d => d.Id == m.DeviceId && d.IsDefault))
-                : MicSources.FirstOrDefault(m => m.Source == radio.Source);
-            _applyingTx = true;
-            MicBoost = radio.MicBoost;
         }
         catch (Exception ex)
         {
-            Status = $"Could not read audio sources: {ex.Message}";
-        }
-        finally
-        {
-            SelectedMicSource = current;
-            MicBoostAvailable = current?.Source == TxAudioSource.RadioMic;
-            _applyingTx = false;
+            Status = $"Could not read audio source: {ex.Message}";
         }
     }
 
@@ -189,29 +171,6 @@ public sealed partial class MainViewModel
     partial void OnMicGainDbChanged(double value)
     {
         if (!_applyingTx && IsConnected) _micGainSender?.Send((int)Math.Round(value));
-    }
-
-    partial void OnSelectedMicSourceChanged(MicSource? value)
-    {
-        MicBoostAvailable = value?.Source == TxAudioSource.RadioMic;
-        if (_applyingTx || !IsConnected || value is null) return;
-        _ = Try(() => ApplyMicSourceAsync(value, MicBoost));
-    }
-
-    partial void OnMicBoostChanged(bool value)
-    {
-        if (_applyingTx || !IsConnected || SelectedMicSource is not { } m) return;
-        _ = Try(() => ApplyMicSourceAsync(m, value));
-    }
-
-    private async Task ApplyMicSourceAsync(MicSource m, bool boost)
-    {
-        var radio = await _client!.GetRadioAudioAsync();
-        if (m.Source == TxAudioSource.Host)
-            await _client.SetHostInputAsync(m.DeviceId);
-        if (radio.HasOnboardCodec)
-            await _client.SetRadioAudioAsync(new AudioFrontEndSetRequest(
-                m.Source, m.Source == TxAudioSource.RadioMic && boost, radio.MicBias, radio.LineInGain));
     }
 
     private void UpdateTxMeters(TxMetersV2Frame f)
