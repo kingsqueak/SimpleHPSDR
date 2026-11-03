@@ -12,6 +12,9 @@ namespace SimpleHPSDR.ViewModels;
 /// frequency, mode and filter transmit (TX on B while listening on A is split).
 /// Both play mixed, each can be muted. Slice B gets its own panadapter, so
 /// it can sit on another band. DUP keeps the receivers audible while keyed.
+/// The slices share one receive filter (mirrored for the other sideband) and
+/// one display zoom; the engine has a single TX filter, signed for whichever
+/// slice transmits.
 /// </summary>
 public sealed partial class MainViewModel
 {
@@ -57,6 +60,10 @@ public sealed partial class MainViewModel
         _muteB = _sliceB?.Muted ?? false;
         SliceBEnabled = _sliceB?.Enabled ?? false;
         FullDuplex = s.FullDuplexMultiRxEnabled;
+        // B's display frames are labelled with the primary's zoom, so B's own
+        // zoom must match or its passband and signals land at different scales.
+        if (SliceBEnabled && _sliceB!.ZoomLevel != s.ZoomLevel && IsConnected)
+            _ = Try(SyncSliceBZoomAsync);
         TxRx = SliceBEnabled ? s.TxReceiverIndex : 0;
         if (!SliceBEnabled && ActiveRx != 0) _ = MakeActiveAsync(0);
     }
@@ -104,7 +111,8 @@ public sealed partial class MainViewModel
         {
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
                 Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
-                AfGainDb: AfGainDb));
+                AfGainDb: AfGainDb, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
+                ZoomLevel: ZoomLevel));
             SliceBEnabled = true;
             await MakeActiveAsync(1);
             Status = $"Slice B on {hz / 1e6:0.000000} MHz.";
@@ -159,6 +167,35 @@ public sealed partial class MainViewModel
     }
 
     public bool IsSliceMuted(int rx) => rx == 0 ? _muteA : _muteB;
+
+    private Task SyncSliceBZoomAsync() =>
+        SliceBEnabled ? _client!.SetReceiverAsync(1, new ReceiverSetRequest(ZoomLevel: ZoomLevel)) : Task.CompletedTask;
+
+    /// <summary>Give the other slice the same receive filter as the active one,
+    /// mirrored when one is lower and the other upper sideband. Slices in
+    /// different kinds of mode (SSB and CW, say) keep their own.</summary>
+    private async Task MirrorFilterAsync(int low, int high, string? preset)
+    {
+        if (!SliceBEnabled) return;
+        int other = ActiveRx == 0 ? 1 : 0;
+        if ((other == 0 ? _sliceA : _sliceB) is not { } o) return;
+        if (Kind(o.Mode) != Kind(Mode)) return;
+        var (lo, hi) = Lower(o.Mode) == Lower(Mode) ? (low, high) : (-high, -low);
+        if (o.FilterLowHz == lo && o.FilterHighHz == hi) return;
+        await _client!.SetFilterAsync(lo, hi, preset, other);
+        if (other == 0) _sliceA = o with { FilterLowHz = lo, FilterHighHz = hi };
+        else _sliceB = o with { FilterLowHz = lo, FilterHighHz = hi };
+    }
+
+    private static string Kind(RxMode m) => m switch
+    {
+        RxMode.LSB or RxMode.USB => "SSB",
+        RxMode.CWL or RxMode.CWU => "CW",
+        RxMode.DIGL or RxMode.DIGU => "DIG",
+        _ => m.ToString(),
+    };
+
+    private static bool Lower(RxMode m) => m is RxMode.LSB or RxMode.CWL or RxMode.DIGL;
 
     /// <summary>A click or wheel on a slice's own panadapter: make that slice
     /// active first, then tune it.</summary>

@@ -610,7 +610,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         int i = Array.IndexOf(ZoomLevels, ZoomLevel);
         int next = ZoomLevels[(i + 1) % ZoomLevels.Length];
         ZoomLevel = next;
-        await Try(() => _client!.SetZoomAsync(next));
+        await Try(async () =>
+        {
+            await _client!.SetZoomAsync(next);
+            await SyncSliceBZoomAsync();
+        });
     }
 
     [RelayCommand]
@@ -628,10 +632,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (!IsConnected) return;
         await Try(() => _client!.SetModeAsync(mode, ActiveRx));
         var s = await _client!.GetStateAsync();
+        UpdateSlices(s);
         var a = ActiveOf(s);
         FilterLowHz = a.Low;
         FilterHighHz = a.High;
         await SetModeLocalAsync(a.Mode, a.Preset);
+        await Try(() => MirrorFilterAsync(a.Low, a.High, a.Preset));
     }
 
     private async Task SetModeLocalAsync(RxMode mode, string? presetName)
@@ -662,7 +668,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var p = slot.Preset;
         FilterLowHz = p.LowHz;
         FilterHighHz = p.HighHz;
-        await Try(() => _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName, ActiveRx));
+        await Try(async () =>
+        {
+            await _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName, ActiveRx);
+            await MirrorFilterAsync(p.LowHz, p.HighHz, p.SlotName);
+        });
     }
 
     /// <summary>Store an edited slot in the engine (per mode); if it's the
