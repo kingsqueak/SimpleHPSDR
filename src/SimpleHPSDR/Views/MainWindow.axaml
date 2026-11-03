@@ -155,7 +155,7 @@
 
     <!-- Spectrum and waterfall -->
     <Border Grid.Row="2" CornerRadius="8" ClipToBounds="True">
-      <c:SpectrumView Name="Spectrum" />
+      <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}" />
     </Border>
 
     <!-- Panadapter controls -->
@@ -169,6 +169,17 @@
           <TextBlock Text="{Binding ZoomLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
         </StackPanel>
       </Button>
+      <Button Classes="seg" Classes.lit="{Binding AutoSpectrum}" Content="Auto" Margin="16,0,0,0"
+              Command="{Binding ToggleAutoSpectrumCommand}"
+              ToolTip.Tip="Spec Min/Max follow the noise floor (blue = on); moving a slider turns it off" />
+      <TextBlock Text="Spec Min" Classes="label" Margin="10,0,6,0" />
+      <Slider Minimum="-160" Maximum="-40" Value="{Binding SpecMinDb}" Width="130" VerticalAlignment="Center"
+              TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Bottom of the panadapter trace (dB)" />
+      <TextBlock Text="{Binding SpecMinDb, StringFormat={}{0:0} dB}" Width="56" VerticalAlignment="Center" FontSize="12" />
+      <TextBlock Text="Spec Max" Classes="label" Margin="12,0,6,0" />
+      <Slider Minimum="-130" Maximum="0" Value="{Binding SpecMaxDb}" Width="130" VerticalAlignment="Center"
+              TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Top of the panadapter trace (dB)" />
+      <TextBlock Text="{Binding SpecMaxDb, StringFormat={}{0:0} dB}" Width="56" VerticalAlignment="Center" FontSize="12" />
     </StackPanel>
 
     <!-- Transmit -->

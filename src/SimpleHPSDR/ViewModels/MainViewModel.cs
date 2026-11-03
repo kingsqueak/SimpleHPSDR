@@ -100,6 +100,56 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string ZoomLabel => $"{ZoomLevel}×";
 
     [ObservableProperty] private bool _ctunOn;
+
+    // Panadapter trace range, kept at least 10 dB apart. With Auto on it
+    // follows the noise floor; moving either slider turns Auto off.
+    [ObservableProperty] private double _specMinDb;
+    [ObservableProperty] private double _specMaxDb;
+    [ObservableProperty] private bool _autoSpectrum;
+    private bool _applyingAutoRange;
+    private DateTime _lastAutoRange;
+
+    partial void OnSpecMinDbChanged(double value)
+    {
+        if (value > SpecMaxDb - 10) SpecMaxDb = value + 10;
+        SpecRangeEdited();
+    }
+
+    partial void OnSpecMaxDbChanged(double value)
+    {
+        if (value < SpecMinDb + 10) SpecMinDb = value - 10;
+        SpecRangeEdited();
+    }
+
+    private void SpecRangeEdited()
+    {
+        if (_applyingAutoRange) return;
+        AutoSpectrum = false;
+        _settings.SpecMinDb = SpecMinDb;
+        _settings.SpecMaxDb = SpecMaxDb;
+        _settings.Save();
+    }
+
+    partial void OnAutoSpectrumChanged(bool value)
+    {
+        _settings.AutoSpectrum = value;
+        _settings.Save();
+    }
+
+    [RelayCommand]
+    private void ToggleAutoSpectrum() => AutoSpectrum = !AutoSpectrum;
+
+    /// <summary>With Auto on, put the floor 10 dB above the bottom with 70 dB
+    /// above it; a few times a second so the sliders don't jitter.</summary>
+    public void FollowNoiseFloor(double floorDb)
+    {
+        if (!AutoSpectrum || DateTime.UtcNow - _lastAutoRange < TimeSpan.FromMilliseconds(400)) return;
+        _lastAutoRange = DateTime.UtcNow;
+        _applyingAutoRange = true;
+        SpecMinDb = Math.Round(floorDb);
+        SpecMaxDb = Math.Round(floorDb + 70);
+        _applyingAutoRange = false;
+    }
     public ObservableCollection<Choice> NoiseBlankers { get; } = [];
     public ObservableCollection<Choice> NoiseReductions { get; } = [];
 
@@ -181,6 +231,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             NoiseReductions.Add(new Choice(label, mode,
                 c => _ = SelectNrAsync(c.IsSelected ? NrMode.Off : (NrMode)c.Value)));
         Mark(TuneSteps, _settings.TuneStepHz);
+        _specMinDb = _settings.SpecMinDb;
+        _specMaxDb = _settings.SpecMaxDb;
+        _autoSpectrum = _settings.AutoSpectrum;
     }
 
     // ---- startup and connection ---------------------------------------

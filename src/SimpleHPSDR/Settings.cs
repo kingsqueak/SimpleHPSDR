@@ -25,6 +25,11 @@ public sealed class Settings
     /// <summary>MON and MON TX: the engine forgets them on restart.</summary>
     public bool MonitorPreview { get; set; }
     public bool MonitorOnTransmit { get; set; }
+    /// <summary>Panadapter trace range (dB).</summary>
+    public double SpecMinDb { get; set; } = -130;
+    public double SpecMaxDb { get; set; } = -60;
+    /// <summary>Spec Min/Max follow the noise floor.</summary>
+    public bool AutoSpectrum { get; set; } = true;
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
 

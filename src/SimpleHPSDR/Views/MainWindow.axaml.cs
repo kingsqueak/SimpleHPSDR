@@ -65,6 +65,7 @@ public partial class MainWindow : Window
             Spectrum.FilterLowHz = vm.FilterLowHz;
             Spectrum.FilterHighHz = vm.FilterHighHz;
             Spectrum.PushFrame(f);
+            vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
         };
         vm.DisplayReset += Spectrum.Clear;
     }

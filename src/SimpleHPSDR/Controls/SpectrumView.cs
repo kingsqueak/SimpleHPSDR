@@ -17,7 +17,21 @@ public sealed class SpectrumView : Control
 {
     private const int WaterfallRows = 512;
     private const double PanFraction = 0.38;
+    // The waterfall's colour range above its tracked noise floor. The trace
+    // uses the operator's Spec Min / Spec Max instead.
     private const double RangeDb = 70;
+
+    public static readonly StyledProperty<double> SpecMinDbProperty =
+        AvaloniaProperty.Register<SpectrumView, double>(nameof(SpecMinDb), -130);
+    public static readonly StyledProperty<double> SpecMaxDbProperty =
+        AvaloniaProperty.Register<SpectrumView, double>(nameof(SpecMaxDb), -60);
+
+    /// <summary>dB at the bottom of the panadapter trace.</summary>
+    public double SpecMinDb { get => GetValue(SpecMinDbProperty); set => SetValue(SpecMinDbProperty, value); }
+    /// <summary>dB at the top of the panadapter trace.</summary>
+    public double SpecMaxDb { get => GetValue(SpecMaxDbProperty); set => SetValue(SpecMaxDbProperty, value); }
+
+    static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty);
     // Trace averaging per frame (30 frames/s): 0.35 settles in about 0.2 s.
     private const float TraceAlpha = 0.35f;
 
@@ -39,6 +53,9 @@ public sealed class SpectrumView : Control
     private long _avgCenterHz;
     private double _hzPerPixel;
     private double _floorDb = -130;
+
+    /// <summary>Smoothed noise floor estimate (dB), for automatic ranging.</summary>
+    public double NoiseFloorDb => _floorDb;
 
     public long VfoHz { get; set; }
     public int FilterLowHz { get; set; }
@@ -164,10 +181,17 @@ public sealed class SpectrumView : Control
 
     private void DrawGrid(DrawingContext ctx, Rect r)
     {
-        for (int i = 1; i < 6; i++)
+        // Level lines every 10 dB (20 dB on a wide range), labelled at the left.
+        double lo = SpecMinDb, hi = SpecMaxDb, range = Math.Max(1, hi - lo);
+        double dbStep = range > 80 ? 20 : 10;
+        for (double db = Math.Ceiling(lo / dbStep) * dbStep; db < hi; db += dbStep)
         {
-            double y = r.Top + r.Height * i / 6;
+            double y = r.Top + (hi - db) / range * r.Height;
+            if (y <= r.Top + 14 || y >= r.Bottom - 1) continue;
             ctx.DrawLine(GridPen, new Point(0, y), new Point(r.Width, y));
+            var label = new FormattedText($"{db:0}", System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight, LabelFace, 10, LabelBrush);
+            ctx.DrawText(label, new Point(4, y - label.Height - 1));
         }
 
         int bins = _pan?.Length ?? _wfWidth;
@@ -196,7 +220,7 @@ public sealed class SpectrumView : Control
     private void DrawTrace(DrawingContext ctx, Rect r)
     {
         if (_pan is not { Length: > 1 } pan) return;
-        double top = _floorDb + RangeDb;
+        double top = SpecMaxDb, span = Math.Max(1, SpecMaxDb - SpecMinDb);
         var geo = new StreamGeometry();
         using (var g = geo.Open())
         {
@@ -204,7 +228,7 @@ public sealed class SpectrumView : Control
             for (int i = 0; i < pan.Length; i++)
             {
                 double x = i * r.Width / (pan.Length - 1);
-                double y = r.Top + (top - pan[i]) / RangeDb * r.Height;
+                double y = r.Top + (top - pan[i]) / span * r.Height;
                 g.LineTo(new Point(x, Math.Clamp(y, r.Top, r.Bottom)));
             }
             g.LineTo(new Point(r.Width, r.Bottom));
@@ -218,7 +242,7 @@ public sealed class SpectrumView : Control
             for (int i = 0; i < pan.Length; i++)
             {
                 double x = i * r.Width / (pan.Length - 1);
-                double y = Math.Clamp(r.Top + (top - pan[i]) / RangeDb * r.Height, r.Top, r.Bottom);
+                double y = Math.Clamp(r.Top + (top - pan[i]) / span * r.Height, r.Top, r.Bottom);
                 if (i == 0) g.BeginFigure(new Point(x, y), false); else g.LineTo(new Point(x, y));
             }
             g.EndFigure(false);
