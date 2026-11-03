@@ -300,6 +300,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
+        StartCpuMonitor();
         _client = new StationClient(_engine.BaseUri);
         _client.Display += QueueFrame;
         _client.SignalDbm += dbm =>

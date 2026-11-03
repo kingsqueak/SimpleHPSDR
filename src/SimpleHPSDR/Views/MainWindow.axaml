@@ -274,7 +274,8 @@
 
     <!-- Bottom controls -->
     <Border Grid.Row="5" Classes="panel" Margin="0,10,0,0">
-      <WrapPanel ItemSpacing="24" LineSpacing="8">
+      <Grid ColumnDefinitions="*,Auto">
+        <WrapPanel ItemSpacing="24" LineSpacing="8">
         <StackPanel Orientation="Horizontal" Spacing="8">
           <TextBlock Text="AF" Classes="label" />
           <Slider Minimum="-50" Maximum="20" Value="{Binding AfGainDb}" Width="150" VerticalAlignment="Center" />
@@ -320,6 +321,9 @@
           </ItemsControl>
         </StackPanel>
       </WrapPanel>
+        <TextBlock Grid.Column="1" Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
+                   Classes="label" FontSize="11" VerticalAlignment="Bottom" Margin="12,0,0,0" />
+      </Grid>
     </Border>
   </Grid>
 </Window>

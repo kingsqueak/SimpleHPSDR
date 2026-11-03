@@ -20,6 +20,21 @@ public sealed class EngineHost : IDisposable
     public Uri BaseUri => new($"http://127.0.0.1:{Port}/");
     public bool HasExited => _process is null || _process.HasExited;
 
+    /// <summary>The engine's total CPU time so far (zero if not running).</summary>
+    public TimeSpan CpuTime
+    {
+        get
+        {
+            try
+            {
+                if (_process is not { HasExited: false } p) return TimeSpan.Zero;
+                p.Refresh();
+                return p.TotalProcessorTime;
+            }
+            catch (InvalidOperationException) { return TimeSpan.Zero; }
+        }
+    }
+
     public static string DataDir
     {
         get
