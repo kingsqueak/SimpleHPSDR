@@ -126,16 +126,20 @@
 
             <TextBlock Text="ADVANCED" Classes="label" Margin="2,4,0,0" />
             <Border Classes="panel">
-              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
                 <TextBlock Text="HW peak" Classes="label" FontSize="12"
                            ToolTip.Tip="Expected peak of the feedback sample. Too high and calibration never completes (Stalled)." />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding PsHwPeak}" Minimum="0.0001" Maximum="2" Increment="0.001"
                                  FormatString="0.0000" Width="150" />
+                  <Button Classes="flat accent" Content="Use measured" Command="{Binding UseMeasuredHwPeakCommand}"
+                          IsVisible="{Binding HasMeasuredTxPeak}" />
                   <Button Classes="flat" Command="{Binding UseDefaultHwPeakCommand}">
                     <TextBlock Text="{Binding PsHwPeakDefault, StringFormat=Default {0:0.0000}}" />
                   </Button>
                 </StackPanel>
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MeasuredTxPeakText}" Classes="label"
+                           FontSize="11" TextWrapping="Wrap" />
                 <TextBlock Grid.Row="1" Text="MOX delay" Classes="label" FontSize="12" />
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding PsMoxDelaySec}" Minimum="0.1" Maximum="1" Increment="0.05"

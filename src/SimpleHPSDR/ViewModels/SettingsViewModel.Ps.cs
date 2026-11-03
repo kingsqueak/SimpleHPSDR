@@ -27,6 +27,13 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _psHwPeakDefault;
     [ObservableProperty] private bool _psMonitor;
 
+    /// <summary>Peak TX envelope from the last transmission, from the main window.</summary>
+    public double MeasuredTxPeak { get; init; }
+    public bool HasMeasuredTxPeak => MeasuredTxPeak > 0;
+    public string MeasuredTxPeakText => HasMeasuredTxPeak
+        ? $"Your last transmission peaked at {MeasuredTxPeak:0.0000}. HW peak must not be above that, or calibration stalls."
+        : "Turn PS on and transmit 2-TONE once; the measured peak will show here.";
+
     private async Task LoadPureSignalAsync()
     {
         var s = _psLoaded = await _client.GetStateAsync();
@@ -58,6 +65,10 @@ public sealed partial class SettingsViewModel
 
     [RelayCommand]
     private void UseDefaultHwPeak() => PsHwPeak = PsHwPeakDefault;
+
+    // A hair under the measured peak, so calcc's top bin reliably fills.
+    [RelayCommand]
+    private void UseMeasuredHwPeak() => PsHwPeak = Math.Round(MeasuredTxPeak * 0.98, 4);
 
     [RelayCommand]
     private async Task ResetPsAsync()

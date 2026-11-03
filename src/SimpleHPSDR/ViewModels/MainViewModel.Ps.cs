@@ -13,6 +13,11 @@ public sealed partial class MainViewModel
     private int _psScheduled;
     private bool _psStalled;
 
+    /// <summary>Highest TX envelope seen in the latest transmission (0 if
+    /// none yet). PureSignal's HW peak must not be above this, or calibration
+    /// never collects its top bin and stalls.</summary>
+    public double MeasuredTxPeak { get; private set; }
+
     [ObservableProperty] private bool _psOn;
     [ObservableProperty] private bool _twoToneOn;
     [ObservableProperty] private string _psStatus = "Off";
@@ -25,6 +30,7 @@ public sealed partial class MainViewModel
         client.PsMeters += f =>
         {
             _latestPs = f;
+            if (f.MaxTxEnvelope > 0) MeasuredTxPeak = f.MaxTxEnvelope;
             if (Interlocked.Exchange(ref _psScheduled, 1) == 0)
                 Dispatcher.UIThread.Post(() =>
                 {
@@ -81,7 +87,7 @@ public sealed partial class MainViewModel
         int fb = (int)Math.Round(f.FeedbackLevel);
         PsFeedbackText = IsTransmitting ? $"FB {fb}" : "";
         if (_psStalled)
-            (PsStatus, PsLevel) = ("Stalled", "bad");
+            (PsStatus, PsLevel) = ("Stalled: HW peak", "bad");
         else if (f.Correcting)
             (PsStatus, PsLevel) = ("Correcting", fb is >= 128 and <= 181 ? "ok" : "warn");
         else if (IsTransmitting)
