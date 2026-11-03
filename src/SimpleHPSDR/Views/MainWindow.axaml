@@ -6,6 +6,14 @@
         x:DataType="vm:MainViewModel"
         Title="SimpleHPSDR" Width="1200" Height="760" MinWidth="900" MinHeight="560">
 
+  <Window.Styles>
+    <!-- The theme's horizontal slider lays out 50 high, twice a button; pull
+         it in so slider rows are as tight as the band and filter rows. The
+         thumb still draws in full. -->
+    <Style Selector="Slider:horizontal">
+      <Setter Property="Margin" Value="0,-14" />
+    </Style>
+  </Window.Styles>
   <Window.Resources>
     <!-- Menu items for a dropdown of Choice objects (step, band, mode) -->
     <ControlTheme x:Key="ChoiceMenuItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:Choice">
@@ -276,7 +284,7 @@
 
     <!-- Transmit -->
     <Border Grid.Row="4" Classes="panel" Margin="0,10,0,0">
-      <WrapPanel ItemSpacing="24" LineSpacing="8">
+      <WrapPanel ItemSpacing="24" LineSpacing="6">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <ToggleButton Classes="seg tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="64"
                         ToolTip.Tip="Transmit" />
