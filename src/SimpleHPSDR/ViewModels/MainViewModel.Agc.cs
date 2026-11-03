@@ -6,11 +6,11 @@ using Zeus.Contracts;
 namespace SimpleHPSDR.ViewModels;
 
 /// <summary>AGC: the button turns the engine's auto AGC on (blue) or off;
-/// off is manual, where the speed (Long/Slow/Med/Fast) is chosen. Both
-/// slices get the same AGC.</summary>
+/// off is manual, where the speed (Off/Long/Slow/Med/Fast) is chosen; Off
+/// is the engine's Fixed mode, a fixed gain. Both slices get the same AGC.</summary>
 public sealed partial class MainViewModel
 {
-    private static readonly AgcMode[] AgcSpeeds = [AgcMode.Long, AgcMode.Slow, AgcMode.Med, AgcMode.Fast];
+    private static readonly AgcMode[] AgcSpeeds = [AgcMode.Fixed, AgcMode.Long, AgcMode.Slow, AgcMode.Med, AgcMode.Fast];
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(AgcManual))] [NotifyPropertyChangedFor(nameof(AgcSubLabel))]
     private bool _agcAuto;
@@ -18,6 +18,7 @@ public sealed partial class MainViewModel
     private AgcMode _agcMode = AgcMode.Med;
 
     public bool AgcManual => !AgcAuto;
+    private static string SpeedName(AgcMode m) => m == AgcMode.Fixed ? "Off" : m.ToString();
     public string AgcSubLabel => AgcAuto ? "auto" : "manual";
     public ObservableCollection<Choice> AgcSpeedChoices { get; } = [];
 
@@ -26,10 +27,10 @@ public sealed partial class MainViewModel
     {
         if (AgcSpeedChoices.Count == 0)
             foreach (var m in AgcSpeeds)
-                AgcSpeedChoices.Add(new Choice(m.ToString(), m, c => _ = SelectAgcSpeedAsync((AgcMode)c.Value)));
+                AgcSpeedChoices.Add(new Choice(SpeedName(m), m, c => _ = SelectAgcSpeedAsync((AgcMode)c.Value)));
         AgcAuto = s.AutoAgcEnabled;
         _agcMode = s.Agc?.Mode ?? AgcMode.Med;
-        AgcSpeedLabel = _agcMode.ToString();
+        AgcSpeedLabel = SpeedName(_agcMode);
         Mark(AgcSpeedChoices, _agcMode);
     }
 
@@ -43,7 +44,7 @@ public sealed partial class MainViewModel
             await _client!.SetAutoAgcAsync(on);
             if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(AutoAgcEnabled: on));
             AgcAuto = on;
-            Status = on ? "AGC auto: the engine sets the AGC gain." : $"AGC manual, speed {_agcMode}.";
+            Status = on ? "AGC auto: the engine sets the AGC gain." : $"AGC manual, speed {SpeedName(_agcMode)}.";
         });
     }
 
@@ -56,7 +57,7 @@ public sealed partial class MainViewModel
             await _client!.SetAgcAsync(agc);
             if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(Agc: agc));
             _agcMode = mode;
-            AgcSpeedLabel = mode.ToString();
+            AgcSpeedLabel = SpeedName(mode);
             Mark(AgcSpeedChoices, mode);
         });
     }
