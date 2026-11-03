@@ -163,12 +163,14 @@ public sealed class FilterScope : Control
     // Audio frequency, 0 at the dial (left) to 6000 Hz (right).
     private void DrawScale(DrawingContext ctx, Rect b, double top)
     {
+        // Label every 500 Hz when there's room, else every 1000.
+        int labelEvery = 500 / SpanHz * b.Width >= 32 ? 500 : 1000;
         for (int hz = 0; hz <= SpanHz; hz += 100)
         {
             double x = hz / SpanHz * b.Width;
             bool major = hz % 500 == 0;
             ctx.DrawLine(major ? MajorTickPen : TickPen, new Point(x, top), new Point(x, top + (major ? 4 : 2)));
-            if (!major) continue;
+            if (hz % labelEvery != 0) continue;
             var ft = new FormattedText(hz.ToString(), System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, LabelFace, 9, LabelBrush);
             double lx = Math.Clamp(x - ft.Width / 2, 2, b.Width - ft.Width - 2);

@@ -56,7 +56,9 @@
                    TextTrimming="CharacterEllipsis" Margin="2,0,0,0" />
       </StackPanel>
 
-      <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
+      <!-- Antennas, VFO and Step shrink together when the window is narrow -->
+      <Viewbox Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="8,0">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
         <!-- TX and RX antenna for the current band, stacked to the VFO's height -->
         <StackPanel Spacing="4" VerticalAlignment="Center">
           <Button Classes="seg ant" IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="TX antenna for this band">
@@ -117,6 +119,7 @@
           </Button.Flyout>
         </Button>
       </StackPanel>
+      </Viewbox>
 
       <Border Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
