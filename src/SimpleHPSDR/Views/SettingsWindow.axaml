@@ -138,8 +138,12 @@
                     <TextBlock Text="{Binding PsHwPeakDefault, StringFormat=Default {0:0.0000}}" />
                   </Button>
                 </StackPanel>
-                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MeasuredTxPeakText}" Classes="label"
-                           FontSize="11" TextWrapping="Wrap" />
+                <StackPanel Grid.Row="4" Grid.Column="1" Spacing="6">
+                  <CheckBox Content="Lower HW peak automatically if calibration stalls"
+                            IsChecked="{Binding AutoHwPeak}"
+                            ToolTip.Tip="While keyed with PS on (2-TONE or voice), if calibration is stuck collecting, set HW peak to just under your signal's measured peak and restart calibration. Never raises it." />
+                  <TextBlock Text="{Binding MeasuredTxPeakText}" Classes="label" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
                 <TextBlock Grid.Row="1" Text="MOX delay" Classes="label" FontSize="12" />
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding PsMoxDelaySec}" Minimum="0.1" Maximum="1" Increment="0.05"

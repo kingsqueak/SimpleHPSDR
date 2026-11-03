@@ -27,6 +27,21 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _psHwPeakDefault;
     [ObservableProperty] private bool _psMonitor;
 
+    /// <summary>The app's own settings file, for options the engine doesn't hold.</summary>
+    public Settings? AppSettings { get; init; }
+
+    public bool AutoHwPeak
+    {
+        get => AppSettings?.AutoHwPeak ?? true;
+        set
+        {
+            if (AppSettings is null || AppSettings.AutoHwPeak == value) return;
+            AppSettings.AutoHwPeak = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     /// <summary>Peak TX envelope from the last transmission, from the main window.</summary>
     public double MeasuredTxPeak { get; init; }
     public bool HasMeasuredTxPeak => MeasuredTxPeak > 0;

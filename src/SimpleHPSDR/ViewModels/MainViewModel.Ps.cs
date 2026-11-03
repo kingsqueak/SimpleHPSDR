@@ -18,6 +18,10 @@ public sealed partial class MainViewModel
     /// never collects its top bin and stalls.</summary>
     public double MeasuredTxPeak { get; private set; }
 
+    private DateTime? _keyedSince;
+    private bool _hwPeakAdjustedThisTx;
+    private const byte CalStateCollect = 4;   // calcc LCOLLECT
+
     [ObservableProperty] private bool _psOn;
     [ObservableProperty] private bool _twoToneOn;
     [ObservableProperty] private string _psStatus = "Off";
@@ -59,6 +63,30 @@ public sealed partial class MainViewModel
         _applyingTx = false;
         _psStalled = s.PsCalibrationStalled;
         UpdatePsStatus();
+        _ = MaybeLowerHwPeakAsync(s);
+    }
+
+    // Auto HW peak: calcc sorts samples into amplitude bins up to HW peak and
+    // only calculates once the top bin has some. If the signal never gets
+    // that high, calibration sits in LCOLLECT forever. When that happens
+    // while keyed, lower HW peak to just under the measured peak and restart
+    // calibration. Only ever lowers, at most once per transmission.
+    private async Task MaybeLowerHwPeakAsync(StateDto s)
+    {
+        if (!_settings.AutoHwPeak || !PsOn || _hwPeakAdjustedThisTx || _keyedSince is not { } since) return;
+        bool stuck = s.PsCalibrationStalled
+                     || (_latestPs.CalState == CalStateCollect && !_latestPs.Correcting
+                         && DateTime.UtcNow - since > TimeSpan.FromSeconds(3));
+        double target = Math.Round(MeasuredTxPeak * 0.98, 4);
+        if (!stuck || MeasuredTxPeak <= 0 || target >= s.PsHwPeak * 0.95) return;
+
+        _hwPeakAdjustedThisTx = true;
+        await Try(async () =>
+        {
+            await _client!.SetPsAdvancedAsync(new PsAdvancedSetRequest(HwPeak: target));
+            await _client.ResetPsAsync();
+            Status = $"PureSignal: HW peak lowered from {s.PsHwPeak:0.0000} to {target:0.0000} to match your signal";
+        });
     }
 
     partial void OnPsOnChanged(bool value)
@@ -80,9 +108,13 @@ public sealed partial class MainViewModel
     {
         if (!PsOn)
         {
+            _keyedSince = null;
             (PsStatus, PsLevel, PsFeedbackText) = ("PS off", "off", "");
             return;
         }
+        if (IsTransmitting) _keyedSince ??= DateTime.UtcNow;
+        else { _keyedSince = null; _hwPeakAdjustedThisTx = false; }
+
         var f = _latestPs;
         int fb = (int)Math.Round(f.FeedbackLevel);
         PsFeedbackText = IsTransmitting ? $"FB {fb}" : "";
