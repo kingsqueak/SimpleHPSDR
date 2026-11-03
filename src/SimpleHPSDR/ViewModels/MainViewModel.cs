@@ -13,7 +13,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 {
     private static readonly RxMode[] ModeOrder =
         [RxMode.LSB, RxMode.USB, RxMode.CWL, RxMode.CWU, RxMode.AM, RxMode.SAM, RxMode.FM, RxMode.DIGL, RxMode.DIGU];
-    private static readonly int[] Steps = [10, 100, 500, 1_000, 5_000, 10_000];
+    private static readonly int[] Steps = [10, 100, 500, 1_000, 5_000, 10_000, 100_000];
 
     private readonly Settings _settings = Settings.Load();
     private readonly EngineHost _engine = new();
@@ -64,6 +64,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public RxMode Mode { get; private set; } = RxMode.USB;
     public int StepHz => _settings.TuneStepHz;
+    public string StepLabel => StepHz >= 1000 ? $"{StepHz / 1000}k" : $"{StepHz}";
     public string FrequencyText => VfoHz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.');
     public string AfGainText => $"{AfGainDb:0} dB";
     // Thetis-style front-end steps: the G2 has one preamp switch, so the
@@ -361,6 +362,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _settings.Save();
         Mark(TuneSteps, hz);
         OnPropertyChanged(nameof(StepHz));
+        OnPropertyChanged(nameof(StepLabel));
     }
 
     private async Task SelectZoomAsync(int level)

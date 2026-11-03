@@ -40,6 +40,24 @@
         </Border>
         <TextBox Text="{Binding FrequencyEntry}" PlaceholderText="kHz or MHz" Width="110"
                  VerticalAlignment="Center" Name="FrequencyBox" />
+        <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Tuning step for the wheel">
+          <StackPanel Spacing="-1">
+            <TextBlock Text="Step" FontSize="12" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding StepLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+          </StackPanel>
+          <Button.Flyout>
+            <MenuFlyout ItemsSource="{Binding TuneSteps}" Placement="BottomEdgeAlignedLeft">
+              <MenuFlyout.ItemContainerTheme>
+                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:Choice">
+                  <Setter Property="Header" Value="{Binding Label}" />
+                  <Setter Property="Command" Value="{Binding Select}" />
+                  <Setter Property="ToggleType" Value="Radio" />
+                  <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=OneWay}" />
+                </ControlTheme>
+              </MenuFlyout.ItemContainerTheme>
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
       </StackPanel>
 
       <Border Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
@@ -199,12 +217,6 @@
           <TextBlock Text="NR" Classes="label" />
           <ItemsControl ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource SegButton}"
                         ToolTip.Tip="Noise reduction (click the lit one for off)">
-            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-          </ItemsControl>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <TextBlock Text="STEP" Classes="label" />
-          <ItemsControl ItemsSource="{Binding TuneSteps}" ItemTemplate="{StaticResource SegButton}">
             <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
           </ItemsControl>
         </StackPanel>
