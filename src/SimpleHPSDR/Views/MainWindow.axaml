@@ -165,13 +165,18 @@
           <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <TextBlock Text="ATT" Classes="label" />
+          <ToggleButton Classes="seg" IsChecked="{Binding AutoAtt}" Padding="8,2" MinWidth="0" Margin="0"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Automatic attenuation: adds attenuation when the ADC overloads (blue = on)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="ATT" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="auto" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+          </ToggleButton>
           <Slider Minimum="0" Maximum="31" Value="{Binding AttenDb}" Width="110" VerticalAlignment="Center"
                   TickFrequency="1" IsSnapToTickEnabled="True" />
           <TextBlock Text="{Binding AttenText}" Width="56" VerticalAlignment="Center" FontSize="12"
-                     ToolTip.Tip="Manual attenuation, plus any added by Auto" />
-          <ToggleButton Classes="seg" Content="Auto" IsChecked="{Binding AutoAtt}"
-                        ToolTip.Tip="Add attenuation automatically when the ADC overloads" />
+                     ToolTip.Tip="Manual attenuation, plus any added automatically" />
           <Border Background="#E5484D" CornerRadius="4" Padding="6,2" IsVisible="{Binding AdcOverload}"
                   VerticalAlignment="Center" ToolTip.Tip="ADC overload">
             <TextBlock Text="OVL" FontSize="11" FontWeight="SemiBold" Foreground="White" />
