@@ -65,12 +65,19 @@ public sealed class StationClient : IDisposable
     public Task DisconnectAsync(bool protocol2) =>
         PostAsync(protocol2 ? "api/disconnect/p2" : "api/disconnect", new { });
 
+    /// <summary>Ignore the region band plan for transmit. The engine keeps its
+    /// equipment, fault and ownership checks either way.</summary>
+    public Task SetBandPlanGuardIgnoredAsync(bool ignore) =>
+        PostAsync("api/bands/guard", new BandGuardSetRequest(ignore));
+
     public Task SetVfoAsync(long hz) => PostAsync("api/vfo", new VfoSetRequest(hz));
     public Task SetModeAsync(RxMode mode) => PostAsync("api/mode", new ModeSetRequest(mode));
     public Task SetFilterAsync(int low, int high, string? preset) =>
         PostAsync("api/filter", new FilterSetRequest(low, high, preset));
     public Task SetAfGainAsync(double db) => PostAsync("api/rx/afGain", new RxAfGainSetRequest(db));
     public Task SetAttenuatorAsync(int db) => PostAsync("api/attenuator", new AttenuatorSetRequest(db));
+    public Task SetAutoAttAsync(bool on) => PostAsync("api/auto-att", new AutoAttSetRequest(on));
+    public Task SetNrAsync(NrConfig nr) => PostAsync("api/rx/nr", new NrSetRequest(nr));
     public Task SetPreampAsync(bool on) => PostAsync("api/preamp", new PreampSetRequest(on));
     public Task SetMuteAsync(bool muted) => PostAsync("api/audio/mute", new { muted });
     public Task SetZoomAsync(int level) => PostAsync("api/rx/zoom", new { level });
@@ -104,6 +111,9 @@ public sealed class StationClient : IDisposable
         // 0x22 level 2: this session wants the display stream (preferred).
         // The engine defines the type byte privately in StreamingHub.
         await _ws.SendAsync(new byte[] { 0x22, 2 },
+            WebSocketMessageType.Binary, true, _wsCts.Token);
+        // 0x21 off: audio plays natively in the engine, so don't stream PCM here.
+        await _ws.SendAsync(new byte[] { (byte)MsgType.AudioStreamRequest, 0 },
             WebSocketMessageType.Binary, true, _wsCts.Token);
         _ = Task.Run(() => ReceiveLoop(_ws, _wsCts.Token));
     }
@@ -142,14 +152,12 @@ public sealed class StationClient : IDisposable
             switch ((MsgType)msg[0])
             {
                 case MsgType.DisplayFrame:
+                    UiStats.FrameReceived();
                     Display?.Invoke(DisplayFrame.Deserialize(msg));
                     break;
                 case MsgType.RxMetersV2:
                     var m = RxMetersV2Frame.Deserialize(msg);
                     if (m.RxId == 0) SignalDbm?.Invoke(m.SignalAv);
-                    break;
-                case MsgType.RxMeter:
-                    SignalDbm?.Invoke(RxMeterFrame.Deserialize(msg).RxDbm);
                     break;
                 case MsgType.VfoState:
                     Vfo?.Invoke(VfoStateFrame.Deserialize(msg));

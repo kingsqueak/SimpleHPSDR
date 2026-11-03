@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Net;
 using Avalonia.Threading;
@@ -22,6 +23,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly Latest<double> _afSender;
     private readonly Latest<int> _attSender;
     private bool _applyingState;
+    private readonly ConcurrentQueue<DisplayFrame> _frames = new();
+    private int _framesScheduled;
+    private float _latestDbm = -140;
+    private int _meterScheduled;
+    private readonly DispatcherTimer _statePoll = new() { Interval = TimeSpan.FromSeconds(1) };
 
     [ObservableProperty] private string _status = "Starting engine…";
     [ObservableProperty] private bool _isConnected;
@@ -33,6 +39,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private double _afGainDb;
     [ObservableProperty] private double _attenDb;
     [ObservableProperty] private bool _preampOn;
+    [ObservableProperty] private bool _autoAtt;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AttenText))]
+    private int _attOffsetDb;
+    [ObservableProperty] private bool _adcOverload;
     [ObservableProperty] private bool _muted;
     [ObservableProperty] private double _signalDbm = -140;
     [ObservableProperty] private string _sUnits = "S0";
@@ -43,12 +53,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<Choice> Filters { get; } = [];
     public ObservableCollection<Choice> TuneSteps { get; } = [];
     public ObservableCollection<Choice> Zooms { get; } = [];
+    public ObservableCollection<Choice> NoiseBlankers { get; } = [];
+    public ObservableCollection<Choice> NoiseReductions { get; } = [];
 
     public RxMode Mode { get; private set; } = RxMode.USB;
     public int StepHz => _settings.TuneStepHz;
     public string FrequencyText => VfoHz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.');
     public string AfGainText => $"{AfGainDb:0} dB";
-    public string AttenText => $"{AttenDb:0} dB";
+    public string AttenText => AttOffsetDb > 0 ? $"{AttenDb:0}+{AttOffsetDb} dB" : $"{AttenDb:0} dB";
 
     /// <summary>Set by the window: shows the radio picker and returns the choice.</summary>
     public Func<RadioPickerViewModel, Task<RadioChoice?>>? ShowRadioPicker { get; set; }
@@ -69,6 +81,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             TuneSteps.Add(new Choice(s >= 1000 ? $"{s / 1000}k" : $"{s}", s, c => SelectStep((int)c.Value)));
         foreach (var z in new[] { 1, 2, 4, 8 })
             Zooms.Add(new Choice($"{z}×", z, c => _ = SelectZoomAsync((int)c.Value)));
+        foreach (var nb in new[] { NbMode.Nb1, NbMode.Nb2 })
+            NoiseBlankers.Add(new Choice(nb.ToString().ToUpperInvariant(), nb,
+                c => _ = SelectNbAsync(c.IsSelected ? NbMode.Off : (NbMode)c.Value)));
+        // Thetis numbering: NR1 LMS, NR2 Ephraim-Malah, NR3 RNNoise, NR4 libspecbleach.
+        foreach (var (label, mode) in new[] { ("NR1", NrMode.Anr), ("NR2", NrMode.Emnr), ("NR3", NrMode.Rnnr), ("NR4", NrMode.Sbnr) })
+            NoiseReductions.Add(new Choice(label, mode,
+                c => _ = SelectNrAsync(c.IsSelected ? NrMode.Off : (NrMode)c.Value)));
         Mark(TuneSteps, _settings.TuneStepHz);
         Mark(Zooms, 1);
     }
@@ -88,8 +107,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
 
         _client = new StationClient(_engine.BaseUri);
-        _client.Display += f => Dispatcher.UIThread.Post(() => Display?.Invoke(f), DispatcherPriority.Render);
-        _client.SignalDbm += dbm => Dispatcher.UIThread.Post(() => UpdateMeter(dbm));
+        _client.Display += QueueFrame;
+        _client.SignalDbm += dbm =>
+        {
+            _latestDbm = dbm;
+            if (Interlocked.Exchange(ref _meterScheduled, 1) == 0)
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _meterScheduled = 0;
+                    UpdateMeter(_latestDbm);
+                });
+        };
+        _statePoll.Tick += async (_, _) => await PollStateAsync();
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
             if (v.Receiver == 0 && !_vfoSender.Busy) SetVfoLocal(v.VfoHz);
@@ -170,9 +199,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _settings.LastRadioBoardId = radio.BoardId;
         _settings.Save();
 
+        // Policy: if the radio will transmit there, SimpleHPSDR allows it. No
+        // region band plan gets in the way.
+        await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
         await ApplyStateAsync(await client.GetStateAsync());
         await client.OpenStreamAsync();
         IsConnected = true;
+        _statePoll.Start();
         RadioLabel = radio.Label;
         Status = $"Connected to {radio.Label}";
         return true;
@@ -183,6 +216,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (_client is null || _radio is null) return;
         try { await _client.DisconnectAsync(_radio.Protocol2); } catch (Exception) { }
         IsConnected = false;
+        _statePoll.Stop();
         RadioLabel = "No radio";
         DisplayReset?.Invoke();
     }
@@ -198,6 +232,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AfGainDb = s.RxAfGainDb;
             AttenDb = s.AttenDb;
             PreampOn = s.PreampOn;
+            AutoAtt = s.AutoAttEnabled;
+            Mark(NoiseBlankers, s.Nr?.NbMode ?? NbMode.Off);
+            Mark(NoiseReductions, s.Nr?.NrMode ?? NrMode.Off);
+            AttOffsetDb = s.AttOffsetDb;
+            AdcOverload = s.AdcOverloadWarning;
             Muted = s.Rx1Muted;
             Mark(Zooms, s.ZoomLevel);
             await SetModeLocalAsync(s.Mode, s.FilterPresetName);
@@ -320,6 +359,39 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (!_applyingState && IsConnected) _attSender.Send((int)Math.Round(value));
     }
 
+    private Task SelectNbAsync(NbMode mode)
+    {
+        Mark(NoiseBlankers, mode);
+        return UpdateNrAsync(nr => nr with { NbMode = mode });
+    }
+
+    private Task SelectNrAsync(NrMode mode)
+    {
+        Mark(NoiseReductions, mode);
+        return UpdateNrAsync(nr => nr with { NrMode = mode });
+    }
+
+    // The engine takes the whole NR/NB config, so read it, change one field,
+    // and send it back. If the engine refuses (e.g. NR3 without a model), show
+    // what it actually applied.
+    private async Task UpdateNrAsync(Func<NrConfig, NrConfig> change)
+    {
+        if (!IsConnected) return;
+        await Try(async () =>
+        {
+            var nr = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
+            await _client.SetNrAsync(change(nr));
+        });
+        var applied = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
+        Mark(NoiseBlankers, applied.NbMode);
+        Mark(NoiseReductions, applied.NrMode);
+    }
+
+    partial void OnAutoAttChanged(bool value)
+    {
+        if (!_applyingState && IsConnected) _ = Try(() => _client!.SetAutoAttAsync(value));
+    }
+
     partial void OnPreampOnChanged(bool value)
     {
         if (!_applyingState && IsConnected) _ = Try(() => _client!.SetPreampAsync(value));
@@ -330,8 +402,47 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (!_applyingState && IsConnected) _ = Try(() => _client!.SetMuteAsync(value));
     }
 
+    // Display frames arrive at 30/s on the socket thread. Queue them and drain
+    // in one UI pass, so a busy UI thread can't stack up separate dispatches
+    // that then replay in a burst. The queue is bounded; on overflow the
+    // oldest frame goes.
+    private void QueueFrame(DisplayFrame f)
+    {
+        _frames.Enqueue(f);
+        while (_frames.Count > 8 && _frames.TryDequeue(out _)) UiStats.FrameDropped();
+        if (Interlocked.Exchange(ref _framesScheduled, 1) == 0)
+            Dispatcher.UIThread.Post(DrainFrames, DispatcherPriority.Render);
+    }
+
+    private void DrainFrames()
+    {
+        _framesScheduled = 0;
+        while (_frames.TryDequeue(out var f))
+        {
+            UiStats.FrameApplied();
+            Display?.Invoke(f);
+        }
+    }
+
+    // Auto-ATT and the overload flag change inside the engine; no frame
+    // carries them, so poll.
+    private async Task PollStateAsync()
+    {
+        if (!IsConnected || _client is null) return;
+        try
+        {
+            var s = await _client.GetStateAsync();
+            AttOffsetDb = s.AttOffsetDb;
+            AdcOverload = s.AdcOverloadWarning;
+        }
+        catch (Exception) { }
+    }
+
     private void UpdateMeter(float dbm)
     {
+        // Fast attack, slower release, like an analogue meter.
+        double k = dbm > SignalDbm ? 0.6 : 0.2;
+        dbm = (float)(SignalDbm + (dbm - SignalDbm) * k);
         SignalDbm = dbm;
         // S9 = -73 dBm, 6 dB per S-unit below it.
         SUnits = dbm >= -73
@@ -358,6 +469,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         _settings.Save();
+        try { _statePoll.Stop(); } catch (InvalidOperationException) { }  // signal thread
         if (_client is not null && _radio is not null)
         {
             try { _client.DisconnectAsync(_radio.Protocol2).Wait(TimeSpan.FromSeconds(2)); }

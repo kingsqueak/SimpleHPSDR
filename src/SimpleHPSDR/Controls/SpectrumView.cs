@@ -18,6 +18,8 @@ public sealed class SpectrumView : Control
     private const int WaterfallRows = 512;
     private const double PanFraction = 0.38;
     private const double RangeDb = 70;
+    // Trace averaging per frame (30 frames/s): 0.35 settles in about 0.2 s.
+    private const float TraceAlpha = 0.35f;
 
     private static readonly uint[] Palette = BuildPalette();
     private static readonly IBrush Background = new SolidColorBrush(Color.Parse("#0B0D11"));
@@ -34,6 +36,7 @@ public sealed class SpectrumView : Control
     private int _wfRow;            // next row to write (ring buffer)
     private float[]? _pan;
     private long _centerHz;
+    private long _avgCenterHz;
     private double _hzPerPixel;
     private double _floorDb = -130;
 
@@ -60,7 +63,15 @@ public sealed class SpectrumView : Control
 
         if (f.BodyFlags.HasFlag(DisplayBodyFlags.PanValid))
         {
-            _pan = f.PanDb.ToArray();
+            var raw = f.PanDb.Span;
+            // Restart the average after a retune or width change, otherwise
+            // the old and new spectra smear together.
+            if (_pan is null || _pan.Length != raw.Length || f.CenterHz != _avgCenterHz)
+                _pan = raw.ToArray();
+            else
+                for (int i = 0; i < _pan.Length; i++)
+                    _pan[i] += (raw[i] - _pan[i]) * TraceAlpha;
+            _avgCenterHz = f.CenterHz;
             TrackFloor(_pan);
         }
         if (f.BodyFlags.HasFlag(DisplayBodyFlags.WfValid))
@@ -102,7 +113,7 @@ public sealed class SpectrumView : Control
 
         using var fb = _waterfall.Lock();
         var dst = new Span<uint>((byte*)fb.Address + _wfRow * fb.RowBytes, _wfWidth);
-        double floor = _floorDb + 12, scale = 255.0 / 45;
+        double floor = _floorDb + 8, scale = 255.0 / 48;
         for (int i = 0; i < _wfWidth; i++)
             dst[i] = Palette[Math.Clamp((int)((row[i] - floor) * scale), 0, 255)];
         _wfRow = (_wfRow + 1) % WaterfallRows;
@@ -110,6 +121,7 @@ public sealed class SpectrumView : Control
 
     public override void Render(DrawingContext ctx)
     {
+        SimpleHPSDR.UiStats.Rendered();
         var b = Bounds;
         ctx.FillRectangle(Background, new Rect(b.Size));
         double panH = Math.Round(b.Height * PanFraction);
