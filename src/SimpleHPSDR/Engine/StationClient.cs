@@ -8,6 +8,8 @@ using Zeus.Contracts;
 namespace SimpleHPSDR.Engine;
 
 public sealed record FilterPreset(string SlotName, string Label, int LowHz, int HighHz);
+public sealed record AudioDevice(string Id, string Name, bool IsDefault);
+public sealed record AudioDevices(string? InputDeviceId, string? OutputDeviceId, AudioDevice[] Inputs);
 
 /// <summary>A connect attempt the engine refused, with its reason.</summary>
 public sealed class StationException(string message, HttpStatusCode status) : Exception(message)
@@ -34,6 +36,9 @@ public sealed class StationClient : IDisposable
     public event Action<DisplayFrame>? Display;
     public event Action<float>? SignalDbm;
     public event Action<VfoStateFrame>? Vfo;
+    public event Action<MoxStateFrame>? MoxState;
+    public event Action<TxMetersV2Frame>? TxMeters;
+    public event Action<float>? MicPeakDbfs;
     public event Action<string>? StreamClosed;
 
     public StationClient(Uri baseUri)
@@ -70,6 +75,35 @@ public sealed class StationClient : IDisposable
     public Task SetBandPlanGuardIgnoredAsync(bool ignore) =>
         PostAsync("api/bands/guard", new BandGuardSetRequest(ignore));
 
+    // ---- transmit ----
+    public Task SetMoxAsync(bool on) => PostAsync("api/tx/mox", new MoxSetRequest(on));
+    public Task SetTunAsync(bool on) => PostAsync("api/tx/tun", new TunSetRequest(on));
+    public Task SetDriveAsync(int percent) => PostAsync("api/tx/drive", new DriveSetRequest(percent));
+    public Task SetTuneDriveAsync(int percent) => PostAsync("api/tx/tune-drive", new TuneDriveSetRequest(percent));
+    public Task SetMicGainAsync(int db) => PostAsync("api/mic-gain", new MicGainSetRequest(db));
+
+    public async Task<AudioDevices> GetAudioDevicesAsync() =>
+        (await _http.GetFromJsonAsync<AudioDevices>("api/audio/devices", Json))!;
+
+    /// <summary>Choose the host (computer) mic. The engine sets input and
+    /// output together, so the current output is passed back unchanged.</summary>
+    public async Task SetHostInputAsync(string? inputId)
+    {
+        var current = await GetAudioDevicesAsync();
+        using var r = await _http.PutAsJsonAsync("api/audio/devices",
+            new { inputDeviceId = inputId, outputDeviceId = current.OutputDeviceId }, Json);
+        await ThrowIfFailed(r);
+    }
+
+    public async Task<AudioFrontEndDto> GetRadioAudioAsync() =>
+        (await _http.GetFromJsonAsync<AudioFrontEndDto>("api/radio/audio", Json))!;
+
+    public async Task SetRadioAudioAsync(AudioFrontEndSetRequest req)
+    {
+        using var r = await _http.PutAsJsonAsync("api/radio/audio", req, Json);
+        await ThrowIfFailed(r);
+    }
+
     public Task SetVfoAsync(long hz) => PostAsync("api/vfo", new VfoSetRequest(hz));
     public Task SetModeAsync(RxMode mode) => PostAsync("api/mode", new ModeSetRequest(mode));
     public Task SetFilterAsync(int low, int high, string? preset) =>
@@ -88,6 +122,11 @@ public sealed class StationClient : IDisposable
     private async Task PostAsync<T>(string path, T body, CancellationToken ct = default)
     {
         using var r = await _http.PostAsJsonAsync(path, body, Json, ct);
+        await ThrowIfFailed(r, ct);
+    }
+
+    private static async Task ThrowIfFailed(HttpResponseMessage r, CancellationToken ct = default)
+    {
         if (r.IsSuccessStatusCode) return;
         var text = await r.Content.ReadAsStringAsync(ct);
         string message = text;
@@ -161,6 +200,15 @@ public sealed class StationClient : IDisposable
                     break;
                 case MsgType.VfoState:
                     Vfo?.Invoke(VfoStateFrame.Deserialize(msg));
+                    break;
+                case MsgType.MoxState:
+                    MoxState?.Invoke(MoxStateFrame.Deserialize(msg));
+                    break;
+                case MsgType.TxMetersV2:
+                    TxMeters?.Invoke(TxMetersV2Frame.Deserialize(msg));
+                    break;
+                case MsgType.MicPeak:
+                    MicPeakDbfs?.Invoke(MicPeakFrame.Deserialize(msg).PeakDbfs);
                     break;
             }
         }

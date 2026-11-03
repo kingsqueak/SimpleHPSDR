@@ -14,7 +14,7 @@
     </DataTemplate>
   </Window.Resources>
 
-  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12">
+  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Margin="12">
 
     <!-- Top: radio, frequency, meter -->
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,10">
@@ -29,6 +29,7 @@
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBlock Text="{Binding FrequencyText}" FontFamily="{StaticResource MonoFont}"
+                       Classes.tx="{Binding IsTransmitting}"
                        FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center" />
             <TextBlock Text="Hz" Classes="label" FontSize="14" Margin="0,14,0,0" />
           </StackPanel>
@@ -74,8 +75,51 @@
       <c:SpectrumView Name="Spectrum" />
     </Border>
 
-    <!-- Bottom controls -->
+    <!-- Transmit -->
     <Border Grid.Row="3" Classes="panel" Margin="0,10,0,0">
+      <WrapPanel ItemSpacing="24" LineSpacing="8">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <ToggleButton Classes="seg tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="64"
+                        ToolTip.Tip="Transmit" />
+          <ToggleButton Classes="seg tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="64"
+                        ToolTip.Tip="Tune carrier at the tune drive level" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="DRIVE" Classes="label" />
+          <Slider Minimum="0" Maximum="100" Value="{Binding DrivePct}" Width="120" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding DrivePct, StringFormat={}{0:0}%}" Width="36" VerticalAlignment="Center" FontSize="12" />
+          <TextBlock Text="TUNE" Classes="label" />
+          <Slider Minimum="0" Maximum="100" Value="{Binding TunePct}" Width="80" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding TunePct, StringFormat={}{0:0}%}" Width="36" VerticalAlignment="Center" FontSize="12" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="MIC" Classes="label" />
+          <ComboBox ItemsSource="{Binding MicSources}" SelectedItem="{Binding SelectedMicSource}"
+                    Width="210" VerticalAlignment="Center" />
+          <ToggleButton Classes="seg" Content="Boost" IsChecked="{Binding MicBoost}"
+                        IsVisible="{Binding MicBoostAvailable}" ToolTip.Tip="Radio mic +20 dB boost" />
+          <Slider Minimum="-20" Maximum="40" Value="{Binding MicGainDb}" Width="100" VerticalAlignment="Center"
+                  ToolTip.Tip="Mic gain" />
+          <TextBlock Text="{Binding MicGainDb, StringFormat={}{0:0} dB}" Width="40" VerticalAlignment="Center" FontSize="12" />
+          <ProgressBar Minimum="-60" Maximum="0" Value="{Binding MicLevelDbfs}" Width="70" MinWidth="0" Height="6"
+                       VerticalAlignment="Center" Foreground="#3DD68C" Background="#1F232C"
+                       ToolTip.Tip="Mic level (dBFS)" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="PWR" Classes="label" />
+          <ProgressBar Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}" Width="110" MinWidth="0" Height="8"
+                       VerticalAlignment="Center" Foreground="#E5484D" Background="#1F232C" />
+          <TextBlock Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" VerticalAlignment="Center" FontSize="12" />
+          <TextBlock Text="SWR" Classes="label" />
+          <TextBlock Text="{Binding SwrText}" Width="44" VerticalAlignment="Center" FontSize="12" />
+          <TextBlock Text="ALC" Classes="label" />
+          <TextBlock Text="{Binding AlcText}" Width="40" VerticalAlignment="Center" FontSize="12" />
+        </StackPanel>
+      </WrapPanel>
+    </Border>
+
+    <!-- Bottom controls -->
+    <Border Grid.Row="4" Classes="panel" Margin="0,10,0,0">
       <WrapPanel ItemSpacing="24" LineSpacing="8">
         <StackPanel Orientation="Horizontal" Spacing="8">
           <TextBlock Text="AF" Classes="label" />

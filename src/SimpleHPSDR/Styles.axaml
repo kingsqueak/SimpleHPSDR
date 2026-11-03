@@ -50,6 +50,14 @@
     <Setter Property="Foreground" Value="White" />
   </Style>
 
+  <!-- Transmit buttons go red when keyed; the frequency does too. -->
+  <Style Selector="ToggleButton.tx:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#E5484D" />
+  </Style>
+  <Style Selector="TextBlock.tx">
+    <Setter Property="Foreground" Value="#FF6B6B" />
+  </Style>
+
   <Style Selector="Button.flat">
     <Setter Property="Background" Value="{StaticResource ControlBg}" />
     <Setter Property="BorderThickness" Value="0" />

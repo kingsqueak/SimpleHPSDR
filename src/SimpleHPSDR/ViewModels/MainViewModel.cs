@@ -119,6 +119,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 });
         };
         _statePoll.Tick += async (_, _) => await PollStateAsync();
+        WireTransmit(_client);
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
             if (v.Receiver == 0 && !_vfoSender.Busy) SetVfoLocal(v.VfoHz);
@@ -202,7 +203,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // Policy: if the radio will transmit there, SimpleHPSDR allows it. No
         // region band plan gets in the way.
         await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
-        await ApplyStateAsync(await client.GetStateAsync());
+        var state = await client.GetStateAsync();
+        await ApplyStateAsync(state);
+        await LoadTransmitAsync(state);
         await client.OpenStreamAsync();
         IsConnected = true;
         _statePoll.Start();
@@ -214,6 +217,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task DisconnectAsync()
     {
         if (_client is null || _radio is null) return;
+        await UnkeyAsync();
         try { await _client.DisconnectAsync(_radio.Protocol2); } catch (Exception) { }
         IsConnected = false;
         _statePoll.Stop();
@@ -470,9 +474,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         _settings.Save();
         try { _statePoll.Stop(); } catch (InvalidOperationException) { }  // signal thread
+        UnkeyForShutdown();
         if (_client is not null && _radio is not null)
         {
-            try { _client.DisconnectAsync(_radio.Protocol2).Wait(TimeSpan.FromSeconds(2)); }
+            var (client, p2) = (_client, _radio.Protocol2);
+            try { Task.Run(() => client.DisconnectAsync(p2)).Wait(TimeSpan.FromSeconds(2)); }
             catch (Exception) { }
         }
         _client?.Dispose();
