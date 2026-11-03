@@ -183,7 +183,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding TxProfiles}" SelectedItem="{Binding SelectedTxProfile}" Width="200"
                             PlaceholderText="Choose to load…"
-                            ToolTip.Tip="Choosing a profile loads it at once. Default resets to the engine's defaults." />
+                            ToolTip.Tip="Choosing a profile loads it at once. Default: 80-3000 Hz, leveler 3 dB, CFC on with 3 dB pre-compression." />
                   <Button Classes="flat" Content="Save" Command="{Binding SaveTxProfileCommand}"
                           IsEnabled="{Binding CanOverwriteProfile}" ToolTip.Tip="Overwrite the chosen profile with the current settings" />
                   <Button Classes="flat" Content="Delete" Command="{Binding DeleteTxProfileCommand}"

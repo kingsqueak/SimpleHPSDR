@@ -24,10 +24,15 @@ public sealed record TxAudioProfile(
     /// processing holds with CFC at FFT 16384, with margin (user-tested).</summary>
     public const int DefaultReleaseDelayMs = 275;
 
-    /// <summary>The engine's own defaults: a clean, unprocessed starting point.</summary>
+    /// <summary>The starting point: 80-3000 Hz, leveler at 3 dB, CFC on with
+    /// 3 dB pre-compression and flat bands; everything else the engine's
+    /// defaults (compressor, EQ, noise gate and phase rotator off).</summary>
     public static TxAudioProfile Default { get; } = new(
-        DefaultName, 150, 2850, new TxLevelingConfig(), 8.0,
-        LegacyTxEqConfig.Default, CfcConfig.Default, DexpConfig.Default, new TxPhaseRotatorConfig(),
+        DefaultName, 80, 3000,
+        new TxLevelingConfig() with { LevelerEnabled = true }, 3.0,
+        LegacyTxEqConfig.Default,
+        CfcConfig.Default with { Enabled = true, PreCompDb = 3.0 },
+        DexpConfig.Default, new TxPhaseRotatorConfig(),
         DefaultReleaseDelayMs);
 }
 

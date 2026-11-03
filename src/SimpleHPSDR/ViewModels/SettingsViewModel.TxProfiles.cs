@@ -5,8 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 namespace SimpleHPSDR.ViewModels;
 
 /// <summary>Named TX audio profiles: choosing one loads it at once, "Save"
-/// overwrites the chosen one, "Save as" makes a new one, "Default" resets
-/// to the engine's defaults.</summary>
+/// overwrites the chosen one, "Save as" makes a new one, "Default" is the
+/// built-in starting point (see <see cref="TxAudioProfile.Default"/>).</summary>
 public sealed partial class SettingsViewModel
 {
     private bool _choosingProfile;
