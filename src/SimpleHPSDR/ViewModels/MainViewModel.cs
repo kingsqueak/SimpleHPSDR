@@ -207,6 +207,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         SpecMaxDb = Math.Round(floorDb + AutoRangeDb);
         _applyingAutoRange = false;
     }
+
+    private DateTime _lastAutoRangeB;
+    private (double Min, double Max) _rangeB = (-130, -80);
+
+    /// <summary>Slice B's panadapter range: with Auto it follows its own noise
+    /// floor (another band can sit far lower or higher), otherwise the sliders.</summary>
+    public (double Min, double Max) SliceBRange(double floorDb)
+    {
+        if (!AutoSpectrum) return (SpecMinDb, SpecMaxDb);
+        if (DateTime.UtcNow - _lastAutoRangeB >= TimeSpan.FromMilliseconds(400))
+        {
+            _lastAutoRangeB = DateTime.UtcNow;
+            _rangeB = (Math.Round(floorDb), Math.Round(floorDb + AutoRangeDb));
+        }
+        return _rangeB;
+    }
     public ObservableCollection<Choice> NoiseBlankers { get; } = [];
     public ObservableCollection<Choice> NoiseReductions { get; } = [];
 
@@ -750,9 +766,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // oldest frame goes.
     private void QueueFrame(DisplayFrame f)
     {
-        // RX2 (and further receivers) stream their own spectrum too; the
-        // panadapter shows RX1's, with slice B drawn on it.
-        if (f.RxId != 0) return;
+        // RX1 feeds the main panadapter, RX2 slice B's own one; further
+        // receivers aren't shown.
+        if (f.RxId > 1) return;
         _frames.Enqueue(f);
         while (_frames.Count > 8 && _frames.TryDequeue(out _)) UiStats.FrameDropped();
         if (Interlocked.Exchange(ref _framesScheduled, 1) == 0)

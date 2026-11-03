@@ -3,6 +3,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
+using Avalonia.Media;
 using Avalonia.Threading;
 using SimpleHPSDR.ViewModels;
 
@@ -32,13 +33,36 @@ public partial class MainWindow : Window
             else if (e.Key == Key.Escape) { Vm?.CancelFrequencyEntry(); e.Handled = true; }
         };
         FrequencyEntryBox.LostFocus += (_, _) => Vm?.CancelFrequencyEntry();
-        Spectrum.TuneRequested += hz => Vm?.TuneTo(hz);
+        Spectrum.TuneRequested += TuneA;
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += ShowSliceMenu;
-        Spectrum.WheelTune += steps => Vm?.TuneBySteps(steps);
+        Spectrum.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(0, steps);
+        // Slice B's own panadapter tunes slice B, making it active first.
+        SpectrumB.TuneRequested += hz => _ = Vm?.TuneSliceAsync(1, hz);
+        SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
+        SpectrumB.MenuRequested += ShowSliceMenu;
+        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
+
+    private void TuneA(long hz) => _ = Vm?.TuneSliceAsync(0, hz);
+
+    private static readonly IBrush[] ActiveOutline =
+        [new SolidColorBrush(Color.Parse("#80F25F5C")), new SolidColorBrush(Color.Parse("#80F5A524"))];
+
+    // Two panadapters while slice B is on, the active one outlined in its
+    // slice colour; one, unoutlined, otherwise.
+    private void LayoutPanadapters()
+    {
+        if (Vm is not { } vm) return;
+        bool two = vm.HasSliceB;
+        PanGrid.RowDefinitions[1].Height = two ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        PanGrid.RowSpacing = two ? 6 : 0;
+        PanBorderA.BorderBrush = two && vm.ActiveRx == 0 ? ActiveOutline[0] : Brushes.Transparent;
+        PanBorderB.BorderBrush = two && vm.ActiveRx == 1 ? ActiveOutline[1] : Brushes.Transparent;
+        if (!two) SpectrumB.Clear();
+    }
 
     // Right-click on the panadapter: add, select, move, mute, remove slices and
     // choose which one transmits.
@@ -105,11 +129,25 @@ public partial class MainWindow : Window
         vm.ShowSettings = settings => new SettingsWindow { DataContext = settings }.ShowDialog(this);
         vm.Display += f =>
         {
+            if (f.RxId == 1)
+            {
+                if (!vm.HasSliceB) return;
+                SpectrumB.Slices = vm.SliceMarks();
+                SpectrumB.PushFrame(f);
+                (SpectrumB.SpecMinDb, SpectrumB.SpecMaxDb) = vm.SliceBRange(SpectrumB.NoiseFloorDb);
+                return;
+            }
             Spectrum.Slices = vm.SliceMarks();
             Spectrum.PushFrame(f);
             vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
         };
-        vm.DisplayReset += Spectrum.Clear;
+        vm.DisplayReset += () => { Spectrum.Clear(); SpectrumB.Clear(); };
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(MainViewModel.HasSliceB) or nameof(MainViewModel.ActiveRx))
+                LayoutPanadapters();
+        };
+        LayoutPanadapters();
     }
 
     protected override async void OnOpened(EventArgs e)

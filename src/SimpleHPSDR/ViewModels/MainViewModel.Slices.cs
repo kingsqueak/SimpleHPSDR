@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Controls;
 using Zeus.Contracts;
 
@@ -9,7 +10,8 @@ namespace SimpleHPSDR.ViewModels;
 /// receiver 1 (RX2). The active slice is the one the VFO, band, mode, filter,
 /// AF and tuning act on; the TX slice is the engine's TX receiver, whose
 /// frequency, mode and filter transmit (TX on B while listening on A is split).
-/// Both play mixed, each can be muted.
+/// Both play mixed, each can be muted. Slice B gets its own panadapter, so
+/// it can sit on another band. DUP keeps the receivers audible while keyed.
 /// </summary>
 public sealed partial class MainViewModel
 {
@@ -19,6 +21,8 @@ public sealed partial class MainViewModel
     private int _txRx;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))]
     private bool _sliceBEnabled;
+
+    [ObservableProperty] private bool _fullDuplex;
 
     public bool HasSliceB => SliceBEnabled;
     public string ActiveSliceLabel => ActiveRx == 0 ? "A" : "B";
@@ -52,6 +56,7 @@ public sealed partial class MainViewModel
         _muteA = _sliceA?.Muted ?? false;
         _muteB = _sliceB?.Muted ?? false;
         SliceBEnabled = _sliceB?.Enabled ?? false;
+        FullDuplex = s.FullDuplexMultiRxEnabled;
         TxRx = SliceBEnabled ? s.TxReceiverIndex : 0;
         if (!SliceBEnabled && ActiveRx != 0) _ = MakeActiveAsync(0);
     }
@@ -154,4 +159,33 @@ public sealed partial class MainViewModel
     }
 
     public bool IsSliceMuted(int rx) => rx == 0 ? _muteA : _muteB;
+
+    /// <summary>A click or wheel on a slice's own panadapter: make that slice
+    /// active first, then tune it.</summary>
+    public async Task TuneSliceAsync(int rx, long hz)
+    {
+        if (rx != ActiveRx) await MakeActiveAsync(rx);
+        if (rx == ActiveRx) TuneTo(hz);
+    }
+
+    public async Task TuneSliceByStepsAsync(int rx, int steps)
+    {
+        if (rx != ActiveRx) await MakeActiveAsync(rx);
+        if (rx == ActiveRx) TuneBySteps(steps);
+    }
+
+    /// <summary>DUP: hear the receivers while transmitting. Off by default:
+    /// with a shared antenna the T/R relay leaves little to hear, or TX bleeds in.</summary>
+    [RelayCommand]
+    private async Task ToggleFullDuplexAsync()
+    {
+        if (!IsConnected) return;
+        bool on = !FullDuplex;
+        await Try(async () =>
+        {
+            await _client!.SetFullDuplexAsync(on);
+            FullDuplex = on;
+            Status = on ? "DUP on: receivers stay audible while transmitting." : "DUP off: receive audio mutes while transmitting.";
+        });
+    }
 }
