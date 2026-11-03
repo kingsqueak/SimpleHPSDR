@@ -3,7 +3,7 @@
         xmlns:vm="using:SimpleHPSDR.ViewModels"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="Configuration" Width="700" Height="720" MinHeight="480"
+        Title="Configuration" Width="760" Height="720" MinHeight="480"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
     <!-- Smaller tab headers so all pages fit on one line -->
@@ -443,6 +443,89 @@
                       <Border Grid.Column="1"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcRx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
                       <Border Grid.Column="2"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
                       <Border Grid.Column="3"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTune1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="CAT &amp; TCI">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="Let other software control the radio. TCI suits WSJT-X, JTDX, loggers and skimmers; CAT speaks Kenwood TS-2000 with the Thetis ZZ extensions (WSJT-X, fldigi, N1MM+, Hamlib). The network servers start with the engine, so changes there need a quick engine restart; serial ports apply at once." />
+
+            <Border Classes="panel" IsVisible="{Binding RestartNeeded}" Background="#3A2E12">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="TCI or CAT settings changed. Restart the engine to apply them (the radio reconnects in a few seconds)."
+                           TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Classes="flat accent" Content="Restart engine" Margin="10,0,0,0"
+                        Command="{Binding RestartEngineNowCommand}" />
+              </Grid>
+            </Border>
+
+            <TextBlock Text="TCI" Classes="label" Margin="2,4,0,0" />
+            <Border Classes="panel">
+              <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                <CheckBox Content="TCI server" IsChecked="{Binding TciEnabled}" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
+                  <RadioButton Content="This computer only" GroupName="tcibind" IsChecked="{Binding !TciNetwork, Mode=OneWay}"
+                               Command="{Binding SetTciLocalCommand}" />
+                  <RadioButton Content="Network" GroupName="tcibind" IsChecked="{Binding TciNetwork, Mode=OneWay}"
+                               Command="{Binding SetTciNetworkCommand}" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Port" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding TciPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="130" />
+                  <Button Classes="flat" Content="Test port" Command="{Binding TestTciPortCommand}" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding TciState}" Classes="label" FontSize="11" TextWrapping="Wrap" />
+              </Grid>
+            </Border>
+
+            <TextBlock Text="CAT (NETWORK)" Classes="label" Margin="2,4,0,0" />
+            <Border Classes="panel">
+              <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+                <CheckBox Content="CAT server" IsChecked="{Binding CatEnabled}" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
+                  <RadioButton Content="This computer only" GroupName="catbind" IsChecked="{Binding !CatNetwork, Mode=OneWay}"
+                               Command="{Binding SetCatLocalCommand}" />
+                  <RadioButton Content="Network" GroupName="catbind" IsChecked="{Binding CatNetwork, Mode=OneWay}"
+                               Command="{Binding SetCatNetworkCommand}" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Port" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding CatPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="130" />
+                  <Button Classes="flat" Content="Test port" Command="{Binding TestCatPortCommand}" />
+                </StackPanel>
+                <CheckBox Grid.Row="2" Grid.Column="1" Content="Auto-report changes (send frequency/mode without being asked)"
+                          IsChecked="{Binding CatAutoReport}" />
+                <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding CatState}" Classes="label" FontSize="11" TextWrapping="Wrap" />
+              </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="*,Auto" Margin="2,4,0,0">
+              <TextBlock Text="CAT (SERIAL)" Classes="label" />
+              <Button Grid.Column="1" Classes="flat" Content="Refresh status" Command="{Binding RefreshCatTciStatusCommand}" />
+            </Grid>
+            <Border Classes="panel">
+              <ItemsControl ItemsSource="{Binding SerialCats}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:SerialCatRow">
+                    <Grid ColumnDefinitions="60,Auto,180,100,80,Auto,*" ColumnSpacing="8" Margin="2,3">
+                      <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                      <CheckBox Grid.Column="1" IsChecked="{Binding Enabled}" MinWidth="0" />
+                      <AutoCompleteBox Grid.Column="2" Text="{Binding PortName}" MinimumPrefixLength="0" PlaceholderText="port"
+                                       ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).SerialPortNames}" />
+                      <ComboBox Grid.Column="3" ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).BaudRates}"
+                                SelectedItem="{Binding BaudRate}" HorizontalAlignment="Stretch" />
+                      <ComboBox Grid.Column="4" ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).SerialFormats}"
+                                SelectedItem="{Binding Format}" HorizontalAlignment="Stretch" />
+                      <CheckBox Grid.Column="5" Content="Auto" IsChecked="{Binding AutoReport}" ToolTip.Tip="Auto-report changes" />
+                      <TextBlock Grid.Column="6" Text="{Binding State}" Classes="label" FontSize="11" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>

@@ -249,7 +249,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task OpenSettingsAsync()
     {
         if (_client is null || ShowSettings is null) return;
-        var settings = new SettingsViewModel(_client) { MeasuredTxPeak = MeasuredTxPeak, AppSettings = _settings };
+        var settings = new SettingsViewModel(() => _client!)
+        {
+            MeasuredTxPeak = MeasuredTxPeak,
+            AppSettings = _settings,
+            RestartEngine = RestartEngineAsync,
+        };
         settings.PaMaxPowerSaved += SetPowerScale;
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
         _ = settings.LoadAsync();
@@ -301,6 +306,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
 
         StartCpuMonitor();
+        _statePoll.Tick += async (_, _) => await PollStateAsync();
+        CreateClient();
+
+        if (_settings is { AutoConnect: true, LastRadioIp: not null })
+        {
+            Status = "Looking for your radio…";
+            RadioInfo[] found = [];
+            try { found = await _client!.DiscoverAsync(); } catch (HttpRequestException) { }
+            var match = found.Select(r => new RadioEntry(r)).FirstOrDefault(r =>
+                (r.Mac == _settings.LastRadioMac || r.Info.IpAddress == _settings.LastRadioIp) && !r.Busy);
+            if (match is not null && await ConnectAsync(match.ToChoice()))
+                return;
+        }
+        await ChooseRadioAsync();
+    }
+
+    /// <summary>A client for the running engine, with all stream handlers.</summary>
+    private void CreateClient()
+    {
         _client = new StationClient(_engine.BaseUri);
         _client.Display += QueueFrame;
         _client.SignalDbm += dbm =>
@@ -313,7 +337,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     UpdateMeter(_latestDbm);
                 });
         };
-        _statePoll.Tick += async (_, _) => await PollStateAsync();
         WireTransmit(_client);
         WirePureSignal(_client);
         WireMonitor(_client);
@@ -325,18 +348,33 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             if (IsConnected) Status = $"Engine stream closed: {reason}";
         });
+    }
 
-        if (_settings is { AutoConnect: true, LastRadioIp: not null })
+    /// <summary>
+    /// Restart the engine and reconnect to the same radio, so settings the
+    /// engine only reads at startup (TCI and network CAT servers) take effect.
+    /// Unkeys and disconnects cleanly first.
+    /// </summary>
+    public async Task RestartEngineAsync()
+    {
+        var radio = _radio;
+        Status = "Restarting the engine…";
+        await DisconnectAsync();
+        _client?.Dispose();
+        _client = null;
+        _engine.Dispose();
+        try
         {
-            Status = "Looking for your radio…";
-            RadioInfo[] found = [];
-            try { found = await _client.DiscoverAsync(); } catch (HttpRequestException) { }
-            var match = found.Select(r => new RadioEntry(r)).FirstOrDefault(r =>
-                (r.Mac == _settings.LastRadioMac || r.Info.IpAddress == _settings.LastRadioIp) && !r.Busy);
-            if (match is not null && await ConnectAsync(match.ToChoice()))
-                return;
+            await _engine.StartAsync(CancellationToken.None);
         }
-        await ChooseRadioAsync();
+        catch (Exception ex)
+        {
+            Status = $"Engine did not restart: {ex.Message}";
+            return;
+        }
+        CreateClient();
+        if (radio is not null) await ConnectAsync(radio);
+        else Status = "Engine restarted. Choose a radio.";
     }
 
     [RelayCommand]

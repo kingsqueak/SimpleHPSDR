@@ -77,7 +77,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"];
     private static readonly TimeSpan ApplyDelay = TimeSpan.FromMilliseconds(250);
 
-    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas }
+    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas, Tci, Cat, Serial }
 
     private static readonly Dictionary<string, Group> GroupOf = new()
     {
@@ -92,6 +92,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(PsLoopDelaySec)] = Group.PureSignal, [nameof(PsAmpDelayNs)] = Group.PureSignal,
         [nameof(PsHwPeak)] = Group.PureSignal, [nameof(PsMonitor)] = Group.PureSignal,
 
+        [nameof(TciEnabled)] = Group.Tci, [nameof(TciNetwork)] = Group.Tci, [nameof(TciPort)] = Group.Tci,
+        [nameof(CatEnabled)] = Group.Cat, [nameof(CatNetwork)] = Group.Cat, [nameof(CatPort)] = Group.Cat,
+        [nameof(CatAutoReport)] = Group.Cat,
         [nameof(ReleaseDelayMs)] = Group.TxAudio, [nameof(CfcFftSize)] = Group.TxAudio,
         [nameof(TxLowCutHz)] = Group.TxAudio, [nameof(TxHighCutHz)] = Group.TxAudio,
         [nameof(CompressorEnabled)] = Group.TxAudio, [nameof(CompressorGainDb)] = Group.TxAudio,
@@ -108,7 +111,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(PhrotStages)] = Group.TxAudio, [nameof(PhrotReverse)] = Group.TxAudio,
     };
 
-    private readonly StationClient _client;
+    // Asked for each time: an engine restart (to apply TCI/CAT) replaces it.
+    private readonly Func<StationClient> _clientOf;
+    private StationClient _client => _clientOf();
     private readonly SemaphoreSlim _applyGate = new(1, 1);
     private readonly Dictionary<Group, CancellationTokenSource> _pending = [];
     private bool _populating;
@@ -129,7 +134,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public ObservableCollection<PaBandRow> PaBands { get; } = [];
     public event Action<int>? PaMaxPowerSaved;
 
-    public SettingsViewModel(StationClient client) => _client = client;
+    public SettingsViewModel(Func<StationClient> client) => _clientOf = client;
 
     public async Task LoadAsync()
     {
@@ -145,6 +150,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
             Populate(pa, devices, radio, state, antennas);
             await RefreshAudioStatusAsync(devices);
+            _populating = true;
+            try { await LoadCatTciAsync(); }
+            finally { _populating = false; }
             Status = "Changes apply as you make them.";
         }
         catch (Exception ex)
@@ -228,6 +236,9 @@ public sealed partial class SettingsViewModel : ObservableObject
                 case Group.PureSignal: await ApplyPureSignalAsync(); break;
                 case Group.TxAudio: await ApplyTxAudioAsync(); break;
                 case Group.Antennas: await ApplyAntennasAsync(); break;
+                case Group.Tci: await ApplyTciAsync(); break;
+                case Group.Cat: await ApplyCatAsync(); break;
+                case Group.Serial: await ApplySerialAsync(); break;
             }
             Status = "Applied.";
         }
@@ -273,6 +284,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         // Compare restored antenna rows against what the engine has now.
         foreach (var row in Antennas)
             if (antennasNow.TryGetValue(row.Band, out var now)) row.Loaded = now;
+        _populating = true;
+        try { RestoreCatTciFields(); }
+        finally { _populating = false; }
 
         foreach (var group in Enum.GetValues<Group>())
             await ApplyAsync(group);

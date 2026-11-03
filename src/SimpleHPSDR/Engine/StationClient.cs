@@ -151,6 +151,36 @@ public sealed class StationClient : IDisposable
         await ThrowIfFailed(r);
     }
 
+    // ---- TCI and CAT servers (TCP ones apply on engine restart) ----
+    public async Task<TciStatus> GetTciStatusAsync() =>
+        (await _http.GetFromJsonAsync<TciStatus>("api/tci/status", Json))!;
+    public async Task<TciStatus> SetTciConfigAsync(TciRuntimeConfig cfg) =>
+        await PostForAsync<TciStatus>("api/tci/config", cfg);
+    public async Task<TciTestResult> TestTciPortAsync(string bind, int port) =>
+        await PostForAsync<TciTestResult>("api/tci/test", new TciTestRequest(bind, port));
+
+    public async Task<CatStatus> GetCatStatusAsync() =>
+        (await _http.GetFromJsonAsync<CatStatus>("api/cat/status", Json))!;
+    public async Task<CatStatus> SetCatConfigAsync(CatRuntimeConfig cfg) =>
+        await PostForAsync<CatStatus>("api/cat/config", cfg);
+    public async Task<CatTestResult> TestCatPortAsync(string bind, int port) =>
+        await PostForAsync<CatTestResult>("api/cat/test", new CatTestRequest(bind, port));
+
+    public async Task<CatSerialStatus> GetCatSerialStatusAsync() =>
+        (await _http.GetFromJsonAsync<CatSerialStatus>("api/cat/serial/status", Json))!;
+    public async Task SetCatSerialConfigAsync(CatSerialConfig cfg)
+    {
+        using var r = await _http.PutAsJsonAsync("api/cat/serial/config", cfg, Json);
+        await ThrowIfFailed(r);
+    }
+
+    private async Task<T> PostForAsync<T>(string path, object body)
+    {
+        using var r = await _http.PostAsJsonAsync(path, body, Json);
+        await ThrowIfFailed(r);
+        return (await r.Content.ReadFromJsonAsync<T>(Json))!;
+    }
+
     public async Task<PaSettingsDto> GetPaSettingsAsync() =>
         (await _http.GetFromJsonAsync<PaSettingsDto>("api/pa-settings", Json))!;
 
