@@ -56,7 +56,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<Choice> Bands { get; } = [];
     public ObservableCollection<Choice> Modes { get; } = [];
-    public ObservableCollection<Choice> Filters { get; } = [];
+    /// <summary>The five filter buttons: engine slots F1-F5 for the current mode.</summary>
+    public ObservableCollection<FilterSlot> Filters { get; } = [];
+    private static readonly string[] FilterSlotNames = ["F1", "F2", "F3", "F4", "F5"];
     public ObservableCollection<Choice> TuneSteps { get; } = [];
     public ObservableCollection<Choice> Zooms { get; } = [];
     public ObservableCollection<Choice> NoiseBlankers { get; } = [];
@@ -399,21 +401,65 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         Mark(Modes, mode);
         OnPropertyChanged(nameof(ModeLabel));
 
-        Filters.Clear();
-        FilterPreset[] presets = [];
-        try { presets = await _client!.GetFilterPresetsAsync(mode); } catch (Exception) { }
-        foreach (var p in presets.Where(p => p.LowHz != p.HighHz).Take(10))
-            Filters.Add(new Choice(p.Label, p, c => _ = SelectFilterAsync((FilterPreset)c.Value)));
-        foreach (var c in Filters)
-            c.IsSelected = ((FilterPreset)c.Value).SlotName == presetName;
+        await LoadFilterSlotsAsync(mode, presetName);
     }
 
-    private async Task SelectFilterAsync(FilterPreset p)
+    private async Task LoadFilterSlotsAsync(RxMode mode, string? selectedSlot)
     {
-        foreach (var c in Filters) c.IsSelected = ReferenceEquals(c.Value, p);
+        FilterPreset[] presets = [];
+        try { presets = await _client!.GetFilterPresetsAsync(mode); } catch (Exception) { }
+        Filters.Clear();
+        foreach (var p in presets.Where(p => FilterSlotNames.Contains(p.SlotName)))
+            Filters.Add(new FilterSlot(mode, p, SelectFilterAsync, SaveFilterAsync, ResetFilterAsync)
+            {
+                IsSelected = p.SlotName == selectedSlot,
+            });
+    }
+
+    private async Task SelectFilterAsync(FilterSlot slot)
+    {
+        foreach (var f in Filters) f.IsSelected = ReferenceEquals(f, slot);
+        var p = slot.Preset;
         FilterLowHz = p.LowHz;
         FilterHighHz = p.HighHz;
         await Try(() => _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName));
+    }
+
+    /// <summary>Store an edited slot in the engine (per mode); if it's the
+    /// filter in use, apply the new edges at once.</summary>
+    private async Task SaveFilterAsync(FilterSlot slot)
+    {
+        var (lo, hi) = slot.EngineEdges;
+        var label = string.IsNullOrWhiteSpace(slot.EditLabel) ? slot.Label : slot.EditLabel.Trim();
+        if (hi - lo < 50)
+        {
+            Status = "Filter not saved: it must be at least 50 Hz wide.";
+            return;
+        }
+        await Try(async () =>
+        {
+            await _client!.WriteFilterPresetAsync(slot.Mode, slot.SlotName, lo, hi, label);
+            await AfterFilterEditAsync(slot);
+            Status = $"Filter {slot.SlotName} saved as \"{label}\" ({slot.EditLowHz:0}-{slot.EditHighHz:0} Hz).";
+        });
+    }
+
+    private async Task ResetFilterAsync(FilterSlot slot)
+    {
+        await Try(async () =>
+        {
+            await _client!.ResetFilterPresetAsync(slot.Mode, slot.SlotName);
+            await AfterFilterEditAsync(slot);
+            Status = $"Filter {slot.SlotName} reset to its default.";
+        });
+    }
+
+    private async Task AfterFilterEditAsync(FilterSlot slot)
+    {
+        string? selected = Filters.FirstOrDefault(f => f.IsSelected)?.SlotName;
+        await LoadFilterSlotsAsync(slot.Mode, selected);
+        if (selected == slot.SlotName && Filters.FirstOrDefault(f => f.SlotName == selected) is { } now)
+            await SelectFilterAsync(now);
     }
 
     // ---- audio and front end -------------------------------------------

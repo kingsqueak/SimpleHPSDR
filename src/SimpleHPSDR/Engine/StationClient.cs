@@ -7,7 +7,7 @@ using Zeus.Contracts;
 
 namespace SimpleHPSDR.Engine;
 
-public sealed record FilterPreset(string SlotName, string Label, int LowHz, int HighHz);
+public sealed record FilterPreset(string SlotName, string Label, int LowHz, int HighHz, bool IsCustomized = false);
 public sealed record AudioDevice(string Id, string Name, bool IsDefault);
 public sealed record MonitorState(bool Enabled, bool MonitorOnTransmit, double VolumeDb);
 public sealed record AudioDevices(
@@ -194,6 +194,12 @@ public sealed class StationClient : IDisposable
     public Task SetPreampAsync(bool on) => PostAsync("api/preamp", new PreampSetRequest(on));
     public Task SetMuteAsync(bool muted) => PostAsync("api/audio/mute", new { muted });
     public Task SetZoomAsync(int level) => PostAsync("api/rx/zoom", new { level });
+
+    public Task WriteFilterPresetAsync(RxMode mode, string slot, int lowHz, int highHz, string label) =>
+        PostAsync("api/filter/presets", new FilterPresetWriteRequest(mode, slot, lowHz, highHz, label));
+
+    public Task ResetFilterPresetAsync(RxMode mode, string slot) =>
+        PostAsync("api/filter/presets/reset", new FilterPresetResetRequest(mode, slot));
 
     public async Task<FilterPreset[]> GetFilterPresetsAsync(RxMode mode) =>
         await _http.GetFromJsonAsync<FilterPreset[]>($"api/filter/presets?mode={mode}", Json) ?? [];

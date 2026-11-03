@@ -27,9 +27,13 @@ public sealed partial class MainViewModel
         {
             var m = await _client!.GetMonitorAsync();
             _applyingMonitor = true;
-            MonitorPreview = m.Enabled;
-            MonitorOnTransmit = m.MonitorOnTransmit;
             MonitorVolumeDb = m.VolumeDb;
+            // The engine keeps the volume but starts with MON and MON TX off,
+            // so put back what the operator had.
+            MonitorPreview = _settings.MonitorPreview;
+            MonitorOnTransmit = _settings.MonitorOnTransmit;
+            if (m.Enabled != MonitorPreview || m.MonitorOnTransmit != MonitorOnTransmit)
+                await _client.SetMonitorAsync(MonitorPreview, MonitorOnTransmit);
         }
         catch (Exception ex)
         {
@@ -47,6 +51,9 @@ public sealed partial class MainViewModel
     private void SendMonitor()
     {
         if (_applyingMonitor || !IsConnected) return;
+        _settings.MonitorPreview = MonitorPreview;
+        _settings.MonitorOnTransmit = MonitorOnTransmit;
+        _settings.Save();
         _ = Try(() => _client!.SetMonitorAsync(MonitorPreview, MonitorOnTransmit));
     }
 

@@ -1,5 +1,9 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
+using Avalonia.Threading;
 using SimpleHPSDR.ViewModels;
 
 namespace SimpleHPSDR.Views;
@@ -23,6 +27,21 @@ public partial class MainWindow : Window
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
+
+    // The filter editor loads the slot's stored values each time it opens.
+    private void OnFilterEditOpening(object? sender, EventArgs e)
+    {
+        if (sender is Flyout { Content: Control { DataContext: FilterSlot slot } }) slot.BeginEdit();
+    }
+
+    // A button's Click runs before its Command; closing the popup right away
+    // would detach the button and the command would never run, so close
+    // once the click has finished.
+    private void CloseFlyout(object? sender, RoutedEventArgs e)
+    {
+        var popup = (sender as Control)?.FindLogicalAncestorOfType<Popup>();
+        Dispatcher.UIThread.Post(() => popup?.Close());
+    }
 
     protected override void OnDataContextChanged(EventArgs e)
     {

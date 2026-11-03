@@ -57,6 +57,9 @@
     <Setter Property="Foreground" Value="{StaticResource TextMain}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="9,5" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="MinWidth" Value="38" />
     <Setter Property="FontSize" Value="12" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
   </Style>

@@ -22,6 +22,9 @@ public sealed class Settings
     /// <summary>Set once the engine's PTT release delay has been given the
     /// app's default, so a deliberate 0 later is left alone.</summary>
     public bool ReleaseDelayDefaulted { get; set; }
+    /// <summary>MON and MON TX: the engine forgets them on restart.</summary>
+    public bool MonitorPreview { get; set; }
+    public bool MonitorOnTransmit { get; set; }
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
 
