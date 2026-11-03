@@ -17,9 +17,6 @@ public sealed class SpectrumView : Control
 {
     private const int WaterfallRows = 512;
     private const double PanFraction = 0.38;
-    // The waterfall's colour range above its tracked noise floor. The trace
-    // uses the operator's Spec Min / Spec Max instead.
-    private const double RangeDb = 70;
 
     public static readonly StyledProperty<double> SpecMinDbProperty =
         AvaloniaProperty.Register<SpectrumView, double>(nameof(SpecMinDb), -130);
@@ -142,7 +139,8 @@ public sealed class SpectrumView : Control
 
         using var fb = _waterfall.Lock();
         var dst = new Span<uint>((byte*)fb.Address + _wfRow * fb.RowBytes, _wfWidth);
-        double floor = _floorDb + 8, scale = 255.0 / 48;
+        // Same range as the trace: Spec Min is the darkest colour, Spec Max the brightest.
+        double floor = SpecMinDb, scale = 255.0 / Math.Max(1, SpecMaxDb - SpecMinDb);
         for (int i = 0; i < _wfWidth; i++)
             dst[i] = Palette[Math.Clamp((int)((row[i] - floor) * scale), 0, 255)];
         _wfRow = (_wfRow + 1) % WaterfallRows;
