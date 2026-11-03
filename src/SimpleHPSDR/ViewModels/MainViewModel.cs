@@ -277,6 +277,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             MeasuredTxPeak = MeasuredTxPeak,
             AppSettings = _settings,
             RestartEngine = RestartEngineAsync,
+            FollowRxFilterNow = () => FollowRxFilterAsync(),
         };
         settings.PaMaxPowerSaved += SetPowerScale;
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
@@ -639,6 +640,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FilterHighHz = a.High;
         await SetModeLocalAsync(a.Mode, a.Preset);
         await Try(() => MirrorFilterAsync(a.Low, a.High, a.Preset));
+        await Try(() => FollowRxFilterAsync());
     }
 
     private async Task SetModeLocalAsync(RxMode mode, string? presetName)
@@ -673,6 +675,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName, ActiveRx);
             await MirrorFilterAsync(p.LowHz, p.HighHz, p.SlotName);
+            await FollowRxFilterAsync();
         });
     }
 

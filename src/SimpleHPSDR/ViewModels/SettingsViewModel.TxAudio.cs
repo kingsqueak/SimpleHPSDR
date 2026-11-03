@@ -177,6 +177,37 @@ public sealed partial class SettingsViewModel
         Reverse = PhrotReverse,
     };
 
+    /// <summary>Set by the main window: apply the follow at once when ticked.</summary>
+    public Func<Task>? FollowRxFilterNow { get; init; }
+
+    /// <summary>TX filter follows the RX filter: the main window keeps the
+    /// TX cuts equal to the transmitting slice's RX filter, and the fields
+    /// here are greyed out.</summary>
+    public bool TxFilterFollowsRx
+    {
+        get => AppSettings?.TxFilterFollowsRx ?? false;
+        set
+        {
+            if (AppSettings is null || AppSettings.TxFilterFollowsRx == value) return;
+            AppSettings.TxFilterFollowsRx = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+            if (value && FollowRxFilterNow is { } follow) _ = FollowAndShowAsync(follow);
+        }
+    }
+
+    private async Task FollowAndShowAsync(Func<Task> follow)
+    {
+        await follow();
+        try
+        {
+            var s = await _client.GetStateAsync();
+            (TxLowCutHz, TxHighCutHz) = CutsOf(s);
+            if (_txLoaded is { } was) _txLoaded = was with { TxFilterLowHz = s.TxFilterLowHz, TxFilterHighHz = s.TxFilterHighHz };
+        }
+        catch (Exception) { }
+    }
+
     private static (int Low, int High) CutsOf(StateDto s) =>
         (Math.Min(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz)),
          Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz)));
@@ -190,7 +221,7 @@ public sealed partial class SettingsViewModel
             await _client.SetTxTailDelayAsync((int)Math.Round(ReleaseDelayMs));
 
         int lo = (int)Math.Round(TxLowCutHz), hi = (int)Math.Round(TxHighCutHz);
-        if ((lo, hi) != CutsOf(was))
+        if (!TxFilterFollowsRx && (lo, hi) != CutsOf(was))
             await _client.SetTxFilterAsync(was.Mode, lo, hi);
 
         var lv = BuildLeveling(was);

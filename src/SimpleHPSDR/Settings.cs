@@ -34,6 +34,8 @@ public sealed class Settings
     public double PanFraction { get; set; } = 0.38;
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
+    /// <summary>The TX filter's cuts follow the transmitting slice's RX filter.</summary>
+    public bool TxFilterFollowsRx { get; set; }
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
 

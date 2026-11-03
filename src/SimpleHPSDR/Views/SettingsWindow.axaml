@@ -222,14 +222,19 @@
             </Expander>
 
             <Expander Header="TX filter" IsExpanded="True" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="8">
-                <TextBlock Text="Low cut" Classes="label" FontSize="12" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                <CheckBox Grid.ColumnSpan="2" Content="TX filter follows the RX filter"
+                          IsChecked="{Binding TxFilterFollowsRx}"
+                          ToolTip.Tip="The TX low and high cuts follow the transmitting slice's RX filter (sideband modes). The fields below are set for you." />
+                <TextBlock Grid.Row="1" Text="Low cut" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                            IsEnabled="{Binding !TxFilterFollowsRx}">
                   <NumericUpDown Value="{Binding TxLowCutHz}" Minimum="0" Maximum="1000" Increment="10" FormatString="0" Width="140" />
                   <TextBlock Text="Hz" Classes="label" />
                 </StackPanel>
-                <TextBlock Grid.Row="1" Text="High cut" Classes="label" FontSize="12" />
-                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Grid.Row="2" Text="High cut" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                            IsEnabled="{Binding !TxFilterFollowsRx}">
                   <NumericUpDown Value="{Binding TxHighCutHz}" Minimum="1000" Maximum="6000" Increment="50" FormatString="0" Width="140" />
                   <TextBlock Text="Hz  (applied to the current sideband)" Classes="label" />
                 </StackPanel>
