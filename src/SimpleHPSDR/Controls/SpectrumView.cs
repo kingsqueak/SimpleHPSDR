@@ -187,6 +187,36 @@ public sealed class SpectrumView : Control
         DrawWaterfall(ctx, wfRect);
         DrawTuning(ctx, b);
         DrawGrip(ctx, b, panH);
+        DrawHover(ctx, b);
+    }
+
+    // Hover: a 1 px line through the pointer, top to bottom, with the
+    // frequency beside it (to the right, or left near the right edge).
+    private Point? _hover;
+    private static readonly IPen HoverPen = new Pen(new SolidColorBrush(Color.Parse("#B3E6E8EB")), 1);
+    private static readonly IBrush HoverTagBrush = new SolidColorBrush(Color.Parse("#E61F232C"));
+    private static readonly IBrush HoverTextBrush = new SolidColorBrush(Color.Parse("#E6E8EB"));
+
+    private void DrawHover(DrawingContext ctx, Rect b)
+    {
+        if (_hover is not { } p || _dragging || _hzPerPixel <= 0) return;
+        double x = Math.Floor(p.X) + 0.5;
+        ctx.DrawLine(HoverPen, new Point(x, 0), new Point(x, b.Height));
+        long hz = XToHz(p.X, b.Width);
+        var ft = new FormattedText($"{hz / 1e6:0.000000} MHz", System.Globalization.CultureInfo.InvariantCulture,
+            FlowDirection.LeftToRight, LabelFace, 11, HoverTextBrush);
+        double w = ft.Width + 10, h = ft.Height + 4;
+        double tx = x + 8 + w <= b.Width ? x + 8 : x - 8 - w;
+        double ty = Math.Clamp(p.Y - h / 2, 0, b.Height - h);
+        ctx.FillRectangle(HoverTagBrush, new Rect(tx, ty, w, h), 3);
+        ctx.DrawText(ft, new Point(tx + 5, ty + 2));
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        _hover = null;
+        InvalidateVisual();
     }
 
     private double SplitY => Math.Round(Bounds.Height * PanFraction);
@@ -213,6 +243,8 @@ public sealed class SpectrumView : Control
             return;
         }
         Cursor = OverGrip(p) ? ResizeCursor : CrossCursor;
+        _hover = OverGrip(p) ? null : p;
+        InvalidateVisual();
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
