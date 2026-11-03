@@ -14,9 +14,54 @@ public sealed partial class PaBandRow(PaBandSettingsDto original) : ObservableOb
     [ObservableProperty] private double _paGainDb = Math.Round(original.PaGainDb, 1);
     [ObservableProperty] private bool _disablePa = original.DisablePa;
 
+    // Open-collector outputs (pins 1-7 = bits 0-6): asserted on receive, on
+    // transmit, and added on top of the TX pins while TUNE is on.
+    [ObservableProperty] private byte _ocTx = original.OcTx;
+    [ObservableProperty] private byte _ocRx = original.OcRx;
+    [ObservableProperty] private byte _ocTune = original.OcTune;
+
     public PaBandSettingsDto Original { get; } = original;
     public string Band => Original.Band;
-    public PaBandSettingsDto ToDto() => Original with { PaGainDb = PaGainDb, DisablePa = DisablePa };
+    public PaBandSettingsDto ToDto() => Original with
+    {
+        PaGainDb = PaGainDb, DisablePa = DisablePa, OcTx = OcTx, OcRx = OcRx, OcTune = OcTune,
+    };
+
+    private static bool Bit(byte mask, int pin) => (mask & (1 << (pin - 1))) != 0;
+    private static byte Set(byte mask, int pin, bool on) =>
+        (byte)(on ? mask | (1 << (pin - 1)) : mask & ~(1 << (pin - 1)));
+
+    // One property per checkbox (pins 1-7 for TX, RX and Tune).
+    public bool OcTx1 { get => Bit(OcTx, 1); set => OcTx = Set(OcTx, 1, value); }
+    public bool OcTx2 { get => Bit(OcTx, 2); set => OcTx = Set(OcTx, 2, value); }
+    public bool OcTx3 { get => Bit(OcTx, 3); set => OcTx = Set(OcTx, 3, value); }
+    public bool OcTx4 { get => Bit(OcTx, 4); set => OcTx = Set(OcTx, 4, value); }
+    public bool OcTx5 { get => Bit(OcTx, 5); set => OcTx = Set(OcTx, 5, value); }
+    public bool OcTx6 { get => Bit(OcTx, 6); set => OcTx = Set(OcTx, 6, value); }
+    public bool OcTx7 { get => Bit(OcTx, 7); set => OcTx = Set(OcTx, 7, value); }
+    public bool OcRx1 { get => Bit(OcRx, 1); set => OcRx = Set(OcRx, 1, value); }
+    public bool OcRx2 { get => Bit(OcRx, 2); set => OcRx = Set(OcRx, 2, value); }
+    public bool OcRx3 { get => Bit(OcRx, 3); set => OcRx = Set(OcRx, 3, value); }
+    public bool OcRx4 { get => Bit(OcRx, 4); set => OcRx = Set(OcRx, 4, value); }
+    public bool OcRx5 { get => Bit(OcRx, 5); set => OcRx = Set(OcRx, 5, value); }
+    public bool OcRx6 { get => Bit(OcRx, 6); set => OcRx = Set(OcRx, 6, value); }
+    public bool OcRx7 { get => Bit(OcRx, 7); set => OcRx = Set(OcRx, 7, value); }
+    public bool OcTune1 { get => Bit(OcTune, 1); set => OcTune = Set(OcTune, 1, value); }
+    public bool OcTune2 { get => Bit(OcTune, 2); set => OcTune = Set(OcTune, 2, value); }
+    public bool OcTune3 { get => Bit(OcTune, 3); set => OcTune = Set(OcTune, 3, value); }
+    public bool OcTune4 { get => Bit(OcTune, 4); set => OcTune = Set(OcTune, 4, value); }
+    public bool OcTune5 { get => Bit(OcTune, 5); set => OcTune = Set(OcTune, 5, value); }
+    public bool OcTune6 { get => Bit(OcTune, 6); set => OcTune = Set(OcTune, 6, value); }
+    public bool OcTune7 { get => Bit(OcTune, 7); set => OcTune = Set(OcTune, 7, value); }
+
+    partial void OnOcTxChanged(byte value) => NotifyPins("Tx");
+    partial void OnOcRxChanged(byte value) => NotifyPins("Rx");
+    partial void OnOcTuneChanged(byte value) => NotifyPins("Tune");
+
+    private void NotifyPins(string kind)
+    {
+        for (int i = 1; i <= 7; i++) OnPropertyChanged($"Oc{kind}{i}");
+    }
 }
 
 /// <summary>
@@ -32,7 +77,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"];
     private static readonly TimeSpan ApplyDelay = TimeSpan.FromMilliseconds(250);
 
-    private enum Group { Pa, Audio, PureSignal, TxAudio }
+    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas }
 
     private static readonly Dictionary<string, Group> GroupOf = new()
     {
@@ -74,6 +119,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private AudioDevices? _origDevices;
     private AudioFrontEndDto? _origRadioAudio;
     private StateDto? _origState;
+    private AntennaSettingsDto? _origAntennas;
 
     [ObservableProperty] private bool _paEnabled;
     [ObservableProperty] private double _paMaxPowerWatts;
@@ -94,9 +140,10 @@ public sealed partial class SettingsViewModel : ObservableObject
             var devices = await _client.GetAudioDevicesAsync();
             var radio = await _client.GetRadioAudioAsync();
             var state = await _client.GetStateAsync();
-            (_origPa, _origDevices, _origRadioAudio, _origState) = (pa, devices, radio, state);
+            var antennas = await _client.GetAntennasAsync();
+            (_origPa, _origDevices, _origRadioAudio, _origState, _origAntennas) = (pa, devices, radio, state, antennas);
 
-            Populate(pa, devices, radio, state);
+            Populate(pa, devices, radio, state, antennas);
             await RefreshAudioStatusAsync(devices);
             Status = "Changes apply as you make them.";
         }
@@ -111,7 +158,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>Fill every page without sending anything back.</summary>
-    private void Populate(PaSettingsDto pa, AudioDevices devices, AudioFrontEndDto radio, StateDto state)
+    private void Populate(PaSettingsDto pa, AudioDevices devices, AudioFrontEndDto radio, StateDto state,
+        AntennaSettingsDto antennas)
     {
         _populating = true;
         try
@@ -121,6 +169,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             PopulatePureSignal(state);
             PopulateTxAudio(state);
             PopulateTxProfiles();
+            PopulateAntennas(antennas);
         }
         finally
         {
@@ -178,6 +227,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 case Group.Audio: await ApplyAudioAsync(); break;
                 case Group.PureSignal: await ApplyPureSignalAsync(); break;
                 case Group.TxAudio: await ApplyTxAudioAsync(); break;
+                case Group.Antennas: await ApplyAntennasAsync(); break;
             }
             Status = "Applied.";
         }
@@ -209,15 +259,20 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task UndoAsync()
     {
-        if (_origPa is null || _origDevices is null || _origRadioAudio is null || _origState is null) return;
+        if (_origPa is null || _origDevices is null || _origRadioAudio is null || _origState is null
+            || _origAntennas is null) return;
         foreach (var cts in _pending.Values) cts.Cancel();
         _pending.Clear();
 
         // Populate from the originals, but keep comparing against what the
         // engine has now, so only real differences are sent.
         var (pa, devices, radio, ps, tx) = (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded);
-        Populate(_origPa, _origDevices, _origRadioAudio, _origState);
+        var antennasNow = Antennas.ToDictionary(r => r.Band, r => r.Loaded);
+        Populate(_origPa, _origDevices, _origRadioAudio, _origState, _origAntennas);
         (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded) = (pa, devices, radio, ps, tx);
+        // Compare restored antenna rows against what the engine has now.
+        foreach (var row in Antennas)
+            if (antennasNow.TryGetValue(row.Band, out var now)) row.Loaded = now;
 
         foreach (var group in Enum.GetValues<Group>())
             await ApplyAsync(group);

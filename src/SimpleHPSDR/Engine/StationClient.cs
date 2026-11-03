@@ -142,6 +142,15 @@ public sealed class StationClient : IDisposable
     public Task SetPsMonitorAsync(bool on) => PostAsync("api/tx/ps/monitor", new PsMonitorSetRequest(on));
     public Task ResetPsAsync() => PostAsync("api/tx/ps/reset", new { });
 
+    public async Task<AntennaSettingsDto> GetAntennasAsync() =>
+        (await _http.GetFromJsonAsync<AntennaSettingsDto>("api/radio/antenna", Json))!;
+
+    public async Task SetAntennaAsync(AntennaSetRequest req)
+    {
+        using var r = await _http.PutAsJsonAsync("api/radio/antenna", req, Json);
+        await ThrowIfFailed(r);
+    }
+
     public async Task<PaSettingsDto> GetPaSettingsAsync() =>
         (await _http.GetFromJsonAsync<PaSettingsDto>("api/pa-settings", Json))!;
 

@@ -3,8 +3,16 @@
         xmlns:vm="using:SimpleHPSDR.ViewModels"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="Configuration" Width="640" Height="720" MinHeight="480"
+        Title="Configuration" Width="700" Height="720" MinHeight="480"
         WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <!-- Smaller tab headers so all pages fit on one line -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="17" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="MinHeight" Value="36" />
+    </Style>
+  </Window.Styles>
   <Grid RowDefinitions="*,Auto" Margin="16">
     <TabControl>
       <TabItem Header="PA">
@@ -377,6 +385,69 @@
                                FormatString="0" Width="140" HorizontalAlignment="Left" />
               </Grid>
             </Expander>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Antennas">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="Which antenna port each band uses for transmit and receive, and an optional extra receive input. A relay change made while transmitting waits until you unkey." />
+            <Grid ColumnDefinitions="110,120,120,*" Margin="12,0">
+              <TextBlock Text="BAND" Classes="label" />
+              <TextBlock Grid.Column="1" Text="TX ANTENNA" Classes="label" />
+              <TextBlock Grid.Column="2" Text="RX ANTENNA" Classes="label" />
+              <TextBlock Grid.Column="3" Text="RX AUX INPUT" Classes="label" IsVisible="{Binding HasRxAux}" />
+            </Grid>
+            <Border Classes="panel">
+              <ItemsControl ItemsSource="{Binding Antennas}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:AntennaRow">
+                    <Grid ColumnDefinitions="110,120,120,*" Margin="2,3">
+                      <TextBlock Text="{Binding Label}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                      <ComboBox Grid.Column="1" ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).AntennaPorts}"
+                                SelectedItem="{Binding TxAnt}" Width="100"
+                                IsEnabled="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).HasTxRelays}" />
+                      <ComboBox Grid.Column="2" ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).AntennaPorts}"
+                                SelectedItem="{Binding RxAnt}" Width="100"
+                                IsEnabled="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).HasRxRelays}" />
+                      <ComboBox Grid.Column="3" ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).RxAuxInputs}"
+                                SelectedItem="{Binding RxAux}" Width="110"
+                                IsVisible="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).HasRxAux}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Band Outputs">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="Open-collector outputs (pins 1-7) for each band: switch an amplifier's bands, filters or relays. RX pins are on while receiving, TX pins while transmitting; Tune pins are added on top of the TX pins during TUNE (e.g. to put an amplifier in bypass)." />
+            <Grid ColumnDefinitions="60,Auto,Auto,Auto" ColumnSpacing="14" Margin="12,0">
+              <TextBlock Text="BAND" Classes="label" VerticalAlignment="Bottom" />
+              <Border Grid.Column="1"><StackPanel Spacing="2"><TextBlock Text="RX PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
+              <Border Grid.Column="2"><StackPanel Spacing="2"><TextBlock Text="TX PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
+              <Border Grid.Column="3"><StackPanel Spacing="2"><TextBlock Text="TUNE PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
+            </Grid>
+            <Border Classes="panel">
+              <ItemsControl ItemsSource="{Binding PaBands}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:PaBandRow">
+                    <Grid ColumnDefinitions="60,Auto,Auto,Auto" ColumnSpacing="14" Margin="2,1">
+                      <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                      <Border Grid.Column="1"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcRx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
+                      <Border Grid.Column="2"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
+                      <Border Grid.Column="3"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTune1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
           </StackPanel>
         </ScrollViewer>
       </TabItem>
