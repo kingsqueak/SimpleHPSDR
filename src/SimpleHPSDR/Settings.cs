@@ -17,6 +17,8 @@ public sealed class Settings
     /// peak: lower it when calibration stalls, raise it when the signal
     /// clearly exceeds it.</summary>
     public bool AutoHwPeak { get; set; } = true;
+    /// <summary>The TX audio profile last loaded or saved.</summary>
+    public string? LastTxProfile { get; set; }
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
 

@@ -177,6 +177,27 @@
       <TabItem Header="TX Audio">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Border Classes="panel">
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="10">
+                <TextBlock Text="Profile" Classes="label" FontSize="12" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <ComboBox ItemsSource="{Binding TxProfiles}" SelectedItem="{Binding SelectedTxProfile}" Width="200"
+                            PlaceholderText="Choose to load…"
+                            ToolTip.Tip="Choosing a profile loads it at once. Default resets to the engine's defaults." />
+                  <Button Classes="flat" Content="Save" Command="{Binding SaveTxProfileCommand}"
+                          IsEnabled="{Binding CanOverwriteProfile}" ToolTip.Tip="Overwrite the chosen profile with the current settings" />
+                  <Button Classes="flat" Content="Delete" Command="{Binding DeleteTxProfileCommand}"
+                          IsEnabled="{Binding CanOverwriteProfile}" />
+                  <TextBlock Text="{Binding TxProfileHint}" Classes="label" FontSize="11" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Save as" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <TextBox Text="{Binding NewTxProfileName}" PlaceholderText="New profile name" Width="200" />
+                  <Button Classes="flat accent" Content="Save as new" Command="{Binding SaveTxProfileAsCommand}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
                        Text="The transmit audio chain, in WDSP order: equalizer, leveler, speech processor or CFC, phase rotator, ALC. Changes apply as you make them. To hear the result without transmitting, turn on MON in the main window." />
 

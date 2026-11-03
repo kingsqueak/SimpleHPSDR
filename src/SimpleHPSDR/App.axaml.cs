@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using SimpleHPSDR.Controls;
 using SimpleHPSDR.Platform;
 using SimpleHPSDR.ViewModels;
 using SimpleHPSDR.Views;
@@ -19,6 +20,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             MacActivity.Begin("Live radio audio and display");
+            SliderWheel.Enable();
             var vm = new MainViewModel();
             desktop.MainWindow = new MainWindow { DataContext = vm };
             desktop.Exit += (_, _) => vm.Dispose();

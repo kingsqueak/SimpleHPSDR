@@ -124,80 +124,89 @@ public sealed partial class SettingsViewModel
         PhrotReverse = pr.Reverse;
     }
 
+    // The page's values laid over the engine's last records, so fields the
+    // page doesn't show (CFC FFT size, noise-gate attack, ...) carry through.
+    private TxLevelingConfig BuildLeveling(StateDto was) => (was.TxLeveling ?? new TxLevelingConfig()) with
+    {
+        CompressorEnabled = CompressorEnabled,
+        CompressorGainDb = Math.Round(CompressorGainDb, 1),
+        CessbEnabled = CessbEnabled,
+        CessbBandwidthHz = CessbWide ? 4000 : 3000,
+        LevelerEnabled = LevelerEnabled,
+        LevelerDecayMs = (int)Math.Round(LevelerDecayMs),
+        AlcMaxGainDb = Math.Round(AlcMaxGainDb, 1),
+        AlcDecayMs = (int)Math.Round(AlcDecayMs),
+    };
+
+    private LegacyTxEqConfig BuildEq() => new(EqEnabled, Math.Round(EqPreampDb, 1),
+        EqBands.Select(b => b.FreqHz).ToArray(), EqBands.Select(b => Math.Round(b.GainDb, 1)).ToArray());
+
+    private CfcConfig BuildCfc(StateDto was) => (was.Cfc ?? CfcConfig.Default) with
+    {
+        Enabled = CfcEnabled,
+        PostEqEnabled = CfcPostEqEnabled,
+        PreCompDb = Math.Round(CfcPreCompDb, 1),
+        PrePeqDb = Math.Round(CfcPrePeqDb, 1),
+        Bands = CfcBands.Count > 0 ? CfcBands.Select(b => b.ToBand()).ToArray() : (was.Cfc ?? CfcConfig.Default).Bands,
+    };
+
+    private DexpConfig BuildDexp(StateDto was) => (was.Dexp ?? DexpConfig.Default) with
+    {
+        Enabled = DexpEnabled,
+        ThresholdDbv = Math.Round(DexpThresholdDbv, 1),
+        ExpansionDb = Math.Round(DexpExpansionDb, 1),
+        HoldMs = Math.Round(DexpHoldMs),
+        ReleaseMs = Math.Round(DexpReleaseMs),
+    };
+
+    private TxPhaseRotatorConfig BuildPhaseRotator(StateDto was) => (was.TxPhaseRotator ?? new TxPhaseRotatorConfig()) with
+    {
+        Enabled = PhrotEnabled,
+        CornerHz = (int)Math.Round(PhrotCornerHz),
+        Stages = (int)Math.Round(PhrotStages),
+        Reverse = PhrotReverse,
+    };
+
+    private static (int Low, int High) CutsOf(StateDto s) =>
+        (Math.Min(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz)),
+         Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz)));
+
     /// <summary>Send only the parts that changed, each as the engine's whole record.</summary>
     private async Task ApplyTxAudioAsync()
     {
         if (_txLoaded is not { } was) return;
 
         int lo = (int)Math.Round(TxLowCutHz), hi = (int)Math.Round(TxHighCutHz);
-        int wasLo = Math.Min(Math.Abs(was.TxFilterLowHz), Math.Abs(was.TxFilterHighHz));
-        int wasHi = Math.Max(Math.Abs(was.TxFilterLowHz), Math.Abs(was.TxFilterHighHz));
-        if (lo != wasLo || hi != wasHi)
+        if ((lo, hi) != CutsOf(was))
             await _client.SetTxFilterAsync(was.Mode, lo, hi);
 
-        var lvWas = was.TxLeveling ?? new TxLevelingConfig();
-        var lv = lvWas with
-        {
-            CompressorEnabled = CompressorEnabled,
-            CompressorGainDb = Math.Round(CompressorGainDb, 1),
-            CessbEnabled = CessbEnabled,
-            CessbBandwidthHz = CessbWide ? 4000 : 3000,
-            LevelerEnabled = LevelerEnabled,
-            LevelerDecayMs = (int)Math.Round(LevelerDecayMs),
-            AlcMaxGainDb = Math.Round(AlcMaxGainDb, 1),
-            AlcDecayMs = (int)Math.Round(AlcDecayMs),
-        };
-        if (lv != lvWas)
+        var lv = BuildLeveling(was);
+        if (lv != (was.TxLeveling ?? new TxLevelingConfig()))
             await _client.SetTxLevelingAsync(lv);
         if (Math.Abs(LevelerMaxGainDb - was.LevelerMaxGainDb) > 0.05)
             await _client.SetLevelerMaxGainAsync(Math.Round(LevelerMaxGainDb, 1));
 
         var eqWas = was.LegacyTxEq ?? LegacyTxEqConfig.Default;
-        var eq = new LegacyTxEqConfig(EqEnabled, Math.Round(EqPreampDb, 1),
-            EqBands.Select(b => b.FreqHz).ToArray(), EqBands.Select(b => Math.Round(b.GainDb, 1)).ToArray());
+        var eq = BuildEq();
         if (eq.Enabled != eqWas.Enabled || eq.PreampDb != eqWas.PreampDb || !eq.GainsDb.SequenceEqual(eqWas.GainsDb))
             await _client.SetTxEqAsync(eq);
 
         if (was.Cfc is { } cfcWas)
         {
-            var cfc = cfcWas with
-            {
-                Enabled = CfcEnabled,
-                PostEqEnabled = CfcPostEqEnabled,
-                PreCompDb = Math.Round(CfcPreCompDb, 1),
-                PrePeqDb = Math.Round(CfcPrePeqDb, 1),
-                Bands = CfcBands.Select(b => b.ToBand()).ToArray(),
-            };
+            var cfc = BuildCfc(was);
             if (cfc.Enabled != cfcWas.Enabled || cfc.PostEqEnabled != cfcWas.PostEqEnabled
                 || cfc.PreCompDb != cfcWas.PreCompDb || cfc.PrePeqDb != cfcWas.PrePeqDb
                 || !cfc.Bands.SequenceEqual(cfcWas.Bands))
                 await _client.SetCfcAsync(cfc);
         }
 
-        if (was.Dexp is { } dxWas)
-        {
-            var dx = dxWas with
-            {
-                Enabled = DexpEnabled,
-                ThresholdDbv = Math.Round(DexpThresholdDbv, 1),
-                ExpansionDb = Math.Round(DexpExpansionDb, 1),
-                HoldMs = Math.Round(DexpHoldMs),
-                ReleaseMs = Math.Round(DexpReleaseMs),
-            };
-            if (dx != dxWas)
-                await _client.SetDexpAsync(dx);
-        }
+        if (was.Dexp is { } dxWas && BuildDexp(was) is var dx && dx != dxWas)
+            await _client.SetDexpAsync(dx);
 
-        var prWas = was.TxPhaseRotator ?? new TxPhaseRotatorConfig();
-        var pr = prWas with
-        {
-            Enabled = PhrotEnabled,
-            CornerHz = (int)Math.Round(PhrotCornerHz),
-            Stages = (int)Math.Round(PhrotStages),
-            Reverse = PhrotReverse,
-        };
-        if (pr != prWas)
+        var pr = BuildPhaseRotator(was);
+        if (pr != (was.TxPhaseRotator ?? new TxPhaseRotatorConfig()))
             await _client.SetPhaseRotatorAsync(pr);
         _txLoaded = await _client.GetStateAsync();
+        TxProfileModified = true;
     }
 }

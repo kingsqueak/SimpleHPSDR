@@ -119,6 +119,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             PopulateAudio(devices, radio);
             PopulatePureSignal(state);
             PopulateTxAudio(state);
+            PopulateTxProfiles();
         }
         finally
         {
