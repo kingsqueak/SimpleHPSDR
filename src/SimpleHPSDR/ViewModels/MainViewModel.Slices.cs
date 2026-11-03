@@ -23,11 +23,28 @@ public sealed partial class MainViewModel
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SplitText))]
     private int _txRx;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))] [NotifyPropertyChangedFor(nameof(AfTip))]
+    [NotifyPropertyChangedFor(nameof(ShowPanadapterB))]
     private bool _sliceBEnabled;
 
     [ObservableProperty] private bool _fullDuplex;
 
     public bool HasSliceB => SliceBEnabled;
+
+    /// <summary>Slice B shown in its own panadapter below A's (for another
+    /// band); otherwise it's drawn on A's panadapter only.</summary>
+    public bool SliceBOwnPanadapter
+    {
+        get => _settings.SliceBOwnPanadapter;
+        set
+        {
+            if (_settings.SliceBOwnPanadapter == value) return;
+            _settings.SliceBOwnPanadapter = value;
+            _settings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ShowPanadapterB));
+        }
+    }
+    public bool ShowPanadapterB => SliceBEnabled && SliceBOwnPanadapter;
 
     // Each slice's own AF, on top of the main (master) AF. Shown under the
     // main AF while slice B is on.
@@ -140,10 +157,11 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>Turn on slice B at a frequency, in the active slice's mode and
-    /// filter, and make it active.</summary>
-    public async Task AddSliceBAsync(long hz)
+    /// filter, and make it active: on A's panadapter, or in its own.</summary>
+    public async Task AddSliceBAsync(long hz, bool ownPanadapter)
     {
         if (!IsConnected) return;
+        SliceBOwnPanadapter = ownPanadapter;
         await Try(async () =>
         {
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(

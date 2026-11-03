@@ -220,7 +220,7 @@
                         PanFraction="{Binding PanFraction}" />
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
-              BorderBrush="Transparent" IsVisible="{Binding HasSliceB}">
+              BorderBrush="Transparent" IsVisible="{Binding ShowPanadapterB}">
         <c:SpectrumView Name="SpectrumB" PanFraction="{Binding PanFraction}" />
       </Border>
     </Grid>

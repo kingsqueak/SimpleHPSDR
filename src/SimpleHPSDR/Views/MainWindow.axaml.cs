@@ -36,7 +36,12 @@ public partial class MainWindow : Window
         Spectrum.TuneRequested += TuneA;
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += ShowSliceMenu;
-        Spectrum.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(0, steps);
+        Spectrum.WheelTune += steps =>
+        {
+            if (Vm is not { } vm) return;
+            if (vm.ShowPanadapterB) _ = vm.TuneSliceByStepsAsync(0, steps);
+            else vm.TuneBySteps(steps);   // one panadapter: tune the active slice
+        };
         // Slice B's own panadapter tunes slice B, making it active first.
         SpectrumB.TuneRequested += hz => _ = Vm?.TuneSliceAsync(1, hz);
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
@@ -46,7 +51,14 @@ public partial class MainWindow : Window
 
     private MainViewModel? Vm => DataContext as MainViewModel;
 
-    private void TuneA(long hz) => _ = Vm?.TuneSliceAsync(0, hz);
+    // With two panadapters the top one is slice A's; with one, a click tunes
+    // whichever slice is active (click a tag to switch).
+    private void TuneA(long hz)
+    {
+        if (Vm is not { } vm) return;
+        if (vm.ShowPanadapterB) _ = vm.TuneSliceAsync(0, hz);
+        else vm.TuneTo(hz);
+    }
 
     private static readonly IBrush[] ActiveOutline =
         [new SolidColorBrush(Color.Parse("#80F25F5C")), new SolidColorBrush(Color.Parse("#80F5A524"))];
@@ -56,7 +68,7 @@ public partial class MainWindow : Window
     private void LayoutPanadapters()
     {
         if (Vm is not { } vm) return;
-        bool two = vm.HasSliceB;
+        bool two = vm.ShowPanadapterB;
         PanGrid.RowDefinitions[1].Height = two ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         PanGrid.RowSpacing = two ? 6 : 0;
         PanBorderA.BorderBrush = two && vm.ActiveRx == 0 ? ActiveOutline[0] : Brushes.Transparent;
@@ -76,7 +88,8 @@ public partial class MainWindow : Window
 
         if (!vm.SliceBEnabled)
         {
-            items.Add(Item($"Add slice B at {at}", () => vm.AddSliceBAsync(hz)));
+            items.Add(Item($"Add slice B at {at}", () => vm.AddSliceBAsync(hz, ownPanadapter: false)));
+            items.Add(Item($"Add slice B at {at} in a new panadapter", () => vm.AddSliceBAsync(hz, ownPanadapter: true)));
         }
         else
         {
@@ -100,6 +113,9 @@ public partial class MainWindow : Window
                 items.Add(Item(muted ? $"Unmute slice {n}" : $"Mute slice {n}", () => vm.SetSliceMuteAsync(r, !muted)));
             }
             items.Add(new Separator());
+            items.Add(vm.SliceBOwnPanadapter
+                ? Item("Show slice B on this panadapter", () => { vm.SliceBOwnPanadapter = false; return Task.CompletedTask; })
+                : Item("Show slice B in its own panadapter", () => { vm.SliceBOwnPanadapter = true; return Task.CompletedTask; }));
             items.Add(Item("Remove slice B", () => vm.RemoveSliceBAsync()));
         }
         var menu = new ContextMenu { ItemsSource = items };
@@ -131,7 +147,7 @@ public partial class MainWindow : Window
         {
             if (f.RxId == 1)
             {
-                if (!vm.HasSliceB) return;
+                if (!vm.ShowPanadapterB) return;
                 SpectrumB.Slices = vm.SliceMarks();
                 SpectrumB.PushFrame(f);
                 (SpectrumB.SpecMinDb, SpectrumB.SpecMaxDb) = vm.SliceBRange(SpectrumB.NoiseFloorDb);
@@ -144,7 +160,7 @@ public partial class MainWindow : Window
         vm.DisplayReset += () => { Spectrum.Clear(); SpectrumB.Clear(); };
         vm.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(MainViewModel.HasSliceB) or nameof(MainViewModel.ActiveRx))
+            if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx))
                 LayoutPanadapters();
         };
         LayoutPanadapters();

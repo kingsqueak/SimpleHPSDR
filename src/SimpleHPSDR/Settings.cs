@@ -32,6 +32,8 @@ public sealed class Settings
     public bool AutoSpectrum { get; set; } = true;
     /// <summary>Spectrum share of the panadapter height (rest is waterfall).</summary>
     public double PanFraction { get; set; } = 0.38;
+    /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
+    public bool SliceBOwnPanadapter { get; set; } = true;
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
 
