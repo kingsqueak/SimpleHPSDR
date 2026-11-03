@@ -718,6 +718,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnAfGainDbChanged(double value)
     {
         OnPropertyChanged(nameof(AfGainText));
+        OnPropertyChanged(nameof(AfTip));
         if (!_applyingState && IsConnected) _afSender.Send(Math.Round(value));
     }
 

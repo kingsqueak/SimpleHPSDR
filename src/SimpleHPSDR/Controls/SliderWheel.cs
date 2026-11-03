@@ -17,7 +17,7 @@ public static class SliderWheel
 
     // The wheel delta Avalonia reports for one wheel click: one line is 0.2
     // on macOS (measured), 1.0 on Windows and Linux.
-    private static readonly double ClickDelta = OperatingSystem.IsMacOS() ? 0.2 : 1.0;
+    internal static readonly double ClickDelta = OperatingSystem.IsMacOS() ? 0.2 : 1.0;
 
     public static void Enable() =>
         InputElement.PointerWheelChangedEvent.AddClassHandler<Slider>(OnWheel, RoutingStrategies.Bubble);
