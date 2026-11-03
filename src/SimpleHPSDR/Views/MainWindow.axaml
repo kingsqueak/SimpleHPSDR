@@ -226,6 +226,11 @@
     </Grid>
 
     <!-- Panadapter controls -->
+    <!-- CPU readout at the right end of the panadapter controls row -->
+    <TextBlock Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
+                   Classes="cpu" FontSize="11" Grid.Row="3" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0"
+                   Classes.warn="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
+                   Classes.bad="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}" />
     <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="4" Margin="0,8,0,0">
       <Button Classes="seg" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}"
               ToolTip.Tip="CTUN: clicking the panadapter moves only the receive frequency; the display stays put (blue = on)" />
@@ -271,8 +276,6 @@
 
     <!-- Transmit -->
     <Border Grid.Row="4" Classes="panel" Margin="0,10,0,0">
-      <!-- The CPU readout overlays the bottom-right corner, taking no width -->
-      <Grid>
       <WrapPanel ItemSpacing="24" LineSpacing="8">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <ToggleButton Classes="seg tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="64"
@@ -323,7 +326,7 @@
           <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,18,0">
             <TextBlock Text="AF" Classes="label" />
             <c:AfSlider Value="{Binding AfGainDb}" TrimA="{Binding SliceAfA}" TrimB="{Binding SliceAfB}"
-                        ShowTrims="{Binding HasSliceB}" Width="170" VerticalAlignment="Center"
+                        ShowTrims="{Binding HasSliceB}" Width="150" VerticalAlignment="Center"
                         ToolTip.Tip="{Binding AfTip}" />
             <StackPanel VerticalAlignment="Center" Width="44">
               <TextBlock Text="{Binding AfGainText}" FontSize="12" />
@@ -335,11 +338,13 @@
                         ToolTip.Tip="Preview: hear your mic through the whole TX chain (EQ, leveler, processor, ALC, TX filter) without transmitting" />
           <ToggleButton Classes="seg" Content="MON TX" IsChecked="{Binding MonitorOnTransmit}"
                         ToolTip.Tip="Hear the processed TX audio while transmitting" />
-          <Slider Minimum="-60" Maximum="0" Value="{Binding MonitorVolumeDb}" Width="90" VerticalAlignment="Center"
+          <Slider Minimum="-60" Maximum="0" Value="{Binding MonitorVolumeDb}" Width="80" VerticalAlignment="Center"
                   ToolTip.Tip="Monitor volume" />
           <TextBlock Text="{Binding MonitorVolumeDb, StringFormat={}{0:0} dB}" Width="44" VerticalAlignment="Center" FontSize="12" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
           <Button Classes="seg" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}"
-                  VerticalAlignment="Center" Margin="12,0,0,0"
+                  VerticalAlignment="Center"
                   ToolTip.Tip="Full duplex: keep hearing the receivers while transmitting (needs a separate RX antenna or a cross-band slice). Blue = on, grey = off." />
           <ToggleButton Classes="seg" IsChecked="{Binding AutoAtt}" Padding="8,2" MinWidth="0" Margin="12,0,0,0"
                         VerticalAlignment="Center"
@@ -349,7 +354,7 @@
               <TextBlock Text="auto" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
             </StackPanel>
           </ToggleButton>
-          <Slider Minimum="0" Maximum="31" Value="{Binding AttenDb}" Width="110" VerticalAlignment="Center"
+          <Slider Minimum="0" Maximum="31" Value="{Binding AttenDb}" Width="80" VerticalAlignment="Center"
                   TickFrequency="1" IsSnapToTickEnabled="True" />
           <TextBlock Text="{Binding AttenText}" Width="56" VerticalAlignment="Center" FontSize="12"
                      ToolTip.Tip="Manual attenuation, plus any added automatically" />
@@ -385,13 +390,13 @@
                           ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
             </Button.Flyout>
           </Button>
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding AgcFixedShown}">
+            <Slider Minimum="-20" Maximum="120" Value="{Binding AgcFixedGainDb}" Width="80" VerticalAlignment="Center"
+                    ToolTip.Tip="Fixed receive gain while AGC is off" />
+            <TextBlock Text="{Binding AgcFixedText}" Width="44" VerticalAlignment="Center" FontSize="12" />
+          </StackPanel>
         </StackPanel>
       </WrapPanel>
-        <TextBlock Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
-                   Classes="cpu" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                   Classes.warn="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
-                   Classes.bad="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}" />
-      </Grid>
     </Border>
   </Grid>
 </Window>
