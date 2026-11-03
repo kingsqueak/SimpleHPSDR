@@ -64,25 +64,29 @@ public sealed partial class MainViewModel
         _applyingTx = false;
         _psStalled = s.PsCalibrationStalled;
         UpdatePsStatus();
-        _ = MaybeLowerHwPeakAsync(s);
+        _ = MaybeAdjustHwPeakAsync(s);
     }
 
     // Auto HW peak: calcc sorts samples into amplitude bins up to HW peak and
-    // only calculates once the top bin has some. If the signal never gets
-    // that high, calibration sits in LCOLLECT forever. When that happens
-    // while keyed, lower HW peak to just under the measured peak. Only ever
-    // lowers, at most once per transmission. The engine holds PureSignal
-    // changes until unkey (changing calcc mid-transmission can splatter), so
-    // the new value applies from the next key-down; the badge says so.
-    private async Task MaybeLowerHwPeakAsync(StateDto s)
+    // only calculates once the top bin has some. HW peak should sit just
+    // under the signal's real peak:
+    //  - above it, calibration never fills the top bin and sits in LCOLLECT,
+    //    so lower it, but only once calibration is actually stuck;
+    //  - well below it, the peaks the amplifier distorts most are left out
+    //    of the fit, so raise it.
+    // At most once per transmission. The engine holds PureSignal changes until
+    // unkey (changing calcc mid-transmission can splatter), so the new value
+    // applies from the next key-down; the badge says so.
+    private async Task MaybeAdjustHwPeakAsync(StateDto s)
     {
         // PS CAL makes its own HW peak changes between bursts.
         if (PsCalibrating || !_settings.AutoHwPeak || !PsOn || _hwPeakAdjustedThisTx || _keyedSince is not { } since) return;
+        var keyedFor = DateTime.UtcNow - since;
         bool stuck = s.PsCalibrationStalled
                      || (_latestPs.CalState == CalStateCollect && !_latestPs.Correcting
-                         && DateTime.UtcNow - since > TimeSpan.FromSeconds(3));
-        double target = Math.Round(MeasuredTxPeak * 0.98, 4);
-        if (!stuck || MeasuredTxPeak <= 0 || target >= s.PsHwPeak * 0.95) return;
+                         && keyedFor > TimeSpan.FromSeconds(3));
+        if (keyedFor < TimeSpan.FromSeconds(1.5)
+            || HwPeakTarget(s.PsHwPeak, stuck) is not { } target) return;
 
         _hwPeakAdjustedThisTx = true;
         await Try(async () =>
@@ -92,6 +96,18 @@ public sealed partial class MainViewModel
             UpdatePsStatus();
             Status = $"PureSignal: HW peak {s.PsHwPeak:0.0000} → {target:0.0000} to match your signal. Unkey and key again to calibrate.";
         });
+    }
+
+    /// <summary>The HW peak to switch to, or null to keep the current one.
+    /// Raises whenever the signal clearly exceeds it; lowers only when
+    /// calibration is stuck. 98% of the measured peak, so the top bin fills.</summary>
+    private double? HwPeakTarget(double current, bool stuck)
+    {
+        if (MeasuredTxPeak <= 0) return null;
+        double target = Math.Round(MeasuredTxPeak * 0.98, 4);
+        if (MeasuredTxPeak > current * 1.05) return target;
+        if (stuck && target < current * 0.95) return target;
+        return null;
     }
 
     partial void OnPsOnChanged(bool value)

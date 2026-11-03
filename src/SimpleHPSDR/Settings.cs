@@ -13,8 +13,9 @@ public sealed class Settings
     public bool AutoConnect { get; set; }
     public int SampleRate { get; set; } = 192_000;
     public int TuneStepHz { get; set; } = 100;
-    /// <summary>Lower PureSignal's HW peak automatically when calibration
-    /// stalls because the signal never reaches it.</summary>
+    /// <summary>Keep PureSignal's HW peak just under the signal's measured
+    /// peak: lower it when calibration stalls, raise it when the signal
+    /// clearly exceeds it.</summary>
     public bool AutoHwPeak { get; set; } = true;
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
