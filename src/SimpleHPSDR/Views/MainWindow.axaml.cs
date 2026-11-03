@@ -18,10 +18,20 @@ public partial class MainWindow : Window
             Vm?.TuneBySteps(Math.Sign(e.Delta.Y));
             e.Handled = true;
         };
-        FrequencyBox.KeyDown += (_, e) =>
+        // Click the frequency to type one; Enter tunes, Esc or clicking away cancels.
+        FrequencyPanel.PointerPressed += (_, e) =>
         {
-            if (e.Key == Key.Enter) Vm?.EnterFrequencyCommand.Execute(null);
+            if (Vm is not { EditingFrequency: false } vm || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            vm.BeginFrequencyEntry();
+            Dispatcher.UIThread.Post(() => FrequencyEntryBox.Focus(), DispatcherPriority.Input);
+            e.Handled = true;
         };
+        FrequencyEntryBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter) { Vm?.EnterFrequencyCommand.Execute(null); e.Handled = true; }
+            else if (e.Key == Key.Escape) { Vm?.CancelFrequencyEntry(); e.Handled = true; }
+        };
+        FrequencyEntryBox.LostFocus += (_, _) => Vm?.CancelFrequencyEntry();
         Spectrum.TuneRequested += hz => Vm?.TuneTo(hz);
         Spectrum.WheelTune += steps => Vm?.TuneBySteps(steps);
     }

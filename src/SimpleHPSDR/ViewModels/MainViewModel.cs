@@ -53,6 +53,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private DateTime _peakAt;
     private static readonly TimeSpan PeakHold = TimeSpan.FromSeconds(3);
     [ObservableProperty] private string _frequencyEntry = "";
+    /// <summary>True while the frequency display is replaced by its entry box.</summary>
+    [ObservableProperty] private bool _editingFrequency;
 
     public ObservableCollection<Choice> Bands { get; } = [];
     public ObservableCollection<Choice> Modes { get; } = [];
@@ -350,16 +352,28 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             : floor + (steps + 1) * step);
     }
 
+    public void BeginFrequencyEntry()
+    {
+        if (!IsConnected) return;
+        FrequencyEntry = "";
+        EditingFrequency = true;
+    }
+
+    public void CancelFrequencyEntry()
+    {
+        EditingFrequency = false;
+        FrequencyEntry = "";
+    }
+
     [RelayCommand]
     private void EnterFrequency()
     {
         // Accept kHz ("14074", "7074.5") or MHz ("14.074").
         var text = FrequencyEntry.Trim().Replace(',', '.');
-        if (!double.TryParse(text, System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out var v) || v <= 0)
-            return;
-        TuneTo((long)Math.Round(v < 100 ? v * 1e6 : v * 1e3));
-        FrequencyEntry = "";
+        if (double.TryParse(text, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var v) && v > 0)
+            TuneTo((long)Math.Round(v < 100 ? v * 1e6 : v * 1e3));
+        CancelFrequencyEntry();
     }
 
     private void SelectBand(Band band)
