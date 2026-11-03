@@ -80,6 +80,11 @@
     <Setter Property="Foreground" Value="#FF6B6B" />
   </Style>
 
+  <!-- CPU readout: green below 25%, yellow 25-50%, red above 50% -->
+  <Style Selector="TextBlock.cpu"><Setter Property="Foreground" Value="#3DD68C" /></Style>
+  <Style Selector="TextBlock.cpu.warn"><Setter Property="Foreground" Value="#F5C542" /></Style>
+  <Style Selector="TextBlock.cpu.bad"><Setter Property="Foreground" Value="#E5484D" /></Style>
+
   <!-- PureSignal status badge -->
   <Style Selector="Border.ps">
     <Setter Property="Background" Value="{StaticResource ControlBg}" />

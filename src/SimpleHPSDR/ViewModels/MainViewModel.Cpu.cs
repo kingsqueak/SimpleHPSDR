@@ -13,6 +13,8 @@ public sealed partial class MainViewModel
 
     [ObservableProperty] private string _cpuText = "CPU —";
     [ObservableProperty] private string _cpuDetail = "";
+    /// <summary>ok below 25%, warn 25-50%, bad above 50%: picks the colour.</summary>
+    [ObservableProperty] private string _cpuLevel = "ok";
 
     private void StartCpuMonitor()
     {
@@ -38,6 +40,7 @@ public sealed partial class MainViewModel
 
         double machine = (appPct + enginePct) / Environment.ProcessorCount;
         CpuText = $"CPU {machine:0}%";
+        CpuLevel = machine < 25 ? "ok" : machine <= 50 ? "warn" : "bad";
         CpuDetail = $"SimpleHPSDR + engine: {machine:0.0}% of this {Environment.ProcessorCount}-core machine " +
                     $"(app {appPct:0}%, engine {enginePct:0}% of one core), 5 s average";
     }
