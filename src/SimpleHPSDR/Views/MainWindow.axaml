@@ -111,7 +111,7 @@
       </StackPanel>
 
       <Border Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
-        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Text="SIGNAL" Classes="label" />
           <!-- Fixed-width slots so the readings don't shift as they change -->
           <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -126,13 +126,26 @@
           <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}"
                        Height="8" Margin="0,6,0,0"
                        ToolTip.Tip="Blue below S4, green S4-S9, orange to S9+15, red from S9+20. White mark: peak, held 3 s." />
+          <!-- Transmit meters -->
+          <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6"
+                Margin="0,8,0,0">
+            <TextBlock Text="PWR" Classes="label" FontSize="11" VerticalAlignment="Center" />
+            <ProgressBar Grid.Column="1" Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}"
+                         MinWidth="0" Height="8" VerticalAlignment="Center" Foreground="#E5484D" Background="#1F232C" />
+            <TextBlock Grid.Column="2" Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" TextAlignment="Right"
+                       VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Grid.Column="3" Text="SWR" Classes="label" FontSize="11" Margin="4,0,0,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="4" Text="{Binding SwrText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Grid.Column="5" Text="ALC" Classes="label" FontSize="11" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="6" Text="{Binding AlcText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+          </Grid>
         </Grid>
       </Border>
     </Grid>
 
     <!-- Band / mode / filter rows -->
     <Border Grid.Row="1" Classes="panel" Margin="0,0,0,10">
-      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="12">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
         <TextBlock Grid.Row="0" Text="BAND" Classes="label" />
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="12">
           <Button Classes="seg lit" Content="{Binding BandLabel}" MinWidth="64" ToolTip.Tip="Choose a band">
@@ -150,8 +163,8 @@
           </Button>
         </StackPanel>
         <TextBlock Grid.Row="1" Text="FILTER" Classes="label" />
-        <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Filters}">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Filters}" VerticalAlignment="Center">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:FilterSlot">
               <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}" MinWidth="52"
@@ -184,13 +197,15 @@
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <TextBlock Grid.Row="2" Text="NB" Classes="label" />
-        <ItemsControl Grid.Row="2" Grid.Column="1" ItemsSource="{Binding NoiseBlankers}" ItemTemplate="{StaticResource SegButton}"
+        <TextBlock Grid.Row="0" Grid.Column="2" Text="NB" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
+        <ItemsControl Grid.Row="0" Grid.Column="3" ItemsSource="{Binding NoiseBlankers}" ItemTemplate="{StaticResource SegButton}"
+                      VerticalAlignment="Center"
                       ToolTip.Tip="Noise blanker for impulse noise (click the lit one for off)">
           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         </ItemsControl>
-        <TextBlock Grid.Row="3" Text="NR" Classes="label" />
-        <ItemsControl Grid.Row="3" Grid.Column="1" ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource SegButton}"
+        <TextBlock Grid.Row="1" Grid.Column="2" Text="NR" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
+        <ItemsControl Grid.Row="1" Grid.Column="3" ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource SegButton}"
+                      VerticalAlignment="Center"
                       ToolTip.Tip="Noise reduction (click the lit one for off)">
           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         </ItemsControl>
@@ -303,6 +318,17 @@
                        ToolTip.Tip="Mic level (dBFS)" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,18,0">
+            <TextBlock Text="AF" Classes="label" />
+            <c:AfSlider Value="{Binding AfGainDb}" TrimA="{Binding SliceAfA}" TrimB="{Binding SliceAfB}"
+                        ShowTrims="{Binding HasSliceB}" Width="170" VerticalAlignment="Center"
+                        ToolTip.Tip="{Binding AfTip}" />
+            <StackPanel VerticalAlignment="Center" Width="44">
+              <TextBlock Text="{Binding AfGainText}" FontSize="12" />
+              <TextBlock Text="{Binding SliceAfText}" FontSize="9" Opacity="0.75" IsVisible="{Binding HasSliceB}" />
+            </StackPanel>
+            <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
+          </StackPanel>
           <ToggleButton Classes="seg" Content="MON" IsChecked="{Binding MonitorPreview}"
                         ToolTip.Tip="Preview: hear your mic through the whole TX chain (EQ, leveler, processor, ALC, TX filter) without transmitting" />
           <ToggleButton Classes="seg" Content="MON TX" IsChecked="{Binding MonitorOnTransmit}"
@@ -311,16 +337,6 @@
                   ToolTip.Tip="Monitor volume" />
           <TextBlock Text="{Binding MonitorVolumeDb, StringFormat={}{0:0} dB}" Width="44" VerticalAlignment="Center" FontSize="12" />
         </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <TextBlock Text="PWR" Classes="label" />
-          <ProgressBar Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}" Width="110" MinWidth="0" Height="8"
-                       VerticalAlignment="Center" Foreground="#E5484D" Background="#1F232C" />
-          <TextBlock Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" VerticalAlignment="Center" FontSize="12" />
-          <TextBlock Text="SWR" Classes="label" />
-          <TextBlock Text="{Binding SwrText}" Width="44" VerticalAlignment="Center" FontSize="12" />
-          <TextBlock Text="ALC" Classes="label" />
-          <TextBlock Text="{Binding AlcText}" Width="40" VerticalAlignment="Center" FontSize="12" />
-        </StackPanel>
       </WrapPanel>
     </Border>
 
@@ -328,17 +344,6 @@
     <Border Grid.Row="5" Classes="panel" Margin="0,10,0,0">
       <Grid ColumnDefinitions="*,Auto">
         <WrapPanel ItemSpacing="24" LineSpacing="8">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <TextBlock Text="AF" Classes="label" />
-          <c:AfSlider Value="{Binding AfGainDb}" TrimA="{Binding SliceAfA}" TrimB="{Binding SliceAfB}"
-                      ShowTrims="{Binding HasSliceB}" Width="170" VerticalAlignment="Center"
-                      ToolTip.Tip="{Binding AfTip}" />
-          <StackPanel VerticalAlignment="Center" Width="44">
-            <TextBlock Text="{Binding AfGainText}" FontSize="12" />
-            <TextBlock Text="{Binding SliceAfText}" FontSize="9" Opacity="0.75" IsVisible="{Binding HasSliceB}" />
-          </StackPanel>
-          <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
-        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
           <ToggleButton Classes="seg" IsChecked="{Binding AutoAtt}" Padding="8,2" MinWidth="0" Margin="0"
                         VerticalAlignment="Center"
