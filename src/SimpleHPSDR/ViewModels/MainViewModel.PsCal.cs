@@ -5,8 +5,8 @@ using Zeus.Contracts;
 namespace SimpleHPSDR.ViewModels;
 
 /// <summary>
-/// PS CAL: key 2-TONE in short bursts until PureSignal calibrates. Each cycle
-/// keys for up to 3 s, then unkeys. If calcc reached Correcting and HW peak
+/// PS CAL: key 2-TONE in bursts until PureSignal calibrates. Each cycle keys
+/// for 3-5 s, then unkeys. If calcc reached Correcting and HW peak
 /// suits the signal, it's done. Otherwise it moves HW peak toward the
 /// measured peak (the engine applies PureSignal changes on unkey) and keys
 /// again. At most four cycles.
@@ -14,7 +14,12 @@ namespace SimpleHPSDR.ViewModels;
 public sealed partial class MainViewModel
 {
     private const int PsCalCycles = 4;
-    private static readonly TimeSpan PsCalKeyWindow = TimeSpan.FromSeconds(3);
+    // A real fit lands about 2-2.5 s after key-down on a G2, and the
+    // Correcting flag can flicker before that (the previous curve is still
+    // loaded for a moment after a reset). So stay keyed at least 3 s before
+    // judging, and up to 5 s for a slow lock.
+    private static readonly TimeSpan PsCalMinKey = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan PsCalMaxKey = TimeSpan.FromSeconds(5);
     private const double PsCalMaxSwr = 2.5;
 
     private CancellationTokenSource? _psCalCts;
@@ -117,14 +122,16 @@ public sealed partial class MainViewModel
     private async Task<CalOutcome> WatchCalibrationAsync(CancellationToken ct)
     {
         var start = DateTime.UtcNow;
-        var until = start + PsCalKeyWindow;
-        while (DateTime.UtcNow < until)
+        while (DateTime.UtcNow - start < PsCalMaxKey)
         {
             await Task.Delay(100, ct);
-            if (_psFreshFit) return CalOutcome.Correcting;
             if (IsTransmitting && _latestTx.Swr > PsCalMaxSwr && _latestTx.FwdWatts > 1) return CalOutcome.HighSwr;
+            if (DateTime.UtcNow - start >= PsCalMinKey && Locked()) return CalOutcome.Correcting;
         }
-        return _psFreshFit ? CalOutcome.Correcting : CalOutcome.StillCollecting;
+        return Locked() ? CalOutcome.Correcting : CalOutcome.StillCollecting;
+
+        // Correcting now, after having seen the reset take effect.
+        bool Locked() => _psSawNotCorrecting && _latestPs.Correcting;
     }
 
     /// <summary>Any key action by the operator ends a running PS CAL.</summary>

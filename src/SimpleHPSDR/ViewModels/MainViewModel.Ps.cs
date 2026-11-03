@@ -24,18 +24,13 @@ public sealed partial class MainViewModel
     private static readonly TimeSpan PeakSettle = TimeSpan.FromSeconds(2.2);
     private long _keyDownTicks;              // UTC ticks of the latest key-down, 0 when unkeyed
 
-    // A fresh fit is a not-correcting frame followed by a correcting one in
-    // the same key-down. The first frame after key-down repeats the engine's
-    // cached meters from the previous transmission (Correcting included), so
-    // a bare "Correcting" proves nothing.
+    // Set once a not-correcting frame arrives in the current key-down. The
+    // first frame after key-down repeats the engine's cached meters from the
+    // previous transmission (Correcting included), so PS CAL only trusts
+    // Correcting after seeing its reset take effect.
     private volatile bool _psSawNotCorrecting;
-    private volatile bool _psFreshFit;
 
-    private void ResetFreshFit()
-    {
-        _psSawNotCorrecting = false;
-        _psFreshFit = false;
-    }
+    private void ResetFreshFit() => _psSawNotCorrecting = false;
 
     private DateTime? _keyedSince;
     private bool _rekeyToApply;
@@ -58,7 +53,6 @@ public sealed partial class MainViewModel
             if (keyDown != 0)
             {
                 if (!f.Correcting) _psSawNotCorrecting = true;
-                else if (_psSawNotCorrecting) _psFreshFit = true;
                 if (f.MaxTxEnvelope > 0 && DateTime.UtcNow.Ticks - keyDown >= PeakSettle.Ticks)
                     MeasuredTxPeak = f.MaxTxEnvelope;
             }
