@@ -49,6 +49,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             foreach (var b in _loaded.Bands.Where(b => EditableBands.Contains(b.Band)))
                 PaBands.Add(new PaBandRow(b));
             await LoadAudioAsync();
+            await LoadPureSignalAsync();
             Status = "";
         }
         catch (Exception ex)
@@ -73,6 +74,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             await _client.SetPaSettingsAsync(new PaSettingsSetRequest(global, bands));
             await SaveAudioAsync();
+            await SavePureSignalAsync();
             await LoadAsync();
             Status = "Saved.";
             PaMaxPowerSaved?.Invoke(global.PaMaxPowerWatts);

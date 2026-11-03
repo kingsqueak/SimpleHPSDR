@@ -194,6 +194,7 @@ public sealed partial class MainViewModel
         if (_client is null) return;
         try { await _client.SetMoxAsync(false); } catch (Exception) { }
         try { await _client.SetTunAsync(false); } catch (Exception) { }
+        if (TwoToneOn) try { await _client.SetTwoToneAsync(false); } catch (Exception) { }
     }
 
     // Shutdown runs on the UI thread or a signal thread; run the HTTP calls on

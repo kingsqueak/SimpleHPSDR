@@ -134,6 +134,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         };
         _statePoll.Tick += async (_, _) => await PollStateAsync();
         WireTransmit(_client);
+        WirePureSignal(_client);
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
             if (v.Receiver == 0 && !_vfoSender.Busy) SetVfoLocal(v.VfoHz);
@@ -220,6 +221,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var state = await client.GetStateAsync();
         await ApplyStateAsync(state);
         await LoadTransmitAsync(state);
+        LoadPureSignal(state);
         await client.OpenStreamAsync();
         IsConnected = true;
         _statePoll.Start();
@@ -452,6 +454,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             var s = await _client.GetStateAsync();
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
+            PollPureSignal(s);
         }
         catch (Exception) { }
     }

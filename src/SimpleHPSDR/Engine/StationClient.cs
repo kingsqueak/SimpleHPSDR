@@ -43,6 +43,7 @@ public sealed class StationClient : IDisposable
     public event Action<MoxStateFrame>? MoxState;
     public event Action<TxMetersV2Frame>? TxMeters;
     public event Action<float>? MicPeakDbfs;
+    public event Action<PsMetersFrame>? PsMeters;
     public event Action<string>? StreamClosed;
 
     public StationClient(Uri baseUri)
@@ -85,6 +86,18 @@ public sealed class StationClient : IDisposable
     public Task SetDriveAsync(int percent) => PostAsync("api/tx/drive", new DriveSetRequest(percent));
     public Task SetTuneDriveAsync(int percent) => PostAsync("api/tx/tune-drive", new TuneDriveSetRequest(percent));
     public Task SetMicGainAsync(int db) => PostAsync("api/mic-gain", new MicGainSetRequest(db));
+    public Task SetTwoToneAsync(bool on) => PostAsync("api/tx/twotone", new TwoToneSetRequest(on));
+
+    // ---- PureSignal ----
+    public Task SetPsAsync(bool enabled, bool auto = true, bool single = false) =>
+        PostAsync("api/tx/ps", new PsControlSetRequest(enabled, auto, single));
+    public Task SetPsAdvancedAsync(PsAdvancedSetRequest req) => PostAsync("api/tx/ps/advanced", req);
+    public Task SetPsFeedbackSourceAsync(PsFeedbackSource source) =>
+        PostAsync("api/tx/ps/feedback-source", new PsFeedbackSourceSetRequest(source));
+    public Task SetPsFeedbackAttenuationAsync(int db) =>
+        PostAsync("api/tx/ps/feedback-attenuation", new PsFeedbackAttenuationSetRequest(db));
+    public Task SetPsMonitorAsync(bool on) => PostAsync("api/tx/ps/monitor", new PsMonitorSetRequest(on));
+    public Task ResetPsAsync() => PostAsync("api/tx/ps/reset", new { });
 
     public async Task<PaSettingsDto> GetPaSettingsAsync() =>
         (await _http.GetFromJsonAsync<PaSettingsDto>("api/pa-settings", Json))!;
@@ -229,6 +242,9 @@ public sealed class StationClient : IDisposable
                     break;
                 case MsgType.TxMetersV2:
                     TxMeters?.Invoke(TxMetersV2Frame.Deserialize(msg));
+                    break;
+                case MsgType.PsMeters:
+                    PsMeters?.Invoke(PsMetersFrame.Deserialize(msg));
                     break;
                 case MsgType.MicPeak:
                     MicPeakDbfs?.Invoke(MicPeakFrame.Deserialize(msg).PeakDbfs);

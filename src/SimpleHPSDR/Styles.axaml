@@ -58,6 +58,17 @@
     <Setter Property="Foreground" Value="#FF6B6B" />
   </Style>
 
+  <!-- PureSignal status badge -->
+  <Style Selector="Border.ps">
+    <Setter Property="Background" Value="{StaticResource ControlBg}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="7,3" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.ps.ok"><Setter Property="Background" Value="#1E7F4F" /></Style>
+  <Style Selector="Border.ps.warn"><Setter Property="Background" Value="#9A6B12" /></Style>
+  <Style Selector="Border.ps.bad"><Setter Property="Background" Value="#B23A3E" /></Style>
+
   <Style Selector="Button.flat">
     <Setter Property="Background" Value="{StaticResource ControlBg}" />
     <Setter Property="BorderThickness" Value="0" />

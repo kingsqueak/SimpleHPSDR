@@ -87,6 +87,21 @@
                         ToolTip.Tip="Transmit" />
           <ToggleButton Classes="seg tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="64"
                         ToolTip.Tip="Tune carrier at the tune drive level" />
+          <ToggleButton Classes="seg tx" Content="2-TONE" IsChecked="{Binding TwoToneOn}"
+                        ToolTip.Tip="Transmit the two-tone test signal (for PureSignal calibration and IMD checks)" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <ToggleButton Classes="seg" Content="PS" IsChecked="{Binding PsOn}"
+                        ToolTip.Tip="PureSignal adaptive predistortion" />
+          <Border Classes="ps" Classes.ok="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ok}"
+                  Classes.warn="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
+                  Classes.bad="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}"
+                  ToolTip.Tip="PureSignal state. Feedback level (FB) is best around 128-181.">
+            <TextBlock FontSize="11" FontWeight="SemiBold">
+              <Run Text="{Binding PsStatus}" />
+              <Run Text="{Binding PsFeedbackText}" />
+            </TextBlock>
+          </Border>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
           <TextBlock Text="DRIVE" Classes="label" />
