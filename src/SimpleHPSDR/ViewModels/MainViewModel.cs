@@ -547,6 +547,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // region band plan gets in the way.
         await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
         var state = await client.GetStateAsync();
+        bool firstFilters = await ApplyFilterDefaultsAsync();
         await ApplyStateAsync(state);
         ActiveRx = 0;
         UpdateSlices(state);
@@ -557,6 +558,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         LoadPureSignal(state);
         await LoadMonitorAsync();
         await LoadNotchesAsync();
+        if (firstFilters && Filters.FirstOrDefault(f => f.SlotName == DefaultFilterSlot) is { } start)
+            await SelectFilterAsync(start);
         await client.OpenStreamAsync();
         IsConnected = true;
         _statePoll.Start();
@@ -815,11 +818,43 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    // The default SSB buttons as lower-sideband edges; USB is the mirror image.
+    // The engine's own defaults stand for every other mode.
+    private static readonly (string Slot, string Label, int Low, int High)[] DefaultSsbFilters =
+    [
+        ("F1", "5.0k", -5000, -63), ("F2", "4k", -4000, -63), ("F3", "3.5k", -3500, -63),
+        ("F4", "3k", -3000, -80), ("F5", "2.8k", -2800, -100),
+    ];
+    private const string DefaultFilterSlot = "F2";
+
+    private Task WriteDefaultFilterAsync(RxMode mode, (string Slot, string Label, int Low, int High) f) =>
+        mode == RxMode.LSB
+            ? _client!.WriteFilterPresetAsync(mode, f.Slot, f.Low, f.High, f.Label)
+            : _client!.WriteFilterPresetAsync(mode, f.Slot, -f.High, -f.Low, f.Label);
+
+    /// <summary>Once per install. True if it ran, so the start filter gets chosen.</summary>
+    private async Task<bool> ApplyFilterDefaultsAsync()
+    {
+        if (_settings.FilterDefaultsApplied) return false;
+        await Try(async () =>
+        {
+            foreach (var mode in new[] { RxMode.LSB, RxMode.USB })
+                foreach (var f in DefaultSsbFilters)
+                    await WriteDefaultFilterAsync(mode, f);
+            _settings.FilterDefaultsApplied = true;
+            _settings.Save();
+        });
+        return _settings.FilterDefaultsApplied;
+    }
+
     private async Task ResetFilterAsync(FilterSlot slot)
     {
         await Try(async () =>
         {
-            await _client!.ResetFilterPresetAsync(slot.Mode, slot.SlotName);
+            if (slot.Mode is RxMode.LSB or RxMode.USB && DefaultSsbFilters.Any(f => f.Slot == slot.SlotName))
+                await WriteDefaultFilterAsync(slot.Mode, DefaultSsbFilters.First(f => f.Slot == slot.SlotName));
+            else
+                await _client!.ResetFilterPresetAsync(slot.Mode, slot.SlotName);
             await AfterFilterEditAsync(slot);
             Status = $"Filter {slot.SlotName} reset to its default.";
         });

@@ -5,7 +5,13 @@ using Zeus.Contracts;
 
 namespace SimpleHPSDR;
 
-/// <summary>Everything on the TX Audio page, saved together under a name.</summary>
+/// <summary>The PureSignal settings a profile keeps. The learned correction
+/// isn't one of them: that belongs to the moment it was measured.</summary>
+public sealed record TxPureSignalSettings(
+    bool ExternalFeedback, bool AutoAttenuate, int FeedbackAttenDb,
+    double MoxDelaySec, double LoopDelaySec, double AmpDelayNs, double HwPeak);
+
+/// <summary>The TX Audio page and PureSignal settings, saved together under a name.</summary>
 public sealed record TxAudioProfile(
     string Name,
     int LowCutHz,
@@ -16,7 +22,8 @@ public sealed record TxAudioProfile(
     CfcConfig Cfc,
     DexpConfig NoiseGate,
     TxPhaseRotatorConfig PhaseRotator,
-    int? ReleaseDelayMs = null)   // null in profiles saved before it existed: leave as is
+    int? ReleaseDelayMs = null,   // null in profiles saved before it existed: leave as is
+    TxPureSignalSettings? PureSignal = null)   // likewise
 {
     public const string DefaultName = "Default";
 
@@ -24,16 +31,10 @@ public sealed record TxAudioProfile(
     /// processing holds with CFC at FFT 16384, with margin (user-tested).</summary>
     public const int DefaultReleaseDelayMs = 275;
 
-    /// <summary>The starting point: 80-3000 Hz, leveler at 3 dB, CFC on with
-    /// 3 dB pre-compression and flat bands; everything else the engine's
-    /// defaults (compressor, EQ, noise gate and phase rotator off).</summary>
-    public static TxAudioProfile Default { get; } = new(
-        DefaultName, 80, 3000,
-        new TxLevelingConfig() with { LevelerEnabled = true }, 3.0,
-        LegacyTxEqConfig.Default,
-        CfcConfig.Default with { Enabled = true, PreCompDb = 3.0 },
-        DexpConfig.Default, new TxPhaseRotatorConfig(),
-        DefaultReleaseDelayMs);
+    /// <summary>The starting point, from DefaultTxProfile.json: the operator's
+    /// tested setup. It holds no PureSignal settings, as those depend on the
+    /// station, so loading it leaves them alone.</summary>
+    public static TxAudioProfile Default => TxProfileStore.BuiltInDefault;
 }
 
 /// <summary>
@@ -48,6 +49,15 @@ public static class TxProfileStore
         WriteIndented = true,
         Converters = { new JsonStringEnumConverter() },
     };
+
+    /// <summary>The built-in profile.</summary>
+    public static TxAudioProfile BuiltInDefault { get; } = ReadBuiltIn();
+
+    private static TxAudioProfile ReadBuiltIn()
+    {
+        using var stream = typeof(TxProfileStore).Assembly.GetManifestResourceStream("DefaultTxProfile.json")!;
+        return JsonSerializer.Deserialize<TxAudioProfile>(stream, Json)!;
+    }
 
     private static string Dir
     {

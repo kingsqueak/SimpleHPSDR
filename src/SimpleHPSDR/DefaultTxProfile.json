@@ -1,0 +1,126 @@
+{
+  "name": "Default",
+  "lowCutHz": 63,
+  "highCutHz": 4000,
+  "leveling": {
+    "alcMaxGainDb": 3,
+    "alcDecayMs": 10,
+    "levelerEnabled": true,
+    "levelerDecayMs": 100,
+    "compressorEnabled": false,
+    "compressorGainDb": 5,
+    "cessbEnabled": false,
+    "cessbBandwidthHz": 3000
+  },
+  "levelerMaxGainDb": 5,
+  "equalizer": {
+    "enabled": true,
+    "preampDb": 0,
+    "frequenciesHz": [
+      32,
+      63,
+      125,
+      250,
+      500,
+      1000,
+      2000,
+      4000,
+      8000,
+      16000
+    ],
+    "gainsDb": [
+      -6.2,
+      -6.2,
+      -10.3,
+      -4.8,
+      0,
+      -0.2,
+      2.2,
+      3.8,
+      0,
+      0
+    ]
+  },
+  "cfc": {
+    "enabled": true,
+    "postEqEnabled": false,
+    "preCompDb": 3,
+    "prePeqDb": 0,
+    "bands": [
+      {
+        "freqHz": 50,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 100,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 200,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 500,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 1000,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 1500,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 2000,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 2500,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 3000,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      },
+      {
+        "freqHz": 5000,
+        "compLevelDb": 0,
+        "postGainDb": 0
+      }
+    ],
+    "fftSize": 16384
+  },
+  "noiseGate": {
+    "enabled": false,
+    "thresholdDbv": -20,
+    "attackMs": 2,
+    "holdMs": 500,
+    "releaseMs": 100,
+    "expansionDb": 10,
+    "hysteresisDb": 2,
+    "detectorTauMs": 20,
+    "sideChannelFilterEnabled": true,
+    "sideChannelLowHz": 500,
+    "sideChannelHighHz": 1500,
+    "lookAheadEnabled": true,
+    "lookAheadMs": 60
+  },
+  "phaseRotator": {
+    "enabled": true,
+    "cornerHz": 338,
+    "stages": 8,
+    "reverse": false,
+    "autoMode": false
+  },
+  "releaseDelayMs": 275
+}

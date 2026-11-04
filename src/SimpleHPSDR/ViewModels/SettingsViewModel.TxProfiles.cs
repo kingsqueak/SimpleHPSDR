@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Zeus.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
 
@@ -62,10 +63,16 @@ public sealed partial class SettingsViewModel
             await _client.SetPhaseRotatorAsync(p.PhaseRotator);
             if (p.ReleaseDelayMs is int tail)
                 await _client.SetTxTailDelayAsync(tail);
+            if (p.PureSignal is { } ps)
+                await ApplyProfilePureSignalAsync(ps);
 
             var state = await _client.GetStateAsync();
             _populating = true;
-            try { PopulateTxAudio(state); }
+            try
+            {
+                PopulateTxAudio(state);
+                PopulatePureSignal(state);
+            }
             finally { _populating = false; }
             TxProfileModified = false;
             if (AppSettings is { } app)
@@ -91,7 +98,17 @@ public sealed partial class SettingsViewModel
         return new TxAudioProfile(name,
             (int)Math.Round(TxLowCutHz), (int)Math.Round(TxHighCutHz),
             BuildLeveling(was), Math.Round(LevelerMaxGainDb, 1), BuildEq(),
-            BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was), (int)Math.Round(ReleaseDelayMs));
+            BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was), (int)Math.Round(ReleaseDelayMs),
+            new TxPureSignalSettings(PsExternalFeedback, PsAutoAttenuate || PsExternalFeedback,
+                (int)Math.Round(PsFeedbackAttenDb), PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak));
+    }
+
+    private async Task ApplyProfilePureSignalAsync(TxPureSignalSettings ps)
+    {
+        await _client.SetPsFeedbackSourceAsync(ps.ExternalFeedback ? PsFeedbackSource.External : PsFeedbackSource.Internal);
+        await _client.SetPsAdvancedAsync(new PsAdvancedSetRequest(
+            ps.AutoAttenuate, ps.MoxDelaySec, ps.LoopDelaySec, ps.AmpDelayNs, ps.HwPeak));
+        if (!ps.AutoAttenuate) await _client.SetPsFeedbackAttenuationAsync(ps.FeedbackAttenDb);
     }
 
     [RelayCommand]

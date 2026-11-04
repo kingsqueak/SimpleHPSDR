@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="DefaultTxProfile.json" LogicalName="DefaultTxProfile.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Wire formats and DTOs come straight from the engine source. -->
     <ProjectReference Include="../../external/station-engine/Zeus.Contracts/Zeus.Contracts.csproj" />
   </ItemGroup>
