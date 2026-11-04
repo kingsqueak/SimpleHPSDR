@@ -57,6 +57,15 @@ sudo dnf install ./simplehpsdr-*.rpm        # Fedora
 sudo pacman -U ./simplehpsdr-*.pkg.tar.zst  # Arch
 ```
 
+**Windows 10 or 11 (x64), preview:** unzip the folder anywhere you can write to
+and run `SimpleHPSDR.exe`; nothing needs installing, and the .NET and Visual C++
+runtimes are included. The app isn't signed, so SmartScreen warns the first time:
+choose More info, then Run anyway. If Windows Firewall asks about
+`StationEngine.exe`, allow it on private networks, or the radio won't be found.
+To use ASIO, install your audio interface's driver, then pick ASIO under
+Config > Audio. The driver must be able to run at 48 kHz. The Windows build hasn't
+been tried with a radio yet, so please report what you find.
+
 Then choose your radio. Several radios report the same ID, so pick your model in
 the radio picker or in Config > Radio. It sets the S-meter calibration and the PA
 and PureSignal defaults.
