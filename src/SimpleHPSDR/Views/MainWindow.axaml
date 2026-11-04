@@ -448,7 +448,7 @@
           </ToggleButton>
           <Button Classes="seg" Classes.lit="{Binding MonitorOn}" Content="{Binding MonitorLabel}" MinWidth="64"
                   Command="{Binding CycleMonitorCommand}" VerticalAlignment="Center"
-                  ToolTip.Tip="Click for Mon (hear your mic through the TX chain without transmitting), TXMon (hear yourself while transmitting), or off. Right-click for the level.">
+                  ToolTip.Tip="Click to step through Mon (hear your mic through the TX chain without transmitting), TX Mon (hear yourself while transmitting), Mon+TX (both), and off. Right-click for the level.">
             <Button.ContextFlyout>
               <Flyout Placement="TopEdgeAlignedLeft">
                 <Grid Width="280" Margin="4" ColumnDefinitions="60,*,48">

@@ -35,17 +35,25 @@ public sealed partial class MainViewModel
     public string MonitorPctText => $"{MonitorPct:0}%";
 
     public bool MonitorOn => MonitorPreview || MonitorOnTransmit;
-    public string MonitorLabel => MonitorOnTransmit ? "TXMon" : "Mon";
+    public string MonitorLabel => (MonitorPreview, MonitorOnTransmit) switch
+    {
+        (true, true) => "Mon+TX",
+        (false, true) => "TX Mon",
+        _ => "Mon",
+    };
 
-    /// <summary>Off, then Mon (preview without transmitting), then TXMon
-    /// (hear yourself while transmitting), then off.</summary>
+    /// <summary>Off, Mon (preview without transmitting), TX Mon (hear yourself
+    /// while transmitting), Mon+TX (both), then off.</summary>
     [RelayCommand]
     private void CycleMonitor()
     {
-        bool preview = !MonitorOn;
-        bool onTransmit = MonitorPreview && !MonitorOnTransmit;
-        MonitorPreview = preview;
-        MonitorOnTransmit = onTransmit;
+        (MonitorPreview, MonitorOnTransmit) = (MonitorPreview, MonitorOnTransmit) switch
+        {
+            (false, false) => (true, false),
+            (true, false) => (false, true),
+            (false, true) => (true, true),
+            _ => (false, false),
+        };
     }
 
     private void WireMonitor(StationClient client) =>
