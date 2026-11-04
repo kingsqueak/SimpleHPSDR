@@ -77,7 +77,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"];
     private static readonly TimeSpan ApplyDelay = TimeSpan.FromMilliseconds(250);
 
-    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas, Tci, Cat, Serial }
+    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas, Tci, Cat, Serial, Amp, Calibration }
 
     private static readonly Dictionary<string, Group> GroupOf = new()
     {
@@ -91,6 +91,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(PsFeedbackAttenDb)] = Group.PureSignal, [nameof(PsMoxDelaySec)] = Group.PureSignal,
         [nameof(PsLoopDelaySec)] = Group.PureSignal, [nameof(PsAmpDelayNs)] = Group.PureSignal,
         [nameof(PsHwPeak)] = Group.PureSignal, [nameof(PsMonitor)] = Group.PureSignal,
+
+        [nameof(PreKeyDelayMs)] = Group.Amp, [nameof(RxResumeDelayMs)] = Group.Amp,
+        [nameof(TxTimeoutSec)] = Group.Amp, [nameof(DriveMaxPct)] = Group.Amp,
+
+        [nameof(SMeterTrimDb)] = Group.Calibration, [nameof(FrequencyPpm)] = Group.Calibration,
+        [nameof(ExternalRefOn)] = Group.Calibration, [nameof(ExternalRefPpm)] = Group.Calibration,
+        [nameof(AdcMaxOffsetDb)] = Group.Calibration, [nameof(AdcReleaseHoldMs)] = Group.Calibration,
 
         [nameof(TciEnabled)] = Group.Tci, [nameof(TciNetwork)] = Group.Tci, [nameof(TciPort)] = Group.Tci,
         [nameof(CatEnabled)] = Group.Cat, [nameof(CatNetwork)] = Group.Cat, [nameof(CatPort)] = Group.Cat,
@@ -151,7 +158,11 @@ public sealed partial class SettingsViewModel : ObservableObject
             Populate(pa, devices, radio, state, antennas);
             await RefreshAudioStatusAsync(devices);
             _populating = true;
-            try { await LoadCatTciAsync(); }
+            try
+            {
+                await LoadCatTciAsync();
+                await LoadAmpCalibrationAsync(state);
+            }
             finally { _populating = false; }
             Status = "Changes apply as you make them.";
         }
@@ -239,6 +250,8 @@ public sealed partial class SettingsViewModel : ObservableObject
                 case Group.Tci: await ApplyTciAsync(); break;
                 case Group.Cat: await ApplyCatAsync(); break;
                 case Group.Serial: await ApplySerialAsync(); break;
+                case Group.Amp: await ApplyAmpAsync(); break;
+                case Group.Calibration: await ApplyCalibrationAsync(); break;
             }
             Status = "Applied.";
         }
@@ -285,7 +298,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         foreach (var row in Antennas)
             if (antennasNow.TryGetValue(row.Band, out var now)) row.Loaded = now;
         _populating = true;
-        try { RestoreCatTciFields(); }
+        try
+        {
+            RestoreCatTciFields();
+            RestoreAmpCalibrationFields();
+        }
         finally { _populating = false; }
 
         foreach (var group in Enum.GetValues<Group>())

@@ -261,6 +261,37 @@ public sealed class StationClient : IDisposable
         PostAsync($"api/bands/stack/{Uri.EscapeDataString(band)}", entry);
     public async Task RemoveBandStackAsync(string band, int id) =>
         (await _http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}")).EnsureSuccessStatusCode();
+    // ---- amplifier and calibration ----
+    public Task SetPreKeyDelayAsync(int ms) => PostAsync("api/tx/prekey-delay", new TxPreKeyDelaySetRequest(ms));
+    public Task SetRxResumeDelayAsync(int ms) => PostAsync("api/tx/rx-resume-delay", new TxRxResumeDelaySetRequest(ms));
+    public Task SetTxTimeoutAsync(int seconds) => PostAsync("api/tx/timeout", new TxTimeoutSetRequest(seconds));
+    public Task SetDriveMaxAsync(int percent) => PostAsync("api/tx/drive-max", new DriveMaxSetRequest(percent));
+    public async Task<RadioSupplyVoltsDto> GetSupplyVoltsAsync() =>
+        (await _http.GetFromJsonAsync<RadioSupplyVoltsDto>("api/radio/supply-volts", Json))!;
+
+    public sealed record ExternalReference(bool Enabled, double Ppm);
+    public sealed record FrequencyCalibration(double Ppm, ExternalReference ExternalReference);
+    public sealed record CalibrationReport(string Outcome, double? OffsetHz, string Message);
+    public async Task<FrequencyCalibration> GetFrequencyCalibrationAsync() =>
+        (await _http.GetFromJsonAsync<FrequencyCalibration>("api/radio/frequency-calibration", Json))!;
+    public Task SetFrequencyPpmAsync(double ppm) => PostAsync("api/radio/frequency-calibration/set", new { ppm });
+    public Task ResetFrequencyCalibrationAsync() => PostAsync("api/radio/frequency-calibration/reset", new { });
+    public Task SetExternalReferenceAsync(bool enabled, double ppm) =>
+        PostAsync("api/radio/frequency-calibration/external-reference", new { enabled, ppm });
+    /// <summary>Tunes to WWV, measures its carrier, sets the factor and tunes back. Receive only.</summary>
+    public async Task<CalibrationReport> CalibrateOnWwvAsync(double referenceHz)
+    {
+        var r = await _http.PostAsync(FormattableString.Invariant($"api/radio/frequency-calibration/calibrate?referenceHz={referenceHz}"), null);
+        r.EnsureSuccessStatusCode();
+        return (await r.Content.ReadFromJsonAsync<CalibrationReport>(Json))!;
+    }
+
+    public async Task<AdcProtectionConfig> GetAdcProtectionAsync() =>
+        (await _http.GetFromJsonAsync<AdcProtectionStatusDto>("api/rx/adc-protection", Json))!.Config;
+    public async Task SetAdcProtectionAsync(int maxOffsetDb, int releaseHoldMs) =>
+        (await _http.PutAsJsonAsync("api/rx/adc-protection",
+            new AdcProtectionSetRequest(MaxOffsetDb: maxOffsetDb, ReleaseHoldMs: releaseHoldMs), Json)).EnsureSuccessStatusCode();
+
     /// <summary>DUP: keep the receivers in the audio mix while transmitting.</summary>
     public Task SetFullDuplexAsync(bool on) => PostAsync("api/radio/full-duplex-multi-rx", new FullDuplexMultiRxSetRequest(on));
     public Task SetFilterAsync(int low, int high, string? preset, int rx = 0) =>

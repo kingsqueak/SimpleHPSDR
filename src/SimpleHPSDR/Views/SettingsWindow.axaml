@@ -3,7 +3,7 @@
         xmlns:vm="using:SimpleHPSDR.ViewModels"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="Configuration" Width="760" Height="720" MinHeight="480"
+        Title="Configuration" Width="840" Height="720" MinHeight="480"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
     <!-- Smaller tab headers so all pages fit on one line -->
@@ -453,6 +453,100 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
             </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Amp">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="Timing and limits for running an external amplifier. The PTT release delay is on the TX Audio page, with the audio that sets it." />
+            <Border Classes="panel">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Pre-key delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding PreKeyDelayMs}" Minimum="0" Maximum="500" Increment="5" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="Holds back RF after keying so the amplifier relays can close first. Stays below PureSignal&apos;s MOX delay." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="2" Text="RX resume delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding RxResumeDelayMs}" Minimum="0" Maximum="5000" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="Keeps receive muted after unkeying while the relays return." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="4" Text="TX timeout" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding TxTimeoutSec}" Minimum="30" Maximum="600" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="s" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="Drops transmit if keyed this long, with a warning about 30 s before." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="6" Text="Maximum drive" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding DriveMaxPct}" Minimum="1" Maximum="100" Increment="1" FormatString="0" Width="140" />
+                  <TextBlock Text="%" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="7" Grid.Column="1" Text="Caps DRIVE and TUNE, and lowers them now if they&apos;re above it." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="8" Text="Supply voltage" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SupplyText}" FontWeight="SemiBold" />
+              </Grid>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Calibration">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Expander Header="S-meter" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Trim" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding SMeterTrimDb}" Minimum="-50" Maximum="50" Increment="0.5" FormatString="0.00" Width="140" />
+                  <TextBlock Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="Moves the reading up or down. 6 dB is one S-unit. Also on right-click of the meter." Classes="label" FontSize="11" TextWrapping="Wrap" />
+              </Grid>
+            </Expander>
+            <Expander Header="Frequency" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Correction" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding FrequencyPpm}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="0.00" Width="140" />
+                  <TextBlock Text="ppm" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Measure on WWV" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                  <Button Classes="flat" Content="10 MHz" Command="{Binding CalibrateWwvCommand}" CommandParameter="10" />
+                  <Button Classes="flat" Content="15 MHz" Command="{Binding CalibrateWwvCommand}" CommandParameter="15" />
+                  <Button Classes="flat" Content="Reset to 0" Command="{Binding ResetFrequencyPpmCommand}" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="Receive only. The radio tunes to WWV for a few seconds, measures it, then tunes back. WWV must be audible."
+                           Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CalibrationResult}" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="4" Text="External 10 MHz" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <CheckBox Grid.Row="4" Grid.Column="1" Content="The radio uses an external 10 MHz reference" IsChecked="{Binding ExternalRefOn}" />
+                <TextBlock Grid.Row="5" Text="Its correction" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding ExternalRefPpm}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="0.00" Width="140" />
+                  <TextBlock Text="ppm" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+            <Expander Header="ADC protection" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Most auto attenuation" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding AdcMaxOffsetDb}" Minimum="0" Maximum="31" Increment="1" FormatString="0" Width="140" />
+                  <TextBlock Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="How much Auto ATT may add when the ADC overloads." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="2" Text="Release hold" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding AdcReleaseHoldMs}" Minimum="0" Maximum="10000" Increment="100" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+              </Grid>
+            </Expander>
           </StackPanel>
         </ScrollViewer>
       </TabItem>
