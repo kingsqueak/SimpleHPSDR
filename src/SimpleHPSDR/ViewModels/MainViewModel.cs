@@ -751,7 +751,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FilterPreset[] presets = [];
         try { presets = await _client!.GetFilterPresetsAsync(mode); } catch (Exception) { }
         Filters.Clear();
-        foreach (var p in presets.Where(p => FilterSlotNames.Contains(p.SlotName)))
+        foreach (var p in presets.Where(p => ShownFilterSlots(mode).Contains(p.SlotName)))
             Filters.Add(new FilterSlot(mode, p, SelectFilterAsync, SaveFilterAsync, ResetFilterAsync)
             {
                 IsSelected = p.SlotName == selectedSlot,
@@ -819,6 +819,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     ];
     private const string DefaultFilterSlot = "F2";
 
+    // AM and SAM have these four buttons; the widths are the whole passband.
+    private static readonly (string Slot, string Label, int Low, int High)[] DefaultAmFilters =
+    [
+        ("F1", "20k", -10000, 10000), ("F2", "10k", -5000, 5000), ("F3", "8k", -4000, 4000), ("F4", "6k", -3000, 3000),
+    ];
+
+    private static IEnumerable<string> ShownFilterSlots(RxMode mode) =>
+        mode is RxMode.AM or RxMode.SAM ? DefaultAmFilters.Select(f => f.Slot) : FilterSlotNames;
+
     private Task WriteDefaultFilterAsync(RxMode mode, (string Slot, string Label, int Low, int High) f) =>
         mode == RxMode.LSB
             ? _client!.WriteFilterPresetAsync(mode, f.Slot, f.Low, f.High, f.Label)
@@ -827,6 +836,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Once per install. True if it ran, so the start filter gets chosen.</summary>
     private async Task<bool> ApplyFilterDefaultsAsync()
     {
+        if (!_settings.AmFilterDefaultsApplied)
+            await Try(async () =>
+            {
+                foreach (var mode in new[] { RxMode.AM, RxMode.SAM })
+                    foreach (var f in DefaultAmFilters)
+                        await _client!.WriteFilterPresetAsync(mode, f.Slot, f.Low, f.High, f.Label);
+                _settings.AmFilterDefaultsApplied = true;
+                _settings.Save();
+            });
         if (_settings.FilterDefaultsApplied) return false;
         await Try(async () =>
         {
@@ -845,6 +863,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             if (slot.Mode is RxMode.LSB or RxMode.USB && DefaultSsbFilters.Any(f => f.Slot == slot.SlotName))
                 await WriteDefaultFilterAsync(slot.Mode, DefaultSsbFilters.First(f => f.Slot == slot.SlotName));
+            else if (slot.Mode is RxMode.AM or RxMode.SAM && DefaultAmFilters.Any(f => f.Slot == slot.SlotName))
+            {
+                var f = DefaultAmFilters.First(d => d.Slot == slot.SlotName);
+                await _client!.WriteFilterPresetAsync(slot.Mode, f.Slot, f.Low, f.High, f.Label);
+            }
             else
                 await _client!.ResetFilterPresetAsync(slot.Mode, slot.SlotName);
             await AfterFilterEditAsync(slot);
