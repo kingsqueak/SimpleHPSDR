@@ -109,6 +109,7 @@ public sealed partial class MainViewModel
         SliceBEnabled = _sliceB?.Enabled ?? false;
         FullDuplex = s.FullDuplexMultiRxEnabled;
         UpdateAgc(s);
+        UpdateOperating(s);
         _ = FollowRxFilterAsync(s);
         // Follow the engine's slice AF unless the operator just moved a slider.
         if (DateTime.UtcNow - _sliceAfMovedAt > TimeSpan.FromSeconds(2))

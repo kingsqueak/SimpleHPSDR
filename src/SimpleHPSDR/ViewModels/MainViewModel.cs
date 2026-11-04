@@ -506,6 +506,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await LoadTransmitAsync(state);
         LoadPureSignal(state);
         await LoadMonitorAsync();
+        await LoadNotchesAsync();
         await client.OpenStreamAsync();
         IsConnected = true;
         _statePoll.Start();
@@ -573,6 +574,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public void TuneTo(long hz)
     {
         if (!IsConnected) return;
+        if (VfoLocked)
+        {
+            Status = "VFO is locked.";
+            return;
+        }
         hz = Math.Clamp(hz, 10_000, 60_000_000);
         SetVfoLocal(hz);
         if (SimpleHPSDR.Band.Find(hz) is { } band) _settings.BandMemory[band.Name] = hz;

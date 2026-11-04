@@ -245,6 +245,22 @@ public sealed class StationClient : IDisposable
     public async Task<double> GetSMeterTrimAsync() =>
         (await _http.GetFromJsonAsync<SMeterTrim>("api/radio/smeter-calibration", Json))!.OffsetDb;
     public Task SetSMeterTrimAsync(double db) => PostAsync("api/radio/smeter-calibration", new { offsetDb = db });
+    public Task SetRitAsync(bool? on = null, long? hz = null) => PostAsync("api/rx/rit", new RitSetRequest(on, hz));
+    public Task SetXitAsync(bool? on = null, long? hz = null) => PostAsync("api/tx/xit", new XitSetRequest(on, hz));
+    public Task SetVfoLockAsync(bool locked) => PostAsync("api/radio/vfo-lock", new VfoLockSetRequest(locked));
+    public Task SwapVfosAsync() => PostAsync("api/vfo/swap", new { });
+    public Task SetSquelchAsync(SquelchConfig squelch) => PostAsync("api/rx/squelch", new SquelchSetRequest(squelch));
+    public Task SetRxLevelerAsync(bool on) => PostAsync("api/rx/leveler", new RxLevelerSetRequest(on));
+    public async Task<List<NotchDto>> GetNotchesAsync() =>
+        (await _http.GetFromJsonAsync<List<NotchDto>>("api/rx/notches", Json))!;
+    /// <summary>The whole notch list. Centres are RF frequencies in Hz.</summary>
+    public Task SetNotchesAsync(IReadOnlyList<NotchDto> notches) => PostAsync("api/rx/notches", new NotchListRequest(notches));
+    public async Task<List<BandStackEntryDto>> GetBandStackAsync() =>
+        (await _http.GetFromJsonAsync<List<BandStackEntryDto>>("api/bands/stack", Json))!;
+    public Task AddBandStackAsync(string band, BandStackAddRequest entry) =>
+        PostAsync($"api/bands/stack/{Uri.EscapeDataString(band)}", entry);
+    public async Task RemoveBandStackAsync(string band, int id) =>
+        (await _http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}")).EnsureSuccessStatusCode();
     /// <summary>DUP: keep the receivers in the audio mix while transmitting.</summary>
     public Task SetFullDuplexAsync(bool on) => PostAsync("api/radio/full-duplex-multi-rx", new FullDuplexMultiRxSetRequest(on));
     public Task SetFilterAsync(int low, int high, string? preset, int rx = 0) =>

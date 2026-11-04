@@ -151,6 +151,29 @@
                         ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
           </Button.Flyout>
         </Button>
+        <!-- Offsets and lock, stacked like the antenna boxes -->
+        <StackPanel Spacing="4" VerticalAlignment="Center">
+          <Button Name="RitButton" Classes="seg ant" Classes.lit="{Binding RitOn}" Command="{Binding ToggleRitCommand}" MinWidth="78"
+                  ToolTip.Tip="RIT: receive offset on slice A. Click on or off, wheel 10 Hz a click, right-click to clear.">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="RIT" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding RitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+          <Button Name="XitButton" Classes="seg ant" Classes.lit="{Binding XitOn}" Command="{Binding ToggleXitCommand}" MinWidth="78"
+                  ToolTip.Tip="XIT: transmit offset. Click on or off, wheel 10 Hz a click, right-click to clear.">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="XIT" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding XitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+        <StackPanel Spacing="4" VerticalAlignment="Center">
+          <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Content="LOCK" Command="{Binding ToggleVfoLockCommand}"
+                  FontSize="11" ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it." />
+          <Button Classes="seg ant" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsVisible="{Binding HasSliceB}"
+                  FontSize="11" ToolTip.Tip="Swap the frequencies of slices A and B" />
+        </StackPanel>
       </StackPanel>
       </Viewbox>
 
@@ -208,7 +231,8 @@
       <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
         <TextBlock Grid.Row="0" Text="BAND" Classes="label" />
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="12">
-          <Button Classes="seg lit" Content="{Binding BandLabel}" MinWidth="64" ToolTip.Tip="Choose a band">
+          <Button Name="BandButton" Classes="seg lit" Content="{Binding BandLabel}" MinWidth="64"
+                  ToolTip.Tip="Choose a band. Right-click to save or recall frequencies on this band.">
             <Button.Flyout>
               <MenuFlyout ItemsSource="{Binding Bands}" Placement="BottomEdgeAlignedLeft"
                           ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
@@ -400,7 +424,7 @@
       </WrapPanel>
       <WrapPanel ItemSpacing="24" LineSpacing="6">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,18,0">
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,6,0">
             <TextBlock Text="AF" Classes="label" />
             <c:AfSlider Value="{Binding AfGainDb}" TrimA="{Binding SliceAfA}" TrimB="{Binding SliceAfB}"
                         ShowTrims="{Binding HasSliceB}" Width="150" VerticalAlignment="Center"
@@ -411,6 +435,28 @@
             </StackPanel>
             <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
           </StackPanel>
+          <Button Classes="seg" Classes.lit="{Binding SquelchOn}" Padding="8,2" MinWidth="40" Margin="0" VerticalAlignment="Center"
+                  Command="{Binding ToggleSquelchCommand}" ToolTip.Tip="Squelch: click on or off, right-click for the level (blue = on)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="SQL" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding SquelchText}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <StackPanel Width="280" Spacing="8" Margin="4">
+                  <TextBlock Text="Squelch" FontWeight="SemiBold" />
+                  <Grid ColumnDefinitions="*,44">
+                    <Slider Minimum="0" Maximum="100" Value="{Binding SquelchLevel}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding SquelchText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  </Grid>
+                  <CheckBox Content="Adaptive (follows the band noise)" IsChecked="{Binding SquelchAdaptive}" />
+                </StackPanel>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+          <Button Classes="seg" Classes.lit="{Binding RxLevelerOn}" Content="LEV" Command="{Binding ToggleRxLevelerCommand}"
+                  VerticalAlignment="Center" Margin="0,0,14,0"
+                  ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on)" />
           <ToggleButton Classes="seg" Content="MON" IsChecked="{Binding MonitorPreview}"
                         ToolTip.Tip="Preview: hear your mic through the whole TX chain (EQ, leveler, processor, ALC, TX filter) without transmitting" />
           <ToggleButton Classes="seg" Content="MON TX" IsChecked="{Binding MonitorOnTransmit}"

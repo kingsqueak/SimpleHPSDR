@@ -13,6 +13,9 @@ namespace SimpleHPSDR.Controls;
 public sealed record SliceMark(int Rx, long Hz, int LowHz, int HighHz, string Tag,
     bool Active, bool Transmit, bool Muted);
 
+/// <summary>A manual notch to draw: its RF centre and width.</summary>
+public sealed record NotchMark(long Hz, double WidthHz, bool Active);
+
 /// <summary>
 /// Panadapter (top) and scrolling waterfall (bottom) drawn from the engine's
 /// display frames. Click to tune, drag to move the band under the display
@@ -89,6 +92,10 @@ public sealed class SpectrumView : Control
 
     /// <summary>Slices to draw (A, and B when on).</summary>
     public IReadOnlyList<SliceMark> Slices { get; set; } = [];
+
+    /// <summary>Manual notches to draw.</summary>
+    public IReadOnlyList<NotchMark> Notches { get; set; } = [];
+    private static readonly IBrush NotchBrush = new SolidColorBrush(Color.Parse("#40E5484D"));
 
     /// <summary>Where to draw the yellow AGC line (dB), NaN for none.</summary>
     public double AgcLineDb { get; set; } = double.NaN;
@@ -253,9 +260,20 @@ public sealed class SpectrumView : Control
         DrawTrace(ctx, panRect);
         DrawAgcLine(ctx, panRect);
         DrawWaterfall(ctx, wfRect);
+        DrawNotches(ctx, b);
         DrawTuning(ctx, b);
         DrawGrip(ctx, b, panH);
         DrawHover(ctx, b);
+    }
+
+    private void DrawNotches(DrawingContext ctx, Rect b)
+    {
+        foreach (var n in Notches)
+        {
+            double lo = HzToX((long)(n.Hz - n.WidthHz / 2), b.Width), hi = HzToX((long)(n.Hz + n.WidthHz / 2), b.Width);
+            if (hi < 0 || lo > b.Width) continue;
+            ctx.FillRectangle(NotchBrush, new Rect(lo, 0, Math.Max(2, hi - lo), b.Height));
+        }
     }
 
     private void DrawAgcLine(DrawingContext ctx, Rect r)

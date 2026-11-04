@@ -33,6 +33,11 @@ public partial class MainWindow : Window
             else if (e.Key == Key.Escape) { Vm?.CancelFrequencyEntry(); e.Handled = true; }
         };
         FrequencyEntryBox.LostFocus += (_, _) => Vm?.CancelFrequencyEntry();
+        RitButton.PointerWheelChanged += (_, e) => { Vm?.NudgeRit(WheelClicks(e)); e.Handled = true; };
+        XitButton.PointerWheelChanged += (_, e) => { Vm?.NudgeXit(WheelClicks(e)); e.Handled = true; };
+        RitButton.ContextRequested += (_, e) => { Vm?.ClearRit(); e.Handled = true; };
+        XitButton.ContextRequested += (_, e) => { Vm?.ClearXit(); e.Handled = true; };
+        BandButton.ContextRequested += async (_, e) => { e.Handled = true; await ShowBandStackAsync(); };
         Spectrum.TuneRequested += TuneA;
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
         SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
@@ -53,6 +58,43 @@ public partial class MainWindow : Window
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
+
+    private static int WheelClicks(PointerWheelEventArgs e) => Math.Sign(e.Delta.Y);
+
+    // Right-click on the band: frequencies saved on this band.
+    private async Task ShowBandStackAsync()
+    {
+        if (Vm is not { IsConnected: true } vm) return;
+        var items = new List<Control>
+        {
+            new MenuItem
+            {
+                Header = $"Save {vm.FrequencyText} {vm.ModeLabel}",
+                Command = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(vm.SaveToBandStackAsync),
+            },
+        };
+        var saved = await vm.BandStackAsync();
+        foreach (var e in saved)
+            items.Add(new MenuItem
+            {
+                Header = e.Label,
+                Command = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(() => vm.RecallBandStackAsync(e)),
+            });
+        if (saved.Count > 0)
+        {
+            items.Add(new Separator());
+            items.Add(new MenuItem
+            {
+                Header = "Remove",
+                ItemsSource = saved.Select(e => new MenuItem
+                {
+                    Header = e.Label,
+                    Command = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(() => vm.RemoveBandStackAsync(e)),
+                }).ToList(),
+            });
+        }
+        new ContextMenu { ItemsSource = items }.Open(BandButton);
+    }
 
     // With two panadapters the top one is slice A's; with one, a click tunes
     // whichever slice is active (click a tag to switch).
@@ -121,6 +163,17 @@ public partial class MainWindow : Window
                 : Item("Show slice B in its own panadapter", () => { vm.SliceBOwnPanadapter = true; return Task.CompletedTask; }));
             items.Add(Item("Remove slice B", () => vm.RemoveSliceBAsync()));
         }
+        if (items.Count > 0) items.Add(new Separator());
+        if (vm.NotchAt(hz) is { } notch)
+        {
+            foreach (var w in new[] { 50, 100, 200, 400 })
+                if (Math.Abs(notch.WidthHz - w) > 1)
+                    items.Add(Item($"Notch width {w} Hz", () => vm.SetNotchWidthAsync(notch, w)));
+            items.Add(Item("Remove notch", () => vm.RemoveNotchAsync(notch)));
+        }
+        else
+            items.Add(Item($"Add notch at {at}", () => vm.AddNotchAsync(hz)));
+        if (vm.HasNotches) items.Add(Item("Clear all notches", () => vm.ClearNotchesAsync()));
         var menu = new ContextMenu { ItemsSource = items };
         menu.Open(Spectrum);
     }
@@ -158,6 +211,7 @@ public partial class MainWindow : Window
         vm.Display += f =>
         {
             Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();
+            Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
             if (f.RxId == vm.ActiveRx)
                 FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz);
             if (f.RxId == 1)
