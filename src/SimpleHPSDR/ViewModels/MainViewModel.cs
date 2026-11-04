@@ -357,6 +357,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Set by the window: shows the radio picker and returns the choice.</summary>
     public Func<RadioPickerViewModel, Task<RadioChoice?>>? ShowRadioPicker { get; set; }
+    public Func<DspPrepViewModel, Task>? ShowDspPrep { get; set; }
     public event Action<DisplayFrame>? Display;
     public event Action? DisplayReset;
 
@@ -413,6 +414,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         StartCpuMonitor();
         _statePoll.Tick += async (_, _) => await PollStateAsync();
         CreateClient();
+        await PrepareDspAsync();
 
         if (_settings is { AutoConnect: true, LastRadioIp: not null })
         {
@@ -425,6 +427,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return;
         }
         await ChooseRadioAsync();
+    }
+
+    /// <summary>Show the engine's first-start preparation, if it's still going.</summary>
+    private async Task PrepareDspAsync()
+    {
+        if (ShowDspPrep is null) return;
+        var prep = new DspPrepViewModel(_client!);
+        if (!await prep.NeededAsync()) return;
+        Status = "Preparing DSP (first start only)…";
+        await ShowDspPrep(prep);
     }
 
     /// <summary>A client for the running engine, with all stream handlers.</summary>
@@ -523,10 +535,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     await client.ConnectAsync(radio.Ip, radio.Protocol2, radio.BoardId, _settings.SampleRate, CancellationToken.None);
                 break;
             }
-            catch (StationException ex) when (ex.Status == HttpStatusCode.ServiceUnavailable && DateTime.UtcNow < deadline)
+            catch (StationException ex) when (ex.Status == HttpStatusCode.ServiceUnavailable)
             {
-                // The engine bakes FFTW plans on first run; connect waits for it.
-                Status = "Preparing DSP (the first run can take a minute)…";
+                // The engine bakes FFTW plans on first run; connect waits for it,
+                // however long this machine takes. Any other refusal gets 3 minutes.
+                var prep = await client.GetDspPrepAsync();
+                if (prep is not { Building: true } && DateTime.UtcNow >= deadline)
+                {
+                    Status = $"Could not connect to {radio.Label}: {ex.Message}";
+                    return false;
+                }
+                Status = DspPrepViewModel.StatusLine(prep?.Status ?? "");
                 await Task.Delay(1000);
             }
             catch (Exception ex)

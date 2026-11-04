@@ -38,6 +38,8 @@ public sealed partial class MainViewModel
     private const byte CalStateCollect = 4;   // calcc LCOLLECT
 
     [ObservableProperty] private bool _psOn;
+    /// <summary>PureSignal is on and correcting: the PS button shows green.</summary>
+    [ObservableProperty] private bool _psLocked;
     [ObservableProperty] private bool _twoToneOn;
     [ObservableProperty] private string _psStatus = "Off";
     /// <summary>off, ok, warn or bad: picks the badge colour.</summary>
@@ -198,6 +200,7 @@ public sealed partial class MainViewModel
         if (!PsOn)
         {
             (PsStatus, PsLevel, PsFeedbackText) = ("PS off", "off", "");
+            PsLocked = false;
             return;
         }
         var f = _latestPs;
@@ -213,5 +216,6 @@ public sealed partial class MainViewModel
             (PsStatus, PsLevel) = ("Calibrating", "warn");
         else
             (PsStatus, PsLevel) = ("Armed", "off");
+        PsLocked = PsStatus == "Correcting";
     }
 }

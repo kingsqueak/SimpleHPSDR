@@ -53,6 +53,8 @@ cat > "$app/Contents/Info.plist" <<EOF
   <key>NSHighResolutionCapable</key><true/>
   <key>NSMicrophoneUsageDescription</key>
   <string>SimpleHPSDR uses the microphone for transmit audio.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>SimpleHPSDR finds and talks to your radio over the local network.</string>
 </dict>
 </plist>
 EOF

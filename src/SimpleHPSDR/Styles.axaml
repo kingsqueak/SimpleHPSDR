@@ -82,6 +82,14 @@
     <Setter Property="Foreground" Value="White" />
   </Style>
 
+  <!-- PS: yellow when on but not locked, green when locked, plain grey when off. -->
+  <Style Selector="ToggleButton.seg.ps:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#9A6B12" />
+  </Style>
+  <Style Selector="ToggleButton.seg.ps.locked:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#1E7F4F" />
+  </Style>
+
   <!-- A plain button in the segmented look, for buttons whose lit state
        comes from the model rather than from being clicked (e.g. Pre). -->
   <Style Selector="Button.seg">

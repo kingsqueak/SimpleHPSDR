@@ -46,7 +46,7 @@ public partial class InfoWindow : Window
         ("Slices", "Right-click the panadapter to add slice B, on the same panadapter or in its own. Click a slice's tag to make it active. The AF slider has an A and a B flag for each slice's level, on top of the blue main AF."),
         ("Filters", "Drag the edges in the close-up at the top right to set the cuts. Config > Filters holds the filter shapes; TX filter follows the RX filter is in Config > TX Audio."),
         ("Monitor", "Mon steps through Mon (your mic through the TX chain, without transmitting), TX Mon (while transmitting), Mon+TX and off. It starts at a low level so it won't feed back through speakers."),
-        ("PureSignal", "Into a dummy load or a matched antenna, right-click PS and press PS CAL. It keys the radio in short two-tone bursts until PureSignal calibrates."),
+        ("PureSignal", "1. Set the source in Config > PureSignal.\n2. Set the drive level you'll be using.\n3. Turn on PS.\n4. Switch to a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts. Run it again until PS turns green.\n\nThat's it until you change the drive level.\n\nThe PS button is green when on and locked, yellow when on but not locked, and grey when off."),
         ("Radio model", "Several radios report the same ID, so choose yours in the radio picker or Config > Radio. It sets the S-meter, PA and PureSignal defaults."),
         ("Firmware", "Click the radio's name, then Firmware. A failed flash can leave the radio needing recovery, so use only the file made for your exact radio."),
     ]);

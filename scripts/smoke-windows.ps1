@@ -20,6 +20,10 @@ $audio = Invoke-RestMethod "http://127.0.0.1:$port/api/audio/devices"
 $audio | Select-Object supported, backend, availableBackends, error, asioError | ConvertTo-Json
 Write-Host "asio drivers: $(@($audio.asioDrivers).Count)"
 if ($audio.error -match 'DLL|load|module') { throw "native audio failed: $($audio.error)" }
+# Both are read by the app: first-start progress, and the radio picker's firewall check.
+$dsp = Invoke-RestMethod "http://127.0.0.1:$port/api/station/dsp-diagnostics"
+Write-Host "dsp: $($dsp.wdspWisdomPhase) $($dsp.wdspWisdomStatus)"
+Invoke-RestMethod "http://127.0.0.1:$port/api/system/windows-firewall" | ConvertTo-Json
 Stop-Process -Id $engine.Id -Force
 Start-Sleep -Seconds 2
 

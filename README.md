@@ -61,10 +61,20 @@ sudo pacman -U ./simplehpsdr-*.pkg.tar.zst  # Arch
 and run `SimpleHPSDR.exe`; nothing needs installing, and the .NET and Visual C++
 runtimes are included. The app isn't signed, so SmartScreen warns the first time:
 choose More info, then Run anyway. If Windows Firewall asks about
-`StationEngine.exe`, allow it on private networks, or the radio won't be found.
+`StationEngine.exe`, or asks to let it change your device, say yes, or the radio
+won't be found. If the radio picker finds nothing, it offers to add the firewall
+rule again.
 To use ASIO, install your audio interface's driver, then pick ASIO under
 Config > Audio. The driver must be able to run at 48 kHz. The Windows build hasn't
 been tried with a radio yet, so please report what you find.
+
+On macOS, allow SimpleHPSDR when it asks to find devices on your local network.
+
+The first start takes a while. The signal processing is measured and tuned for your
+computer, which takes around 8 minutes on a fast machine and longer on an older one.
+A window shows the progress. Leave the app open until it finishes; this only happens
+again after some updates. SimpleHPSDR needs nothing from Zeus; everything it uses is
+in the package.
 
 Then choose your radio. Several radios report the same ID, so pick your model in
 the radio picker or in Config > Radio. It sets the S-meter calibration and the PA
@@ -92,6 +102,11 @@ in the app data folder:
 - macOS: `~/Library/Application Support/SimpleHPSDR`
 - Linux: `~/.local/share/SimpleHPSDR`
 - Windows: `%LOCALAPPDATA%\SimpleHPSDR`
+
+The engine also keeps a few things in a `Zeus` folder beside that one, whether or
+not Zeus is installed: `wdspWisdom01`, the tuning file from that first start, and
+any noise reduction model you add. If Zeus is on the same computer, the two share
+that file.
 
 ## Credits
 

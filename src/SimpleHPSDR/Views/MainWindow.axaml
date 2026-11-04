@@ -498,7 +498,7 @@
                         ToolTip.Tip="Transmit" />
           <ToggleButton Classes="seg tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="64"
                         ToolTip.Tip="Tune carrier at the tune drive level" />
-          <ToggleButton Classes="seg" Content="PS" IsChecked="{Binding PsOn}" Margin="12,0,0,0"
+          <ToggleButton Classes="seg ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" Margin="12,0,0,0"
                         ToolTip.Tip="PureSignal adaptive predistortion. Right-click for two-tone, calibration and status.">
             <ToggleButton.ContextFlyout>
               <Flyout Placement="TopEdgeAlignedLeft">

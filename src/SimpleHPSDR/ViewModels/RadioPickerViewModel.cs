@@ -66,6 +66,7 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     [ObservableProperty] private int _modelIndex = -1;
     [ObservableProperty] private bool _manualP2 = true;
     [ObservableProperty] private bool _autoConnect;
+    [ObservableProperty] private bool _firewallBlocked;
 
     public ObservableCollection<RadioEntry> Radios { get; } = [];
     public bool SelectedBusy => Selected is { Busy: true };
@@ -109,6 +110,7 @@ public sealed partial class RadioPickerViewModel : ObservableObject
                 1 => "Found 1 radio.",
                 var n => $"Found {n} radios.",
             };
+            await CheckFirewallAsync();
         }
         catch (Exception ex)
         {
@@ -117,6 +119,39 @@ public sealed partial class RadioPickerViewModel : ObservableObject
         finally
         {
             Searching = false;
+        }
+    }
+
+    // Windows drops the radio's packets until a rule names the engine. The
+    // engine asks for it once on first start; if that was declined it never
+    // asks again, and all anyone sees is an empty list.
+    private async Task CheckFirewallAsync()
+    {
+        FirewallBlocked = false;
+        if (Radios.Count > 0) return;
+        try
+        {
+            if ((await _client.GetFirewallAsync()).Needed)
+            {
+                FirewallBlocked = true;
+                Status = "No radios found. Windows Firewall may be blocking the radio.";
+            }
+        }
+        catch (Exception) { }
+    }
+
+    [RelayCommand]
+    private async Task AllowFirewallAsync()
+    {
+        Status = "Waiting for Windows to approve the firewall rule…";
+        try
+        {
+            await _client.AllowFirewallAsync();
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            Status = $"The firewall rule wasn't added: {ex.Message}";
         }
     }
 

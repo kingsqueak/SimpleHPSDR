@@ -30,6 +30,20 @@ public sealed record NativeAudioStatus(bool OutputOpen, bool Muted, NativeAudioD
 public sealed record NativeAudioDiagnostics(long UnderrunSamplesTotal, int OutputSampleRateHz, int RingDepthSamples);
 
 /// <summary>A connect attempt the engine refused, with its reason.</summary>
+/// <summary>The engine's FFTW planning: phase Idle, Building, Ready or Failed.</summary>
+public sealed record DspPrep(string Phase, string Status)
+{
+    public bool Ready => Phase == "Ready";
+    public bool Failed => Phase == "Failed";
+    public bool Building => !Ready && !Failed;
+}
+
+public sealed record FirewallStatus(bool Supported, bool CanApply, bool? RulePresent, bool? RuleMatchesProgram)
+{
+    /// <summary>The rule is missing, or names a copy of the engine in another folder.</summary>
+    public bool Needed => Supported && CanApply && (RulePresent != true || RuleMatchesProgram == false);
+}
+
 public sealed class StationException(string message, HttpStatusCode status) : Exception(message)
 {
     public HttpStatusCode Status { get; } = status;
@@ -290,6 +304,36 @@ public sealed class StationClient : IDisposable
         PostAsync($"api/bands/stack/{Uri.EscapeDataString(band)}", entry);
     public async Task RemoveBandStackAsync(string band, int id) =>
         (await _http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}")).EnsureSuccessStatusCode();
+    /// <summary>The engine's FFTW planning state, or null if it can't say.</summary>
+    public async Task<DspPrep?> GetDspPrepAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(await _http.GetStringAsync("api/station/dsp-diagnostics", ct));
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("wdspWisdomPhase", out var phase)) return null;
+            return new DspPrep(phase.GetString() ?? "",
+                root.TryGetProperty("wdspWisdomStatus", out var status) ? status.GetString() ?? "" : "");
+        }
+        catch (Exception e) when (e is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Whether Windows Firewall lets the radio's packets reach the engine.</summary>
+    public async Task<FirewallStatus> GetFirewallAsync() =>
+        (await _http.GetFromJsonAsync<FirewallStatus>("api/system/windows-firewall", Json))!;
+
+    /// <summary>Add the firewall rule. Windows asks the user to approve it, so
+    /// this waits far longer than an ordinary request.</summary>
+    public async Task AllowFirewallAsync()
+    {
+        using var http = new HttpClient { BaseAddress = _http.BaseAddress, Timeout = TimeSpan.FromMinutes(5) };
+        using var r = await http.PostAsync("api/system/windows-firewall/allow", null);
+        await ThrowIfFailed(r);
+    }
+
     private sealed record EngineInfo(string Version);
     public async Task<string> GetEngineVersionAsync() =>
         (await _http.GetFromJsonAsync<EngineInfo>("api/capabilities", Json))!.Version;
