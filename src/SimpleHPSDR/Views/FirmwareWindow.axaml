@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        x:Class="SimpleHPSDR.Views.FirmwareWindow"
+        x:DataType="vm:FirmwareViewModel"
+        Title="Radio firmware" Width="560" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="18" Spacing="12">
+    <StackPanel Spacing="2">
+      <TextBlock Text="Radio firmware" FontSize="18" FontWeight="SemiBold" />
+      <TextBlock Text="{Binding RadioText}" Classes="label" FontSize="12" />
+      <TextBlock Text="{Binding MacText, StringFormat=MAC {0}}" Classes="label" FontSize="12" />
+    </StackPanel>
+
+    <Border Classes="panel">
+      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="2">
+        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="1" Text="{Binding FileDetail}" Classes="label" FontSize="12" />
+        <TextBlock Grid.Row="2" Text="{Binding FileWarning}" IsVisible="{Binding HasFileWarning}" FontSize="12"
+                   Foreground="#F2A93B" TextWrapping="Wrap" />
+        <Button Grid.Column="1" Grid.RowSpan="3" Classes="flat" Content="Choose file…" Click="OnChooseFile"
+                IsEnabled="{Binding Idle}" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <TextBlock FontSize="12" Foreground="#F2A93B" TextWrapping="Wrap"
+               Text="Flashing erases the radio's firmware first, and the radio can't confirm the result afterwards. If it fails, or the file is wrong for this radio, the radio may need an external programmer to recover. Use only the file made for your exact radio. Don't power off the radio or this computer until it finishes, and use a wired network." />
+    <CheckBox Content="I understand and accept the risk." IsChecked="{Binding Accepted}" IsEnabled="{Binding Idle}" />
+
+    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="6" MinWidth="0" Background="#1F232C" />
+    <TextBlock Text="{Binding Status}" FontSize="12" TextWrapping="Wrap" />
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Classes="flat" Content="Close" Click="OnClose" IsEnabled="{Binding Idle}" />
+      <Button Classes="flat accent" Content="Flash" Command="{Binding FlashCommand}" />
+    </StackPanel>
+  </StackPanel>
+</Window>

@@ -47,6 +47,8 @@
 
     <CheckBox Grid.Row="4" Content="Connect to this radio automatically next time" IsChecked="{Binding AutoConnect}" />
 
+    <Button Grid.Row="5" Classes="flat" Content="Firmware…" Command="{Binding FirmwareCommand}"
+            HorizontalAlignment="Left" ToolTip.Tip="Write new firmware to this radio (Protocol 2)" />
     <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button Classes="flat" Content="Cancel" Command="{Binding CancelCommand}" />
       <Button Classes="flat" Content="Take over" Command="{Binding TakeOverCommand}" IsVisible="{Binding SelectedBusy}" />

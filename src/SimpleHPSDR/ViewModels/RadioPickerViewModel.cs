@@ -39,6 +39,7 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
     [NotifyCanExecuteChangedFor(nameof(TakeOverCommand))]
     [NotifyPropertyChangedFor(nameof(SelectedBusy))]
+    [NotifyCanExecuteChangedFor(nameof(FirmwareCommand))]
     private RadioEntry? _selected;
     [ObservableProperty] private bool _searching;
     [ObservableProperty] private string _status = "";
@@ -50,6 +51,8 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     public ObservableCollection<RadioEntry> Radios { get; } = [];
     public bool SelectedBusy => Selected is { Busy: true };
     public event Action<RadioChoice?>? Done;
+    /// <summary>Set by the window: shows the firmware window.</summary>
+    public Func<FirmwareViewModel, Task>? ShowFirmware { get; set; }
 
     public RadioPickerViewModel(StationClient client, bool autoConnect)
     {
@@ -102,6 +105,15 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     {
         if (Selected is { Busy: true } s)
             Done?.Invoke(s.ToChoice() with { TakeOver = true });
+    }
+
+    private bool CanFirmware() => Selected is { Protocol2: true, Busy: false };
+
+    /// <summary>Protocol 2 radios only, and not one another program is using.</summary>
+    [RelayCommand(CanExecute = nameof(CanFirmware))]
+    private async Task FirmwareAsync()
+    {
+        if (Selected is { } s && ShowFirmware is { } show) await show(new FirmwareViewModel(s));
     }
 
     [RelayCommand]
