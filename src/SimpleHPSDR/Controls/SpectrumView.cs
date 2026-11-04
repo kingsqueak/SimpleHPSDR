@@ -15,7 +15,8 @@ public sealed record SliceMark(int Rx, long Hz, int LowHz, int HighHz, string Ta
 
 /// <summary>
 /// Panadapter (top) and scrolling waterfall (bottom) drawn from the engine's
-/// display frames. Click to tune; the wheel tunes by the step via
+/// display frames. Click to tune, drag to move the band under the display
+/// (the dial stays where it is); the wheel tunes by the step via
 /// <see cref="WheelTune"/>.
 /// </summary>
 public sealed class SpectrumView : Control
@@ -33,6 +34,7 @@ public sealed class SpectrumView : Control
     private bool _dragging;
     private static readonly Cursor CrossCursor = new(StandardCursorType.Cross);
     private static readonly Cursor ResizeCursor = new(StandardCursorType.SizeNorthSouth);
+    private static readonly Cursor PanCursor = new(StandardCursorType.SizeWestEast);
 
     public static readonly StyledProperty<double> SpecMinDbProperty =
         AvaloniaProperty.Register<SpectrumView, double>(nameof(SpecMinDb), -130);
@@ -43,6 +45,13 @@ public sealed class SpectrumView : Control
     public double SpecMinDb { get => GetValue(SpecMinDbProperty); set => SetValue(SpecMinDbProperty, value); }
     /// <summary>dB at the top of the panadapter trace.</summary>
     public double SpecMaxDb { get => GetValue(SpecMaxDbProperty); set => SetValue(SpecMaxDbProperty, value); }
+
+    public static readonly StyledProperty<bool> PopModeProperty =
+        AvaloniaProperty.Register<SpectrumView, bool>(nameof(PopMode));
+    /// <summary>POP: new waterfall rows follow the noise floor instead of Spec
+    /// Min/Max, with a curve that keeps noise dark and lifts weak signals.</summary>
+    public bool PopMode { get => GetValue(PopModeProperty); set => SetValue(PopModeProperty, value); }
+    private const double PopFloorDb = 3, PopSpanDb = 30;   // above the floor; gamma is 0.5
 
     static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty, PanFractionProperty);
     // Trace averaging per frame (30 frames/s): 0.35 settles in about 0.2 s.
@@ -69,6 +78,9 @@ public sealed class SpectrumView : Control
     private float[]? _pan;
     private long _centerHz;
     private long _avgCenterHz;
+    private long _wfCenterHz;     // centre the stored waterfall rows are lined up to
+    private float[]? _popSort;
+    private double _popFloor = double.NaN;
     private double _hzPerPixel;
     private double _floorDb = -130;
 
@@ -84,6 +96,8 @@ public sealed class SpectrumView : Control
     public event Action<long>? MenuRequested;
 
     public event Action<long>? TuneRequested;
+    /// <summary>The panadapter was dragged: the display centre it should move to.</summary>
+    public event Action<long>? PanRequested;
     public event Action<int>? WheelTune;
 
     public SpectrumView()
@@ -102,7 +116,21 @@ public sealed class SpectrumView : Control
         // A new span (zoom) makes the old waterfall rows a different scale,
         // so start the waterfall afresh. Retuning keeps them.
         if (_hzPerPixel > 0 && Math.Abs(f.HzPerPixel / _hzPerPixel - 1) > 0.01)
+        {
             ClearWaterfall();
+            _wfCenterHz = f.CenterHz;
+        }
+        else if (_wfCenterHz != 0 && f.HzPerPixel > 0)
+        {
+            // The centre moved: slide the history with it so signals stay lined up.
+            int shift = (int)Math.Round((f.CenterHz - _wfCenterHz) / f.HzPerPixel);
+            if (shift != 0)
+            {
+                ShiftWaterfall(shift);
+                _wfCenterHz += (long)Math.Round(shift * f.HzPerPixel);
+            }
+        }
+        if (_wfCenterHz == 0) _wfCenterHz = f.CenterHz;
         _centerHz = f.CenterHz;
         _hzPerPixel = f.HzPerPixel;
 
@@ -125,6 +153,24 @@ public sealed class SpectrumView : Control
         InvalidateVisual();
     }
 
+    // Move every stored row sideways by bins (positive: towards the left).
+    private unsafe void ShiftWaterfall(int bins)
+    {
+        if (_waterfall is null || _wfWidth == 0) return;
+        using var fb = _waterfall.Lock();
+        int n = Math.Min(Math.Abs(bins), _wfWidth);
+        for (int r = 0; r < WaterfallRows; r++)
+        {
+            var row = new Span<uint>((byte*)fb.Address + r * fb.RowBytes, _wfWidth);
+            if (n < _wfWidth)
+            {
+                if (bins > 0) row[n..].CopyTo(row);
+                else row[..^n].CopyTo(row[n..]);
+            }
+            (bins > 0 ? row[(_wfWidth - n)..] : row[..n]).Fill(Palette[0]);
+        }
+    }
+
     private unsafe void ClearWaterfall()
     {
         if (_waterfall is null) return;
@@ -135,6 +181,7 @@ public sealed class SpectrumView : Control
 
     public void Clear()
     {
+        _wfCenterHz = 0;
         _pan = null;
         _waterfall?.Dispose();
         _waterfall = null;
@@ -168,8 +215,23 @@ public sealed class SpectrumView : Control
         var dst = new Span<uint>((byte*)fb.Address + _wfRow * fb.RowBytes, _wfWidth);
         // Same range as the trace: Spec Min is the darkest colour, Spec Max the brightest.
         double floor = SpecMinDb, scale = 255.0 / Math.Max(1, SpecMaxDb - SpecMinDb);
-        for (int i = 0; i < _wfWidth; i++)
-            dst[i] = Palette[Math.Clamp((int)((row[i] - floor) * scale), 0, 255)];
+        if (PopMode)
+        {
+            // The floor comes from the waterfall data itself: the 30th
+            // percentile of the row, eased so rows don't flicker.
+            _popSort ??= new float[_wfWidth];
+            if (_popSort.Length != _wfWidth) _popSort = new float[_wfWidth];
+            row.CopyTo(_popSort);
+            Array.Sort(_popSort);
+            double level = _popSort[_wfWidth * 3 / 10];
+            _popFloor = double.IsNaN(_popFloor) ? level : _popFloor + (level - _popFloor) * 0.1;
+            double pop = _popFloor + PopFloorDb;
+            for (int i = 0; i < _wfWidth; i++)
+                dst[i] = Palette[(int)(Math.Sqrt(Math.Clamp((row[i] - pop) / PopSpanDb, 0, 1)) * 255)];
+        }
+        else
+            for (int i = 0; i < _wfWidth; i++)
+                dst[i] = Palette[Math.Clamp((int)((row[i] - floor) * scale), 0, 255)];
         _wfRow = (_wfRow + 1) % WaterfallRows;
     }
 
@@ -230,6 +292,13 @@ public sealed class SpectrumView : Control
             ctx.FillRectangle(GripDots, new Rect(cx + i * 6 - 1, y - 1, 2, 2));
     }
 
+    // Left button down on the display: a click tunes on release, unless the
+    // pointer moves far enough to be a drag, which pans instead.
+    private const double PanThreshold = 5;
+    private Point? _pressAt;
+    private long _pressCenterHz;
+    private bool _panning;
+
     private bool OverGrip(Point p) => Math.Abs(p.Y - SplitY) <= GripHalfHeight;
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -242,6 +311,21 @@ public sealed class SpectrumView : Control
             e.Handled = true;
             return;
         }
+        if (_pressAt is { } at && Bounds.Width > 0)
+        {
+            _panning |= Math.Abs(p.X - at.X) >= PanThreshold;
+            if (_panning)
+            {
+                // Follow the pointer: dragging right brings lower frequencies in.
+                int bins = _pan?.Length ?? _wfWidth;
+                double hz = (at.X - p.X) * bins / Bounds.Width * _hzPerPixel;
+                PanRequested?.Invoke(_pressCenterHz + (long)Math.Round(hz));
+                Cursor = PanCursor;
+                _hover = null;
+                e.Handled = true;
+                return;
+            }
+        }
         Cursor = OverGrip(p) ? ResizeCursor : CrossCursor;
         _hover = OverGrip(p) ? null : p;
         InvalidateVisual();
@@ -250,6 +334,16 @@ public sealed class SpectrumView : Control
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (_pressAt is { } at)
+        {
+            if (!_panning) TuneRequested?.Invoke(XToHz(at.X, Bounds.Width));
+            _pressAt = null;
+            _panning = false;
+            Cursor = CrossCursor;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+            return;
+        }
         if (!_dragging) return;
         _dragging = false;
         e.Pointer.Capture(null);
@@ -450,7 +544,10 @@ public sealed class SpectrumView : Control
                 e.Handled = true;
                 return;
             }
-        TuneRequested?.Invoke(hz);
+        _pressAt = pos;
+        _pressCenterHz = _centerHz;
+        _panning = false;
+        e.Pointer.Capture(this);
         e.Handled = true;
     }
 

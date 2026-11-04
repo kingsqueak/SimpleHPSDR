@@ -76,6 +76,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var r in protocol2 ? SpanRatesP2 : SpanRatesP1)
             SpanRates.Add(new Choice(RateLabel(r), r, c => _ = SelectSpanAsync((int)c.Value)));
         Mark(SpanRates, current);
+        _sampleRateHz = current;
         SpanLabel = RateLabel(current);
     }
 
@@ -86,6 +87,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await _client!.SetSampleRateAsync(hz);
             Mark(SpanRates, hz);
+            _sampleRateHz = hz;
             SpanLabel = RateLabel(hz);
             // Reconnects use this rate, so remember it.
             _settings.SampleRate = hz;
@@ -194,6 +196,22 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void ToggleAutoSpectrum() => AutoSpectrum = !AutoSpectrum;
+
+    /// <summary>POP on the waterfall: remembered between runs.</summary>
+    public bool WaterfallPop
+    {
+        get => _settings.WaterfallPop;
+        set
+        {
+            if (_settings.WaterfallPop == value) return;
+            _settings.WaterfallPop = value;
+            _settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleWaterfallPop() => WaterfallPop = !WaterfallPop;
 
     /// <summary>With Auto on, put the noise floor at the bottom with 50 dB above
     /// it (bright waterfall, tall trace); a few times a second so the sliders
@@ -308,11 +326,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             TuneSteps.Add(new Choice(s >= 1000 ? $"{s / 1000}k" : $"{s}", s, c => SelectStep((int)c.Value)));
         foreach (var nb in new[] { NbMode.Nb1, NbMode.Nb2 })
             NoiseBlankers.Add(new Choice(nb.ToString().ToUpperInvariant(), nb,
-                c => _ = SelectNbAsync(c.IsSelected ? NbMode.Off : (NbMode)c.Value)));
-        // Thetis numbering: NR1 LMS, NR2 Ephraim-Malah, NR3 RNNoise, NR4 libspecbleach.
-        foreach (var (label, mode) in new[] { ("NR1", NrMode.Anr), ("NR2", NrMode.Emnr), ("NR3", NrMode.Rnnr), ("NR4", NrMode.Sbnr) })
+                c => _ = SelectNbAsync(c.IsSelected ? NbMode.Off : (NbMode)c.Value)) { Params = NoisePanelFor(nb) });
+        // Thetis numbering: NR1 LMS, NR2 Ephraim-Malah, NR3 RNNoise, NR4
+        // libspecbleach; NNR is WDSP's neural reduction.
+        foreach (var (label, mode) in new[]
+                 {
+                     ("NR1", NrMode.Anr), ("NR2", NrMode.Emnr), ("NR3", NrMode.Rnnr), ("NR4", NrMode.Sbnr), ("NNR", NrMode.Nnr),
+                 })
             NoiseReductions.Add(new Choice(label, mode,
-                c => _ = SelectNrAsync(c.IsSelected ? NrMode.Off : (NrMode)c.Value)));
+                c => _ = SelectNrAsync(c.IsSelected ? NrMode.Off : (NrMode)c.Value)) { Params = NoisePanelFor(mode) });
         Mark(TuneSteps, _settings.TuneStepHz);
         _specMinDb = _settings.SpecMinDb;
         _specMaxDb = _settings.SpecMaxDb;
@@ -772,7 +794,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await Try(async () =>
         {
             var nr = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
-            await _client.SetNrAsync(change(nr));
+            await SendNrAsync(change(nr));
         });
         var applied = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
         Mark(NoiseBlankers, applied.NbMode);

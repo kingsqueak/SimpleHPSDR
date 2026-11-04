@@ -234,6 +234,8 @@ public sealed class StationClient : IDisposable
     public Task SetAgcAsync(AgcConfig agc) => PostAsync("api/rx/agc", new AgcSetRequest(agc));
     /// <summary>Auto AGC: the engine adjusts the AGC gain to conditions.</summary>
     public Task SetAutoAgcAsync(bool on) => PostAsync("api/auto-agc", new AutoAgcSetRequest(on));
+    /// <summary>Move a receiver's display centre without moving its dial.</summary>
+    public Task SetReceiverLoAsync(int rx, long hz) => PostAsync($"api/receivers/{rx}/lo", new RadioLoSetRequest(hz));
     /// <summary>DUP: keep the receivers in the audio mix while transmitting.</summary>
     public Task SetFullDuplexAsync(bool on) => PostAsync("api/radio/full-duplex-multi-rx", new FullDuplexMultiRxSetRequest(on));
     public Task SetFilterAsync(int low, int high, string? preset, int rx = 0) =>

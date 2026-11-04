@@ -34,6 +34,8 @@ public partial class MainWindow : Window
         };
         FrequencyEntryBox.LostFocus += (_, _) => Vm?.CancelFrequencyEntry();
         Spectrum.TuneRequested += TuneA;
+        Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
+        SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += ShowSliceMenu;
@@ -127,6 +129,13 @@ public partial class MainWindow : Window
     private void OnFilterEditOpening(object? sender, EventArgs e)
     {
         if (sender is Flyout { Content: Control { DataContext: FilterSlot slot } }) slot.BeginEdit();
+    }
+
+    // The NB and NR popups show what the engine has when they open.
+    private void OnNoiseParamsOpening(object? sender, EventArgs e)
+    {
+        if (sender is Flyout { Content: Control { DataContext: Choice { Params: { } panel } } })
+            _ = Vm?.LoadNoisePanelAsync(panel);
     }
 
     // A button's Click runs before its Command; closing the popup right away

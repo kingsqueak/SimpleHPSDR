@@ -255,6 +255,23 @@ public sealed partial class MainViewModel
 
     private static bool Lower(RxMode m) => m is RxMode.LSB or RxMode.CWL or RxMode.DIGL;
 
+    private int _sampleRateHz;
+    private readonly Latest<long>?[] _panSenders = new Latest<long>?[2];
+
+    /// <summary>A panadapter dragged: move that receiver's display centre, not
+    /// its dial. The dial must stay inside what the receiver captures or its
+    /// audio would stop, so the centre stops short of that. The engine
+    /// ignores this while keyed and retunes the centre on the next dial move
+    /// unless CTUN is on.</summary>
+    public void PanTo(int rx, long centerHz)
+    {
+        if (!IsConnected) return;
+        long dial = rx == ActiveRx ? VfoHz : (rx == 0 ? _sliceA : _sliceB)?.VfoHz ?? VfoHz;
+        long reach = (long)(_sampleRateHz * 0.45);
+        centerHz = Math.Clamp(centerHz, dial - reach, dial + reach);
+        (_panSenders[rx] ??= new Latest<long>(hz => _client!.SetReceiverLoAsync(rx, hz))).Send(centerHz);
+    }
+
     /// <summary>A click or wheel on a slice's own panadapter: make that slice
     /// active first, then tune it.</summary>
     public async Task TuneSliceAsync(int rx, long hz)

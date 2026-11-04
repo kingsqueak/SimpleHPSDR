@@ -18,4 +18,6 @@ public sealed partial class Choice : ObservableObject
     public string Label { get; }
     public object Value { get; }
     public IRelayCommand Select { get; }
+    /// <summary>NB and NR buttons: the settings their right-click popup shows.</summary>
+    public NoisePanel? Params { get; init; }
 }

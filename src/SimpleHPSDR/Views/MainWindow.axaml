@@ -28,6 +28,39 @@
       <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}"
               Command="{Binding Select}" />
     </DataTemplate>
+    <DataTemplate x:Key="NoiseButton" x:DataType="vm:Choice">
+      <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}"
+              Command="{Binding Select}" ToolTip.Tip="Click for on or off. Right-click for its settings.">
+        <Button.ContextFlyout>
+          <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnNoiseParamsOpening">
+            <StackPanel Width="360" Spacing="10" Margin="4">
+              <TextBlock Text="{Binding Params.Title}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding Params.Note}" IsVisible="{Binding Params.HasNote}" Classes="label"
+                         FontSize="12" TextWrapping="Wrap" />
+              <ItemsControl ItemsSource="{Binding Params.Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:NoiseParam">
+                    <Grid ColumnDefinitions="110,*,64" Margin="0,4">
+                      <TextBlock Text="{Binding Label}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                      <Slider Grid.Column="1" IsVisible="{Binding IsSlider}" Minimum="{Binding Min}" Maximum="{Binding Max}"
+                              SmallChange="{Binding Step}" TickFrequency="{Binding Step}" IsSnapToTickEnabled="True"
+                              Value="{Binding Value}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" IsVisible="{Binding IsSlider}" Text="{Binding Text}" FontSize="12"
+                                 Margin="8,0,0,0" VerticalAlignment="Center" />
+                      <CheckBox Grid.Column="1" IsVisible="{Binding IsToggle}" IsChecked="{Binding On}" />
+                      <ComboBox Grid.Column="1" Grid.ColumnSpan="2" IsVisible="{Binding IsOptions}" ItemsSource="{Binding Options}"
+                                SelectedIndex="{Binding Option}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Button Classes="flat" Content="Reset to defaults" Command="{Binding Params.ResetCommand}"
+                      IsVisible="{Binding Params.HasRows}" />
+            </StackPanel>
+          </Flyout>
+        </Button.ContextFlyout>
+      </Button>
+    </DataTemplate>
   </Window.Resources>
 
   <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
@@ -209,18 +242,18 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <TextBlock Grid.Row="0" Grid.Column="2" Text="NB" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
-        <ItemsControl Grid.Row="0" Grid.Column="3" ItemsSource="{Binding NoiseBlankers}" ItemTemplate="{StaticResource SegButton}"
+        <ItemsControl Grid.Row="0" Grid.Column="3" ItemsSource="{Binding NoiseBlankers}" ItemTemplate="{StaticResource NoiseButton}"
                       VerticalAlignment="Center"
-                      ToolTip.Tip="Noise blanker for impulse noise (click the lit one for off)">
+                      ToolTip.Tip="Noise blanker for impulse noise (click the lit one for off, right-click for settings)">
           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         </ItemsControl>
         <!-- Close-up of the received signal with the filter: drag its edges -->
         <c:FilterScope Name="FilterScope" Grid.Column="4" Grid.RowSpan="2" Margin="12,0,0,0"
                        ToolTip.Tip="6 kHz around the dial with the receive filter shaded. Drag an edge to set the low or high cut. Scale: audio frequency in Hz." />
         <TextBlock Grid.Row="1" Grid.Column="2" Text="NR" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
-        <ItemsControl Grid.Row="1" Grid.Column="3" ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource SegButton}"
+        <ItemsControl Grid.Row="1" Grid.Column="3" ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource NoiseButton}"
                       VerticalAlignment="Center"
-                      ToolTip.Tip="Noise reduction (click the lit one for off)">
+                      ToolTip.Tip="Noise reduction (click the lit one for off, right-click for settings)">
           <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         </ItemsControl>
       </Grid>
@@ -231,11 +264,12 @@
     <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0">
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
+                        PopMode="{Binding WaterfallPop}"
                         PanFraction="{Binding PanFraction}" />
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
               BorderBrush="Transparent" IsVisible="{Binding ShowPanadapterB}">
-        <c:SpectrumView Name="SpectrumB" PanFraction="{Binding PanFraction}" />
+        <c:SpectrumView Name="SpectrumB" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
       </Border>
     </Grid>
 
@@ -286,6 +320,9 @@
                       ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
         </Button.Flyout>
       </Button>
+      <Button Classes="seg" Classes.lit="{Binding WaterfallPop}" Content="POP" Command="{Binding ToggleWaterfallPopCommand}"
+              VerticalAlignment="Center"
+              ToolTip.Tip="POP: the waterfall follows the noise floor and lifts weak signals out of the noise (blue = on)" />
     </StackPanel>
 
     <!-- Transmit -->
