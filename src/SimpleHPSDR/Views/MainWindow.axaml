@@ -446,17 +446,28 @@
               </Flyout>
             </ToggleButton.ContextFlyout>
           </ToggleButton>
-          <ToggleButton Classes="seg" Content="MON" IsChecked="{Binding MonitorPreview}"
-                        ToolTip.Tip="Preview: hear your mic through the whole TX chain (EQ, leveler, processor, ALC, TX filter) without transmitting" />
+          <Button Classes="seg" Classes.lit="{Binding MonitorOn}" Content="{Binding MonitorLabel}" MinWidth="64"
+                  Command="{Binding CycleMonitorCommand}" VerticalAlignment="Center"
+                  ToolTip.Tip="Click for Mon (hear your mic through the TX chain without transmitting), TXMon (hear yourself while transmitting), or off. Right-click for the level.">
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <Grid Width="280" Margin="4" ColumnDefinitions="60,*,48">
+                  <TextBlock Text="Level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding MonitorPct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding MonitorPctText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </Grid>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
           <Button Classes="seg" VerticalAlignment="Center"
-                  ToolTip.Tip="Transmit levels, mic and monitor">
+                  ToolTip.Tip="Transmit levels and mic">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <TextBlock Text="TX" VerticalAlignment="Center" />
               <TextBlock Text="{Binding DrivePct, StringFormat={}{0:0}%}" VerticalAlignment="Center" />
             </StackPanel>
             <Button.Flyout>
               <Flyout Placement="TopEdgeAlignedLeft">
-                <Grid Width="380" Margin="4" ColumnDefinitions="60,*,64" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="14">
+                <Grid Width="380" Margin="4" ColumnDefinitions="60,*,64" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="14">
                   <TextBlock Text="DRIVE" Classes="label" FontSize="12" VerticalAlignment="Center" />
                   <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding DrivePct}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="2" Text="{Binding DrivePct, StringFormat={}{0:0}%}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
@@ -473,11 +484,6 @@
                   </Border>
                   <ProgressBar Grid.Row="3" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MicLevelDbfs}" MinWidth="0" Height="6"
                                VerticalAlignment="Center" Foreground="#3DD68C" Background="#1F232C" ToolTip.Tip="Mic level (dBFS)" />
-                  <ToggleButton Grid.Row="4" Classes="seg" Content="MON TX" IsChecked="{Binding MonitorOnTransmit}" Padding="4,3"
-                                FontSize="10" ToolTip.Tip="Hear the processed TX audio while transmitting" />
-                  <Slider Grid.Row="4" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MonitorVolumeDb}" VerticalAlignment="Center"
-                          ToolTip.Tip="Monitor volume" />
-                  <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding MonitorVolumeDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
                 </Grid>
               </Flyout>
             </Button.Flyout>

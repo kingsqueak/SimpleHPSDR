@@ -25,6 +25,8 @@ public sealed class Settings
     /// <summary>MON and MON TX: the engine forgets them on restart.</summary>
     public bool MonitorPreview { get; set; }
     public bool MonitorOnTransmit { get; set; }
+    /// <summary>The low starting monitor level has been applied once.</summary>
+    public bool MonitorLevelDefaulted { get; set; }
     /// <summary>Panadapter trace range (dB).</summary>
     public double SpecMinDb { get; set; } = -130;
     public double SpecMaxDb { get; set; } = -60;

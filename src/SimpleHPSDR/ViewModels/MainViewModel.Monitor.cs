@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Engine;
 
 namespace SimpleHPSDR.ViewModels;
@@ -14,9 +15,38 @@ public sealed partial class MainViewModel
     private bool _wasKeyedForMonitor;
     private Latest<double>? _monitorVolumeSender;
 
-    [ObservableProperty] private bool _monitorPreview;
-    [ObservableProperty] private bool _monitorOnTransmit;
-    [ObservableProperty] private double _monitorVolumeDb;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MonitorOn))] [NotifyPropertyChangedFor(nameof(MonitorLabel))]
+    private bool _monitorPreview;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MonitorOn))] [NotifyPropertyChangedFor(nameof(MonitorLabel))]
+    private bool _monitorOnTransmit;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(MonitorPct))] [NotifyPropertyChangedFor(nameof(MonitorPctText))]
+    private double _monitorVolumeDb;
+
+    // The level as a percentage of the slider's -60..0 dB. Starts low so that
+    // Mon can't howl through open speakers the first time it's pressed.
+    private const double MonitorMinDb = -60, MonitorDefaultPct = 30;
+    public double MonitorPct
+    {
+        get => (MonitorVolumeDb - MonitorMinDb) / -MonitorMinDb * 100;
+        set => MonitorVolumeDb = Math.Round(MonitorMinDb + value / 100 * -MonitorMinDb);
+    }
+    public string MonitorPctText => $"{MonitorPct:0}%";
+
+    public bool MonitorOn => MonitorPreview || MonitorOnTransmit;
+    public string MonitorLabel => MonitorOnTransmit ? "TXMon" : "Mon";
+
+    /// <summary>Off, then Mon (preview without transmitting), then TXMon
+    /// (hear yourself while transmitting), then off.</summary>
+    [RelayCommand]
+    private void CycleMonitor()
+    {
+        bool preview = !MonitorOn;
+        bool onTransmit = MonitorPreview && !MonitorOnTransmit;
+        MonitorPreview = preview;
+        MonitorOnTransmit = onTransmit;
+    }
 
     private void WireMonitor(StationClient client) =>
         _monitorVolumeSender = new Latest<double>(db => client.SetMonitorVolumeAsync(db));
@@ -28,6 +58,13 @@ public sealed partial class MainViewModel
             var m = await _client!.GetMonitorAsync();
             _applyingMonitor = true;
             MonitorVolumeDb = m.VolumeDb;
+            if (!_settings.MonitorLevelDefaulted)
+            {
+                _settings.MonitorLevelDefaulted = true;
+                _settings.Save();
+                MonitorPct = MonitorDefaultPct;
+                await _client.SetMonitorVolumeAsync(MonitorVolumeDb);
+            }
             // The engine keeps the volume but starts with MON and MON TX off,
             // so put back what the operator had.
             MonitorPreview = _settings.MonitorPreview;
