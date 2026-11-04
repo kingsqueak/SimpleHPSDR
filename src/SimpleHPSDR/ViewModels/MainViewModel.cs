@@ -742,6 +742,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         Mode = mode;
         OnPropertyChanged(nameof(Mode));
+        OnPropertyChanged(nameof(ModeIsAm));
+        OnPropertyChanged(nameof(ModeIsFm));
+        OnPropertyChanged(nameof(ModeHasNoOptions));
         Mark(Modes, mode);
         OnPropertyChanged(nameof(ModeLabel));
 

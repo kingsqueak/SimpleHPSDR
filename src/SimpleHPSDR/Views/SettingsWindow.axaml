@@ -3,7 +3,7 @@
         xmlns:vm="using:SimpleHPSDR.ViewModels"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="Configuration" Width="840" Height="720" MinHeight="480"
+        Title="Configuration" Width="980" Height="720" MinHeight="480"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
     <!-- Smaller tab headers so all pages fit on one line -->
@@ -306,6 +306,15 @@
               </StackPanel>
             </Expander>
 
+            <Border Classes="panel" IsVisible="{Binding HasCfc}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="CFC preset" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding CfcPresets}" SelectedItem="{Binding SelectedCfcPreset}" Width="170" PlaceholderText="Choose to load…" />
+                <TextBox Text="{Binding CfcPresetName}" PlaceholderText="Name" Width="150" />
+                <Button Classes="flat" Content="Save" Command="{Binding SaveCfcPresetCommand}" />
+                <Button Classes="flat" Content="Delete" Command="{Binding DeleteCfcPresetCommand}" />
+              </StackPanel>
+            </Border>
             <Expander Header="CFC (continuous frequency compressor)" HorizontalAlignment="Stretch" IsVisible="{Binding HasCfc}">
               <StackPanel Spacing="8">
                 <StackPanel Orientation="Horizontal" Spacing="16">
@@ -546,6 +555,98 @@
                   <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 </StackPanel>
               </Grid>
+            </Expander>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Filters">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Expander Header="Filter shape" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="RX shape" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding WindowNames}" SelectedIndex="{Binding RxWindowIndex}" Width="160" />
+                <TextBlock Grid.Row="1" Text="RX phase" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding PhaseNames}" SelectedIndex="{Binding RxPhaseIndex}" Width="160" />
+                <TextBlock Grid.Row="2" Text="TX shape" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding WindowNames}" SelectedIndex="{Binding TxWindowIndex}" Width="160" />
+                <TextBlock Grid.Row="3" Text="TX phase" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding PhaseNames}" SelectedIndex="{Binding TxPhaseIndex}" Width="160" />
+                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="More taps make steeper filter edges but add delay and CPU. Minimum phase keeps the delay down at high tap counts. With linear phase, TX stops at 16k taps." />
+              </Grid>
+            </Expander>
+            <Expander Header="RF filters" IsExpanded="True" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{Binding RfFilterText}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+                <CheckBox Content="Bypass the receive filters" IsChecked="{Binding RxBypassAll}" />
+                <CheckBox Content="Bypass them while transmitting" IsChecked="{Binding RxBypassOnTx}" />
+                <CheckBox Content="Bypass them for PureSignal" IsChecked="{Binding RxBypassOnPs}" />
+              </StackPanel>
+            </Expander>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Station">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Expander Header="PTT" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
+                <CheckBox Grid.ColumnSpan="2" Content="Radio PTT input keys the transmitter" IsChecked="{Binding PttInputOn}" />
+                <CheckBox Grid.Row="1" Grid.ColumnSpan="2" Content="Serial PTT switch" IsChecked="{Binding SerialPttOn}"
+                          ToolTip.Tip="A foot switch on a serial port's CTS or DSR line. If the line is already active, turning this on can key the radio." />
+                <TextBlock Grid.Row="2" Text="Port" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <ComboBox ItemsSource="{Binding SerialPorts}" SelectedItem="{Binding SerialPttPort}" Width="280" PlaceholderText="Choose a port" />
+                  <TextBlock Text="{Binding SerialPttState}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                  <CheckBox Content="CTS" IsChecked="{Binding SerialSenseCts}" />
+                  <CheckBox Content="DSR" IsChecked="{Binding SerialSenseDsr}" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+            <Expander Header="Diversity" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <CheckBox Grid.ColumnSpan="2" Content="Combine the two receive inputs" IsChecked="{Binding DiversityOn}" />
+                <TextBlock Grid.Row="1" Text="Gain" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding DiversityGain}" Minimum="0" Maximum="5" Increment="0.05" FormatString="0.00" Width="140" HorizontalAlignment="Left" />
+                <TextBlock Grid.Row="2" Text="Phase" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding DiversityPhase}" Minimum="-180" Maximum="180" Increment="1" FormatString="0" Width="140" HorizontalAlignment="Left" />
+                <TextBlock Grid.Row="3" Text="Output" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding DiversityOutputs}" SelectedIndex="{Binding DiversityOutputIndex}" Width="140" />
+                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="Needs an antenna on each receive input." Classes="label" FontSize="11" />
+              </Grid>
+            </Expander>
+            <Expander Header="Transverters" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="6">
+                <CheckBox Content="Use transverters" IsChecked="{Binding TransverterOn}" />
+                <Grid ColumnDefinitions="40,90,110,110,110,80,60,60" Margin="0,4,0,0">
+                  <TextBlock Grid.Column="1" Text="NAME" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="2" Text="LO MHz" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="3" Text="FROM MHz" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="4" Text="TO MHz" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="5" Text="RX GAIN" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="6" Text="RX ONLY" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="7" Text="PA OFF" Classes="label" FontSize="11" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Transverters}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TransverterRow">
+                      <Grid ColumnDefinitions="40,90,110,110,110,80,60,60" Margin="0,2">
+                        <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" />
+                        <TextBox Grid.Column="1" Text="{Binding Name}" Margin="0,0,6,0" />
+                        <NumericUpDown Grid.Column="2" Value="{Binding LoMhz}" ShowButtonSpinner="False" FormatString="0.000000" Margin="0,0,6,0" />
+                        <NumericUpDown Grid.Column="3" Value="{Binding BeginMhz}" ShowButtonSpinner="False" FormatString="0.000000" Margin="0,0,6,0" />
+                        <NumericUpDown Grid.Column="4" Value="{Binding EndMhz}" ShowButtonSpinner="False" FormatString="0.000000" Margin="0,0,6,0" />
+                        <NumericUpDown Grid.Column="5" Value="{Binding RxGainDb}" ShowButtonSpinner="False" FormatString="0.0" Margin="0,0,6,0" />
+                        <CheckBox Grid.Column="6" IsChecked="{Binding RxOnly}" MinWidth="0" />
+                        <CheckBox Grid.Column="7" IsChecked="{Binding DisablePa}" MinWidth="0" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
             </Expander>
           </StackPanel>
         </ScrollViewer>

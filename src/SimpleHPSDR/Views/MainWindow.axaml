@@ -260,11 +260,59 @@
             </Button.Flyout>
           </Button>
           <TextBlock Text="MODE" Classes="label" Margin="12,0,0,0" />
-          <Button Classes="seg lit" Content="{Binding ModeLabel}" MinWidth="64" ToolTip.Tip="Choose a mode">
+          <Button Classes="seg lit" Content="{Binding ModeLabel}" MinWidth="64"
+                  ToolTip.Tip="Choose a mode. In AM and FM, right-click for its options.">
             <Button.Flyout>
               <MenuFlyout ItemsSource="{Binding Modes}" Placement="BottomEdgeAlignedLeft"
                           ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
             </Button.Flyout>
+            <Button.ContextFlyout>
+              <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnModeOptionsOpening">
+                <Panel Width="340" Margin="4">
+                  <StackPanel Spacing="8" IsVisible="{Binding ModeIsAm}">
+                    <TextBlock Text="AM transmit" FontWeight="SemiBold" />
+                    <CheckBox Content="Broadcast-style AM (asymmetric peaks)" IsChecked="{Binding AmBroadcastOn}" />
+                    <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmBroadcastOn}">
+                      <TextBlock Text="Positive peak" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                      <Slider Grid.Column="1" Minimum="100" Maximum="150" Value="{Binding AmPositivePeak}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding AmPositiveText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                    </Grid>
+                  <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmBroadcastOn}">
+                    <TextBlock Text="Negative peak" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                    <Slider Grid.Column="1" Minimum="80" Maximum="100" Value="{Binding AmNegativePeak}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding AmNegativeText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  </Grid>
+                    <CheckBox Content="Pre-emphasis" IsChecked="{Binding AmPreEmphasis}" IsVisible="{Binding AmBroadcastOn}" />
+                    <CheckBox Content="Invert polarity" IsChecked="{Binding AmInvert}" IsVisible="{Binding AmBroadcastOn}" />
+                  <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmSymmetric}">
+                    <TextBlock Text="Carrier level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                    <Slider Grid.Column="1" Minimum="0" Maximum="125" Value="{Binding AmCarrierPct}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding AmCarrierText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  </Grid>
+                  </StackPanel>
+                  <StackPanel Spacing="8" IsVisible="{Binding ModeIsFm}">
+                    <TextBlock Text="FM" FontWeight="SemiBold" />
+                    <CheckBox Content="Narrow (2.5 kHz deviation, otherwise 5 kHz)" IsChecked="{Binding FmNarrow}" />
+                    <Grid ColumnDefinitions="110,*">
+                      <CheckBox Content="CTCSS" IsChecked="{Binding FmCtcssOn}" />
+                      <ComboBox Grid.Column="1" ItemsSource="{Binding CtcssTones}" SelectedItem="{Binding FmCtcssTone}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                    <Grid ColumnDefinitions="110,*">
+                      <TextBlock Text="RX tone squelch" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                      <ComboBox Grid.Column="1" ItemsSource="{Binding FmToneModes}" SelectedIndex="{Binding FmRxToneIndex}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                    <Grid ColumnDefinitions="110,*">
+                      <TextBlock Text="Repeater shift" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                      <ComboBox Grid.Column="1" ItemsSource="{Binding FmShiftNames}" SelectedIndex="{Binding FmShiftIndex}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                    <CheckBox Content="Reverse" IsChecked="{Binding FmReverse}" />
+                    <CheckBox Content="1750 Hz tone burst at the start of each over" IsChecked="{Binding FmBurstOnKey}" />
+                  </StackPanel>
+                  <TextBlock Text="Options are available in AM, SAM and FM." Classes="label" FontSize="12"
+                             IsVisible="{Binding ModeHasNoOptions}" />
+                </Panel>
+              </Flyout>
+            </Button.ContextFlyout>
           </Button>
         </StackPanel>
         <TextBlock Grid.Row="1" Text="FILTER" Classes="label" />
@@ -445,7 +493,8 @@
                         ToolTip.Tip="PureSignal adaptive predistortion. Right-click for two-tone, calibration and status.">
             <ToggleButton.ContextFlyout>
               <Flyout Placement="TopEdgeAlignedLeft">
-                <StackPanel Orientation="Horizontal" Spacing="6" Margin="4">
+                <StackPanel Spacing="8" Margin="4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
                     <ToggleButton Classes="seg tx" Content="2-TONE" IsChecked="{Binding TwoToneOn}"
                                   ToolTip.Tip="Transmit the two-tone test signal (for PureSignal calibration and IMD checks)" />
                     <ToggleButton Classes="seg tx" Content="PS CAL" IsChecked="{Binding PsCalibrating, Mode=OneWay}"
@@ -460,6 +509,12 @@
                         <Run Text="{Binding PsFeedbackText}" />
                       </TextBlock>
                     </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Classes="flat" Content="Save correction" Command="{Binding SavePsCorrectionCommand}"
+                          ToolTip.Tip="Keep what PureSignal has learned, to bring back without recalibrating" />
+                  <Button Classes="flat" Content="Restore" Command="{Binding RestorePsCorrectionCommand}" />
+                </StackPanel>
                 </StackPanel>
               </Flyout>
             </ToggleButton.ContextFlyout>

@@ -261,6 +261,51 @@ public sealed class StationClient : IDisposable
         PostAsync($"api/bands/stack/{Uri.EscapeDataString(band)}", entry);
     public async Task RemoveBandStackAsync(string band, int id) =>
         (await _http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}")).EnsureSuccessStatusCode();
+    // ---- filters, station hardware and mode options ----
+    public Task SetRxFilterWindowAsync(BandpassWindow w) => PostAsync("api/rx/filter-window", new BandpassWindowSetRequest(w));
+    public Task SetTxFilterWindowAsync(BandpassWindow w) => PostAsync("api/tx/filter-window", new BandpassWindowSetRequest(w));
+    public Task SetRxFilterPhaseAsync(FilterPhaseMode p) => PostAsync("api/rx/filter-phase", new FilterPhaseSetRequest(p));
+    public Task SetTxFilterPhaseAsync(FilterPhaseMode p) => PostAsync("api/tx/filter-phase", new FilterPhaseSetRequest(p));
+    public async Task<RfFilterSettingsDto> GetRfFiltersAsync() =>
+        (await _http.GetFromJsonAsync<RfFilterSettingsDto>("api/radio/rf-filters", Json))!;
+    public async Task SetRfFiltersAsync(RfFilterSettingsSetRequest r) =>
+        (await _http.PutAsJsonAsync("api/radio/rf-filters", r, Json)).EnsureSuccessStatusCode();
+
+    public sealed record PttInput(bool Enabled);
+    public async Task<bool> GetPttInputAsync() =>
+        (await _http.GetFromJsonAsync<PttInput>("api/radio/ptt-status", Json))!.Enabled;
+    public async Task SetPttInputAsync(bool on) =>
+        (await _http.PutAsJsonAsync("api/radio/ptt-status", new PttEnableSetRequest(on), Json)).EnsureSuccessStatusCode();
+    public async Task<SerialPttStatus> GetSerialPttAsync() =>
+        (await _http.GetFromJsonAsync<SerialPttStatus>("api/radio/serial-ptt", Json))!;
+    public async Task SetSerialPttAsync(SerialPttConfig c) =>
+        (await _http.PutAsJsonAsync("api/radio/serial-ptt", c, Json)).EnsureSuccessStatusCode();
+    public async Task<TransverterSettingsDto> GetTransverterAsync() =>
+        (await _http.GetFromJsonAsync<TransverterSettingsDto>("api/radio/transverter", Json))!;
+    public async Task SetTransverterAsync(TransverterSettingsSetRequest r) =>
+        (await _http.PutAsJsonAsync("api/radio/transverter", r, Json)).EnsureSuccessStatusCode();
+    public Task SetDiversityAsync(DiversitySetRequest r) => PostAsync("api/rx/diversity", r);
+
+    public async Task<AmBroadcastConfig> GetAmBroadcastAsync() =>
+        (await _http.GetFromJsonAsync<AmBroadcastConfig>("api/tx/am-broadcast", Json))!;
+    public Task SetAmBroadcastAsync(AmBroadcastConfig c) => PostAsync("api/tx/am-broadcast", c);
+    public Task SetAmCarrierAsync(int percent) => PostAsync("api/tx/am-carrier-level", new AmCarrierLevelSetRequest(percent));
+    public async Task<FmConfig> GetFmAsync() => (await _http.GetFromJsonAsync<FmConfig>("api/fm", Json))!;
+    public Task SetFmAsync(FmConfig c) => PostAsync("api/fm", new FmConfigSetRequest(c));
+
+    /// <summary>Save or load PureSignal's correction, in a file the engine reads and writes.</summary>
+    public Task SavePsCorrectionAsync(string path) => PostAsync("api/tx/ps/save", new PsSaveRequest(path));
+    public Task RestorePsCorrectionAsync(string path) => PostAsync("api/tx/ps/restore", new PsRestoreRequest(path));
+
+    public sealed record CfcPresetDto(string Name, CfcConfig Config);
+    private sealed record CfcPresetList(List<CfcPresetDto> Presets);
+    public async Task<List<CfcPresetDto>> GetCfcPresetsAsync() =>
+        (await _http.GetFromJsonAsync<CfcPresetList>("api/tx/cfc/presets", Json))!.Presets;
+    public async Task SaveCfcPresetAsync(string name, CfcConfig c) =>
+        (await _http.PutAsJsonAsync($"api/tx/cfc/presets/{Uri.EscapeDataString(name)}", new CfcSetRequest(c), Json)).EnsureSuccessStatusCode();
+    public async Task DeleteCfcPresetAsync(string name) =>
+        (await _http.DeleteAsync($"api/tx/cfc/presets/{Uri.EscapeDataString(name)}")).EnsureSuccessStatusCode();
+
     // ---- amplifier and calibration ----
     public Task SetPreKeyDelayAsync(int ms) => PostAsync("api/tx/prekey-delay", new TxPreKeyDelaySetRequest(ms));
     public Task SetRxResumeDelayAsync(int ms) => PostAsync("api/tx/rx-resume-delay", new TxRxResumeDelaySetRequest(ms));

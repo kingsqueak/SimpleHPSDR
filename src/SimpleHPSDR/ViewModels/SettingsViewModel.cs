@@ -77,7 +77,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"];
     private static readonly TimeSpan ApplyDelay = TimeSpan.FromMilliseconds(250);
 
-    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas, Tci, Cat, Serial, Amp, Calibration }
+    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas, Tci, Cat, Serial, Amp, Calibration, Filters, Station, Transverter, Diversity }
 
     private static readonly Dictionary<string, Group> GroupOf = new()
     {
@@ -98,6 +98,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(SMeterTrimDb)] = Group.Calibration, [nameof(FrequencyPpm)] = Group.Calibration,
         [nameof(ExternalRefOn)] = Group.Calibration, [nameof(ExternalRefPpm)] = Group.Calibration,
         [nameof(AdcMaxOffsetDb)] = Group.Calibration, [nameof(AdcReleaseHoldMs)] = Group.Calibration,
+
+        [nameof(RxWindowIndex)] = Group.Filters, [nameof(TxWindowIndex)] = Group.Filters,
+        [nameof(RxPhaseIndex)] = Group.Filters, [nameof(TxPhaseIndex)] = Group.Filters,
+        [nameof(RxBypassAll)] = Group.Filters, [nameof(RxBypassOnTx)] = Group.Filters,
+        [nameof(RxBypassOnPs)] = Group.Filters,
+
+        [nameof(PttInputOn)] = Group.Station, [nameof(SerialPttOn)] = Group.Station,
+        [nameof(SerialPttPort)] = Group.Station, [nameof(SerialSenseCts)] = Group.Station,
+        [nameof(SerialSenseDsr)] = Group.Station,
+        [nameof(TransverterOn)] = Group.Transverter,
+        [nameof(DiversityOn)] = Group.Diversity, [nameof(DiversityGain)] = Group.Diversity,
+        [nameof(DiversityPhase)] = Group.Diversity, [nameof(DiversityOutputIndex)] = Group.Diversity,
 
         [nameof(TciEnabled)] = Group.Tci, [nameof(TciNetwork)] = Group.Tci, [nameof(TciPort)] = Group.Tci,
         [nameof(CatEnabled)] = Group.Cat, [nameof(CatNetwork)] = Group.Cat, [nameof(CatPort)] = Group.Cat,
@@ -162,6 +174,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             {
                 await LoadCatTciAsync();
                 await LoadAmpCalibrationAsync(state);
+                await LoadFiltersStationAsync(state);
+                await LoadCfcPresetsAsync();
             }
             finally { _populating = false; }
             Status = "Changes apply as you make them.";
@@ -252,6 +266,10 @@ public sealed partial class SettingsViewModel : ObservableObject
                 case Group.Serial: await ApplySerialAsync(); break;
                 case Group.Amp: await ApplyAmpAsync(); break;
                 case Group.Calibration: await ApplyCalibrationAsync(); break;
+                case Group.Filters: await ApplyFiltersAsync(); break;
+                case Group.Station: await ApplyStationAsync(); break;
+                case Group.Transverter: await ApplyTransverterAsync(); break;
+                case Group.Diversity: await ApplyDiversityAsync(); break;
             }
             Status = "Applied.";
         }
@@ -302,6 +320,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             RestoreCatTciFields();
             RestoreAmpCalibrationFields();
+            RestoreFiltersStationFields();
         }
         finally { _populating = false; }
 

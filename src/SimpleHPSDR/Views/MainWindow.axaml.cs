@@ -208,6 +208,8 @@ public partial class MainWindow : Window
         if (sender is Flyout { Content: Control { DataContext: FilterSlot slot } }) slot.BeginEdit();
     }
 
+    private void OnModeOptionsOpening(object? sender, EventArgs e) => _ = Vm?.LoadModeOptionsAsync();
+
     private void OnSMeterTrimOpening(object? sender, EventArgs e) => _ = Vm?.LoadSMeterTrimAsync();
 
     // The NB and NR popups show what the engine has when they open.
