@@ -424,18 +424,39 @@
           <ToggleButton Classes="seg tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="64"
                         ToolTip.Tip="Tune carrier at the tune drive level" />
           <ToggleButton Classes="seg" Content="PS" IsChecked="{Binding PsOn}" Margin="12,0,0,0"
-                        ToolTip.Tip="PureSignal adaptive predistortion" />
+                        ToolTip.Tip="PureSignal adaptive predistortion. Right-click for two-tone, calibration and status.">
+            <ToggleButton.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="4">
+                    <ToggleButton Classes="seg tx" Content="2-TONE" IsChecked="{Binding TwoToneOn}"
+                                  ToolTip.Tip="Transmit the two-tone test signal (for PureSignal calibration and IMD checks)" />
+                    <ToggleButton Classes="seg tx" Content="PS CAL" IsChecked="{Binding PsCalibrating, Mode=OneWay}"
+                                  Command="{Binding CalibratePsCommand}"
+                                  ToolTip.Tip="Key 2-TONE in up to four 3-second bursts until PureSignal calibrates, adjusting HW peak between bursts. Press again to cancel." />
+                    <Border Classes="ps" Classes.ok="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ok}"
+                            Classes.warn="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
+                            Classes.bad="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}"
+                            ToolTip.Tip="PureSignal state. Feedback level (FB) is best around 128-181.">
+                      <TextBlock FontSize="11" FontWeight="SemiBold">
+                        <Run Text="{Binding PsStatus}" />
+                        <Run Text="{Binding PsFeedbackText}" />
+                      </TextBlock>
+                    </Border>
+                </StackPanel>
+              </Flyout>
+            </ToggleButton.ContextFlyout>
+          </ToggleButton>
           <ToggleButton Classes="seg" Content="MON" IsChecked="{Binding MonitorPreview}"
                         ToolTip.Tip="Preview: hear your mic through the whole TX chain (EQ, leveler, processor, ALC, TX filter) without transmitting" />
           <Button Classes="seg" VerticalAlignment="Center"
-                  ToolTip.Tip="Transmit levels, mic, PureSignal calibration, two-tone and monitor">
+                  ToolTip.Tip="Transmit levels, mic and monitor">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <TextBlock Text="TX" VerticalAlignment="Center" />
               <TextBlock Text="{Binding DrivePct, StringFormat={}{0:0}%}" VerticalAlignment="Center" />
             </StackPanel>
             <Button.Flyout>
               <Flyout Placement="TopEdgeAlignedLeft">
-                <Grid Width="380" Margin="4" ColumnDefinitions="60,*,64" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="14">
+                <Grid Width="380" Margin="4" ColumnDefinitions="60,*,64" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="14">
                   <TextBlock Text="DRIVE" Classes="label" FontSize="12" VerticalAlignment="Center" />
                   <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding DrivePct}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="2" Text="{Binding DrivePct, StringFormat={}{0:0}%}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
@@ -457,22 +478,6 @@
                   <Slider Grid.Row="4" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MonitorVolumeDb}" VerticalAlignment="Center"
                           ToolTip.Tip="Monitor volume" />
                   <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding MonitorVolumeDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
-                  <StackPanel Grid.Row="5" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
-                    <ToggleButton Classes="seg tx" Content="2-TONE" IsChecked="{Binding TwoToneOn}"
-                                  ToolTip.Tip="Transmit the two-tone test signal (for PureSignal calibration and IMD checks)" />
-                    <ToggleButton Classes="seg tx" Content="PS CAL" IsChecked="{Binding PsCalibrating, Mode=OneWay}"
-                                  Command="{Binding CalibratePsCommand}"
-                                  ToolTip.Tip="Key 2-TONE in up to four 3-second bursts until PureSignal calibrates, adjusting HW peak between bursts. Press again to cancel." />
-                    <Border Classes="ps" Classes.ok="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ok}"
-                            Classes.warn="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
-                            Classes.bad="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}"
-                            ToolTip.Tip="PureSignal state. Feedback level (FB) is best around 128-181.">
-                      <TextBlock FontSize="11" FontWeight="SemiBold">
-                        <Run Text="{Binding PsStatus}" />
-                        <Run Text="{Binding PsFeedbackText}" />
-                      </TextBlock>
-                    </Border>
-                  </StackPanel>
                 </Grid>
               </Flyout>
             </Button.Flyout>
