@@ -138,22 +138,35 @@
               <TextBlock FontFamily="{StaticResource MonoFont}"
                          Classes.tx="{Binding IsTransmitting}" IsVisible="{Binding !EditingFrequency}"
                          FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center">
-                <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="#F5C518" /><Run Text="{Binding FrequencyTail}" />
+                <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="#F9DF83" /><Run Text="{Binding FrequencyTail}" />
               </TextBlock>
               <TextBox Name="FrequencyEntryBox" Text="{Binding FrequencyEntry}" IsVisible="{Binding EditingFrequency}"
                        FontFamily="{StaticResource MonoFont}" FontSize="30" Width="230" VerticalAlignment="Center"
                        PlaceholderText="MHz or kHz" />
             </Panel>
-            <!-- Tuning step above the Hz. A press here doesn't start typing a frequency. -->
-            <StackPanel VerticalAlignment="Center" Spacing="2">
-              <Button Classes="seg" Content="Step" FontSize="11" Padding="6,1" MinWidth="0" Margin="0" HorizontalAlignment="Left"
+            <TextBlock Text="Hz" Classes="label" FontSize="14" VerticalAlignment="Center" Margin="0,14,0,0" />
+            <!-- Step and lock beside the Hz. A press here doesn't start typing a frequency. -->
+            <StackPanel VerticalAlignment="Center" Spacing="4">
+              <Button Classes="seg" Content="Step" FontSize="11" Padding="6,1" MinWidth="0" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                       ToolTip.Tip="{Binding StepLabel, StringFormat=Tuning step for the wheel: {0}}">
                 <Button.Flyout>
                   <MenuFlyout ItemsSource="{Binding TuneSteps}" Placement="BottomEdgeAlignedLeft"
                               ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
                 </Button.Flyout>
               </Button>
-              <TextBlock Text="Hz" Classes="label" FontSize="14" />
+                <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
+                        Padding="7,4" MinWidth="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it.">
+                  <Viewbox Width="15" Height="15">
+                    <Canvas Width="24" Height="24">
+                      <Path Data="M4 11h16v11H4z" Fill="{Binding $parent[Button].Foreground}" />
+                      <Path Data="M7.5 11V7a4.5 4.5 0 0 1 9 0v4" IsVisible="{Binding VfoLocked}" StrokeThickness="2.5"
+                            Stroke="{Binding $parent[Button].Foreground}" />
+                      <Path Data="M7.5 11V7a4.5 4.5 0 0 1 8.6-1.9" IsVisible="{Binding !VfoLocked}" StrokeThickness="2.5"
+                            Stroke="{Binding $parent[Button].Foreground}" />
+                    </Canvas>
+                  </Viewbox>
+                </Button>
             </StackPanel>
           </StackPanel>
         </Border>
@@ -178,19 +191,6 @@
           </Button>
         </StackPanel>
         <StackPanel Grid.Column="2" Spacing="4" VerticalAlignment="Center">
-          <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
-                  Padding="7,4" MinWidth="0" HorizontalAlignment="Center"
-                  ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it.">
-            <Viewbox Width="15" Height="15">
-              <Canvas Width="24" Height="24">
-                <Path Data="M4 11h16v11H4z" Fill="{Binding $parent[Button].Foreground}" />
-                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 9 0v4" IsVisible="{Binding VfoLocked}" StrokeThickness="2.5"
-                      Stroke="{Binding $parent[Button].Foreground}" />
-                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 8.6-1.9" IsVisible="{Binding !VfoLocked}" StrokeThickness="2.5"
-                      Stroke="{Binding $parent[Button].Foreground}" />
-              </Canvas>
-            </Viewbox>
-          </Button>
           <Button Classes="seg ant" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsVisible="{Binding HasSliceB}"
                   FontSize="11" MinWidth="0" Padding="4,3" ToolTip.Tip="Swap the frequencies of slices A and B" />
         </StackPanel>
