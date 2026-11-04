@@ -41,7 +41,7 @@ public sealed class Settings
     /// <summary>The default SSB filter buttons have been written to the engine.</summary>
     public bool FilterDefaultsApplied { get; set; }
     /// <summary>The same for the AM and SAM buttons.</summary>
-    public bool AmFilterDefaultsApplied { get; set; }
+    public int AmFilterDefaultsVersion { get; set; }
     /// <summary>Zoom level the Zoom button goes to (2-32).</summary>
     public int ZoomOnLevel { get; set; } = 4;
     /// <summary>Waterfall POP contrast.</summary>

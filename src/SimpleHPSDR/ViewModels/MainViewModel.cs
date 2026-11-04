@@ -751,7 +751,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FilterPreset[] presets = [];
         try { presets = await _client!.GetFilterPresetsAsync(mode); } catch (Exception) { }
         Filters.Clear();
-        foreach (var p in presets.Where(p => ShownFilterSlots(mode).Contains(p.SlotName)))
+        foreach (var p in presets.Where(p => FilterSlotNames.Contains(p.SlotName)))
             Filters.Add(new FilterSlot(mode, p, SelectFilterAsync, SaveFilterAsync, ResetFilterAsync)
             {
                 IsSelected = p.SlotName == selectedSlot,
@@ -819,14 +819,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     ];
     private const string DefaultFilterSlot = "F2";
 
-    // AM and SAM have these four buttons; the widths are the whole passband.
+    // AM and SAM; the widths are the whole passband. Raise the version when
+    // these change so existing installs get them.
+    private const int AmFilterDefaultsVersion = 2;
     private static readonly (string Slot, string Label, int Low, int High)[] DefaultAmFilters =
     [
-        ("F1", "20k", -10000, 10000), ("F2", "10k", -5000, 5000), ("F3", "8k", -4000, 4000), ("F4", "6k", -3000, 3000),
+        ("F1", "20k", -10000, 10000), ("F2", "18k", -9000, 9000), ("F3", "10k", -5000, 5000),
+        ("F4", "8k", -4000, 4000), ("F5", "6k", -3000, 3000),
     ];
-
-    private static IEnumerable<string> ShownFilterSlots(RxMode mode) =>
-        mode is RxMode.AM or RxMode.SAM ? DefaultAmFilters.Select(f => f.Slot) : FilterSlotNames;
 
     private Task WriteDefaultFilterAsync(RxMode mode, (string Slot, string Label, int Low, int High) f) =>
         mode == RxMode.LSB
@@ -836,13 +836,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Once per install. True if it ran, so the start filter gets chosen.</summary>
     private async Task<bool> ApplyFilterDefaultsAsync()
     {
-        if (!_settings.AmFilterDefaultsApplied)
+        if (_settings.AmFilterDefaultsVersion < AmFilterDefaultsVersion)
             await Try(async () =>
             {
                 foreach (var mode in new[] { RxMode.AM, RxMode.SAM })
                     foreach (var f in DefaultAmFilters)
                         await _client!.WriteFilterPresetAsync(mode, f.Slot, f.Low, f.High, f.Label);
-                _settings.AmFilterDefaultsApplied = true;
+                _settings.AmFilterDefaultsVersion = AmFilterDefaultsVersion;
                 _settings.Save();
             });
         if (_settings.FilterDefaultsApplied) return false;
