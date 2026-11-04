@@ -13,7 +13,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 {
     private static readonly RxMode[] ModeOrder =
         [RxMode.LSB, RxMode.USB, RxMode.CWL, RxMode.CWU, RxMode.AM, RxMode.SAM, RxMode.FM, RxMode.DIGL, RxMode.DIGU];
-    private static readonly int[] Steps = [10, 100, 500, 1_000, 5_000, 10_000, 100_000];
+    private static readonly int[] Steps = [1, 10, 100, 500, 1_000, 5_000, 10_000, 100_000];
 
     private readonly Settings _settings = Settings.Load();
     private readonly EngineHost _engine = new();
