@@ -10,7 +10,7 @@ namespace SimpleHPSDR.Controls;
 /// slider's value (or one tick when it snaps to ticks). Trackpads send
 /// fractions of a click, which add up until they make a whole step. The
 /// event is consumed so a scrolling page doesn't scroll at the same time.
-/// A sideways scroll counts the same: right is up, left is down.
+/// A sideways scroll works too, more slowly: right is up, left is down.
 /// </summary>
 public static class SliderWheel
 {
@@ -20,10 +20,28 @@ public static class SliderWheel
     // on macOS (measured), 1.0 on Windows and Linux.
     internal static readonly double ClickDelta = OperatingSystem.IsMacOS() ? 0.2 : 1.0;
 
+    // Sideways scrollers send many small events, so sideways movement has to
+    // add up to a few wheel clicks to make one step, with a limit on how fast
+    // steps can come.
+    private const double SideClicksPerStep = 3;
+    private static readonly TimeSpan SideStepGap = TimeSpan.FromMilliseconds(80);
+    private static double _side;
+    private static DateTime _lastSideStep;
+
     /// <summary>How far the wheel moved, up or right positive. A scroll that's
-    /// a bit of both counts as whichever way it went further.</summary>
-    public static double Amount(PointerWheelEventArgs e) =>
-        Math.Abs(e.Delta.X) > Math.Abs(e.Delta.Y) ? -e.Delta.X : e.Delta.Y;
+    /// a bit of both counts as whichever way it went further. Sideways, this
+    /// is zero or one wheel click.</summary>
+    public static double Amount(PointerWheelEventArgs e)
+    {
+        if (Math.Abs(e.Delta.X) <= Math.Abs(e.Delta.Y)) return e.Delta.Y;
+        _side = Math.Clamp(_side - e.Delta.X / ClickDelta, -SideClicksPerStep, SideClicksPerStep);
+        var now = DateTime.UtcNow;
+        if (Math.Abs(_side) < SideClicksPerStep || now - _lastSideStep < SideStepGap) return 0;
+        double step = Math.Sign(_side) * ClickDelta;
+        _side = 0;
+        _lastSideStep = now;
+        return step;
+    }
 
     public static void Enable() =>
         InputElement.PointerWheelChangedEvent.AddClassHandler<Slider>(OnWheel, RoutingStrategies.Bubble);
