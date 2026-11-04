@@ -38,10 +38,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int _filterHighHz;
     [ObservableProperty] private double _afGainDb;
     [ObservableProperty] private double _attenDb;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(PreLabel))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(PreLabel))] [NotifyPropertyChangedFor(nameof(RfText))]
     private bool _preampOn;
     [ObservableProperty] private bool _autoAtt;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AttenText))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AttenText))] [NotifyPropertyChangedFor(nameof(RfText))]
     private int _attOffsetDb;
     [ObservableProperty] private bool _adcOverload;
     [ObservableProperty] private bool _muted;
@@ -286,6 +286,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     public string AttenText => AttOffsetDb > 0 ? $"{AttenDb:0}+{AttOffsetDb} dB" : $"{AttenDb:0} dB";
+    /// <summary>What the RF button shows.</summary>
+    public string RfText => PreampOn ? "pre on" : AttenText;
 
     /// <summary>Set by the window: shows the settings dialog.</summary>
     public Func<SettingsViewModel, Task>? ShowSettings { get; set; }
@@ -814,6 +816,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(AttenText));
         OnPropertyChanged(nameof(PreLabel));
+        OnPropertyChanged(nameof(RfText));
         if (!_applyingState && IsConnected) _attSender.Send((int)Math.Round(value));
     }
 

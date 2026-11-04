@@ -8,6 +8,19 @@ namespace SimpleHPSDR.ViewModels;
 /// antenna routing, the same setting as Configuration > Antennas.</summary>
 public sealed partial class MainViewModel
 {
+    /// <summary>One button for both: "ANT1", or "TX1 RX2" when they differ.</summary>
+    public string AntennaText => TxAntLabel == RxAntLabel ? TxAntLabel
+        : $"TX{TxAntLabel.Replace("ANT", "")} RX{RxAntLabel.Replace("ANT", "")}";
+    public bool AntennasDiffer => TxAntLabel != RxAntLabel;
+    partial void OnTxAntLabelChanged(string value) => NotifyAntennaText();
+    partial void OnRxAntLabelChanged(string value) => NotifyAntennaText();
+
+    private void NotifyAntennaText()
+    {
+        OnPropertyChanged(nameof(AntennaText));
+        OnPropertyChanged(nameof(AntennasDiffer));
+    }
+
     private static readonly string[] AntennaPorts = ["Ant1", "Ant2", "Ant3"];
     private readonly Dictionary<string, AntennaBandDto> _antennas = [];
     private string? _antennaBand;

@@ -206,7 +206,7 @@ public sealed class SpectrumView : Control
         var sorted = (float[])db.Clone();
         Array.Sort(sorted);
         double p20 = sorted[sorted.Length / 5];
-        double target = p20 - 10;
+        double target = p20 - 3;   // Auto: the noise sits just above the bottom of the trace
         _floorDb = _floorDb + (target - _floorDb) * 0.05;
     }
 
