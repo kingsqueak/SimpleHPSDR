@@ -38,6 +38,12 @@ public sealed partial class SettingsViewModel
     public ObservableCollection<string> SerialPorts { get; } = [];
     public ObservableCollection<TransverterRow> Transverters { get; } = [];
 
+    public string[] RadioModelNames => RadioModels.Names;
+    /// <summary>Only the OrionMkII family needs telling apart.</summary>
+    [ObservableProperty] private bool _showRadioModel;
+    [ObservableProperty] private int _radioModelIndex;
+    private int _modelWas, _modelOrig;
+
     [ObservableProperty] private int _rxWindowIndex, _txWindowIndex, _rxPhaseIndex, _txPhaseIndex;
     [ObservableProperty] private bool _rxBypassAll, _rxBypassOnTx, _rxBypassOnPs;
     [ObservableProperty] private string _rfFilterText = "";
@@ -66,6 +72,10 @@ public sealed partial class SettingsViewModel
 
     private async Task LoadFiltersStationAsync(StateDto s)
     {
+        var model = await _client.GetRadioVariantAsync();
+        _modelWas = _modelOrig = RadioModels.IndexOf(model.Variant);
+        RadioModelIndex = _modelWas;
+        ShowRadioModel = await _client.GetConnectedBoardAsync() == RadioModels.BoardName;
         _rf = await _client.GetRfFiltersAsync();
         _filtersWas = _filtersOrig = new FilterValues((int)s.RxFilterWindow, (int)s.TxFilterWindow,
             (int)s.RxFilterPhase, (int)s.TxFilterPhase, _rf.RxBypassAll, _rf.RxBypassOnTx, _rf.RxBypassOnPureSignal);
@@ -113,6 +123,7 @@ public sealed partial class SettingsViewModel
     {
         if (_filtersOrig is { } f) ShowFilters(f);
         if (_stationOrig is { } v) ShowStation(v);
+        RadioModelIndex = _modelOrig;
         if (_diversityOrig is { } d) ShowDiversity(d);
         if (_transverterOrig is { } t) ShowTransverter(t);
     }
@@ -142,6 +153,12 @@ public sealed partial class SettingsViewModel
 
     private async Task ApplyStationAsync()
     {
+        if (RadioModelIndex != _modelWas)
+        {
+            await _client.SetRadioVariantAsync((OrionMkIIVariant)RadioModelIndex);
+            _modelWas = RadioModelIndex;
+            Status = "Radio model set. Choose the radio again to reconnect with it.";
+        }
         if (_stationWas is not { } was) return;
         var now = new StationValues(PttInputOn, SerialPttOn, SerialPttPort, SerialSenseCts, SerialSenseDsr);
         if (now.Ptt != was.Ptt) await _client.SetPttInputAsync(now.Ptt);

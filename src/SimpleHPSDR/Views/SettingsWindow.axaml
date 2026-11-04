@@ -3,7 +3,7 @@
         xmlns:vm="using:SimpleHPSDR.ViewModels"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="Configuration" Width="980" Height="720" MinHeight="480"
+        Title="Configuration" Width="1040" Height="720" MinHeight="480"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
     <!-- Smaller tab headers so all pages fit on one line -->
@@ -15,6 +15,25 @@
   </Window.Styles>
   <Grid RowDefinitions="*,Auto" Margin="16">
     <TabControl>
+      <TabItem Header="Radio">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Border Classes="panel" IsVisible="{Binding ShowRadioModel}">
+              <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Radio model" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox ItemsSource="{Binding RadioModelNames}" SelectedIndex="{Binding RadioModelIndex}" Width="180" />
+                </StackPanel>
+                <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="These radios all report the same ID, so choose yours. It sets the S-meter calibration and the PA and PureSignal defaults. Reconnect after changing it." />
+              </StackPanel>
+            </Border>
+            <TextBlock Text="This radio identifies itself, so there's no model to choose." Classes="label" FontSize="12"
+                       IsVisible="{Binding !ShowRadioModel}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
       <TabItem Header="PA">
         <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="12" Margin="0,12,0,0">
           <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"

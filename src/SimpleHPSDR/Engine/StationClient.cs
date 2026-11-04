@@ -261,6 +261,18 @@ public sealed class StationClient : IDisposable
         PostAsync($"api/bands/stack/{Uri.EscapeDataString(band)}", entry);
     public async Task RemoveBandStackAsync(string band, int id) =>
         (await _http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}")).EnsureSuccessStatusCode();
+    private sealed record ConnectedBoard(string EffectiveBoard);
+    /// <summary>The engine's name for the connected board, such as OrionMkII.</summary>
+    public async Task<string> GetConnectedBoardAsync() =>
+        (await _http.GetFromJsonAsync<ConnectedBoard>("api/radio/pa-thermal", Json))!.EffectiveBoard;
+
+    public sealed record RadioVariant(string Variant, bool RequiresConfirmation);
+    /// <summary>Which radio behind the OrionMkII board ID: they all report the same one.</summary>
+    public async Task<RadioVariant> GetRadioVariantAsync() =>
+        (await _http.GetFromJsonAsync<RadioVariant>("api/radio/variant", Json))!;
+    public async Task SetRadioVariantAsync(OrionMkIIVariant v) =>
+        (await _http.PutAsJsonAsync("api/radio/variant", new { variant = v.ToString() }, Json)).EnsureSuccessStatusCode();
+
     // ---- filters, station hardware and mode options ----
     public Task SetRxFilterWindowAsync(BandpassWindow w) => PostAsync("api/rx/filter-window", new BandpassWindowSetRequest(w));
     public Task SetTxFilterWindowAsync(BandpassWindow w) => PostAsync("api/tx/filter-window", new BandpassWindowSetRequest(w));

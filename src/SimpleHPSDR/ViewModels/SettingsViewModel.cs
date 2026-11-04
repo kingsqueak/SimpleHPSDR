@@ -104,6 +104,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(RxBypassAll)] = Group.Filters, [nameof(RxBypassOnTx)] = Group.Filters,
         [nameof(RxBypassOnPs)] = Group.Filters,
 
+        [nameof(RadioModelIndex)] = Group.Station,
         [nameof(PttInputOn)] = Group.Station, [nameof(SerialPttOn)] = Group.Station,
         [nameof(SerialPttPort)] = Group.Station, [nameof(SerialSenseCts)] = Group.Station,
         [nameof(SerialSenseDsr)] = Group.Station,

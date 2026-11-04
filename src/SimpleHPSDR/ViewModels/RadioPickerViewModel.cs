@@ -8,6 +8,22 @@ namespace SimpleHPSDR.ViewModels;
 
 public sealed record RadioChoice(string Ip, bool Protocol2, byte? BoardId, string? Mac, string Label, bool TakeOver = false);
 
+/// <summary>The radios that share the OrionMkII board ID and can't be told
+/// apart on the network. Calibration, PA and PureSignal defaults depend on it.</summary>
+public static class RadioModels
+{
+    public const string BoardName = "OrionMkII";
+    /// <summary>Sent with a typed address. The ID means OrionMkII on both
+    /// protocols; a discovered radio may report another on Protocol 2.</summary>
+    public const byte OrionBoardId = 0x0A;
+    public static string[] Names { get; } =
+        ["ANAN-G2", "ANAN-G2-1K", "ANAN-7000DLE", "ANAN-8000DLE", "Orion MkII", "Anvelina Pro3", "Red Pitaya"];
+
+    // The list's order is the engine's, and the names here are for people.
+    public static int IndexOf(string engineName) =>
+        Enum.TryParse<OrionMkIIVariant>(engineName, out var v) ? (int)v : 0;
+}
+
 public sealed class RadioEntry(RadioInfo info)
 {
     public RadioInfo Info { get; } = info;
@@ -40,16 +56,26 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(TakeOverCommand))]
     [NotifyPropertyChangedFor(nameof(SelectedBusy))]
     [NotifyCanExecuteChangedFor(nameof(FirmwareCommand))]
+    [NotifyPropertyChangedFor(nameof(ShowModel))]
     private RadioEntry? _selected;
     [ObservableProperty] private bool _searching;
     [ObservableProperty] private string _status = "";
     [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
+    [NotifyPropertyChangedFor(nameof(ShowModel))] [NotifyPropertyChangedFor(nameof(ModelChoices))]
     private string _manualIp = "";
+    [ObservableProperty] private int _modelIndex = -1;
     [ObservableProperty] private bool _manualP2 = true;
     [ObservableProperty] private bool _autoConnect;
 
     public ObservableCollection<RadioEntry> Radios { get; } = [];
     public bool SelectedBusy => Selected is { Busy: true };
+    private bool Manual => System.Net.IPAddress.TryParse(ManualIp.Trim(), out _);
+    private const string OtherRadio = "Other radio";
+
+    /// <summary>A typed address may be any radio, so it also offers "Other".</summary>
+    public string[] ModelChoices => Manual ? [.. RadioModels.Names, OtherRadio] : RadioModels.Names;
+    public bool ShowModel => Manual || Selected?.Info.BoardId.ToString() == RadioModels.BoardName;
+    private int _engineModel;
     public event Action<RadioChoice?>? Done;
     /// <summary>Set by the window: shows the firmware window.</summary>
     public Func<FirmwareViewModel, Task>? ShowFirmware { get; set; }
@@ -64,6 +90,12 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     public async Task RefreshAsync()
     {
         Searching = true;
+        try
+        {
+            _engineModel = RadioModels.IndexOf((await _client.GetRadioVariantAsync()).Variant);
+            ModelIndex = _engineModel;
+        }
+        catch (Exception) { }
         Status = "Searching the network…";
         try
         {
@@ -91,20 +123,50 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     private bool CanConnect() =>
         Selected is { Busy: false } || System.Net.IPAddress.TryParse(ManualIp.Trim(), out _);
 
-    [RelayCommand(CanExecute = nameof(CanConnect))]
-    private void Connect()
+    /// <summary>Tell the engine which radio it is. False for "Other radio".</summary>
+    private async Task<bool> SaveModelAsync()
     {
-        if (System.Net.IPAddress.TryParse(ManualIp.Trim(), out _))
-            Done?.Invoke(new RadioChoice(ManualIp.Trim(), ManualP2, null, null, ManualIp.Trim()));
-        else if (Selected is { Busy: false } s)
-            Done?.Invoke(s.ToChoice());
+        if (ModelIndex < 0 || ModelIndex >= RadioModels.Names.Length) return false;
+        if (ModelIndex != _engineModel)
+            await _client.SetRadioVariantAsync((OrionMkIIVariant)ModelIndex);
+        return true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanConnect))]
+    private async Task ConnectAsync()
+    {
+        try
+        {
+            if (Manual)
+            {
+                bool orion = await SaveModelAsync();
+                Done?.Invoke(new RadioChoice(ManualIp.Trim(), ManualP2, orion ? RadioModels.OrionBoardId : null, null, ManualIp.Trim()));
+            }
+            else if (Selected is { Busy: false } s)
+            {
+                if (ShowModel) await SaveModelAsync();
+                Done?.Invoke(s.ToChoice());
+            }
+        }
+        catch (Exception ex)
+        {
+            Status = $"Could not set the radio model: {ex.Message}";
+        }
     }
 
     [RelayCommand(CanExecute = nameof(SelectedBusy))]
-    private void TakeOver()
+    private async Task TakeOverAsync()
     {
-        if (Selected is { Busy: true } s)
+        if (Selected is not { Busy: true } s) return;
+        try
+        {
+            if (ShowModel) await SaveModelAsync();
             Done?.Invoke(s.ToChoice() with { TakeOver = true });
+        }
+        catch (Exception ex)
+        {
+            Status = $"Could not set the radio model: {ex.Message}";
+        }
     }
 
     private bool CanFirmware() => Selected is { Protocol2: true, Busy: false };
