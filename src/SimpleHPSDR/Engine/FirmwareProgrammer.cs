@@ -128,7 +128,11 @@ public static class FirmwareProgrammer
         {
             while (true)
             {
-                var r = await udp.ReceiveAsync(cts.Token);
+                UdpReceiveResult r;
+                // Windows reports an earlier send's ICMP unreachable here, for
+                // instance while the radio reboots; that's just no reply yet.
+                try { r = await udp.ReceiveAsync(cts.Token); }
+                catch (SocketException) { await Task.Delay(50, cts.Token); continue; }
                 if (r.RemoteEndPoint.Address.Equals(radio.Address) && match(r.Buffer)) return r.Buffer;
             }
         }

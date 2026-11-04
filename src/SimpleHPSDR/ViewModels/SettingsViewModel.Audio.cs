@@ -48,6 +48,9 @@ public sealed partial class SettingsViewModel
     private sealed record DeviceSelection(string? InputId, string? OutputId, int Channel);
     private DeviceSelection? _devicesWas;
 
+    private DeviceSelection CurrentDevices() =>
+        new(SelectedInput?.Id, SelectedOutput?.Id, SelectedChannel?.Value ?? -1);
+
     private void PopulateAudio(AudioDevices devices, AudioFrontEndDto radio)
     {
         Outputs.Clear();
@@ -64,7 +67,8 @@ public sealed partial class SettingsViewModel
         Channels.Add(new ChannelOption("Mix all channels", -1));
         for (int c = 0; c < devices.InputChannels; c++) Channels.Add(new ChannelOption($"Channel {c + 1}", c));
         SelectedChannel = Channels.FirstOrDefault(c => c.Value == (devices.InputChannel ?? -1)) ?? Channels[0];
-        _devicesWas = new DeviceSelection(SelectedInput.Id, SelectedOutput.Id, SelectedChannel.Value);
+        _devicesWas = CurrentDevices();
+        PopulateAsio(devices);
 
         _radioAudio = radio;
         HasRadioAudio = radio.HasOnboardCodec;
@@ -89,8 +93,15 @@ public sealed partial class SettingsViewModel
         devices ??= await _client.GetAudioDevicesAsync();
         var native = await _client.GetNativeAudioStatusAsync();
         var d = native.Diagnostics;
-        AudioStatus = devices.Error is { Length: > 0 } err
+        AudioStatus = devices.AsioError is { Length: > 0 } asioErr
+            ? $"ASIO: {asioErr}"
+            : devices.Error is { Length: > 0 } err
             ? $"Audio error: {err}"
+            : devices.Backend == AsioBackend
+            ? $"ASIO {(devices.AsioSampleRate ?? AsioRateHz) / 1000.0:0.#} kHz, {devices.AsioBufferFrames} frames" +
+              (devices.AsioInputLatencyFrames is { } inFrames && devices.AsioOutputLatencyFrames is { } outFrames
+                  ? $" · latency in {inFrames * 1000.0 / AsioRateHz:0.#} ms, out {outFrames * 1000.0 / AsioRateHz:0.#} ms"
+                  : "")
             : $"Output {(native.OutputOpen ? "open" : "closed")}" +
               (d is null ? "" : $", {d.OutputSampleRateHz / 1000.0:0.#} kHz") +
               $" · mic {devices.InputSampleRate / 1000.0:0.#} kHz, {devices.InputChannels} ch";
@@ -100,9 +111,15 @@ public sealed partial class SettingsViewModel
     // channel actually changed; the radio's codec settings go separately.
     private async Task ApplyAudioAsync()
     {
-        var sel = new DeviceSelection(SelectedInput?.Id, SelectedOutput?.Id, SelectedChannel?.Value ?? -1);
+        var sel = CurrentDevices();
+        var asio = CurrentAsio();
         bool changed = false;
-        if (sel != _devicesWas)
+        if (HasAsio && (sel != _devicesWas || asio != _asioWas))
+        {
+            await ApplyRouteAsync(sel, asio);
+            changed = true;
+        }
+        else if (sel != _devicesWas)
         {
             await _client.SetAudioDevicesAsync(sel.InputId, sel.OutputId, sel.Channel);
             _devicesWas = sel;

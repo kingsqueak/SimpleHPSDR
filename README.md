@@ -12,7 +12,8 @@ pass through the interface. That keeps latency low, and audio keeps playing
 while the window is hidden or on another Space.
 
 Developed on an ANAN 7000DLE MkII over Protocol 2. macOS and Linux packages
-are available; Windows is planned once ASIO device selection is in.
+are available. A Windows x64 zip is built too, with ASIO under Config > Audio,
+but it hasn't been tried with a radio yet.
 
 Not affiliated with or endorsed by the Zeus SDR project.
 
@@ -71,7 +72,7 @@ scripts/build-engine.sh          # publishes the engine to artifacts/engine/<rid
 dotnet run --project src/SimpleHPSDR
 ```
 
-`scripts/make-dmg.sh` and `scripts/make-linux.sh` build the packages. Set
+`scripts/make-dmg.sh`, `scripts/make-linux.sh` and `scripts/make-windows.sh` build the packages. Set
 `SIMPLEHPSDR_ENGINE` to use an engine binary elsewhere.
 
 ## Where things live

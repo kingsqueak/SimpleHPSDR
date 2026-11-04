@@ -120,7 +120,9 @@ public sealed partial class MainViewModel
             if (radio.Source == TxAudioSource.Host)
             {
                 var devices = await _client.GetAudioDevicesAsync();
-                var name = devices.Inputs.FirstOrDefault(d => d.Id == devices.InputDeviceId)?.Name
+                var name = devices.Backend == "asio"
+                    ? devices.AsioInputs?.FirstOrDefault(c => c.Index == devices.AsioInputChannel)?.Name ?? "ASIO"
+                    : devices.Inputs.FirstOrDefault(d => d.Id == devices.InputDeviceId)?.Name
                            ?? devices.Inputs.FirstOrDefault(d => d.IsDefault)?.Name ?? "system default";
                 MicSourceLabel = "PC";
                 MicSourceDetail = $"Computer mic: {name}";

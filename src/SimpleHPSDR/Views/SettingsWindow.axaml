@@ -92,7 +92,35 @@
                        Text="Receive audio plays and the computer mic is captured directly by the engine, not through this window, which keeps latency low and audio running when the window is hidden." />
 
             <Border Classes="panel">
-              <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
+              <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="130,*" IsVisible="{Binding HasAsio}">
+                <TextBlock Text="Audio system" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding Backends}" SelectedItem="{Binding SelectedBackend}"
+                          Width="200" ToolTip.Tip="ASIO talks straight to the audio interface's own driver" />
+              </Grid>
+              <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10"
+                    IsVisible="{Binding UseAsio}">
+                <TextBlock Text="Driver" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <ComboBox ItemsSource="{Binding AsioDrivers}" SelectedItem="{Binding SelectedAsioDriver}"
+                            HorizontalAlignment="Stretch" />
+                  <Button Grid.Column="1" Content="Driver panel" Command="{Binding OpenAsioPanelCommand}"
+                          IsEnabled="{Binding AsioActive}"
+                          ToolTip.Tip="The driver's own settings; set the sample rate to 48 kHz" />
+                </Grid>
+                <TextBlock Grid.Row="1" Text="Speaker output" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AsioOutputs}"
+                          SelectedItem="{Binding SelectedAsioOutput}" HorizontalAlignment="Stretch" />
+                <TextBlock Grid.Row="2" Text="Computer mic" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding AsioInputs}"
+                          SelectedItem="{Binding SelectedAsioInput}" HorizontalAlignment="Stretch" />
+                <TextBlock Grid.Row="3" Text="Buffer" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AsioBuffers}"
+                          SelectedItem="{Binding SelectedAsioBuffer}" Width="300"
+                          ToolTip.Tip="Smaller is lower latency; go up if the audio crackles" />
+              </Grid>
+              <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10"
+                    IsVisible="{Binding UseSystemAudio}">
                 <TextBlock Text="Speaker output" Classes="label" FontSize="12" />
                 <ComboBox Grid.Column="1" ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedOutput}"
                           HorizontalAlignment="Stretch" />
@@ -103,6 +131,7 @@
                 <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Channels}" SelectedItem="{Binding SelectedChannel}"
                           Width="200" ToolTip.Tip="For multi-channel interfaces: use one input, or mix them all" />
               </Grid>
+              </StackPanel>
             </Border>
 
             <TextBlock Text="RADIO AUDIO" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasRadioAudio}" />

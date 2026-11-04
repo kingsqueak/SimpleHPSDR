@@ -10,9 +10,22 @@ namespace SimpleHPSDR.Engine;
 public sealed record FilterPreset(string SlotName, string Label, int LowHz, int HighHz, bool IsCustomized = false);
 public sealed record AudioDevice(string Id, string Name, bool IsDefault);
 public sealed record MonitorState(bool Enabled, bool MonitorOnTransmit, double VolumeDb);
+public sealed record AsioDriver(string Id, string Name);
+public sealed record AsioChannel(int Index, string Name);
 public sealed record AudioDevices(
     string? InputDeviceId, string? OutputDeviceId, AudioDevice[] Inputs, AudioDevice[] Outputs,
-    int InputChannels, int? InputChannel, int InputSampleRate, bool OutputOpen, string? Error);
+    int InputChannels, int? InputChannel, int InputSampleRate, bool OutputOpen, string? Error,
+    string Backend = "system", string[]? AvailableBackends = null, AsioDriver[]? AsioDrivers = null,
+    string? AsioDriverId = null, AsioChannel[]? AsioInputs = null, AsioChannel[]? AsioOutputs = null,
+    int AsioInputWidth = 1, int AsioInputChannel = 0, int AsioOutputChannel = 0,
+    int? AsioSampleRate = null, int? AsioBufferFrames = null,
+    int? AsioInputLatencyFrames = null, int? AsioOutputLatencyFrames = null, string? AsioError = null,
+    uint? AsioBufferMinFrames = null, uint? AsioBufferMaxFrames = null, uint? AsioBufferPreferredFrames = null,
+    int? AsioBufferGranularity = null, int AsioRequestedBufferFrames = 0);
+/// <summary>Null ASIO fields keep what the engine has.</summary>
+public sealed record AudioRouteRequest(
+    string? InputDeviceId, string? OutputDeviceId, int? InputChannel, string Backend, string? AsioDriverId,
+    int? AsioInputChannel, int? AsioInputWidth, int? AsioOutputChannel, int? AsioBufferFrames);
 public sealed record NativeAudioStatus(bool OutputOpen, bool Muted, NativeAudioDiagnostics? Diagnostics);
 public sealed record NativeAudioDiagnostics(long UnderrunSamplesTotal, int OutputSampleRateHz, int RingDepthSamples);
 
@@ -208,6 +221,22 @@ public sealed class StationClient : IDisposable
     {
         using var r = await _http.PutAsJsonAsync("api/audio/devices",
             new { inputDeviceId = inputId, outputDeviceId = outputId, inputChannel }, Json);
+        await ThrowIfFailed(r);
+    }
+
+    /// <summary>Choose the audio system and its devices; the engine reopens
+    /// audio and answers with the result, including the new driver's channels.</summary>
+    public async Task<AudioDevices> SetAudioRouteAsync(AudioRouteRequest request)
+    {
+        using var r = await _http.PutAsJsonAsync("api/audio/devices", request, Json);
+        await ThrowIfFailed(r);
+        return (await r.Content.ReadFromJsonAsync<AudioDevices>(Json))!;
+    }
+
+    /// <summary>Open the active ASIO driver's own settings window.</summary>
+    public async Task OpenAsioPanelAsync()
+    {
+        using var r = await _http.PostAsync("api/audio/asio/control-panel", null);
         await ThrowIfFailed(r);
     }
 

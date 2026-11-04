@@ -86,6 +86,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(SelectedOutput)] = Group.Audio, [nameof(SelectedInput)] = Group.Audio,
         [nameof(SelectedChannel)] = Group.Audio, [nameof(SelectedTxSource)] = Group.Audio,
         [nameof(MicBoost)] = Group.Audio, [nameof(MicBias)] = Group.Audio, [nameof(LineInGain)] = Group.Audio,
+        [nameof(SelectedBackend)] = Group.Audio, [nameof(SelectedAsioDriver)] = Group.Audio,
+        [nameof(SelectedAsioOutput)] = Group.Audio, [nameof(SelectedAsioInput)] = Group.Audio,
+        [nameof(SelectedAsioBuffer)] = Group.Audio,
 
         [nameof(PsExternalFeedback)] = Group.PureSignal, [nameof(PsAutoAttenuate)] = Group.PureSignal,
         [nameof(PsFeedbackAttenDb)] = Group.PureSignal, [nameof(PsMoxDelaySec)] = Group.PureSignal,
@@ -310,9 +313,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         // Populate from the originals, but keep comparing against what the
         // engine has now, so only real differences are sent.
         var (pa, devices, radio, ps, tx) = (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded);
+        var asio = _asioWas;
         var antennasNow = Antennas.ToDictionary(r => r.Band, r => r.Loaded);
         Populate(_origPa, _origDevices, _origRadioAudio, _origState, _origAntennas);
         (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded) = (pa, devices, radio, ps, tx);
+        _asioWas = asio;
         // Compare restored antenna rows against what the engine has now.
         foreach (var row in Antennas)
             if (antennasNow.TryGetValue(row.Band, out var now)) row.Loaded = now;

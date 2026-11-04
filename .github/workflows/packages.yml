@@ -1,17 +1,24 @@
 name: Packages
 
-# Builds the macOS DMGs, and deb, RPM and Arch packages for x86-64 and arm64.
-# Runs on a version tag (v*) or by hand; the packages are the run's artifacts.
+# Builds the macOS DMGs, deb, RPM and Arch packages for x86-64 and arm64, and
+# the Windows zip. Runs on a version tag (v*) or by hand; the packages are the
+# run's artifacts.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      windows_only:
+        description: Build only the Windows zip
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   linux:
+    if: ${{ !inputs.windows_only }}
     strategy:
       matrix:
         runner: [ubuntu-26.04, ubuntu-26.04-arm]
@@ -40,6 +47,7 @@ jobs:
           if-no-files-found: error
 
   dmg:
+    if: ${{ !inputs.windows_only }}
     runs-on: macos-26
     strategy:
       matrix:
@@ -58,3 +66,31 @@ jobs:
           name: simplehpsdr-dmg-${{ matrix.rid }}
           path: artifacts/*.dmg
           if-no-files-found: error
+
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build the zip
+        shell: bash
+        run: ./scripts/make-windows.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simplehpsdr-windows-x64
+          path: artifacts/*.zip
+          if-no-files-found: error
+      - name: Start it
+        shell: pwsh
+        run: |
+          $dir = (Get-Item artifacts/win/SimpleHPSDR-*).FullName
+          ./scripts/smoke-windows.ps1 $dir "$pwd/windows-screenshot.png"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-screenshot
+          path: windows-screenshot.png
