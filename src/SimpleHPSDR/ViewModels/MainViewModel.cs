@@ -77,6 +77,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SpanRates.Add(new Choice(RateLabel(r), r, c => _ = SelectSpanAsync((int)c.Value)));
         Mark(SpanRates, current);
         _sampleRateHz = current;
+        NotifyZoomSpan();
         SpanLabel = RateLabel(current);
     }
 
@@ -88,6 +89,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await _client!.SetSampleRateAsync(hz);
             Mark(SpanRates, hz);
             _sampleRateHz = hz;
+            NotifyZoomSpan();
             SpanLabel = RateLabel(hz);
             // Reconnects use this rate, so remember it.
             _settings.SampleRate = hz;
@@ -147,11 +149,29 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         SpeedLabel = SpeedText(period);
     });
 
-    // Panadapter zoom, cycled by the Zoom button. At 192 kHz, 16x is a 12 kHz span.
-    private static readonly int[] ZoomLevels = [1, 2, 4, 8, 16];
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(ZoomLabel))]
+    // Panadapter zoom: off is the full span. At 384 kHz, level 8 is a 48 kHz span.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ZoomLabel))] [NotifyPropertyChangedFor(nameof(ZoomOn))]
+    [NotifyPropertyChangedFor(nameof(ZoomSpanText))] [NotifyPropertyChangedFor(nameof(ZoomSlider))]
     private int _zoomLevel = 1;
-    public string ZoomLabel => $"{ZoomLevel}×";
+    public string ZoomLabel => ZoomOn ? ZoomSpanText : "full";
+    public bool ZoomOn => ZoomLevel > 1;
+    public string ZoomSpanText => SpanText(Math.Max(ZoomLevel > 1 ? ZoomLevel : _settings.ZoomOnLevel, 1));
+    private string SpanText(int level) => _sampleRateHz <= 0 ? $"{level}×"
+        : _sampleRateHz / level >= 1000 ? $"{_sampleRateHz / level / 1000} kHz" : $"{_sampleRateHz / level} Hz";
+
+    // The slider is logarithmic: each step of travel is the same ratio of span.
+    private const int MinZoomOnLevel = 2, MaxZoomLevel = 32;
+    public double ZoomSlider
+    {
+        get => Math.Log2(ZoomOn ? ZoomLevel : _settings.ZoomOnLevel);
+        set
+        {
+            int level = Math.Clamp((int)Math.Round(Math.Pow(2, value)), MinZoomOnLevel, MaxZoomLevel);
+            if (level != ZoomLevel) SetZoom(level);
+        }
+    }
+    private Latest<int>? _zoomSender;
 
     [ObservableProperty] private bool _ctunOn;
 
@@ -641,19 +661,30 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(StepLabel));
     }
 
-    /// <summary>1x → 2x → 4x → 8x → 16x → 1x.</summary>
+    private void NotifyZoomSpan()
+    {
+        OnPropertyChanged(nameof(ZoomLabel));
+        OnPropertyChanged(nameof(ZoomSpanText));
+    }
+
+    /// <summary>Full span, or back to the last zoomed span.</summary>
     [RelayCommand]
-    private async Task CycleZoomAsync()
+    private void ToggleZoom() => SetZoom(ZoomOn ? 1 : Math.Clamp(_settings.ZoomOnLevel, MinZoomOnLevel, MaxZoomLevel));
+
+    private void SetZoom(int level)
     {
         if (!IsConnected) return;
-        int i = Array.IndexOf(ZoomLevels, ZoomLevel);
-        int next = ZoomLevels[(i + 1) % ZoomLevels.Length];
-        ZoomLevel = next;
-        await Try(async () =>
+        if (level > 1 && level != _settings.ZoomOnLevel)
         {
-            await _client!.SetZoomAsync(next);
+            _settings.ZoomOnLevel = level;
+            _settings.Save();
+        }
+        ZoomLevel = level;
+        (_zoomSender ??= new Latest<int>(async z =>
+        {
+            await _client!.SetZoomAsync(z);
             await SyncSliceBZoomAsync();
-        });
+        })).Send(level);
     }
 
     [RelayCommand]

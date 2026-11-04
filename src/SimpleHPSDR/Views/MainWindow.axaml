@@ -339,12 +339,22 @@
     <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="4" Margin="0,8,0,0">
       <Button Classes="seg" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}"
               ToolTip.Tip="CTUN: clicking the panadapter moves only the receive frequency; the display stays put (blue = on)" />
-      <Button Classes="seg" Padding="10,3" Command="{Binding CycleZoomCommand}"
-              ToolTip.Tip="Panadapter zoom: click to step 1x, 2x, 4x, 8x, 16x">
+      <Button Classes="seg" Classes.lit="{Binding ZoomOn}" Padding="10,3" Command="{Binding ToggleZoomCommand}"
+              ToolTip.Tip="Zoom: click for full span (grey) or zoomed (blue). Right-click to set the zoomed span.">
         <StackPanel Spacing="-1">
           <TextBlock Text="Zoom" FontSize="12" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ZoomLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
         </StackPanel>
+        <Button.ContextFlyout>
+          <Flyout Placement="TopEdgeAlignedLeft">
+            <Grid Width="300" Margin="4" ColumnDefinitions="60,*,70">
+              <TextBlock Text="Span" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Column="1" Minimum="1" Maximum="5" SmallChange="0.1" TickFrequency="0.1" IsSnapToTickEnabled="True"
+                      Value="{Binding ZoomSlider}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="{Binding ZoomSpanText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+            </Grid>
+          </Flyout>
+        </Button.ContextFlyout>
       </Button>
       <Button Classes="seg" Classes.lit="{Binding AutoSpectrum}" Content="Auto" Margin="16,0,0,0"
               Command="{Binding ToggleAutoSpectrumCommand}"

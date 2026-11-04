@@ -34,6 +34,8 @@ public sealed class Settings
     public double PanFraction { get; set; } = 0.38;
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
+    /// <summary>Zoom level the Zoom button goes to (2-32).</summary>
+    public int ZoomOnLevel { get; set; } = 4;
     /// <summary>Waterfall POP contrast.</summary>
     public bool WaterfallPop { get; set; }
     /// <summary>The TX filter's cuts follow the transmitting slice's RX filter.</summary>
