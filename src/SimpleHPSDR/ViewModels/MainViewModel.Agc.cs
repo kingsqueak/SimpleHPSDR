@@ -24,10 +24,21 @@ public sealed partial class MainViewModel
     [ObservableProperty] private string _agcSpeedLabel = "Med";
     private AgcMode _agcMode = AgcMode.Med;
 
+    // AGC-T, the AGC's maximum gain. The engine removed its AGC knee control,
+    // so this sets the same thing from the other end, and the yellow line
+    // shows where the knee lands.
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AgcTopText))]
+    private double _agcTopDb = 90;
+    private double _agcOffsetDb;      // auto AGC's adjustment on top
+    private Latest<double>? _agcTopSender;
+    public string AgcTopText => $"{AgcTopDb:0} dB";
+
     public bool AgcManual => !AgcAuto;
     /// <summary>The fixed-gain slider: manual AGC with the speed Off.</summary>
     public bool AgcFixedShown => !AgcAuto && _agcMode == AgcMode.Fixed;
     public string AgcFixedText => $"{AgcFixedGainDb:0} dB";
+    /// <summary>AGC-T doesn't apply with AGC off (the fixed-gain slider does).</summary>
+    public bool AgcTopShown => _agcMode != AgcMode.Fixed;
     private static string SpeedName(AgcMode m) => m == AgcMode.Fixed ? "Off" : m.ToString();
     public string AgcSubLabel => AgcAuto ? "auto" : "manual";
     public ObservableCollection<Choice> AgcSpeedChoices { get; } = [];
@@ -43,6 +54,14 @@ public sealed partial class MainViewModel
         AgcSpeedLabel = SpeedName(_agcMode);
         Mark(AgcSpeedChoices, _agcMode);
         OnPropertyChanged(nameof(AgcFixedShown));
+        OnPropertyChanged(nameof(AgcTopShown));
+        _agcOffsetDb = s.AgcOffsetDb;
+        if (_agcTopSender is null || !_agcTopSender.Busy)
+        {
+            _applyingAgc = true;
+            AgcTopDb = s.AgcTopDb;
+            _applyingAgc = false;
+        }
         if (_agcFixedSender is null || !_agcFixedSender.Busy)
         {
             _applyingAgc = true;
@@ -77,7 +96,30 @@ public sealed partial class MainViewModel
             AgcSpeedLabel = SpeedName(mode);
             Mark(AgcSpeedChoices, mode);
             OnPropertyChanged(nameof(AgcFixedShown));
+            OnPropertyChanged(nameof(AgcTopShown));
         });
+    }
+
+    partial void OnAgcTopDbChanged(double value)
+    {
+        if (_applyingAgc || !IsConnected) return;
+        _agcTopSender ??= new Latest<double>(async db =>
+        {
+            await _client!.SetAgcGainAsync(db);
+            if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(AgcTopDb: db));
+        });
+        _agcTopSender.Send(Math.Round(value));
+    }
+
+    /// <summary>Where the AGC starts to act, on the panadapter's dB scale; NaN
+    /// when there's no knee (AGC off). WDSP's own bandscope line, worked out
+    /// from its formula: -(max gain) - 10 log10(filter width x FFT size / rate).
+    /// An estimate: the engine doesn't report the real value.</summary>
+    public double AgcLineDb()
+    {
+        if (!IsConnected || _agcMode == AgcMode.Fixed || _sampleRateHz <= 0) return double.NaN;
+        double width = Math.Max(1, Math.Abs(FilterHighHz - FilterLowHz));
+        return -(AgcTopDb + _agcOffsetDb) - 10 * Math.Log10(width * _displayFftSize / _sampleRateHz);
     }
 
     partial void OnAgcFixedGainDbChanged(double value)

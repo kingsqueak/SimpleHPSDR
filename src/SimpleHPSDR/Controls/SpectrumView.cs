@@ -90,6 +90,11 @@ public sealed class SpectrumView : Control
     /// <summary>Slices to draw (A, and B when on).</summary>
     public IReadOnlyList<SliceMark> Slices { get; set; } = [];
 
+    /// <summary>Where to draw the yellow AGC line (dB), NaN for none.</summary>
+    public double AgcLineDb { get; set; } = double.NaN;
+    private static readonly IPen AgcPen = new Pen(new SolidColorBrush(Color.Parse("#F5C518")), 1);
+    private static readonly IBrush AgcBrush = new SolidColorBrush(Color.Parse("#F5C518"));
+
     /// <summary>A slice's tag was clicked: make it active.</summary>
     public event Action<int>? SliceClicked;
     /// <summary>Right-click: the frequency under the pointer.</summary>
@@ -246,10 +251,23 @@ public sealed class SpectrumView : Control
 
         DrawGrid(ctx, panRect);
         DrawTrace(ctx, panRect);
+        DrawAgcLine(ctx, panRect);
         DrawWaterfall(ctx, wfRect);
         DrawTuning(ctx, b);
         DrawGrip(ctx, b, panH);
         DrawHover(ctx, b);
+    }
+
+    private void DrawAgcLine(DrawingContext ctx, Rect r)
+    {
+        if (double.IsNaN(AgcLineDb)) return;
+        double hi = SpecMaxDb, range = Math.Max(1, hi - SpecMinDb);
+        double y = Math.Floor(r.Top + (hi - AgcLineDb) / range * r.Height) + 0.5;
+        if (y < r.Top || y > r.Bottom) return;
+        ctx.DrawLine(AgcPen, new Point(0, y), new Point(r.Width, y));
+        var ft = new FormattedText("AGC", System.Globalization.CultureInfo.InvariantCulture,
+            FlowDirection.LeftToRight, LabelFace, 10, AgcBrush);
+        ctx.DrawText(ft, new Point(r.Width - ft.Width - 4, y - ft.Height - 1 < r.Top ? y + 1 : y - ft.Height - 1));
     }
 
     // Hover: a 1 px line through the pointer, top to bottom, with the

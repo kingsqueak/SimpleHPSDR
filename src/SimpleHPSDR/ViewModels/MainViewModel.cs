@@ -117,6 +117,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             period = t.WaterfallUpdatePeriod;
         }
         catch (Exception) { }
+        _displayFftSize = fft;
         Resolutions.Clear();
         foreach (var n in FftSizes)
             Resolutions.Add(new Choice($"{n / 1024}k", n, c => _ = SelectResolutionAsync((int)c.Value)));
@@ -129,9 +130,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         SpeedLabel = SpeedText(period);
     }
 
+    private int _displayFftSize = DefaultFftSize;
+
     private async Task SelectResolutionAsync(int fft) => await Try(async () =>
     {
         await _client!.SetDisplayTuningAsync(fftSize: fft);
+        _displayFftSize = fft;
         Mark(Resolutions, fft);
         ResolutionLabel = $"{fft / 1024}k";
     });

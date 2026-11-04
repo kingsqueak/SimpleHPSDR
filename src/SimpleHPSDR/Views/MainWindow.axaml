@@ -323,6 +323,12 @@
       <Button Classes="seg" Classes.lit="{Binding WaterfallPop}" Content="POP" Command="{Binding ToggleWaterfallPopCommand}"
               VerticalAlignment="Center"
               ToolTip.Tip="POP: the waterfall follows the noise floor and lifts weak signals out of the noise (blue = on)" />
+      <StackPanel Orientation="Horizontal" Spacing="6" Margin="12,0,0,0" IsVisible="{Binding AgcTopShown}">
+        <TextBlock Text="AGC-T" Classes="label" VerticalAlignment="Center" />
+        <Slider Minimum="30" Maximum="120" Value="{Binding AgcTopDb}" Width="100" VerticalAlignment="Center"
+                ToolTip.Tip="AGC threshold: raise it until the yellow line sits just above the noise. Moving this turns auto AGC off." />
+        <TextBlock Text="{Binding AgcTopText}" Width="44" VerticalAlignment="Center" FontSize="12" />
+      </StackPanel>
     </StackPanel>
 
     <!-- Transmit -->

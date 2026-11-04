@@ -155,6 +155,7 @@ public partial class MainWindow : Window
         vm.ShowSettings = settings => new SettingsWindow { DataContext = settings }.ShowDialog(this);
         vm.Display += f =>
         {
+            Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();
             if (f.RxId == vm.ActiveRx)
                 FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz);
             if (f.RxId == 1)
