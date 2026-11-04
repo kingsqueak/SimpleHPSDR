@@ -117,8 +117,9 @@
       </StackPanel>
 
       <!-- Only the frequency shrinks when the window is narrow -->
-      <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12" Margin="8,0">
-        <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+      <Panel Name="VfoArea" Grid.Column="1" Margin="8,0">
+      <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="10" HorizontalAlignment="Center">
+        <Viewbox Name="VfoScale" Stretch="Uniform" StretchDirection="DownOnly">
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
                 ToolTip.Tip="Click to type a frequency (kHz or MHz); wheel tunes by the step">
           <StackPanel Orientation="Horizontal" Spacing="8">
@@ -172,7 +173,7 @@
         </Border>
         </Viewbox>
         <!-- Offsets and lock, stacked like the antenna boxes -->
-        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+        <StackPanel Name="OffsetButtons" Grid.Column="1" Spacing="4" VerticalAlignment="Center">
           <Button Name="RitButton" Classes="seg ant" Classes.lit="{Binding RitOn}" Command="{Binding ToggleRitCommand}" Padding="6,3" MinWidth="0" HorizontalAlignment="Stretch"
                   ToolTip.Tip="RIT: receive offset on slice A. Click on or off, wheel 10 Hz a click, right-click to clear.">
             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -195,6 +196,7 @@
                   FontSize="11" MinWidth="0" Padding="4,3" ToolTip.Tip="Swap the frequencies of slices A and B" />
         </StackPanel>
       </Grid>
+      </Panel>
 
       <Border Name="SignalPanel" Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
         <Border.ContextFlyout>

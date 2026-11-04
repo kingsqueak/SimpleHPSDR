@@ -16,6 +16,9 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SizeChanged += (_, e) => FitTopBar(e.NewSize.Width);
+        // RIT and XIT stay full size beside the VFO, which takes what's left.
+        VfoArea.SizeChanged += (_, _) => FitVfo();
+        OffsetButtons.SizeChanged += (_, _) => FitVfo();
         FrequencyPanel.PointerWheelChanged += (_, e) =>
         {
             Vm?.TuneBySteps(WheelClicks(e));
@@ -64,6 +67,12 @@ public partial class MainWindow : Window
     // A narrow window gives its width to the frequency: the radio name and
     // status shorten and the signal meter narrows, and the buttons stay as they are.
     private const double FullTopBarWidth = 1180;
+
+    private void FitVfo()
+    {
+        const double Gap = 10, SwapWidth = 44;
+        VfoScale.MaxWidth = Math.Max(0, VfoArea.Bounds.Width - OffsetButtons.Bounds.Width - 2 * Gap - SwapWidth);
+    }
 
     private void FitTopBar(double width)
     {
