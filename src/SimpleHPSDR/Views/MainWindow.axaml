@@ -81,9 +81,8 @@
                    TextTrimming="CharacterEllipsis" Margin="2,0,0,0" />
       </StackPanel>
 
-      <!-- Antennas, VFO and Step shrink together when the window is narrow -->
-      <Viewbox Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="8,0">
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12">
+      <!-- Only the frequency shrinks when the window is narrow -->
+      <Grid Grid.Column="1" ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="12" Margin="8,0">
         <!-- Antennas for the current band: one button, lit when TX and RX differ -->
         <Button Classes="seg" Classes.lit="{Binding AntennasDiffer}" Padding="10,3" VerticalAlignment="Center"
                 IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="TX and RX antenna for this band">
@@ -118,6 +117,7 @@
             </Flyout>
           </Button.Flyout>
         </Button>
+        <Viewbox Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly">
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
                 ToolTip.Tip="Click to type a frequency (kHz or MHz); wheel tunes by the step">
           <StackPanel Orientation="Horizontal" Spacing="8">
@@ -144,7 +144,8 @@
             <TextBlock Text="Hz" Classes="label" FontSize="14" Margin="0,14,0,0" />
           </StackPanel>
         </Border>
-        <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Tuning step for the wheel">
+        </Viewbox>
+        <Button Grid.Column="2" Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Tuning step for the wheel">
           <StackPanel Spacing="-1">
             <TextBlock Text="Step" FontSize="12" HorizontalAlignment="Center" />
             <TextBlock Text="{Binding StepLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
@@ -155,7 +156,7 @@
           </Button.Flyout>
         </Button>
         <!-- Offsets and lock, stacked like the antenna boxes -->
-        <StackPanel Spacing="4" VerticalAlignment="Center">
+        <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Center">
           <Button Name="RitButton" Classes="seg ant" Classes.lit="{Binding RitOn}" Command="{Binding ToggleRitCommand}" MinWidth="78"
                   ToolTip.Tip="RIT: receive offset on slice A. Click on or off, wheel 10 Hz a click, right-click to clear.">
             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -171,14 +172,13 @@
             </StackPanel>
           </Button>
         </StackPanel>
-        <StackPanel Spacing="4" VerticalAlignment="Center">
+        <StackPanel Grid.Column="4" Spacing="4" VerticalAlignment="Center">
           <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Content="LOCK" Command="{Binding ToggleVfoLockCommand}"
                   FontSize="11" ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it." />
           <Button Classes="seg ant" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsVisible="{Binding HasSliceB}"
                   FontSize="11" ToolTip.Tip="Swap the frequencies of slices A and B" />
         </StackPanel>
-      </StackPanel>
-      </Viewbox>
+      </Grid>
 
       <Border Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
         <Border.ContextFlyout>
