@@ -155,6 +155,22 @@
       </Viewbox>
 
       <Border Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
+        <Border.ContextFlyout>
+          <Flyout Placement="BottomEdgeAlignedRight" Opening="OnSMeterTrimOpening">
+            <StackPanel Width="300" Spacing="8" Margin="4">
+              <TextBlock Text="S-meter trim" FontWeight="SemiBold" />
+              <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                         Text="Moves the signal reading up or down. 6 dB is one S-unit. Only the reading changes, not what you hear." />
+              <Grid ColumnDefinitions="*,70">
+                <Slider Minimum="-20" Maximum="20" SmallChange="0.5" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                        Value="{Binding SMeterTrimDb}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding SMeterTrimText}" FontSize="12" Margin="8,0,0,0"
+                           VerticalAlignment="Center" />
+              </Grid>
+              <Button Classes="flat" Content="Reset to 0" Command="{Binding ResetSMeterTrimCommand}" />
+            </StackPanel>
+          </Flyout>
+        </Border.ContextFlyout>
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Text="SIGNAL" Classes="label" />
           <!-- Fixed-width slots so the readings don't shift as they change -->

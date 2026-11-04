@@ -239,6 +239,12 @@ public sealed class StationClient : IDisposable
     public Task SetAutoAgcAsync(bool on) => PostAsync("api/auto-agc", new AutoAgcSetRequest(on));
     /// <summary>Move a receiver's display centre without moving its dial.</summary>
     public Task SetReceiverLoAsync(int rx, long hz) => PostAsync($"api/receivers/{rx}/lo", new RadioLoSetRequest(hz));
+    public sealed record SMeterTrim(double OffsetDb);
+    /// <summary>The operator's S-meter trim, on top of the board's calibration.
+    /// The engine keeps it per radio model.</summary>
+    public async Task<double> GetSMeterTrimAsync() =>
+        (await _http.GetFromJsonAsync<SMeterTrim>("api/radio/smeter-calibration", Json))!.OffsetDb;
+    public Task SetSMeterTrimAsync(double db) => PostAsync("api/radio/smeter-calibration", new { offsetDb = db });
     /// <summary>DUP: keep the receivers in the audio mix while transmitting.</summary>
     public Task SetFullDuplexAsync(bool on) => PostAsync("api/radio/full-duplex-multi-rx", new FullDuplexMultiRxSetRequest(on));
     public Task SetFilterAsync(int low, int high, string? preset, int rx = 0) =>

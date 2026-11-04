@@ -761,6 +761,37 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await SelectFilterAsync(now);
     }
 
+    // ---- S-meter trim ---------------------------------------------------
+
+    private Latest<double>? _trimSender;
+    private bool _applyingTrim;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SMeterTrimText))]
+    private double _sMeterTrimDb;
+    public string SMeterTrimText => $"{SMeterTrimDb:+0.0;-0.0;0.0} dB";
+
+    /// <summary>Right-click on the meter: read the trim the engine has.</summary>
+    public async Task LoadSMeterTrimAsync()
+    {
+        if (!IsConnected) return;
+        await Try(async () =>
+        {
+            double db = await _client!.GetSMeterTrimAsync();
+            _applyingTrim = true;
+            SMeterTrimDb = db;
+            _applyingTrim = false;
+        });
+    }
+
+    partial void OnSMeterTrimDbChanged(double value)
+    {
+        if (_applyingTrim || !IsConnected) return;
+        _trimSender ??= new Latest<double>(db => _client!.SetSMeterTrimAsync(db));
+        _trimSender.Send(Math.Round(value * 2) / 2);
+    }
+
+    [RelayCommand]
+    private void ResetSMeterTrim() => SMeterTrimDb = 0;
+
     // ---- audio and front end -------------------------------------------
 
     partial void OnAfGainDbChanged(double value)
