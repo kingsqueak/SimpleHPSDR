@@ -34,6 +34,36 @@ public sealed partial class MainViewModel
     public string XitText => FormatOffset(XitHz);
     public string SquelchText => $"{SquelchLevel:0}";
 
+    // The engine's adaptive squelch opens at its noise floor plus a fixed
+    // margin and ignores the level: the 20th percentile of the last 12
+    // readings of received audio, slewed up slowly and down quickly. The app
+    // doesn't get those readings, so the mark applies the same method to the
+    // S-meter: a guide to the opening point, not the exact value. Fixed
+    // squelch has no level in dBm, so there the mark is only the level's
+    // place along the bar.
+    private const double AdaptiveMarginDb = 2.5, FloorRiseDb = 0.25, FloorFallDb = 7;
+    private readonly double[] _squelchWindow = new double[12];
+    private int _squelchFill, _squelchIndex;
+    private double _squelchFloor = double.NaN;
+    [ObservableProperty] private double _squelchMark = double.NaN;
+
+    private void TrackSquelchMark(double dbm)
+    {
+        if (!double.IsFinite(dbm)) return;
+        _squelchWindow[_squelchIndex] = dbm;
+        _squelchIndex = (_squelchIndex + 1) % _squelchWindow.Length;
+        if (_squelchFill < _squelchWindow.Length) _squelchFill++;
+        var recent = _squelchWindow[.._squelchFill];
+        Array.Sort(recent);
+        double floor = recent[(int)Math.Round((_squelchFill - 1) * 0.2)];
+        _squelchFloor = double.IsNaN(_squelchFloor) ? floor
+            : floor > _squelchFloor ? Math.Min(floor, _squelchFloor + FloorRiseDb)
+            : Math.Max(floor, _squelchFloor - FloorFallDb);
+        SquelchMark = !SquelchOn ? double.NaN
+            : SquelchAdaptive ? _squelchFloor + AdaptiveMarginDb
+            : SMeterBar.MinDbm + SquelchLevel / 100 * (SMeterBar.MaxDbm - SMeterBar.MinDbm);
+    }
+
     private static string FormatOffset(long hz) => hz == 0 ? "0" : $"{hz:+0;-0}";
 
     /// <summary>Notches to draw on the panadapter.</summary>

@@ -209,9 +209,9 @@
             <TextBlock Text="{Binding SignalDbm, StringFormat={}{0:0} dBm}" Width="80" FontFamily="{StaticResource MonoFont}"
                        FontSize="13" TextAlignment="Right" Foreground="{StaticResource TextMuted}" />
           </StackPanel>
-          <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}"
+          <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}" Squelch="{Binding SquelchMark}"
                        Height="8" Margin="0,6,0,0"
-                       ToolTip.Tip="Blue below S4, green S4-S9, orange to S9+15, red from S9+20. White mark: peak, held 3 s." />
+                       ToolTip.Tip="Blue below S4, green S4-S9, orange to S9+15, red from S9+20. White mark: peak, held 3 s. Yellow mark: squelch, while it's on." />
           <!-- Transmit meters -->
           <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6"
                 Margin="0,8,0,0">
@@ -417,11 +417,11 @@
                         ToolTip.Tip="PureSignal adaptive predistortion" />
           <ToggleButton Classes="seg" Content="MON" IsChecked="{Binding MonitorPreview}"
                         ToolTip.Tip="Preview: hear your mic through the whole TX chain (EQ, leveler, processor, ALC, TX filter) without transmitting" />
-          <Button Classes="seg" Padding="10,3" VerticalAlignment="Center"
+          <Button Classes="seg" VerticalAlignment="Center"
                   ToolTip.Tip="Transmit levels, mic, PureSignal calibration, two-tone and monitor">
-            <StackPanel Spacing="-1">
-              <TextBlock Text="TX" FontSize="12" HorizontalAlignment="Center" />
-              <TextBlock Text="{Binding DrivePct, StringFormat={}{0:0}%}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="TX" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding DrivePct, StringFormat={}{0:0}%}" VerticalAlignment="Center" />
             </StackPanel>
             <Button.Flyout>
               <Flyout Placement="TopEdgeAlignedLeft">
@@ -493,10 +493,13 @@
                 <StackPanel Width="280" Spacing="8" Margin="4">
                   <TextBlock Text="Squelch" FontWeight="SemiBold" />
                   <Grid ColumnDefinitions="*,44">
-                    <Slider Minimum="0" Maximum="100" Value="{Binding SquelchLevel}" VerticalAlignment="Center" />
+                    <Slider Minimum="0" Maximum="100" Value="{Binding SquelchLevel}" VerticalAlignment="Center"
+                            IsEnabled="{Binding !SquelchAdaptive}" />
                     <TextBlock Grid.Column="1" Text="{Binding SquelchText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
                   </Grid>
                   <CheckBox Content="Adaptive (follows the band noise)" IsChecked="{Binding SquelchAdaptive}" />
+                  <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                             Text="Adaptive opens just above the band noise and doesn't use the level. Untick it to set the level yourself." />
                 </StackPanel>
               </Flyout>
             </Button.ContextFlyout>

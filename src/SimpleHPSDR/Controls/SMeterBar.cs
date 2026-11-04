@@ -8,7 +8,7 @@ namespace SimpleHPSDR.Controls;
 /// S-meter bar. The colour scale is fixed to the meter, not to the bar's
 /// length: blue below S4, green S4-S9, orange S9 to S9+15, red from S9+20,
 /// blending into each other at the boundaries. A thin marker shows the held
-/// peak.
+/// peak, and a yellow one where squelch sits while it's on.
 /// </summary>
 public sealed class SMeterBar : Control
 {
@@ -17,8 +17,13 @@ public sealed class SMeterBar : Control
     public static readonly StyledProperty<double> PeakProperty =
         AvaloniaProperty.Register<SMeterBar, double>(nameof(Peak), -140);
 
+    public static readonly StyledProperty<double> SquelchProperty =
+        AvaloniaProperty.Register<SMeterBar, double>(nameof(Squelch), double.NaN);
+    /// <summary>Where to draw the squelch mark (dBm), NaN for none.</summary>
+    public double Squelch { get => GetValue(SquelchProperty); set => SetValue(SquelchProperty, value); }
+
     // Scale: S1 (-121 dBm) area up to S9+40 (-33 dBm).
-    private const double MinDbm = -127, MaxDbm = -33;
+    public const double MinDbm = -127, MaxDbm = -33;
     private const double S4 = -103, S9 = -73, S9Plus15 = -58, S9Plus20 = -53;
     // Half-width of each colour blend, in dB.
     private const double Blend = 3;
@@ -29,8 +34,9 @@ public sealed class SMeterBar : Control
     private static readonly Color Red = Color.Parse("#E5484D");
     private static readonly IBrush Track = new SolidColorBrush(Color.Parse("#1F232C"));
     private static readonly IBrush PeakBrush = new SolidColorBrush(Color.Parse("#E6E8EB"));
+    private static readonly IBrush SquelchBrush = new SolidColorBrush(Color.Parse("#F5C518"));
 
-    static SMeterBar() => AffectsRender<SMeterBar>(ValueProperty, PeakProperty);
+    static SMeterBar() => AffectsRender<SMeterBar>(ValueProperty, PeakProperty, SquelchProperty);
 
     public double Value { get => GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
     public double Peak { get => GetValue(PeakProperty); set => SetValue(PeakProperty, value); }
@@ -66,6 +72,12 @@ public sealed class SMeterBar : Control
         if (w > 0)
             using (ctx.PushClip(new Rect(0, 0, w, r.Height)))
                 ctx.DrawRectangle(Gradient, null, r, radius, radius);
+
+        if (!double.IsNaN(Squelch))
+        {
+            double x = Math.Round(r.Width * Pos(Squelch));
+            ctx.FillRectangle(SquelchBrush, new Rect(Math.Clamp(x - 1.5, 0, r.Width - 3), 0, 3, r.Height));
+        }
 
         if (Peak > MinDbm)
         {

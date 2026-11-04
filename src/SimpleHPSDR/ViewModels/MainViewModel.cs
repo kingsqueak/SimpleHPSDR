@@ -915,6 +915,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateMeter(float dbm)
     {
+        TrackSquelchMark(dbm);
         // Peak of the RMS reading, held 3 s, then it follows the signal again.
         var now = DateTime.UtcNow;
         if (dbm >= PeakDbm || now - _peakAt > PeakHold)
