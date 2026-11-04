@@ -271,6 +271,31 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public RxMode Mode { get; private set; } = RxMode.USB;
     public int StepHz => _settings.TuneStepHz;
     public string StepLabel => StepHz >= 1000 ? $"{StepHz / 1000}k" : $"{StepHz}";
+    // The frequency in three pieces, so the digit the step moves can be yellow.
+    private int StepDigitIndex
+    {
+        get
+        {
+            int fromRight = (int)Math.Floor(Math.Log10(StepHz));
+            var text = FrequencyText;
+            for (int i = text.Length - 1; i >= 0; i--)
+                if (char.IsDigit(text[i]) && fromRight-- == 0) return i;
+            return -1;
+        }
+    }
+    public string FrequencyHead => StepDigitIndex < 0 ? FrequencyText : FrequencyText[..StepDigitIndex];
+    public string FrequencyDigit => StepDigitIndex < 0 ? "" : FrequencyText[StepDigitIndex].ToString();
+    public string FrequencyTail => StepDigitIndex < 0 ? "" : FrequencyText[(StepDigitIndex + 1)..];
+
+    partial void OnVfoHzChanged(long value) => NotifyFrequencyDigits();
+
+    private void NotifyFrequencyDigits()
+    {
+        OnPropertyChanged(nameof(FrequencyHead));
+        OnPropertyChanged(nameof(FrequencyDigit));
+        OnPropertyChanged(nameof(FrequencyTail));
+    }
+
     public string FrequencyText => VfoHz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.');
     public string AfGainText => $"{AfGainDb:0} dB";
     // Thetis-style front-end steps: the G2 has one preamp switch, so the
@@ -658,6 +683,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _settings.Save();
         Mark(TuneSteps, hz);
         OnPropertyChanged(nameof(StepHz));
+        NotifyFrequencyDigits();
         OnPropertyChanged(nameof(StepLabel));
     }
 
