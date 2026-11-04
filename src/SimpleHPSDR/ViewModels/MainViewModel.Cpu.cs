@@ -7,6 +7,26 @@ namespace SimpleHPSDR.ViewModels;
 /// <summary>CPU use of SimpleHPSDR and its engine, averaged over 5 s.</summary>
 public sealed partial class MainViewModel
 {
+    // Beside the CPU readout, while the TCI server runs.
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(TciStatusShown))] private string _tciStatusText = "";
+    public bool TciStatusShown => TciStatusText.Length > 0;
+
+    private async Task RefreshTciStatusAsync()
+    {
+        if (!IsConnected || _client is null)
+        {
+            TciStatusText = "";
+            return;
+        }
+        try
+        {
+            var t = await _client.GetTciStatusAsync();
+            TciStatusText = !t.CurrentlyEnabled ? ""
+                : $"TCI {t.CurrentBindAddress}:{t.CurrentPort} · {(t.ClientCount == 1 ? "1 client" : $"{t.ClientCount} clients")}";
+        }
+        catch (Exception) { TciStatusText = ""; }
+    }
+
     private readonly DispatcherTimer _cpuTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private readonly Stopwatch _cpuWall = new();
     private TimeSpan _lastAppCpu, _lastEngineCpu;
@@ -21,7 +41,11 @@ public sealed partial class MainViewModel
         _lastAppCpu = Process.GetCurrentProcess().TotalProcessorTime;
         _lastEngineCpu = _engine.CpuTime;
         _cpuWall.Restart();
-        _cpuTimer.Tick += (_, _) => SampleCpu();
+        _cpuTimer.Tick += (_, _) =>
+        {
+            SampleCpu();
+            _ = RefreshTciStatusAsync();
+        };
         _cpuTimer.Start();
     }
 
