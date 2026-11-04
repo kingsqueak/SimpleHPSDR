@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        BuildMenu();
         SizeChanged += (_, e) => FitTopBar(e.NewSize.Width);
         // RIT and XIT stay full size beside the VFO, which takes what's left.
         VfoArea.SizeChanged += (_, _) => FitVfo();
@@ -63,6 +64,27 @@ public partial class MainWindow : Window
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
+
+    // Help everywhere; About is in the application menu on macOS.
+    private void BuildMenu()
+    {
+        var help = new NativeMenuItem("SimpleHPSDR Help");
+        help.Click += (_, _) => InfoWindow.Help().ShowDialog(this);
+        var items = new NativeMenu { help };
+        if (!OperatingSystem.IsMacOS())
+        {
+            var about = new NativeMenuItem("About SimpleHPSDR");
+            about.Click += (_, _) => ShowAbout();
+            items.Add(about);
+        }
+        NativeMenu.SetMenu(this, new NativeMenu { new NativeMenuItem("Help") { Menu = items } });
+    }
+
+    public async void ShowAbout()
+    {
+        string engine = Vm is { } vm ? await vm.EngineVersionAsync() : "";
+        await InfoWindow.About(App.Version, engine).ShowDialog(this);
+    }
 
     // A narrow window gives its width to the frequency: the radio name and
     // status shorten and the signal meter narrows, and the buttons stay as they are.

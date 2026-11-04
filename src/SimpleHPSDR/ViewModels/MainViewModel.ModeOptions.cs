@@ -11,6 +11,13 @@ public sealed partial class MainViewModel
 {
     public string Theme => _settings.Theme;
 
+    /// <summary>For the About window: the version the running engine reports.</summary>
+    public async Task<string> EngineVersionAsync()
+    {
+        try { return _client is null ? "" : (await _client.GetEngineVersionAsync()).Split('+')[0]; }
+        catch (Exception) { return ""; }
+    }
+
     public bool ModeIsAm => Mode is RxMode.AM or RxMode.SAM;
     public bool ModeIsFm => Mode == RxMode.FM;
     public bool ModeHasNoOptions => !ModeIsAm && !ModeIsFm;

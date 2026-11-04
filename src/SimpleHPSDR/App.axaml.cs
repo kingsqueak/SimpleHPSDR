@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -14,7 +15,20 @@ public partial class App : Application
 {
     private PosixSignalRegistration[] _signals = [];
 
-    public override void Initialize() => AvaloniaXamlLoader.Load(this);
+    /// <summary>The program's version, without the build hash.</summary>
+    public static string Version { get; } =
+        (typeof(App).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "")
+        .Split('+')[0];
+
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+        // The name in the macOS menu bar.
+        Name = $"SimpleHPSDR {Version}";
+    }
+
+    private void OnAbout(object? sender, EventArgs e) =>
+        ((ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow as MainWindow)?.ShowAbout();
 
     /// <summary>System, Dark or Light. System follows the OS as it changes.</summary>
     public static void ApplyTheme(string theme)

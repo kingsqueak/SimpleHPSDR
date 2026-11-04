@@ -55,6 +55,10 @@
     </DataTemplate>
   </Window.Resources>
 
+  <DockPanel>
+  <!-- A menu in the window on Windows and Linux. On macOS these menus are in
+       the menu bar and this draws nothing. -->
+  <NativeMenuBar DockPanel.Dock="Top" />
   <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
 
     <!-- Top: radio, frequency, meter -->
@@ -670,4 +674,5 @@
       </StackPanel>
     </Border>
   </Grid>
+  </DockPanel>
 </Window>

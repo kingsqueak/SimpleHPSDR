@@ -261,6 +261,10 @@ public sealed class StationClient : IDisposable
         PostAsync($"api/bands/stack/{Uri.EscapeDataString(band)}", entry);
     public async Task RemoveBandStackAsync(string band, int id) =>
         (await _http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}")).EnsureSuccessStatusCode();
+    private sealed record EngineInfo(string Version);
+    public async Task<string> GetEngineVersionAsync() =>
+        (await _http.GetFromJsonAsync<EngineInfo>("api/capabilities", Json))!.Version;
+
     private sealed record ConnectedBoard(string EffectiveBoard);
     /// <summary>The engine's name for the connected board, such as OrionMkII.</summary>
     public async Task<string> GetConnectedBoardAsync() =>
