@@ -504,7 +504,7 @@
               </Flyout>
             </Button.ContextFlyout>
           </Button>
-          <Button Classes="seg" Classes.lit="{Binding RxLevelerOn}" Content="LEV" Command="{Binding ToggleRxLevelerCommand}"
+          <Button Classes="seg" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}"
                   VerticalAlignment="Center" Margin="0,0,14,0"
                   ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on)" />
         </StackPanel>
