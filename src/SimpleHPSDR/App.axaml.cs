@@ -21,6 +21,7 @@ public partial class App : Application
         {
             MacActivity.Begin("Live radio audio and display");
             SliderWheel.Enable();
+            PopupTimeout.Enable();
             var vm = new MainViewModel();
             desktop.MainWindow = new MainWindow { DataContext = vm };
             desktop.Exit += (_, _) => vm.Dispose();

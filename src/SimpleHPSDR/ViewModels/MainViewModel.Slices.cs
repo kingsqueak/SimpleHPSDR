@@ -273,6 +273,15 @@ public sealed partial class MainViewModel
         (_panSenders[rx] ??= new Latest<long>(hz => _client!.SetReceiverLoAsync(rx, hz))).Send(centerHz);
     }
 
+    /// <summary>Bring the dial to the middle of the display: with CTUN on or
+    /// after a drag it can be off centre, and a narrow span could leave it out
+    /// of view. Each panadapter centres on its own slice.</summary>
+    private async Task CenterOnDialAsync()
+    {
+        await _client!.SetReceiverLoAsync(0, ActiveRx == 0 ? VfoHz : _sliceA?.VfoHz ?? VfoHz);
+        if (ShowPanadapterB) await _client.SetReceiverLoAsync(1, ActiveRx == 1 ? VfoHz : _sliceB?.VfoHz ?? VfoHz);
+    }
+
     /// <summary>A click or wheel on a slice's own panadapter: make that slice
     /// active first, then tune it.</summary>
     public async Task TuneSliceAsync(int rx, long hz)

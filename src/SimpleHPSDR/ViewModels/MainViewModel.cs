@@ -684,6 +684,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await _client!.SetZoomAsync(z);
             await SyncSliceBZoomAsync();
+            await CenterOnDialAsync();
         })).Send(level);
     }
 
