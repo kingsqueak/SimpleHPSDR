@@ -1,0 +1,52 @@
+name: Packages
+
+# Builds the macOS DMGs and the Ubuntu 26.04 packages for amd64 and arm64.
+# Runs on a version tag (v*) or by hand; the packages are the run's artifacts.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deb:
+    strategy:
+      matrix:
+        runner: [ubuntu-26.04, ubuntu-26.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build the package
+        run: ./scripts/make-deb.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simplehpsdr-deb-${{ runner.arch }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+  dmg:
+    runs-on: macos-26
+    strategy:
+      matrix:
+        rid: [osx-arm64, osx-x64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build the DMG
+        run: ./scripts/make-dmg.sh ${{ matrix.rid }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: simplehpsdr-dmg-${{ matrix.rid }}
+          path: artifacts/*.dmg
+          if-no-files-found: error
