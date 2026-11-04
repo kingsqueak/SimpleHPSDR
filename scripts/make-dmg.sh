@@ -31,6 +31,8 @@ for d in "$app/Contents/Resources/engine/runtimes/"*; do
 done
 find "$app/Contents" -name '*.pdb' -delete
 
+cp src/SimpleHPSDR/Assets/AppIcon.icns "$app/Contents/Resources/"
+
 cat > "$app/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -40,6 +42,7 @@ cat > "$app/Contents/Info.plist" <<EOF
   <key>CFBundleDisplayName</key><string>SimpleHPSDR</string>
   <key>CFBundleIdentifier</key><string>com.kc2rgw.simplehpsdr</string>
   <key>CFBundleExecutable</key><string>SimpleHPSDR</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$version</string>
   <key>CFBundleVersion</key><string>$version</string>

@@ -370,7 +370,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _attSender = new Latest<int>(db => _client!.SetAttenuatorAsync(db));
 
         foreach (var b in SimpleHPSDR.Band.All)
-            Bands.Add(new Choice(b.Name, b, c => SelectBand((Band)c.Value)));
+            Bands.Add(new Choice(b.Name, b, c => _ = SelectBandAsync((Band)c.Value)));
         foreach (var m in ModeOrder)
             Modes.Add(new Choice(m.ToString(), m, c => _ = SelectModeAsync((RxMode)c.Value)));
         foreach (var s in Steps)
@@ -672,14 +672,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         CancelFrequencyEntry();
     }
 
-    private void SelectBand(Band band)
-    {
-        if (!IsConnected) return;
-        TuneTo(_settings.BandMemory.TryGetValue(band.Name, out var hz) && band.Contains(hz) ? hz : band.DefaultHz);
-        var mode = band.DefaultHz < 10_000_000 ? RxMode.LSB : RxMode.USB;
-        if (Mode is RxMode.LSB or RxMode.USB && Mode != mode) _ = SelectModeAsync(mode);
-    }
-
     private void SelectStep(int hz)
     {
         _settings.TuneStepHz = hz;
@@ -727,7 +719,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     // ---- mode and filter ------------------------------------------------
 
-    private async Task SelectModeAsync(RxMode mode)
+    private async Task ChangeModeAsync(RxMode mode)
     {
         if (!IsConnected) return;
         await Try(() => _client!.SetModeAsync(mode, ActiveRx));
@@ -1050,6 +1042,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
+        RememberBandMode();
         _settings.Save();
         try { _statePoll.Stop(); } catch (InvalidOperationException) { }  // signal thread
         UnkeyForShutdown();

@@ -19,6 +19,7 @@ namespace SimpleHPSDR.ViewModels;
 public sealed partial class MainViewModel
 {
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ActiveSliceLabel))] [NotifyPropertyChangedFor(nameof(SplitText))]
+    [NotifyPropertyChangedFor(nameof(RitUsable))]
     private int _activeRx;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SplitText))]
     private int _txRx;

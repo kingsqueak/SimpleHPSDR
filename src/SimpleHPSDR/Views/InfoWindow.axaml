@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
         x:Class="SimpleHPSDR.Views.InfoWindow"
         Width="620" Height="620" CanResize="False" WindowStartupLocation="CenterOwner">
   <Grid RowDefinitions="*,Auto" Margin="18" RowSpacing="12">

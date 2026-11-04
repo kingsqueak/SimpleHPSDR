@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SimpleHPSDR.ViewModels"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
         x:Class="SimpleHPSDR.Views.RadioPickerWindow"
         x:DataType="vm:RadioPickerViewModel"
         Title="Choose a radio" Width="520" Height="520" CanResize="False"

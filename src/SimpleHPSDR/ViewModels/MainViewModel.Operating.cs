@@ -31,6 +31,8 @@ public sealed partial class MainViewModel
     private List<NotchDto> _notches = [];
 
     public string RitText => FormatOffset(RitHz);
+    /// <summary>The engine's RIT is on slice A only.</summary>
+    public bool RitUsable => ActiveRx == 0;
     public string XitText => FormatOffset(XitHz);
     public string SquelchText => $"{SquelchLevel:0}";
 
@@ -191,6 +193,15 @@ public sealed partial class MainViewModel
 
     // ---- band stacking --------------------------------------------------
 
+    /// <summary>Set a filter, lighting its button when it's one of them.</summary>
+    private async Task ApplyFilterAsync(int low, int high)
+    {
+        if (Filters.FirstOrDefault(f => f.Preset.LowHz == low && f.Preset.HighHz == high) is { } slot)
+            await SelectFilterAsync(slot);
+        else
+            DragFilter(low, high);
+    }
+
     private string BandKey => SimpleHPSDR.Band.Find(VfoHz)?.Name ?? "GEN";
 
     /// <summary>Saved frequencies for the current band, newest first.</summary>
@@ -211,13 +222,8 @@ public sealed partial class MainViewModel
     public Task RecallBandStackAsync(BandStackEntryDto e) => Try(async () =>
     {
         TuneTo(e.Hz);
-        if (e.Mode != Mode) await SelectModeAsync(e.Mode);
-        if (e is not { FilterLowHz: { } low, FilterHighHz: { } high }) return;
-        // Light the filter button when the saved filter is one of them.
-        if (Filters.FirstOrDefault(f => f.Preset.LowHz == low && f.Preset.HighHz == high) is { } slot)
-            await SelectFilterAsync(slot);
-        else
-            DragFilter(low, high);
+        if (e.Mode != Mode) await ChangeModeAsync(e.Mode);
+        if (e is { FilterLowHz: { } low, FilterHighHz: { } high }) await ApplyFilterAsync(low, high);
     });
 
     public Task RemoveBandStackAsync(BandStackEntryDto e) => Try(() => _client!.RemoveBandStackAsync(e.Band, e.Id));

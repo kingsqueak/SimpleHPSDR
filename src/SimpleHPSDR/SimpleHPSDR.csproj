@@ -9,6 +9,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <Version>0.2.0</Version>
     <Product>SimpleHPSDR</Product>
+    <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="DefaultTxProfile.json" LogicalName="DefaultTxProfile.json" />
+    <AvaloniaResource Include="Assets/icon.png" />
   </ItemGroup>
 
   <ItemGroup>

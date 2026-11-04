@@ -48,6 +48,10 @@ public sealed class Settings
     public bool TxFilterFollowsRx { get; set; } = true;
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
+    /// <summary>Settings per band and mode, keyed "40m|DIGU".</summary>
+    public Dictionary<string, ModeMemory> ModeMemories { get; set; } = [];
+    /// <summary>The mode last used on each band.</summary>
+    public Dictionary<string, int> BandLastMode { get; set; } = [];
 
     private static string FilePath => Path.Combine(EngineHost.DataDir, "settings.json");
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
@@ -69,3 +73,9 @@ public sealed class Settings
         catch (IOException) { }
     }
 }
+
+/// <summary>What comes back on returning to a band and mode. Enums as numbers.</summary>
+public sealed record ModeMemory(
+    long Hz, int FilterLowHz, int FilterHighHz,
+    bool AgcAuto, int AgcMode, double AgcTopDb, double AgcFixedDb,
+    double DrivePct, double TunePct, double MicGainDb, int NrMode, int NbMode);

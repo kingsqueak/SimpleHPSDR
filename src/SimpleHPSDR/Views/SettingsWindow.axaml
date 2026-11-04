@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SimpleHPSDR.ViewModels"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="Configuration" Width="1040" Height="720" MinHeight="480"
