@@ -36,6 +36,8 @@ public sealed class Settings
     public double PanFraction { get; set; } = 0.38;
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
+    /// <summary>System, Dark or Light.</summary>
+    public string Theme { get; set; } = "System";
     /// <summary>The default SSB filter buttons have been written to the engine.</summary>
     public bool FilterDefaultsApplied { get; set; }
     /// <summary>Zoom level the Zoom button goes to (2-32).</summary>

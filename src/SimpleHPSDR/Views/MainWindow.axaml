@@ -131,7 +131,7 @@
                       ToolTip.Tip="Active slice: the VFO, band, mode, filter and AF act on it">
                 <TextBlock Text="{Binding ActiveSliceLabel}" FontSize="16" FontWeight="Bold" Foreground="White" />
               </Border>
-              <TextBlock Text="{Binding SplitText}" FontSize="9" Foreground="#FF6B6B" HorizontalAlignment="Center"
+              <TextBlock Text="{Binding SplitText}" FontSize="9" Foreground="{DynamicResource TxText}" HorizontalAlignment="Center"
                          ToolTip.Tip="Transmit is on the other slice (split)" />
             </StackPanel>
             <!-- Click the frequency to type one in its place -->
@@ -139,7 +139,7 @@
               <TextBlock FontFamily="{StaticResource MonoFont}"
                          Classes.tx="{Binding IsTransmitting}" IsVisible="{Binding !EditingFrequency}"
                          FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center">
-                <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="#F9DF83" /><Run Text="{Binding FrequencyTail}" />
+                <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="{DynamicResource StepDigit}" /><Run Text="{Binding FrequencyTail}" />
               </TextBlock>
               <TextBox Name="FrequencyEntryBox" Text="{Binding FrequencyEntry}" IsVisible="{Binding EditingFrequency}"
                        FontFamily="{StaticResource MonoFont}" FontSize="30" Width="230" VerticalAlignment="Center"
@@ -225,7 +225,7 @@
             <TextBlock Text="{Binding PeakSUnits}" Width="56" FontFamily="{StaticResource MonoFont}"
                        FontSize="13" TextAlignment="Left" ToolTip.Tip="Peak RMS, held 3 s" />
             <TextBlock Text="{Binding SignalDbm, StringFormat={}{0:0} dBm}" Width="80" FontFamily="{StaticResource MonoFont}"
-                       FontSize="13" TextAlignment="Right" Foreground="{StaticResource TextMuted}" />
+                       FontSize="13" TextAlignment="Right" Foreground="{DynamicResource TextMuted}" />
           </StackPanel>
           <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}" Squelch="{Binding SquelchMark}"
                        Height="8" Margin="0,6,0,0"
@@ -235,7 +235,7 @@
                 Margin="0,8,0,0">
             <TextBlock Text="PWR" Classes="label" FontSize="11" VerticalAlignment="Center" />
             <ProgressBar Grid.Column="1" Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}"
-                         MinWidth="0" Height="8" VerticalAlignment="Center" Foreground="#E5484D" Background="#1F232C" />
+                         MinWidth="0" Height="8" VerticalAlignment="Center" Foreground="#E5484D" Background="{DynamicResource ControlBg}" />
             <TextBlock Grid.Column="2" Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" TextAlignment="Right"
                        VerticalAlignment="Center" FontSize="12" />
             <TextBlock Grid.Column="3" Text="SWR" Classes="label" FontSize="11" Margin="4,0,0,0" VerticalAlignment="Center" />
@@ -551,12 +551,12 @@
                   <Slider Grid.Row="2" Grid.Column="1" Minimum="-20" Maximum="40" Value="{Binding MicGainDb}" VerticalAlignment="Center"
                           ToolTip.Tip="Mic gain" />
                   <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MicGainDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
-                  <Border Grid.Row="3" Background="{StaticResource ControlBg}" CornerRadius="5" Padding="6,3" HorizontalAlignment="Left"
+                  <Border Grid.Row="3" Background="{DynamicResource ControlBg}" CornerRadius="5" Padding="6,3" HorizontalAlignment="Left"
                           VerticalAlignment="Center" ToolTip.Tip="{Binding MicSourceDetail}">
                     <TextBlock Text="{Binding MicSourceLabel}" FontSize="11" FontWeight="SemiBold" />
                   </Border>
                   <ProgressBar Grid.Row="3" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MicLevelDbfs}" MinWidth="0" Height="6"
-                               VerticalAlignment="Center" Foreground="#3DD68C" Background="#1F232C" ToolTip.Tip="Mic level (dBFS)" />
+                               VerticalAlignment="Center" Foreground="#3DD68C" Background="{DynamicResource ControlBg}" ToolTip.Tip="Mic level (dBFS)" />
                 </Grid>
               </Flyout>
             </Button.Flyout>

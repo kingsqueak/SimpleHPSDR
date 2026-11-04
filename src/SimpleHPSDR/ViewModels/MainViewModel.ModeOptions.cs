@@ -9,6 +9,8 @@ namespace SimpleHPSDR.ViewModels;
 /// PureSignal's saved correction, on the PS button.</summary>
 public sealed partial class MainViewModel
 {
+    public string Theme => _settings.Theme;
+
     public bool ModeIsAm => Mode is RxMode.AM or RxMode.SAM;
     public bool ModeIsFm => Mode == RxMode.FM;
     public bool ModeHasNoOptions => !ModeIsAm && !ModeIsFm;

@@ -30,6 +30,13 @@
             </Border>
             <TextBlock Text="This radio identifies itself, so there's no model to choose." Classes="label" FontSize="12"
                        IsVisible="{Binding !ShowRadioModel}" />
+            <Border Classes="panel">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Theme" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" Width="180"
+                          ToolTip.Tip="System follows the computer's light or dark setting." />
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
       </TabItem>
@@ -676,7 +683,7 @@
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
                        Text="Let other software control the radio. TCI suits WSJT-X, JTDX, loggers and skimmers; CAT speaks Kenwood TS-2000 with the Thetis ZZ extensions (WSJT-X, fldigi, N1MM+, Hamlib). The network servers start with the engine, so changes there need a quick engine restart; serial ports apply at once." />
 
-            <Border Classes="panel" IsVisible="{Binding RestartNeeded}" Background="#3A2E12">
+            <Border Classes="panel" IsVisible="{Binding RestartNeeded}" Background="{DynamicResource WarnPanel}">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="TCI or CAT settings changed. Restart the engine to apply them (the radio reconnects in a few seconds)."
                            TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" />

@@ -25,7 +25,7 @@
                   <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
                   <TextBlock Text="{Binding Subtitle}" Classes="label" FontSize="12" />
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="IN USE" IsVisible="{Binding Busy}" Foreground="#F2A93B"
+                <TextBlock Grid.Column="1" Text="IN USE" IsVisible="{Binding Busy}" Foreground="{DynamicResource WarnText}"
                            FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
                            ToolTip.Tip="Another program is controlling this radio" />
               </Grid>
@@ -36,7 +36,7 @@
       </Panel>
     </Border>
 
-    <TextBlock Grid.Row="2" IsVisible="{Binding SelectedBusy}" TextWrapping="Wrap" FontSize="12" Foreground="#F2A93B"
+    <TextBlock Grid.Row="2" IsVisible="{Binding SelectedBusy}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WarnText}"
                Text="Another program is controlling this radio. Take over stops it there, including any transmission in progress." />
 
     <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">

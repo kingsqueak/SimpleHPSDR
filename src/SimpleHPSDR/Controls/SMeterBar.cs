@@ -32,9 +32,11 @@ public sealed class SMeterBar : Control
     private static readonly Color Green = Color.Parse("#3DD68C");
     private static readonly Color Orange = Color.Parse("#F5A524");
     private static readonly Color Red = Color.Parse("#E5484D");
-    private static readonly IBrush Track = new SolidColorBrush(Color.Parse("#1F232C"));
-    private static readonly IBrush PeakBrush = new SolidColorBrush(Color.Parse("#E6E8EB"));
-    private static readonly IBrush SquelchBrush = new SolidColorBrush(Color.Parse("#F5C518"));
+
+    public SMeterBar() => ActualThemeVariantChanged += (_, _) => InvalidateVisual();
+
+    private IBrush Themed(string key) =>
+        this.TryFindResource(key, ActualThemeVariant, out var v) && v is IBrush b ? b : Brushes.Gray;
 
     static SMeterBar() => AffectsRender<SMeterBar>(ValueProperty, PeakProperty, SquelchProperty);
 
@@ -64,7 +66,7 @@ public sealed class SMeterBar : Control
     {
         var r = new Rect(Bounds.Size);
         const double radius = 3;
-        ctx.DrawRectangle(Track, null, r, radius, radius);
+        ctx.DrawRectangle(Themed("MeterTrack"), null, r, radius, radius);
 
         // Paint the full-width gradient, clipped to the signal, so each colour
         // stays at its S-unit whatever the bar's length.
@@ -76,13 +78,13 @@ public sealed class SMeterBar : Control
         if (!double.IsNaN(Squelch))
         {
             double x = Math.Round(r.Width * Pos(Squelch));
-            ctx.FillRectangle(SquelchBrush, new Rect(Math.Clamp(x - 1.5, 0, r.Width - 3), 0, 3, r.Height));
+            ctx.FillRectangle(Themed("SquelchMark"), new Rect(Math.Clamp(x - 1.5, 0, r.Width - 3), 0, 3, r.Height));
         }
 
         if (Peak > MinDbm)
         {
             double x = Math.Round(r.Width * Pos(Peak));
-            ctx.FillRectangle(PeakBrush, new Rect(Math.Clamp(x - 1, 0, r.Width - 2), 0, 2, r.Height));
+            ctx.FillRectangle(Themed("MeterPeak"), new Rect(Math.Clamp(x - 1, 0, r.Width - 2), 0, 2, r.Height));
         }
     }
 }

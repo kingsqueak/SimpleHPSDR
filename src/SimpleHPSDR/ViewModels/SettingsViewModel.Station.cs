@@ -38,6 +38,19 @@ public sealed partial class SettingsViewModel
     public ObservableCollection<string> SerialPorts { get; } = [];
     public ObservableCollection<TransverterRow> Transverters { get; } = [];
 
+    public string[] ThemeNames { get; } = ["System", "Dark", "Light"];
+    public int ThemeIndex
+    {
+        get => Math.Max(0, Array.IndexOf(ThemeNames, AppSettings?.Theme));
+        set
+        {
+            if (AppSettings is null || value < 0) return;
+            AppSettings.Theme = ThemeNames[value];
+            AppSettings.Save();
+            App.ApplyTheme(AppSettings.Theme);
+        }
+    }
+
     public string[] RadioModelNames => RadioModels.Names;
     /// <summary>Only the OrionMkII family needs telling apart.</summary>
     [ObservableProperty] private bool _showRadioModel;
