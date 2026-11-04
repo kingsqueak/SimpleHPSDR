@@ -67,6 +67,8 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     [ObservableProperty] private bool _manualP2 = true;
     [ObservableProperty] private bool _autoConnect;
     [ObservableProperty] private bool _firewallBlocked;
+    [ObservableProperty] private bool _noRadios;
+    private bool _firewallHelpShown;
 
     public ObservableCollection<RadioEntry> Radios { get; } = [];
     public bool SelectedBusy => Selected is { Busy: true };
@@ -80,6 +82,8 @@ public sealed partial class RadioPickerViewModel : ObservableObject
     public event Action<RadioChoice?>? Done;
     /// <summary>Set by the window: shows the firmware window.</summary>
     public Func<FirmwareViewModel, Task>? ShowFirmware { get; set; }
+    /// <summary>Set by the window once it's open: shows the ports and protocols.</summary>
+    public Func<Task>? ShowNetworkHelp { get; set; }
 
     public RadioPickerViewModel(StationClient client, bool autoConnect)
     {
@@ -98,6 +102,7 @@ public sealed partial class RadioPickerViewModel : ObservableObject
         }
         catch (Exception) { }
         Status = "Searching the network…";
+        bool blocked = false;
         try
         {
             var found = await _client.DiscoverAsync();
@@ -110,7 +115,7 @@ public sealed partial class RadioPickerViewModel : ObservableObject
                 1 => "Found 1 radio.",
                 var n => $"Found {n} radios.",
             };
-            await CheckFirewallAsync();
+            blocked = await CheckFirewallAsync();
         }
         catch (Exception ex)
         {
@@ -120,25 +125,42 @@ public sealed partial class RadioPickerViewModel : ObservableObject
         {
             Searching = false;
         }
+        // Once per visit, so Search again doesn't keep throwing it up.
+        if (blocked && !_firewallHelpShown && ShowNetworkHelp is { } show)
+        {
+            _firewallHelpShown = true;
+            await show();
+        }
     }
 
     // Windows drops the radio's packets until a rule names the engine. The
     // engine asks for it once on first start; if that was declined it never
     // asks again, and all anyone sees is an empty list.
-    private async Task CheckFirewallAsync()
+    private async Task<bool> CheckFirewallAsync()
     {
         FirewallBlocked = false;
-        if (Radios.Count > 0) return;
+        NoRadios = Radios.Count == 0;
+        if (Radios.Count > 0) return false;
         try
         {
-            if ((await _client.GetFirewallAsync()).Needed)
+            var firewall = await _client.GetFirewallAsync();
+            if (firewall.Missing)
             {
                 FirewallBlocked = true;
                 Status = "No radios found. Windows Firewall may be blocking the radio.";
             }
+            else if (firewall.OwnedElsewhere)
+                Status = "No radios found. Windows Firewall may be blocking the radio.";
+            else
+                return false;
+            return true;
         }
         catch (Exception) { }
+        return false;
     }
+
+    [RelayCommand]
+    private Task OpenNetworkHelpAsync() => ShowNetworkHelp?.Invoke() ?? Task.CompletedTask;
 
     [RelayCommand]
     private async Task AllowFirewallAsync()

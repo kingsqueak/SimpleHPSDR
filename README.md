@@ -62,8 +62,10 @@ and run `SimpleHPSDR.exe`; nothing needs installing, and the .NET and Visual C++
 runtimes are included. The app isn't signed, so SmartScreen warns the first time:
 choose More info, then Run anyway. If Windows Firewall asks about
 `StationEngine.exe`, or asks to let it change your device, say yes, or the radio
-won't be found. If the radio picker finds nothing, it offers to add the firewall
-rule again.
+won't be found. If Zeus is on the same computer, answer No and add a rule of your
+own instead, or Zeus loses its firewall rule; the radio picker's Network help button
+gives the command. If the picker finds nothing, it also offers to add the rule again
+when none exists.
 To use ASIO, install your audio interface's driver, then pick ASIO under
 Config > Audio. The driver must be able to run at 48 kHz. The Windows build hasn't
 been tried with a radio yet, so please report what you find.
@@ -93,6 +95,12 @@ dotnet run --project src/SimpleHPSDR
 
 `scripts/make-dmg.sh`, `scripts/make-linux.sh` and `scripts/make-windows.sh` build the packages. Set
 `SIMPLEHPSDR_ENGINE` to use an engine binary elsewhere.
+
+## Firewalls
+
+The radio uses UDP only, on radio ports 1024 to 1044 in both directions. This
+computer's port is 1025 with Protocol 2 and random with Protocol 1, so allow the
+`StationEngine` program rather than one port where your firewall can do that.
 
 ## Where things live
 

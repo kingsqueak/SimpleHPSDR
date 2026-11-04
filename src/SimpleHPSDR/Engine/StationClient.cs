@@ -40,8 +40,12 @@ public sealed record DspPrep(string Phase, string Status)
 
 public sealed record FirewallStatus(bool Supported, bool CanApply, bool? RulePresent, bool? RuleMatchesProgram)
 {
-    /// <summary>The rule is missing, or names a copy of the engine in another folder.</summary>
-    public bool Needed => Supported && CanApply && (RulePresent != true || RuleMatchesProgram == false);
+    /// <summary>No rule yet, so adding one is safe.</summary>
+    public bool Missing => Supported && CanApply && RulePresent != true;
+
+    /// <summary>The rule names another program. The engine has one rule name and
+    /// replaces it, which would take it from Zeus, so this one is left to the user.</summary>
+    public bool OwnedElsewhere => Supported && RulePresent == true && RuleMatchesProgram == false;
 }
 
 public sealed class StationException(string message, HttpStatusCode status) : Exception(message)

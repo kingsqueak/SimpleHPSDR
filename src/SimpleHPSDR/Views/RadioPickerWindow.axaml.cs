@@ -12,6 +12,7 @@ public partial class RadioPickerWindow : Window
         var vm = (RadioPickerViewModel)DataContext!;
         vm.Done += choice => Close(choice);
         vm.ShowFirmware = firmware => new FirmwareWindow { DataContext = firmware }.ShowDialog(this);
+        Opened += (_, _) => vm.ShowNetworkHelp = () => InfoWindow.Network().ShowDialog(this);
         return ShowDialog<RadioChoice?>(owner);
     }
 }

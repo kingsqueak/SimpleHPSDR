@@ -40,9 +40,12 @@
     <TextBlock Grid.Row="2" IsVisible="{Binding SelectedBusy}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WarnText}"
                Text="Another program is controlling this radio. Take over stops it there, including any transmission in progress." />
 
-    <Button Grid.Row="2" Classes="flat" Content="Allow through Windows Firewall…" Command="{Binding AllowFirewallCommand}"
-            IsVisible="{Binding FirewallBlocked}" HorizontalAlignment="Left"
-            ToolTip.Tip="Windows will ask you to approve this" />
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" IsVisible="{Binding NoRadios}">
+      <Button Classes="flat" Content="Network help…" Command="{Binding OpenNetworkHelpCommand}"
+              ToolTip.Tip="The ports and protocols the radio needs" />
+      <Button Classes="flat" Content="Allow through Windows Firewall…" Command="{Binding AllowFirewallCommand}"
+              IsVisible="{Binding FirewallBlocked}" ToolTip.Tip="Windows will ask you to approve this" />
+    </StackPanel>
 
     <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
       <TextBlock Text="Or by address" Classes="label" FontSize="12" />
