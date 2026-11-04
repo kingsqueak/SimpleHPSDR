@@ -61,8 +61,9 @@
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,10">
       <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <Button Classes="flat" Content="{Binding RadioLabel}" Command="{Binding ChooseRadioCommand}"
-                  ToolTip.Tip="Choose a radio" />
+          <Button Classes="flat" Command="{Binding ChooseRadioCommand}" ToolTip.Tip="{Binding RadioLabel}">
+            <TextBlock Name="RadioText" Text="{Binding RadioLabel}" TextTrimming="CharacterEllipsis" />
+          </Button>
           <Button Classes="flat" Content="Config" Command="{Binding OpenSettingsCommand}"
                   IsEnabled="{Binding IsConnected}" ToolTip.Tip="Configuration" />
           <Button Classes="seg" Padding="10,3" IsEnabled="{Binding IsConnected}" VerticalAlignment="Center"
@@ -77,7 +78,7 @@
             </Button.Flyout>
           </Button>
         </StackPanel>
-        <TextBlock Text="{Binding Status}" Classes="label" FontSize="11" MaxWidth="300"
+        <TextBlock Name="StatusText" Text="{Binding Status}" Classes="label" FontSize="11" MaxWidth="300"
                    TextTrimming="CharacterEllipsis" Margin="2,0,0,0" />
       </StackPanel>
 
@@ -157,30 +158,43 @@
         </Button>
         <!-- Offsets and lock, stacked like the antenna boxes -->
         <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Center">
-          <Button Name="RitButton" Classes="seg ant" Classes.lit="{Binding RitOn}" Command="{Binding ToggleRitCommand}" MinWidth="78"
+          <Button Name="RitButton" Classes="seg ant" Classes.lit="{Binding RitOn}" Command="{Binding ToggleRitCommand}" Padding="6,3" MinWidth="0" HorizontalAlignment="Stretch"
                   ToolTip.Tip="RIT: receive offset on slice A. Click on or off, wheel 10 Hz a click, right-click to clear.">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <TextBlock Text="RIT" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding RitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding RitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                         MinWidth="21" TextAlignment="Right" />
             </StackPanel>
           </Button>
-          <Button Name="XitButton" Classes="seg ant" Classes.lit="{Binding XitOn}" Command="{Binding ToggleXitCommand}" MinWidth="78"
+          <Button Name="XitButton" Classes="seg ant" Classes.lit="{Binding XitOn}" Command="{Binding ToggleXitCommand}" Padding="6,3" MinWidth="0" HorizontalAlignment="Stretch"
                   ToolTip.Tip="XIT: transmit offset. Click on or off, wheel 10 Hz a click, right-click to clear.">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <TextBlock Text="XIT" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding XitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding XitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                         MinWidth="21" TextAlignment="Right" />
             </StackPanel>
           </Button>
         </StackPanel>
         <StackPanel Grid.Column="4" Spacing="4" VerticalAlignment="Center">
-          <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Content="LOCK" Command="{Binding ToggleVfoLockCommand}"
-                  FontSize="11" ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it." />
+          <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
+                  Padding="7,4" MinWidth="0" HorizontalAlignment="Center"
+                  ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it.">
+            <Viewbox Width="15" Height="15">
+              <Canvas Width="24" Height="24">
+                <Path Data="M4 11h16v11H4z" Fill="{Binding $parent[Button].Foreground}" />
+                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 9 0v4" IsVisible="{Binding VfoLocked}" StrokeThickness="2.5"
+                      Stroke="{Binding $parent[Button].Foreground}" />
+                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 8.6-1.9" IsVisible="{Binding !VfoLocked}" StrokeThickness="2.5"
+                      Stroke="{Binding $parent[Button].Foreground}" />
+              </Canvas>
+            </Viewbox>
+          </Button>
           <Button Classes="seg ant" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsVisible="{Binding HasSliceB}"
-                  FontSize="11" ToolTip.Tip="Swap the frequencies of slices A and B" />
+                  FontSize="11" MinWidth="0" Padding="4,3" ToolTip.Tip="Swap the frequencies of slices A and B" />
         </StackPanel>
       </Grid>
 
-      <Border Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
+      <Border Name="SignalPanel" Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
         <Border.ContextFlyout>
           <Flyout Placement="BottomEdgeAlignedRight" Opening="OnSMeterTrimOpening">
             <StackPanel Width="300" Spacing="8" Margin="4">
@@ -198,7 +212,7 @@
           </Flyout>
         </Border.ContextFlyout>
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
-          <TextBlock Text="SIGNAL" Classes="label" />
+          <TextBlock Name="SignalLabel" Text="SIGNAL" Classes="label" />
           <!-- Fixed-width slots so the readings don't shift as they change -->
           <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
             <TextBlock Text="{Binding SUnits}" Width="62" Margin="12,0,0,0" FontFamily="{StaticResource MonoFont}" FontSize="13"

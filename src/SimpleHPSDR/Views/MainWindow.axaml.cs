@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        SizeChanged += (_, e) => FitTopBar(e.NewSize.Width);
         FrequencyPanel.PointerWheelChanged += (_, e) =>
         {
             Vm?.TuneBySteps(WheelClicks(e));
@@ -59,6 +60,19 @@ public partial class MainWindow : Window
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
+
+    // A narrow window gives its width to the frequency: the radio name and
+    // status shorten and the signal meter narrows, and the buttons stay as they are.
+    private const double FullTopBarWidth = 1180;
+
+    private void FitTopBar(double width)
+    {
+        bool narrow = width < FullTopBarWidth;
+        RadioText.MaxWidth = narrow ? 96 : double.PositiveInfinity;
+        StatusText.MaxWidth = narrow ? 230 : 300;
+        SignalPanel.Width = Math.Clamp(width - 760, 236, 300);
+        SignalLabel.IsVisible = SignalPanel.Width >= 290;
+    }
 
     private static int WheelClicks(PointerWheelEventArgs e) => Math.Sign(SliderWheel.Amount(e));
 
