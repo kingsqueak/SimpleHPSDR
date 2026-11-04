@@ -11,7 +11,7 @@ Audio runs natively in the engine, so receive audio and the microphone never
 pass through the interface. That keeps latency low, and audio keeps playing
 while the window is hidden or on another Space.
 
-Developed on an ANAN 7000DLE MkII over Protocol 2. macOS and Ubuntu packages
+Developed on an ANAN 7000DLE MkII over Protocol 2. macOS and Linux packages
 are available; Windows is planned once ASIO device selection is in.
 
 Not affiliated with or endorsed by the Zeus SDR project.
@@ -48,10 +48,12 @@ isn't signed by Apple, so the first time, run:
 xattr -dr com.apple.quarantine /Applications/SimpleHPSDR.app
 ```
 
-**Ubuntu 26.04:**
+**Linux (x86-64 and arm64):**
 
 ```sh
-sudo apt install ./simplehpsdr_*.deb
+sudo apt install ./simplehpsdr_*.deb        # Ubuntu 26.04, Debian
+sudo dnf install ./simplehpsdr-*.rpm        # Fedora
+sudo pacman -U ./simplehpsdr-*.pkg.tar.zst  # Arch
 ```
 
 Then choose your radio. Several radios report the same ID, so pick your model in
@@ -69,7 +71,7 @@ scripts/build-engine.sh          # publishes the engine to artifacts/engine/<rid
 dotnet run --project src/SimpleHPSDR
 ```
 
-`scripts/make-dmg.sh` and `scripts/make-deb.sh` build the packages. Set
+`scripts/make-dmg.sh` and `scripts/make-linux.sh` build the packages. Set
 `SIMPLEHPSDR_ENGINE` to use an engine binary elsewhere.
 
 ## Where things live

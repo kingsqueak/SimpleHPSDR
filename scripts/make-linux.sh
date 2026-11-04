@@ -1,16 +1,18 @@
 #!/bin/sh
-# Build a .deb of SimpleHPSDR, with station-engine inside, for this machine's
-# architecture. Both are self-contained, so no .NET install is needed.
+# Build the Linux packages of SimpleHPSDR, with station-engine inside, for this
+# machine's architecture. Both are self-contained, so no .NET install is needed.
+# Run on Ubuntu; the .rpm and Arch packages need fpm (gem install fpm) and are
+# skipped without it.
 #
-# Writes dist/simplehpsdr_<version>-1_<arch>.deb
+# Writes dist/simplehpsdr_<version>-1_<arch>.deb, an .rpm and a .pkg.tar.zst
 set -eu
 cd "$(dirname "$0")/.."
 
 VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/SimpleHPSDR/SimpleHPSDR.csproj)
 ARCH=$(dpkg --print-architecture)
 case "$ARCH" in
-  amd64) RID=linux-x64 ;;
-  arm64) RID=linux-arm64 ;;
+  amd64) RID=linux-x64; LINUX_ARCH=x86_64 ;;
+  arm64) RID=linux-arm64; LINUX_ARCH=aarch64 ;;
   *) echo "Unsupported architecture $ARCH" >&2; exit 1 ;;
 esac
 
@@ -91,4 +93,19 @@ Description: Clean, simple interface for OpenHPSDR radios
 EOF
 
 dpkg-deb --root-owner-group -Zxz --build "$STAGE" "dist/simplehpsdr_${VERSION}-1_${ARCH}.deb"
-ls -la dist/*.deb
+
+if command -v fpm > /dev/null; then
+  rm -rf "$STAGE/DEBIAN"
+  fpm_common() {
+    fpm -s dir -C "$STAGE" -n simplehpsdr -v "$VERSION" --iteration 1 -a "$LINUX_ARCH" \
+        --license GPL-3.0-or-later --url https://github.com/kingsqueak/SimpleHPSDR \
+        --maintainer "KC2RGW Chris <2788495+kingsqueak@users.noreply.github.com>" \
+        --description "Clean, simple interface for OpenHPSDR radios" "$@" usr
+  }
+  fpm_common -t rpm -p "dist/simplehpsdr-${VERSION}-1.${LINUX_ARCH}.rpm" \
+      -d glibc -d libstdc++ -d libgcc -d zlib -d openssl-libs -d alsa-lib -d libX11 -d libICE -d libSM \
+      -d fontconfig -d libgomp
+  fpm_common -t pacman -p "dist/simplehpsdr-${VERSION}-1-${LINUX_ARCH}.pkg.tar.zst" \
+      -d glibc -d gcc-libs -d zlib -d openssl -d alsa-lib -d libx11 -d libice -d libsm -d fontconfig
+fi
+ls -la dist/
