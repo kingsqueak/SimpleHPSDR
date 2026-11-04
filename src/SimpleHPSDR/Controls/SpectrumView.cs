@@ -590,7 +590,7 @@ public sealed class SpectrumView : Control
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
-        int steps = Math.Sign(e.Delta.Y);
+        int steps = Math.Sign(SliderWheel.Amount(e));
         if (steps != 0) WheelTune?.Invoke(steps);
         e.Handled = true;
     }

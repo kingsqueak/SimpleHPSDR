@@ -152,10 +152,11 @@ public sealed class AfSlider : Control
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
-        if (e.Delta.Y == 0) return;
+        double amount = SliderWheel.Amount(e);
+        if (amount == 0) return;
         e.Handled = true;
         var part = HitTest(e.GetPosition(this));
-        double acc = _wheel.GetValueOrDefault(part) + e.Delta.Y / SliderWheel.ClickDelta;
+        double acc = _wheel.GetValueOrDefault(part) + amount / SliderWheel.ClickDelta;
         int clicks = (int)Math.Truncate(acc + Math.CopySign(1e-6, acc));
         _wheel[part] = acc - clicks;
         if (clicks != 0) Set(part, Math.Round(Get(part)) + clicks);

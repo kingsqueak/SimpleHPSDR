@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Threading;
+using SimpleHPSDR.Controls;
 using SimpleHPSDR.ViewModels;
 
 namespace SimpleHPSDR.Views;
@@ -16,7 +17,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         FrequencyPanel.PointerWheelChanged += (_, e) =>
         {
-            Vm?.TuneBySteps(Math.Sign(e.Delta.Y));
+            Vm?.TuneBySteps(WheelClicks(e));
             e.Handled = true;
         };
         // Click the frequency to type one; Enter tunes, Esc or clicking away cancels.
@@ -59,7 +60,7 @@ public partial class MainWindow : Window
 
     private MainViewModel? Vm => DataContext as MainViewModel;
 
-    private static int WheelClicks(PointerWheelEventArgs e) => Math.Sign(e.Delta.Y);
+    private static int WheelClicks(PointerWheelEventArgs e) => Math.Sign(SliderWheel.Amount(e));
 
     // Right-click on the band: frequencies saved on this band.
     private async Task ShowBandStackAsync()
