@@ -11,7 +11,9 @@ namespace SimpleHPSDR.ViewModels;
 /// connected). The file is read whole and checked before anything is sent,
 /// and the radio is probed again just before the erase: no answer, another
 /// MAC or a radio in use stops it. There's no cancel once it starts, because
-/// stopping after the erase leaves the radio without gateware.
+/// stopping after the erase leaves the radio without gateware. The protocol
+/// can't read the flash back, so success is shown in two steps: every block
+/// acknowledged, then the radio rebooted and reporting its firmware.
 /// </summary>
 public sealed partial class FirmwareViewModel(RadioEntry radio) : ObservableObject
 {
@@ -20,6 +22,8 @@ public sealed partial class FirmwareViewModel(RadioEntry radio) : ObservableObje
     private readonly IPEndPoint _target = new(IPAddress.Parse(radio.Info.IpAddress), FirmwareProgrammer.Port);
     private byte[]? _image;
     private bool _eraseStarted;
+    private string _fileVersion = "";
+    private readonly CancellationTokenSource _watch = new();
 
     public string RadioText { get; } = $"{radio.Info.BoardId}, {radio.Info.IpAddress}, firmware {radio.Info.FirmwareVersion}";
     public string MacText { get; } = radio.Mac;
@@ -34,10 +38,16 @@ public sealed partial class FirmwareViewModel(RadioEntry radio) : ObservableObje
     [NotifyPropertyChangedFor(nameof(Idle))]
     private bool _busy;
     [ObservableProperty] private double _progress;
-    [ObservableProperty] private bool _finished;
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(FlashCommand))] private bool _finished;
+    [ObservableProperty] private string _result = "";
+    [ObservableProperty] private string _prompt = "";
 
     public bool Idle => !Busy;
     public bool HasFileWarning => FileWarning.Length > 0;
+    public bool HasResult => Result.Length > 0;
+    public bool HasPrompt => Prompt.Length > 0;
+    partial void OnResultChanged(string value) => OnPropertyChanged(nameof(HasResult));
+    partial void OnPromptChanged(string value) => OnPropertyChanged(nameof(HasPrompt));
     partial void OnFileWarningChanged(string value) => OnPropertyChanged(nameof(HasFileWarning));
 
     /// <summary>Read and check a chosen file. Nothing goes to the radio here.</summary>
@@ -68,6 +78,9 @@ public sealed partial class FirmwareViewModel(RadioEntry radio) : ObservableObje
                         !FileName.Contains("Orion", StringComparison.OrdinalIgnoreCase))
                         FileWarning = "The file name doesn't mention Orion. Check it's for this radio.";
                     _image = image;
+                    // "..._v2.2.15.rbf" is firmware 2.2b15 as the radio reports it.
+                    var v = System.Text.RegularExpressions.Regex.Match(FileName, @"v(\d+)\.(\d+)\.(\d+)");
+                    _fileVersion = v.Success ? $"{v.Groups[1]}.{v.Groups[2]}b{v.Groups[3]}" : "";
                     Status = "Read the warning, then tick the box to enable Flash.";
                 }
             }
@@ -88,6 +101,7 @@ public sealed partial class FirmwareViewModel(RadioEntry radio) : ObservableObje
         Progress = 0;
         var progress = new Progress<(string Text, double Fraction)>(p =>
         {
+            if (Finished) return;   // a late update mustn't replace the result
             Status = p.Text;
             Progress = p.Fraction * 100;
         });
@@ -100,7 +114,10 @@ public sealed partial class FirmwareViewModel(RadioEntry radio) : ObservableObje
             await FirmwareProgrammer.WriteAsync(_target, _image!, progress);
             Progress = 100;
             Finished = true;
-            Status = "Firmware written. Power-cycle the radio before using it.";
+            Result = $"Write complete: all {FirmwareProgrammer.BlocksFor(_image!.Length):N0} blocks acknowledged.";
+            Prompt = "Power-cycle the radio now: turn it off, wait a few seconds, and turn it back on.";
+            Status = "Waiting for the radio to come back…";
+            _ = ConfirmRestartAsync();
         }
         catch (Exception ex) when (ex is TimeoutException or System.Net.Sockets.SocketException)
         {
@@ -112,6 +129,33 @@ public sealed partial class FirmwareViewModel(RadioEntry radio) : ObservableObje
             Busy = false;
         }
     }
+
+    // Runs until the radio is back or the window closes.
+    private async Task ConfirmRestartAsync()
+    {
+        try
+        {
+            string mac = new(radio.Mac.Where(Uri.IsHexDigit).ToArray());
+            var back = await FirmwareProgrammer.WaitForRestartAsync(_target, mac, _watch.Token);
+            Prompt = "";
+            if (_fileVersion.Length == 0 || back.Firmware == _fileVersion)
+            {
+                Result = $"Success: the radio restarted and reports firmware {back.Firmware}" +
+                         (_fileVersion.Length == 0 ? "." : ", matching the file.");
+                Status = "You can close this window and connect.";
+            }
+            else
+            {
+                Result = "";
+                Prompt = $"The radio restarted but reports firmware {back.Firmware}, and the file says {_fileVersion}.";
+                Status = "Check the file and the radio before using it.";
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    /// <summary>The window closed.</summary>
+    public void StopWatching() => _watch.Cancel();
 
     private async Task<bool> CheckRadioAsync()
     {

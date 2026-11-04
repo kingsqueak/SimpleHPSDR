@@ -4,7 +4,11 @@ using System.Net.Sockets;
 namespace SimpleHPSDR.Engine;
 
 /// <summary>The radio's answer to a discovery probe on the programming port.</summary>
-public sealed record FirmwareProbe(string Mac, bool Running, byte BoardId, byte FirmwareVersion);
+public sealed record FirmwareProbe(string Mac, bool Running, byte BoardId, byte FirmwareVersion, byte BetaVersion)
+{
+    /// <summary>As the radio reports it, e.g. 2.2b15.</summary>
+    public string Firmware => $"{FirmwareVersion / 10}.{FirmwareVersion % 10}" + (BetaVersion == 0 ? "" : $"b{BetaVersion}");
+}
 
 /// <summary>
 /// OpenHPSDR Protocol 2 FPGA programming, UDP to port 1024, as in TAPR's
@@ -31,20 +35,48 @@ public static class FirmwareProgrammer
     public static int BlocksFor(long bytes) => (int)((bytes + BlockBytes - 1) / BlockBytes);
 
     /// <summary>Ask the radio who it is and whether it's running. Null if it doesn't answer.</summary>
-    public static async Task<FirmwareProbe?> ProbeAsync(IPEndPoint radio)
+    public static async Task<FirmwareProbe?> ProbeAsync(IPEndPoint radio, int attempts = 3)
     {
         using var udp = new UdpClient(AddressFamily.InterNetwork);
         var packet = new byte[DiscoverLength];
         packet[4] = Discover;
-        for (int attempt = 0; attempt < 3; attempt++)
+        for (int attempt = 0; attempt < attempts; attempt++)
         {
-            await udp.SendAsync(packet, radio);
+            // With the radio powered off, the send itself can fail (no route
+            // or host down). That's no answer, not an error.
+            try { await udp.SendAsync(packet, radio); }
+            catch (SocketException) { continue; }
             var reply = await ReceiveAsync(udp, radio, BlockTimeout,
                 b => b.Length >= 14 && b[4] is ReplyIdle or ReplyRunning);
             if (reply is not null)
-                return new FirmwareProbe(Convert.ToHexString(reply, 5, 6), reply[4] == ReplyRunning, reply[11], reply[13]);
+                return new FirmwareProbe(Convert.ToHexString(reply, 5, 6), reply[4] == ReplyRunning, reply[11], reply[13],
+                    reply.Length > 23 ? reply[23] : (byte)0);
         }
         return null;
+    }
+
+    /// <summary>After a write: wait for the radio to go quiet (two probes in a
+    /// row unanswered, so one lost packet doesn't count) and then answer
+    /// again, which shows it rebooted. Runs until cancelled.</summary>
+    public static async Task<FirmwareProbe> WaitForRestartAsync(IPEndPoint radio, string mac, CancellationToken cancel)
+    {
+        int silent = 0;
+        while (true)
+        {
+            cancel.ThrowIfCancellationRequested();
+            var probe = await ProbeAsync(radio, attempts: 1);
+            if (probe is null)
+            {
+                silent++;
+                await Task.Delay(1000, cancel);
+            }
+            else if (silent >= 2 && string.Equals(probe.Mac, mac, StringComparison.OrdinalIgnoreCase)) return probe;
+            else
+            {
+                silent = 0;
+                await Task.Delay(1000, cancel);
+            }
+        }
     }
 
     /// <summary>Erase, then program. Throws if the radio stops answering; the

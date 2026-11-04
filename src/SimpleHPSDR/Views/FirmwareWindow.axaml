@@ -28,6 +28,12 @@
     <CheckBox Content="I understand and accept the risk." IsChecked="{Binding Accepted}" IsEnabled="{Binding Idle}" />
 
     <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="6" MinWidth="0" Background="#1F232C" />
+    <Border IsVisible="{Binding HasResult}" Background="#14532D" CornerRadius="6" Padding="10,8">
+      <TextBlock Text="{Binding Result}" FontWeight="SemiBold" Foreground="#BBF7D0" TextWrapping="Wrap" />
+    </Border>
+    <Border IsVisible="{Binding HasPrompt}" Background="#713F12" CornerRadius="6" Padding="10,8">
+      <TextBlock Text="{Binding Prompt}" FontWeight="SemiBold" Foreground="#FEF3C7" TextWrapping="Wrap" />
+    </Border>
     <TextBlock Text="{Binding Status}" FontSize="12" TextWrapping="Wrap" />
 
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">

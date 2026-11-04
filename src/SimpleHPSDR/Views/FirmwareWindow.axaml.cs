@@ -12,6 +12,7 @@ public partial class FirmwareWindow : Window
         InitializeComponent();
         // Closing mid-flash would leave the radio half written.
         Closing += (_, e) => e.Cancel = DataContext is FirmwareViewModel { Busy: true };
+        Closed += (_, _) => (DataContext as FirmwareViewModel)?.StopWatching();
     }
 
     private async void OnChooseFile(object? sender, RoutedEventArgs e)
