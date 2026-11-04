@@ -8,6 +8,9 @@
 # only this runtime's native libraries are kept. Ad-hoc signed (not notarized).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Homebrew's dotnet bundles its own runtime, linked to Homebrew's brotli, which
+# wouldn't run on other Macs. Use Microsoft's when it's installed.
+[ -x /usr/local/share/dotnet/dotnet ] && export PATH="/usr/local/share/dotnet:$PATH"
 rid="${1:-osx-arm64}"
 arch="${rid#osx-}"
 version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/SimpleHPSDR/SimpleHPSDR.csproj)
@@ -53,6 +56,9 @@ cat > "$app/Contents/Info.plist" <<EOF
 </dict>
 </plist>
 EOF
+
+echo "== check"
+scripts/check-mac-bundle.sh "$app"
 
 echo "== sign (ad-hoc)"
 codesign --force --deep --sign - "$app"
