@@ -13,7 +13,40 @@ public sealed partial class MainViewModel
     private int _noiseSeq;
     private NoisePanel[] _noisePanels = [];
 
-    private NoisePanel NoisePanelFor(NbMode mode) => _nbPanel ??= Panel(new NoisePanel(
+    /// <summary>NB and NR are one dropdown each: what's on, lit when something is.</summary>
+    public string NbLabel => NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Label ?? "Off";
+    public bool NbOn => NbLabel != "Off";
+    public string NrLabel => NoiseReductions.FirstOrDefault(c => c.IsSelected)?.Label ?? "Off";
+    public bool NrOn => NrLabel != "Off";
+    private NoisePanel? _lastNrPanel;
+
+    /// <summary>Right-click on NB: its settings.</summary>
+    public NoisePanel NbParams => _nbPanel ??= BuildNbPanel();
+
+    /// <summary>Right-click on NR: the one that's on, or the last one with NR off.</summary>
+    public NoisePanel NrParams =>
+        NoiseReductions.FirstOrDefault(c => c.IsSelected)?.Params ?? _lastNrPanel
+        ?? NoiseReductions.First(c => Equals(c.Value, NrMode.Emnr)).Params!;
+
+    private void WireNoiseButtons()
+    {
+        foreach (var c in NoiseBlankers)
+            c.PropertyChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(NbLabel));
+                OnPropertyChanged(nameof(NbOn));
+            };
+        foreach (var c in NoiseReductions)
+            c.PropertyChanged += (_, _) =>
+            {
+                if (c is { IsSelected: true, Params: { } panel }) _lastNrPanel = panel;
+                OnPropertyChanged(nameof(NrLabel));
+                OnPropertyChanged(nameof(NrOn));
+                OnPropertyChanged(nameof(NrParams));
+            };
+    }
+
+    private NoisePanel BuildNbPanel() => Panel(new NoisePanel(
         "Noise blanker", "NB1 and NB2 share the threshold. Lower blanks more.",
         new NoiseParam
         {

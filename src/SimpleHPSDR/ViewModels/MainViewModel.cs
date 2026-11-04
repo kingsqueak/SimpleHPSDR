@@ -328,17 +328,20 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Modes.Add(new Choice(m.ToString(), m, c => _ = SelectModeAsync((RxMode)c.Value)));
         foreach (var s in Steps)
             TuneSteps.Add(new Choice(s >= 1000 ? $"{s / 1000}k" : $"{s}", s, c => SelectStep((int)c.Value)));
-        foreach (var nb in new[] { NbMode.Nb1, NbMode.Nb2 })
-            NoiseBlankers.Add(new Choice(nb.ToString().ToUpperInvariant(), nb,
-                c => _ = SelectNbAsync(c.IsSelected ? NbMode.Off : (NbMode)c.Value)) { Params = NoisePanelFor(nb) });
+        foreach (var (label, mode) in new[] { ("Off", NbMode.Off), ("NB1", NbMode.Nb1), ("NB2", NbMode.Nb2) })
+            NoiseBlankers.Add(new Choice(label, mode, c => _ = SelectNbAsync((NbMode)c.Value)));
         // Thetis numbering: NR1 LMS, NR2 Ephraim-Malah, NR3 RNNoise, NR4
         // libspecbleach; NNR is WDSP's neural reduction.
         foreach (var (label, mode) in new[]
                  {
-                     ("NR1", NrMode.Anr), ("NR2", NrMode.Emnr), ("NR3", NrMode.Rnnr), ("NR4", NrMode.Sbnr), ("NNR", NrMode.Nnr),
+                     ("Off", NrMode.Off), ("NR1", NrMode.Anr), ("NR2", NrMode.Emnr), ("NR3", NrMode.Rnnr),
+                     ("NR4", NrMode.Sbnr), ("NNR", NrMode.Nnr),
                  })
-            NoiseReductions.Add(new Choice(label, mode,
-                c => _ = SelectNrAsync(c.IsSelected ? NrMode.Off : (NrMode)c.Value)) { Params = NoisePanelFor(mode) });
+            NoiseReductions.Add(new Choice(label, mode, c => _ = SelectNrAsync((NrMode)c.Value))
+            {
+                Params = mode == NrMode.Off ? null : NoisePanelFor(mode),
+            });
+        WireNoiseButtons();
         Mark(TuneSteps, _settings.TuneStepHz);
         _specMinDb = _settings.SpecMinDb;
         _specMaxDb = _settings.SpecMaxDb;

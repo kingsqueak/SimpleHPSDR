@@ -28,38 +28,30 @@
       <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}"
               Command="{Binding Select}" />
     </DataTemplate>
-    <DataTemplate x:Key="NoiseButton" x:DataType="vm:Choice">
-      <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}"
-              Command="{Binding Select}" ToolTip.Tip="Click for on or off. Right-click for its settings.">
-        <Button.ContextFlyout>
-          <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnNoiseParamsOpening">
-            <StackPanel Width="360" Spacing="10" Margin="4">
-              <TextBlock Text="{Binding Params.Title}" FontWeight="SemiBold" />
-              <TextBlock Text="{Binding Params.Note}" IsVisible="{Binding Params.HasNote}" Classes="label"
-                         FontSize="12" TextWrapping="Wrap" />
-              <ItemsControl ItemsSource="{Binding Params.Rows}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:NoiseParam">
-                    <Grid ColumnDefinitions="110,*,64" Margin="0,4">
-                      <TextBlock Text="{Binding Label}" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                      <Slider Grid.Column="1" IsVisible="{Binding IsSlider}" Minimum="{Binding Min}" Maximum="{Binding Max}"
-                              SmallChange="{Binding Step}" TickFrequency="{Binding Step}" IsSnapToTickEnabled="True"
-                              Value="{Binding Value}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Column="2" IsVisible="{Binding IsSlider}" Text="{Binding Text}" FontSize="12"
-                                 Margin="8,0,0,0" VerticalAlignment="Center" />
-                      <CheckBox Grid.Column="1" IsVisible="{Binding IsToggle}" IsChecked="{Binding On}" />
-                      <ComboBox Grid.Column="1" Grid.ColumnSpan="2" IsVisible="{Binding IsOptions}" ItemsSource="{Binding Options}"
-                                SelectedIndex="{Binding Option}" HorizontalAlignment="Stretch" />
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-              <Button Classes="flat" Content="Reset to defaults" Command="{Binding Params.ResetCommand}"
-                      IsVisible="{Binding Params.HasRows}" />
-            </StackPanel>
-          </Flyout>
-        </Button.ContextFlyout>
-      </Button>
+    <!-- NB and NR settings, shown on right-click -->
+    <DataTemplate x:Key="NoisePanelView" x:DataType="vm:NoisePanel">
+      <StackPanel Width="360" Spacing="10" Margin="4">
+        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Note}" IsVisible="{Binding HasNote}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:NoiseParam">
+              <Grid ColumnDefinitions="110,*,64" Margin="0,4">
+                <TextBlock Text="{Binding Label}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <Slider Grid.Column="1" IsVisible="{Binding IsSlider}" Minimum="{Binding Min}" Maximum="{Binding Max}"
+                        SmallChange="{Binding Step}" TickFrequency="{Binding Step}" IsSnapToTickEnabled="True"
+                        Value="{Binding Value}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" IsVisible="{Binding IsSlider}" Text="{Binding Text}" FontSize="12"
+                           Margin="8,0,0,0" VerticalAlignment="Center" />
+                <CheckBox Grid.Column="1" IsVisible="{Binding IsToggle}" IsChecked="{Binding On}" />
+                <ComboBox Grid.Column="1" Grid.ColumnSpan="2" IsVisible="{Binding IsOptions}" ItemsSource="{Binding Options}"
+                          SelectedIndex="{Binding Option}" HorizontalAlignment="Stretch" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Classes="flat" Content="Reset to defaults" Command="{Binding ResetCommand}" IsVisible="{Binding HasRows}" />
+      </StackPanel>
     </DataTemplate>
   </Window.Resources>
 
@@ -282,20 +274,34 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <TextBlock Grid.Row="0" Grid.Column="2" Text="NB" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
-        <ItemsControl Grid.Row="0" Grid.Column="3" ItemsSource="{Binding NoiseBlankers}" ItemTemplate="{StaticResource NoiseButton}"
-                      VerticalAlignment="Center"
-                      ToolTip.Tip="Noise blanker for impulse noise (click the lit one for off, right-click for settings)">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-        </ItemsControl>
+        <Button Grid.Row="0" Grid.Column="3" Classes="seg" Classes.lit="{Binding NbOn}" Content="{Binding NbLabel}" MinWidth="64"
+                VerticalAlignment="Center" ToolTip.Tip="Noise blanker for impulse noise. Right-click for its settings.">
+          <Button.Flyout>
+            <MenuFlyout ItemsSource="{Binding NoiseBlankers}" Placement="BottomEdgeAlignedLeft"
+                        ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+          </Button.Flyout>
+          <Button.ContextFlyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnNbParamsOpening">
+              <ContentControl Content="{Binding NbParams}" ContentTemplate="{StaticResource NoisePanelView}" />
+            </Flyout>
+          </Button.ContextFlyout>
+        </Button>
         <!-- Close-up of the received signal with the filter: drag its edges -->
         <c:FilterScope Name="FilterScope" Grid.Column="4" Grid.RowSpan="2" Margin="12,0,0,0"
                        ToolTip.Tip="6 kHz around the dial with the receive filter shaded. Drag an edge to set the low or high cut. Scale: audio frequency in Hz." />
         <TextBlock Grid.Row="1" Grid.Column="2" Text="NR" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
-        <ItemsControl Grid.Row="1" Grid.Column="3" ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource NoiseButton}"
-                      VerticalAlignment="Center"
-                      ToolTip.Tip="Noise reduction (click the lit one for off, right-click for settings)">
-          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-        </ItemsControl>
+        <Button Grid.Row="1" Grid.Column="3" Classes="seg" Classes.lit="{Binding NrOn}" Content="{Binding NrLabel}" MinWidth="64"
+                VerticalAlignment="Center" ToolTip.Tip="Noise reduction. Right-click for its settings.">
+          <Button.Flyout>
+            <MenuFlyout ItemsSource="{Binding NoiseReductions}" Placement="BottomEdgeAlignedLeft"
+                        ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+          </Button.Flyout>
+          <Button.ContextFlyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnNrParamsOpening">
+              <ContentControl Content="{Binding NrParams}" ContentTemplate="{StaticResource NoisePanelView}" />
+            </Flyout>
+          </Button.ContextFlyout>
+        </Button>
       </Grid>
     </Border>
 
@@ -332,37 +338,51 @@
       <Button Classes="seg" Classes.lit="{Binding AutoSpectrum}" Content="Auto" Margin="16,0,0,0"
               Command="{Binding ToggleAutoSpectrumCommand}"
               ToolTip.Tip="Spec Min/Max follow the noise floor, 50 dB range (blue = on); moving a slider turns it off" />
-      <TextBlock Text="Spec Min" Classes="label" Margin="10,0,6,0" />
-      <Slider Minimum="-160" Maximum="-40" Value="{Binding SpecMinDb}" Width="130" VerticalAlignment="Center"
-              TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Bottom of the panadapter trace (dB)" />
-      <TextBlock Text="{Binding SpecMinDb, StringFormat={}{0:0} dB}" Width="56" VerticalAlignment="Center" FontSize="12" />
-      <TextBlock Text="Spec Max" Classes="label" Margin="12,0,6,0" />
-      <Slider Minimum="-130" Maximum="0" Value="{Binding SpecMaxDb}" Width="130" VerticalAlignment="Center"
-              TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Top of the panadapter trace (dB)" />
-      <TextBlock Text="{Binding SpecMaxDb, StringFormat={}{0:0} dB}" Width="56" VerticalAlignment="Center" FontSize="12" />
-      <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Display resolution (FFT size): bigger shows finer detail, at more CPU">
-        <StackPanel Spacing="-1">
-          <TextBlock Text="Res" FontSize="12" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding ResolutionLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
-        </StackPanel>
+      <Button Classes="seg" Content="Display" VerticalAlignment="Center"
+              ToolTip.Tip="Spectrum range, resolution, waterfall speed and POP">
         <Button.Flyout>
-          <MenuFlyout ItemsSource="{Binding Resolutions}" Placement="BottomEdgeAlignedLeft"
-                      ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+          <Flyout Placement="TopEdgeAlignedLeft">
+            <Grid Width="340" Margin="4" ColumnDefinitions="74,*,60" RowDefinitions="Auto,Auto,Auto" RowSpacing="14">
+              <TextBlock Text="Spec Min" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Column="1" Minimum="-160" Maximum="-40" Value="{Binding SpecMinDb}" VerticalAlignment="Center"
+                      TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Bottom of the panadapter trace (dB)" />
+              <TextBlock Grid.Column="2" Text="{Binding SpecMinDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0"
+                         VerticalAlignment="Center" FontSize="12" />
+              <TextBlock Grid.Row="1" Text="Spec Max" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Row="1" Grid.Column="1" Minimum="-130" Maximum="0" Value="{Binding SpecMaxDb}" VerticalAlignment="Center"
+                      TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Top of the panadapter trace (dB)" />
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SpecMaxDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0"
+                         VerticalAlignment="Center" FontSize="12" />
+              <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
+                <Button Classes="seg" Padding="10,3" VerticalAlignment="Center"
+                        ToolTip.Tip="Display resolution (FFT size): bigger shows finer detail, at more CPU">
+                  <StackPanel Spacing="-1">
+                    <TextBlock Text="Res" FontSize="12" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding ResolutionLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+                  </StackPanel>
+                  <Button.Flyout>
+                    <MenuFlyout ItemsSource="{Binding Resolutions}" Placement="TopEdgeAlignedLeft"
+                                ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                  </Button.Flyout>
+                </Button>
+                <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Waterfall speed (rows per second)">
+                  <StackPanel Spacing="-1">
+                    <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding SpeedLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+                  </StackPanel>
+                  <Button.Flyout>
+                    <MenuFlyout ItemsSource="{Binding WaterfallSpeeds}" Placement="TopEdgeAlignedLeft"
+                                ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                  </Button.Flyout>
+                </Button>
+                <Button Classes="seg" Classes.lit="{Binding WaterfallPop}" Content="POP" Command="{Binding ToggleWaterfallPopCommand}"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="POP: the waterfall follows the noise floor and lifts weak signals out of the noise (blue = on)" />
+              </StackPanel>
+            </Grid>
+          </Flyout>
         </Button.Flyout>
       </Button>
-      <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Waterfall speed (rows per second)">
-        <StackPanel Spacing="-1">
-          <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
-          <TextBlock Text="{Binding SpeedLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
-        </StackPanel>
-        <Button.Flyout>
-          <MenuFlyout ItemsSource="{Binding WaterfallSpeeds}" Placement="BottomEdgeAlignedLeft"
-                      ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
-        </Button.Flyout>
-      </Button>
-      <Button Classes="seg" Classes.lit="{Binding WaterfallPop}" Content="POP" Command="{Binding ToggleWaterfallPopCommand}"
-              VerticalAlignment="Center"
-              ToolTip.Tip="POP: the waterfall follows the noise floor and lifts weak signals out of the noise (blue = on)" />
       <StackPanel Orientation="Horizontal" Spacing="6" Margin="12,0,0,0" IsVisible="{Binding AgcTopShown}">
         <TextBlock Text="AGC-T" Classes="label" VerticalAlignment="Center" />
         <Slider Minimum="30" Maximum="120" Value="{Binding AgcTopDb}" Width="100" VerticalAlignment="Center"

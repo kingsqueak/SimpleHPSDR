@@ -187,10 +187,14 @@ public partial class MainWindow : Window
     private void OnSMeterTrimOpening(object? sender, EventArgs e) => _ = Vm?.LoadSMeterTrimAsync();
 
     // The NB and NR popups show what the engine has when they open.
-    private void OnNoiseParamsOpening(object? sender, EventArgs e)
+    private void OnNbParamsOpening(object? sender, EventArgs e)
     {
-        if (sender is Flyout { Content: Control { DataContext: Choice { Params: { } panel } } })
-            _ = Vm?.LoadNoisePanelAsync(panel);
+        if (Vm is { } vm) _ = vm.LoadNoisePanelAsync(vm.NbParams);
+    }
+
+    private void OnNrParamsOpening(object? sender, EventArgs e)
+    {
+        if (Vm is { } vm) _ = vm.LoadNoisePanelAsync(vm.NrParams);
     }
 
     // A button's Click runs before its Command; closing the popup right away
