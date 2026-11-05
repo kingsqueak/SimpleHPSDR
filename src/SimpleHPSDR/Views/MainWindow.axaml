@@ -319,6 +319,34 @@
               </Flyout>
             </Button.ContextFlyout>
           </Button>
+          <Button Classes="seg" Classes.lit="{Binding AnfOn}" Content="ANF" Command="{Binding ToggleAnfCommand}"
+                  ToolTip.Tip="Automatic notch filter, for steady tones. Right-click for manual notches.">
+            <Button.ContextFlyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Spacing="8" Margin="4" Width="320">
+                  <TextBlock Text="Manual notches" FontWeight="SemiBold" />
+                  <TextBlock Text="None yet." Classes="label" FontSize="12" IsVisible="{Binding !HasNotches}" />
+                  <ItemsControl ItemsSource="{Binding NotchRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:NotchRow">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
+                          <TextBlock Text="{Binding Frequency}" VerticalAlignment="Center" />
+                          <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:NotchRow.WidthNames}"
+                                    SelectedIndex="{Binding WidthIndex}" Width="96" />
+                          <Button Grid.Column="2" Classes="flat" Content="Remove" Command="{Binding RemoveCommand}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="flat accent" Content="Add on panadapter" Command="{Binding PlaceNotchCommand}" Click="CloseFlyout"
+                            ToolTip.Tip="The next click on the panadapter places a notch" />
+                    <Button Classes="flat" Content="Clear all" Command="{Binding ClearNotchesCommand}" IsVisible="{Binding HasNotches}" />
+                  </StackPanel>
+                </StackPanel>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
         </StackPanel>
         <TextBlock Grid.Row="1" Text="FILTER" Classes="label" />
         <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Filters}" VerticalAlignment="Center">

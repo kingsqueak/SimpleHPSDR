@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Controls;
@@ -164,26 +165,82 @@ public sealed partial class MainViewModel
 
     // ---- notches --------------------------------------------------------
 
+    [ObservableProperty] private bool _anfOn;
+
+    /// <summary>The manual notches, for the ANF right-click panel.</summary>
+    public ObservableCollection<NotchRow> NotchRows { get; } = [];
+    public bool HasNotches => _notches.Count > 0;
+
+    /// <summary>The next panadapter click places a notch instead of tuning.</summary>
+    [ObservableProperty] private bool _placingNotch;
+    private string _statusBeforePlacing = "";
+
     private async Task LoadNotchesAsync()
     {
         try { _notches = await _client!.GetNotchesAsync(); }
         catch (Exception) { _notches = []; }
+        ShowNotchRows();
     }
 
-    /// <summary>The notch under a right-click, if any.</summary>
-    public NotchDto? NotchAt(long hz) =>
-        _notches.FirstOrDefault(n => Math.Abs(n.CenterHz - hz) <= Math.Max(n.WidthHz / 2, DefaultNotchHz / 2));
+    private void ShowNotchRows()
+    {
+        NotchRows.Clear();
+        foreach (var n in _notches) NotchRows.Add(new NotchRow(n, SetNotchWidthAsync, RemoveNotchAsync));
+        OnPropertyChanged(nameof(HasNotches));
+    }
 
-    public Task AddNotchAsync(long hz) => SendNotchesAsync([.. _notches, new NotchDto(hz, DefaultNotchHz)]);
+    [RelayCommand]
+    private void PlaceNotch()
+    {
+        if (!IsConnected) return;
+        if (PlacingNotch) { EndPlacingNotch(); return; }
+        PlacingNotch = true;
+        _statusBeforePlacing = Status;
+        Status = "Click the panadapter to place a notch";
+    }
 
-    public Task RemoveNotchAsync(NotchDto notch) => SendNotchesAsync([.. _notches.Where(n => n != notch)]);
+    private void EndPlacingNotch()
+    {
+        if (!PlacingNotch) return;
+        PlacingNotch = false;
+        Status = _statusBeforePlacing;
+    }
 
-    public Task SetNotchWidthAsync(NotchDto notch, double hz) =>
-        SendNotchesAsync([.. _notches.Select(n => n == notch ? n with { WidthHz = hz } : n)]);
+    /// <summary>A panadapter click: true if it placed a notch rather than tuning.</summary>
+    public bool TryPlaceNotch(long hz)
+    {
+        if (!PlacingNotch) return false;
+        EndPlacingNotch();
+        _ = AddNotchAsync(hz);
+        return true;
+    }
 
-    public Task ClearNotchesAsync() => SendNotchesAsync([]);
+    private async Task AddNotchAsync(long hz)
+    {
+        await SendNotchesAsync([.. _notches, new NotchDto(hz, DefaultNotchHz)]);
+        ShowNotchRows();
+    }
 
-    public bool HasNotches => _notches.Count > 0;
+    private async Task RemoveNotchAsync(NotchRow row)
+    {
+        await SendNotchesAsync([.. _notches.Where(n => n != row.Notch)]);
+        ShowNotchRows();
+    }
+
+    // Keeps the row, so the width box isn't replaced while it's in use.
+    private async Task SetNotchWidthAsync(NotchRow row, double hz)
+    {
+        var wider = row.Notch with { WidthHz = hz };
+        await SendNotchesAsync([.. _notches.Select(n => n == row.Notch ? wider : n)]);
+        row.Notch = wider;
+    }
+
+    [RelayCommand]
+    private async Task ClearNotchesAsync()
+    {
+        await SendNotchesAsync([]);
+        ShowNotchRows();
+    }
 
     private Task SendNotchesAsync(List<NotchDto> notches) => Try(async () =>
     {

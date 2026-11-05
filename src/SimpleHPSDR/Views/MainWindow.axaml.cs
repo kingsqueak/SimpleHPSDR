@@ -57,7 +57,10 @@ public partial class MainWindow : Window
             else vm.TuneBySteps(steps);   // one panadapter: tune the active slice
         };
         // Slice B's own panadapter tunes slice B, making it active first.
-        SpectrumB.TuneRequested += hz => _ = Vm?.TuneSliceAsync(1, hz);
+        SpectrumB.TuneRequested += hz =>
+        {
+            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(1, hz);
+        };
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += ShowSliceMenu;
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
@@ -146,7 +149,7 @@ public partial class MainWindow : Window
     // whichever slice is active (click a tag to switch).
     private void TuneA(long hz)
     {
-        if (Vm is not { } vm) return;
+        if (Vm is not { } vm || vm.TryPlaceNotch(hz)) return;
         if (vm.ShowPanadapterB) _ = vm.TuneSliceAsync(0, hz);
         else vm.TuneTo(hz);
     }
@@ -209,17 +212,6 @@ public partial class MainWindow : Window
                 : Item("Show slice B in its own panadapter", () => { vm.SliceBOwnPanadapter = true; return Task.CompletedTask; }));
             items.Add(Item("Remove slice B", () => vm.RemoveSliceBAsync()));
         }
-        if (items.Count > 0) items.Add(new Separator());
-        if (vm.NotchAt(hz) is { } notch)
-        {
-            foreach (var w in new[] { 50, 100, 200, 400 })
-                if (Math.Abs(notch.WidthHz - w) > 1)
-                    items.Add(Item($"Notch width {w} Hz", () => vm.SetNotchWidthAsync(notch, w)));
-            items.Add(Item("Remove notch", () => vm.RemoveNotchAsync(notch)));
-        }
-        else
-            items.Add(Item($"Add notch at {at}", () => vm.AddNotchAsync(hz)));
-        if (vm.HasNotches) items.Add(Item("Clear all notches", () => vm.ClearNotchesAsync()));
         var menu = new ContextMenu { ItemsSource = items };
         menu.Open(Spectrum);
     }

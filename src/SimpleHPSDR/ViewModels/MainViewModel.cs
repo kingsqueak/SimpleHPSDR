@@ -589,6 +589,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private async Task DisconnectAsync()
     {
+        EndPlacingNotch();
         if (_client is null || _radio is null) return;
         await UnkeyAsync();
         try { await _client.DisconnectAsync(_radio.Protocol2); } catch (Exception) { }
@@ -612,6 +613,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AutoAtt = s.AutoAttEnabled;
             Mark(NoiseBlankers, s.Nr?.NbMode ?? NbMode.Off);
             Mark(NoiseReductions, s.Nr?.NrMode ?? NrMode.Off);
+            AnfOn = s.Nr?.AnfEnabled ?? false;
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
             Muted = s.Rx1Muted;
@@ -976,7 +978,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var applied = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
         Mark(NoiseBlankers, applied.NbMode);
         Mark(NoiseReductions, applied.NrMode);
+        AnfOn = applied.AnfEnabled;
     }
+
+    [RelayCommand]
+    private Task ToggleAnfAsync() => UpdateNrAsync(nr => nr with { AnfEnabled = !AnfOn });
 
     partial void OnAutoAttChanged(bool value)
     {
