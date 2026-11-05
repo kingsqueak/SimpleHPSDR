@@ -211,7 +211,7 @@ Each slider shows a percentage of its full travel and the power in watts. With a
 Set MIC by speaking normally and watching the meters. Aim for steady ALC movement rather than maximum. If your audio sounds harsh, turn it down.
 
 ## Meters while transmitting
-- PWR is output power.
+- PWR is output power, from the radio's own meter. That meter can read low, so check it against an external one. Config > PA can correct it.
 - SWR is how well the antenna matches. Stop and check if it's high.
 - ALC shows the transmit audio being held back to stop overdriving.
 
@@ -297,11 +297,16 @@ Ant in the top row picks this band's transmit and receive antennas. Config > Ant
 
 ## Radio, PA and calibration
 - Radio: your radio model and the light or dark theme.
-- PA: power calibration for each band. Calibrate does it automatically.
+- PA: rated power, each band's PA gain, automatic calibration and correction from an external meter.
 - Calibration: S-meter trim, frequency correction using WWV, and overload protection.
 
-## Calibrating the power output
-Config > PA > Calibrate sets each band so that the power you ask for is what you get.
+## Setting the power output
+Output is Rated power × the DRIVE or TUNE percentage, with each band's PA gain setting how hard the radio is driven to get it. A higher PA gain means less drive for the same setting. Leave Rated power at your radio's real figure. To limit power, use Maximum drive in Config > Amp: at 100 W rated, 25% tops out at 25 W.
+
+The stock gains are a sound starting point. Reset to stock on the PA page puts them back at any time, and also clears any calibration and PWR correction.
+
+## Calibrating with the radio's meter
+Config > PA > Calibrate evens out the bands automatically, using the radio's own power meter.
 1. Connect a dummy load rated for 50 W carriers to the transmit antenna port of every band.
 2. Turn off any external amplifier.
 3. Press Calibrate, tick both confirmations and press Start calibration.
@@ -312,8 +317,15 @@ It needs a band plan with every HF band including 60 m, set in Config > Station.
 
 It uses the radio's own power meter, so the bands end up even with each other, but that meter can be several dB out, which can leave real power well above what's shown. Check with an external meter afterwards. Run PS CAL again too, since PureSignal is turned off for the run.
 
+On some radios the meter reads several dB low, and calibrating then pushes real power well above what's shown. On those, skip Calibrate and use the stock gains with the external meter steps below.
+
 ## Correcting power with an external meter
-If you have a meter you trust, key TUNE into a dummy load and note three things: what TUNE is set to, what PWR reads, and what your meter reads. Unkey and enter them under External meter on the PA page. Apply shifts every HF band and corrects the PWR display. Reset to stock puts the stock gains back and clears calibration and the correction.
+If you have a meter you trust, this puts real output and the PWR display right.
+1. Key TUNE into a dummy load, at 10 W for example.
+2. Note what TUNE is set to, what PWR reads, and what your meter reads, then unkey.
+3. Enter them under External meter on the PA page and press Apply.
+
+Apply shifts every HF band by the gap between what you asked for and what your meter read, and corrects the PWR display by the gap between PWR and your meter. Then check at a higher power. Run PS CAL again afterwards, since drive has changed. Applying a shift replaces any calibration on those bands with a single gain.
 
 ## Audio
 Config > Audio chooses your speakers and microphone: a computer mic, or the radio's mic jack with its boost and bias. On Windows, ASIO can be used with an audio interface.
@@ -354,6 +366,9 @@ Check Config > Audio. If you hear crackling on ASIO, use a larger buffer.
 
 ## Weak or distorted receive
 Check RF: too much preamp near strong signals overloads the receiver. Try attenuation, and leave Auto ATT on.
+
+## Power doesn't match another meter
+PWR is the radio's own meter and can read low, and everything set from it inherits that. Compare against a meter you trust, and use External meter on the PA page. If you ran Calibrate and power is higher than shown, press Reset to stock first. Keep drive low until it's sorted out, especially with an amplifier connected.
 
 ## End of transmission cut off
 Raise the PTT release delay in Config > TX Audio, especially with CFC at a large FFT size.

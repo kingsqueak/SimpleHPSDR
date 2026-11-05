@@ -46,7 +46,7 @@
       <TabItem Header="PA">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12" Margin="0,12,0,0">
           <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                     Text="PA gain is how much the amplifier adds on each band. It sets how hard the radio is driven for a given power: a higher value means less drive for the same setting. Measure into a dummy load and adjust until the power meter matches." />
+                     Text="PA gain is how much the amplifier adds on each band. It sets how hard the radio is driven for a given power: a higher value means less drive for the same setting. The stock values are a sound start. The radio's PWR meter can read low, so check real power with an external meter." />
 
           <Border Grid.Row="1" Classes="panel">
             <StackPanel Orientation="Horizontal" Spacing="16">
