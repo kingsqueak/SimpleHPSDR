@@ -49,7 +49,9 @@ public partial class App : Application
             // Development aid: the guide alone, with no engine or radio.
             if (Environment.GetEnvironmentVariable("SIMPLEHPSDR_GUIDE_ONLY") != null)
             {
-                desktop.MainWindow = new StationGuideWindow { DataContext = new StationGuideViewModel(Settings.Load(), _ => { }) };
+                var guide = new StationGuideViewModel(Settings.Load(), _ => { });
+                guide.Start();
+                desktop.MainWindow = new StationGuideWindow { DataContext = guide };
                 base.OnFrameworkInitializationCompleted();
                 return;
             }

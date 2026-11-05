@@ -33,11 +33,13 @@ Most controls have more behind a right-click. Hover over anything for a short ex
 """),
 
         ("Shortwave listening", """
-Choose SWL from the Mode menu. The radio defaults to SAM, with a 10 kHz broadcast filter if SAM has no saved settings on that band, and the station guide opens. SAM is only the starting point: change the mode or filter as you like and the guide stays open. Closing the guide ends SWL.
+Choose SWL from the Mode menu. The radio defaults to SAM, with a 10 kHz broadcast filter if SAM has no saved settings on that band, and the station guide opens. SAM is only the starting point: change the mode or filter as you like and SWL stays on.
+
+While SWL is on, an SWL button appears beside Mode. Click it to open the guide; you can close the guide at any time and SWL carries on. Right-click the button to turn SWL off.
 
 The guide lists non-digital stations from the EiBi shortwave schedule (eibispace.de), from long wave up, in your local time. It updates itself and works from its saved copy when you're offline. Click a heading to sort, pick a language, or search. Click a station to tune it; your mode doesn't change.
 
-While the guide is open, a box at the bottom of the waterfall shows the station EiBi lists on your tuned frequency, within 1 kHz: its name, language, target area, site and end time. Any others sharing the frequency are named under it. This works however you tune, not only from the guide, and the box goes away when nothing is listed there.
+While SWL is on, a box at the bottom of the waterfall shows the station EiBi lists on your tuned frequency, within 1 kHz: its name, language, target area, site and end time. Any others sharing the frequency are named under it. This works however you tune, not only from the guide, and the box goes away when nothing is listed there.
 
 The box and the guide show what's scheduled, not what's identified from the signal, so what you're hearing may be a different station. Voice utility stations in the list usually need USB rather than SAM.
 """),

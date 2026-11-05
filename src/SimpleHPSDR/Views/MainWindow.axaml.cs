@@ -271,6 +271,7 @@ public partial class MainWindow : Window
             _guide = new StationGuideWindow { DataContext = vm.Guide };
             _guide.Show(this);
         };
+        vm.CloseGuide = () => { if (_guide is { IsVisible: true }) _guide.Close(); };
         vm.ShowDspPrep = prep => new DspPrepWindow { DataContext = prep }.ShowDialog(this);
         vm.ShowSettings = settings => new SettingsWindow { DataContext = settings }.ShowDialog(this);
         vm.Display += f =>

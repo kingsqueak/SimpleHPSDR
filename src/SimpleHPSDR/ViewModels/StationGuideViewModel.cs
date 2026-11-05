@@ -51,7 +51,7 @@ public sealed partial class StationGuideViewModel : ObservableObject
 
     /// <summary>The listing or the clock moved on.</summary>
     public event Action? Changed;
-    public bool IsOpen { get; private set; }
+    public bool IsRunning { get; private set; }
 
     public ObservableCollection<GuideRow> Items { get; } = [];
     public ObservableCollection<string> Languages { get; } = [AllLanguages];
@@ -90,10 +90,12 @@ public sealed partial class StationGuideViewModel : ObservableObject
         _clock.Tick += (_, _) => Apply();
     }
 
-    /// <summary>The window opened: refresh the listing and keep it current against the clock.</summary>
+    /// <summary>SWL is on: refresh the listing and keep it current against the clock,
+    /// whether or not the guide's window is showing.</summary>
     public void Start()
     {
-        IsOpen = true;
+        if (IsRunning) return;
+        IsRunning = true;
         _clock.Start();
         Apply();
         if (CurrentFile() is not { } f || DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > MaxAge) _ = UpdateAsync();
@@ -101,7 +103,7 @@ public sealed partial class StationGuideViewModel : ObservableObject
 
     public void Stop()
     {
-        IsOpen = false;
+        IsRunning = false;
         _clock.Stop();
         Changed?.Invoke();
     }

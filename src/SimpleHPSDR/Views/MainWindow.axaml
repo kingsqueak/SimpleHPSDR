@@ -319,6 +319,16 @@
               </Flyout>
             </Button.ContextFlyout>
           </Button>
+          <!-- Only while SWL is on -->
+          <Button Classes="seg lit" Content="SWL" IsVisible="{Binding SwlActive}" Command="{Binding OpenGuideCommand}"
+                  ToolTip.Tip="Open the station guide. Right-click to turn SWL off.">
+            <Button.ContextFlyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Open station guide" Command="{Binding OpenGuideCommand}" />
+                <MenuItem Header="Turn SWL off" Command="{Binding TurnSwlOffCommand}" />
+              </MenuFlyout>
+            </Button.ContextFlyout>
+          </Button>
           <Button Classes="seg" Classes.lit="{Binding AnfOn}" Content="ANF" Command="{Binding ToggleAnfCommand}"
                   ToolTip.Tip="Automatic notch filter, for steady tones. Right-click for manual notches.">
             <Button.ContextFlyout>
