@@ -710,9 +710,9 @@
     <!-- Clock in the bottom corner, over the empty end of the panel -->
     <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8"
           HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,10" IsHitTestVisible="False">
-      <TextBlock Text="Local" Classes="label" FontSize="11" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding LocalZoneText}" Classes="label" FontSize="11" VerticalAlignment="Center" />
       <TextBlock Grid.Column="1" Text="{Binding LocalTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
-      <TextBlock Grid.Row="1" Text="Zulu" Classes="label" FontSize="11" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="1" Text="UTC" Classes="label" FontSize="11" VerticalAlignment="Center" />
       <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ZuluTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
     </Grid>
   </Grid>

@@ -358,6 +358,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Set by the window: shows the radio picker and returns the choice.</summary>
     public Func<RadioPickerViewModel, Task<RadioChoice?>>? ShowRadioPicker { get; set; }
     public Func<DspPrepViewModel, Task>? ShowDspPrep { get; set; }
+    /// <summary>Radio, reason, log path; true to restart the engine.</summary>
+    public Func<string, string, string, Task<bool>>? ShowEngineStopped { get; set; }
     public event Action<DisplayFrame>? Display;
     public event Action? DisplayReset;
 
@@ -402,6 +404,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public async Task StartAsync()
     {
         StartClock();
+        _engine.Stopped += code => Dispatcher.UIThread.Post(() => _ = OnEngineStoppedAsync(code));
         try
         {
             await _engine.StartAsync(CancellationToken.None);
@@ -471,6 +474,21 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    // Only asks while on a radio: otherwise (the firmware window included) a
+    // restart must not reconnect by itself, and Choose radio restarts it anyway.
+    private async Task OnEngineStoppedAsync(int exitCode)
+    {
+        if (_disposed != 0) return;
+        Status = "The radio engine stopped.";
+        if (!IsConnected) return;
+        var radio = RadioLabel;
+        await DisconnectAsync();
+        Status = "The radio engine stopped.";
+        var reason = EngineHost.LastFatalLine() ?? $"It exited with code {exitCode}.";
+        if (ShowEngineStopped is { } ask && await ask(radio, reason, EngineHost.LogPath))
+            await RestartEngineAsync();
+    }
+
     /// <summary>
     /// Restart the engine and reconnect to the same radio, so settings the
     /// engine only reads at startup (TCI and network CAT servers) take effect.
@@ -479,6 +497,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public async Task RestartEngineAsync()
     {
         var radio = _radio;
+        // A new engine starts from what it last saved, so carry these across.
+        var (hz, nb, anf) = (VfoHz, NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Value as NbMode?, AnfOn);
         Status = "Restarting the engine…";
         await DisconnectAsync();
         _client?.Dispose();
@@ -494,14 +514,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
         CreateClient();
-        if (radio is not null) await ConnectAsync(radio);
-        else Status = "Engine restarted. Choose a radio.";
+        if (radio is null)
+        {
+            Status = "Engine restarted. Choose a radio.";
+            return;
+        }
+        if (!await ConnectAsync(radio)) return;
+        TuneTo(hz);
+        await UpdateNrAsync(nr => nr with { NbMode = nb ?? nr.NbMode, AnfEnabled = anf });
     }
 
     [RelayCommand]
     private async Task ChooseRadioAsync()
     {
         if (_client is null || ShowRadioPicker is null) return;
+        if (_engine.HasExited)
+        {
+            await RestartEngineAsync();
+            return;
+        }
         if (IsConnected) await DisconnectAsync();
 
         var picker = new RadioPickerViewModel(_client, _settings.AutoConnect);
@@ -597,6 +628,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         IsConnected = false;
         _statePoll.Stop();
         RadioLabel = "No radio";
+        (SignalDbm, PeakDbm, SUnits) = (-140, -140, "S0");
         DisplayReset?.Invoke();
     }
 

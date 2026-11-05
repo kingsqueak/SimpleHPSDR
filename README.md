@@ -105,7 +105,7 @@ computer's port is 1025 with Protocol 2 and random with Protocol 1, so allow the
 ## Where things live
 
 Settings, the engine's own database (separate from Zeus's) and `engine.log` are
-in the app data folder:
+in the app data folder, with the log from the previous start as `engine.previous.log`:
 
 - macOS: `~/Library/Application Support/SimpleHPSDR`
 - Linux: `~/.local/share/SimpleHPSDR`

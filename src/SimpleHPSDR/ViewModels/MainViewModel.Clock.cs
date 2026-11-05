@@ -1,5 +1,6 @@
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleHPSDR.Engine;
 
 namespace SimpleHPSDR.ViewModels;
 
@@ -11,6 +12,8 @@ public sealed partial class MainViewModel
 
     [ObservableProperty] private string _localTimeText = "";
     [ObservableProperty] private string _zuluTimeText = "";
+    [ObservableProperty] private string _localZoneText = "";
+    private TimeSpan? _shownOffset;
 
     private void StartClock()
     {
@@ -23,6 +26,12 @@ public sealed partial class MainViewModel
     private void ShowTime()
     {
         var now = DateTimeOffset.Now;
+        // The zone's name changes with daylight saving, and only then.
+        if (now.Offset != _shownOffset)
+        {
+            _shownOffset = now.Offset;
+            LocalZoneText = TimeZoneLabel.Local();
+        }
         LocalTimeText = now.ToString("HH:mm:ss");
         ZuluTimeText = now.UtcDateTime.ToString("HH:mm:ss");
     }

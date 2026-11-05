@@ -16,6 +16,11 @@ public sealed class EngineHost : IDisposable
     private Process? _process;
     private StreamWriter? _log;
 
+    private bool _running;
+
+    /// <summary>The engine stopped by itself, after starting. Its exit code.</summary>
+    public event Action<int>? Stopped;
+
     public int Port { get; private set; }
     public Uri BaseUri => new($"http://127.0.0.1:{Port}/");
     public bool HasExited => _process is null || _process.HasExited;
@@ -49,6 +54,7 @@ public sealed class EngineHost : IDisposable
     }
 
     public static string LogPath => Path.Combine(DataDir, "engine.log");
+    private static string PreviousLogPath => Path.Combine(DataDir, "engine.previous.log");
     private static string PidPath => Path.Combine(DataDir, "engine.pid");
 
     /// <summary>Find the engine: env override, beside the app, in a macOS
@@ -104,8 +110,12 @@ public sealed class EngineHost : IDisposable
         psi.Environment["ZEUS_PREFS_PATH"] = Path.Combine(DataDir, "prefs.db");
         psi.Environment["Logging__LogLevel__Microsoft.AspNetCore"] = "Warning";
 
+        // Each start begins a new log; keep the last one, which may hold a crash.
+        try { if (File.Exists(LogPath)) File.Move(LogPath, PreviousLogPath, overwrite: true); }
+        catch (IOException) { }
         _log = new StreamWriter(LogPath, append: false) { AutoFlush = true };
         _process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+        _process.Exited += (_, _) => OnExited();
         _process.OutputDataReceived += (_, e) => WriteLog(e.Data);
         _process.ErrorDataReceived += (_, e) => WriteLog(e.Data);
         _process.Start();
@@ -124,7 +134,11 @@ public sealed class EngineHost : IDisposable
             try
             {
                 using var r = await http.GetAsync("api/station/version", ct);
-                if (r.IsSuccessStatusCode) return;
+                if (r.IsSuccessStatusCode)
+                {
+                    _running = true;
+                    return;
+                }
             }
             catch (HttpRequestException) { }
             catch (TaskCanceledException) when (!ct.IsCancellationRequested) { }
@@ -166,8 +180,34 @@ public sealed class EngineHost : IDisposable
         return port;
     }
 
+    private void OnExited()
+    {
+        if (!_running) return;   // we stopped it, or it never started
+        _running = false;
+        int code;
+        try { code = _process?.ExitCode ?? -1; }
+        catch (InvalidOperationException) { code = -1; }
+        Stopped?.Invoke(code);
+    }
+
+    /// <summary>The last fatal line in the log, if there is one.</summary>
+    public static string? LastFatalLine()
+    {
+        try
+        {
+            using var f = new FileStream(LogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var r = new StreamReader(f);
+            var line = r.ReadToEnd().Split('\n')
+                .LastOrDefault(l => l.Contains("fatal", StringComparison.OrdinalIgnoreCase)
+                                 || l.StartsWith("Unhandled exception", StringComparison.OrdinalIgnoreCase));
+            return line?.Trim() is { Length: > 0 } t ? t[..Math.Min(t.Length, 200)] : null;
+        }
+        catch (IOException) { return null; }
+    }
+
     public void Dispose()
     {
+        _running = false;
         try
         {
             if (_process is { HasExited: false })
