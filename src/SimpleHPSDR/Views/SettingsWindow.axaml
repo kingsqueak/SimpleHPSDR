@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SimpleHPSDR.ViewModels"
+        xmlns:c="using:SimpleHPSDR.Controls"
         Icon="avares://SimpleHPSDR/Assets/icon.png"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
@@ -345,8 +346,34 @@
                   <TextBlock Text="Preamp" Classes="label" />
                   <Slider Minimum="-24" Maximum="24" Value="{Binding EqPreampDb}" Width="140" />
                   <TextBlock Text="{Binding EqPreampDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" />
+                  <CheckBox Content="Parametric" IsChecked="{Binding ParametricEqOn}"
+                            ToolTip.Tip="Six parametric bands in place of the graphic bands. It uses no more processing: the app works out the engine's ten EQ points to follow your curve." />
                 </StackPanel>
-                <ItemsControl ItemsSource="{Binding EqBands}">
+                <StackPanel Spacing="6" IsVisible="{Binding ParametricEqOn}">
+                  <c:ParametricEqView Height="220" Bands="{Binding ParametricBands}" FittedHz="{Binding FittedHz}" FittedDb="{Binding FittedDb}"
+                                      ToolTip.Tip="Drag a numbered point for frequency and gain; use the wheel over it for Q or slope." />
+                  <TextBlock Text="{Binding FitText}" Classes="label" FontSize="12" />
+                  <ItemsControl ItemsSource="{Binding ParametricBands}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ParametricBandRow">
+                        <Grid ColumnDefinitions="24,70,120,130,130,130,Auto" ColumnSpacing="8" Margin="0,2">
+                          <TextBlock Text="{Binding Number}" VerticalAlignment="Center" />
+                          <CheckBox Grid.Column="1" Content="On" IsChecked="{Binding On}" />
+                          <ComboBox Grid.Column="2" ItemsSource="{Binding TypeNames}" SelectedIndex="{Binding TypeIndex}"
+                                    IsEnabled="{Binding HasTypes}" HorizontalAlignment="Stretch" />
+                          <NumericUpDown Grid.Column="3" Value="{Binding Hz}" Minimum="20" Maximum="8000" Increment="10"
+                                         FormatString="0" ToolTip.Tip="Frequency in Hz" />
+                          <NumericUpDown Grid.Column="4" Value="{Binding GainDb}" Minimum="-24" Maximum="24" Increment="0.5"
+                                         FormatString="0.0" IsEnabled="{Binding HasGain}" ToolTip.Tip="Gain in dB" />
+                          <NumericUpDown Grid.Column="5" Value="{Binding Shape}" Minimum="{Binding ShapeMin}" Maximum="{Binding ShapeMax}"
+                                         Increment="{Binding ShapeStep}" FormatString="{Binding ShapeFormat}" ToolTip.Tip="Q, or dB per octave for a pass filter" />
+                          <TextBlock Grid.Column="6" Text="{Binding ShapeLabel}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding EqBands}" IsVisible="{Binding !ParametricEqOn}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:EqBandRow">

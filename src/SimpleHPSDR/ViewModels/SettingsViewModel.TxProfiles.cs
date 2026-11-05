@@ -66,6 +66,9 @@ public sealed partial class SettingsViewModel
             if (p.PureSignal is { } ps)
                 await ApplyProfilePureSignalAsync(ps);
 
+            if (AppSettings is { } settings)
+                settings.ParametricEq = p.ParametricEq
+                    ?? settings.ParametricEq with { Enabled = false };
             var state = await _client.GetStateAsync();
             _populating = true;
             try
@@ -100,7 +103,8 @@ public sealed partial class SettingsViewModel
             BuildLeveling(was), Math.Round(LevelerMaxGainDb, 1), BuildEq(),
             BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was), (int)Math.Round(ReleaseDelayMs),
             new TxPureSignalSettings(PsExternalFeedback, PsAutoAttenuate || PsExternalFeedback,
-                (int)Math.Round(PsFeedbackAttenDb), PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak));
+                (int)Math.Round(PsFeedbackAttenDb), PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak),
+            ParametricEqOn ? SnapshotParametric() : null);
     }
 
     private async Task ApplyProfilePureSignalAsync(TxPureSignalSettings ps)

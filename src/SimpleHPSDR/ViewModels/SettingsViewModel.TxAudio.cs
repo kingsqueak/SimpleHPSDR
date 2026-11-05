@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleHPSDR.Dsp;
 using Zeus.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
@@ -56,6 +57,62 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _eqPreampDb;
     public ObservableCollection<EqBandRow> EqBands { get; } = [];
 
+    // Parametric EQ: an app setting, sent to the engine as its ten EQ points.
+    [ObservableProperty] private bool _parametricEqOn;
+    [ObservableProperty] private double[]? _fittedHz;
+    [ObservableProperty] private double[]? _fittedDb;
+    [ObservableProperty] private string _fitText = "";
+    public ObservableCollection<ParametricBandRow> ParametricBands { get; } = [];
+    private ParametricEqSettings? _parametricOpened;
+
+    private void PopulateParametric()
+    {
+        var saved = AppSettings?.ParametricEq ?? ParametricEqSettings.Default;
+        _parametricOpened ??= saved;
+        ParametricEqOn = saved.Enabled;
+        ParametricBands.Clear();
+        for (int i = 0; i < saved.Bands.Length; i++)
+        {
+            var row = Watch(new ParametricBandRow(i + 1, saved.Bands[i]), Group.TxAudio);
+            row.PropertyChanged += (_, _) => UpdateFit();
+            ParametricBands.Add(row);
+        }
+        UpdateFit();
+    }
+
+    private void UpdateFit()
+    {
+        var (hz, db, error) = ParametricEq.Fit([.. ParametricBands.Select(b => b.ToBand())]);
+        (FittedHz, FittedDb) = (hz, db);
+        FitText = $"The engine's curve (dashed) is within {error:0.0} dB of this one.";
+    }
+
+    private ParametricEqSettings SnapshotParametric() =>
+        new(ParametricEqOn, [.. ParametricBands.Select(b => b.ToBand())]);
+
+    // Leaving the parametric view: keep its sound on the graphic EQ's own bands.
+    partial void OnParametricEqOnChanged(bool value)
+    {
+        if (_populating) return;
+        if (!value)
+        {
+            var bands = ParametricBands.Select(b => b.ToBand()).ToArray();
+            var standard = LegacyTxEqConfig.Default.FrequenciesHz;
+            EqBands.Clear();
+            foreach (var hz in standard)
+                EqBands.Add(Watch(new EqBandRow(hz, Math.Round(ParametricEq.ResponseDb(bands, hz), 1)), Group.TxAudio));
+        }
+        SaveParametric();
+    }
+
+    private void SaveParametric()
+    {
+        if (AppSettings is not { } app) return;
+        app.ParametricEq = SnapshotParametric();
+        app.Save();
+    }
+
+
     // CFC
     [ObservableProperty] private bool _hasCfc;
     [ObservableProperty] private bool _cfcEnabled;
@@ -103,6 +160,7 @@ public sealed partial class SettingsViewModel
         EqBands.Clear();
         for (int i = 0; i < eq.FrequenciesHz.Length; i++)
             EqBands.Add(Watch(new EqBandRow(eq.FrequenciesHz[i], eq.GainsDb[i]), Group.TxAudio));
+        PopulateParametric();
 
         HasCfc = s.Cfc is not null;
         CfcBands.Clear();
@@ -147,8 +205,13 @@ public sealed partial class SettingsViewModel
         AlcDecayMs = (int)Math.Round(AlcDecayMs),
     };
 
-    private LegacyTxEqConfig BuildEq() => new(EqEnabled, Math.Round(EqPreampDb, 1),
-        EqBands.Select(b => b.FreqHz).ToArray(), EqBands.Select(b => Math.Round(b.GainDb, 1)).ToArray());
+    private LegacyTxEqConfig BuildEq()
+    {
+        if (ParametricEqOn && FittedHz is { } hz && FittedDb is { } db)
+            return new(EqEnabled, Math.Round(EqPreampDb, 1), hz, db);
+        return new(EqEnabled, Math.Round(EqPreampDb, 1),
+            EqBands.Select(b => b.FreqHz).ToArray(), EqBands.Select(b => Math.Round(b.GainDb, 1)).ToArray());
+    }
 
     private CfcConfig BuildCfc(StateDto was) => (was.Cfc ?? CfcConfig.Default) with
     {
@@ -232,8 +295,10 @@ public sealed partial class SettingsViewModel
 
         var eqWas = was.LegacyTxEq ?? LegacyTxEqConfig.Default;
         var eq = BuildEq();
-        if (eq.Enabled != eqWas.Enabled || eq.PreampDb != eqWas.PreampDb || !eq.GainsDb.SequenceEqual(eqWas.GainsDb))
+        if (eq.Enabled != eqWas.Enabled || eq.PreampDb != eqWas.PreampDb || !eq.GainsDb.SequenceEqual(eqWas.GainsDb)
+            || !eq.FrequenciesHz.SequenceEqual(eqWas.FrequenciesHz))
             await _client.SetTxEqAsync(eq);
+        SaveParametric();
 
         if (was.Cfc is { } cfcWas)
         {

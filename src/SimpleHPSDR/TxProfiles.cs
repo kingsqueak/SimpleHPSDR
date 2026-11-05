@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SimpleHPSDR.Dsp;
 using SimpleHPSDR.Engine;
 using Zeus.Contracts;
 
@@ -23,7 +24,8 @@ public sealed record TxAudioProfile(
     DexpConfig NoiseGate,
     TxPhaseRotatorConfig PhaseRotator,
     int? ReleaseDelayMs = null,   // null in profiles saved before it existed: leave as is
-    TxPureSignalSettings? PureSignal = null)   // likewise
+    TxPureSignalSettings? PureSignal = null,   // likewise
+    ParametricEqSettings? ParametricEq = null) // null: the graphic EQ
 {
     public const string DefaultName = "Default";
 

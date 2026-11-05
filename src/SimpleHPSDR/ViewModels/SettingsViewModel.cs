@@ -125,7 +125,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(LevelerEnabled)] = Group.TxAudio, [nameof(LevelerMaxGainDb)] = Group.TxAudio,
         [nameof(LevelerDecayMs)] = Group.TxAudio, [nameof(AlcMaxGainDb)] = Group.TxAudio,
         [nameof(AlcDecayMs)] = Group.TxAudio, [nameof(EqEnabled)] = Group.TxAudio,
-        [nameof(EqPreampDb)] = Group.TxAudio, [nameof(CfcEnabled)] = Group.TxAudio,
+        [nameof(EqPreampDb)] = Group.TxAudio, [nameof(ParametricEqOn)] = Group.TxAudio, [nameof(CfcEnabled)] = Group.TxAudio,
         [nameof(CfcPostEqEnabled)] = Group.TxAudio, [nameof(CfcPreCompDb)] = Group.TxAudio,
         [nameof(CfcPrePeqDb)] = Group.TxAudio, [nameof(DexpEnabled)] = Group.TxAudio,
         [nameof(DexpThresholdDbv)] = Group.TxAudio, [nameof(DexpExpansionDb)] = Group.TxAudio,
@@ -315,6 +315,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         var (pa, devices, radio, ps, tx) = (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded);
         var asio = _asioWas;
         var antennasNow = Antennas.ToDictionary(r => r.Band, r => r.Loaded);
+        if (AppSettings is { } app && _parametricOpened is { } parametric) app.ParametricEq = parametric;
         Populate(_origPa, _origDevices, _origRadioAudio, _origState, _origAntennas);
         (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded) = (pa, devices, radio, ps, tx);
         _asioWas = asio;
