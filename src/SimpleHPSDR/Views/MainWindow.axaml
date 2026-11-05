@@ -573,17 +573,17 @@
                   ToolTip.Tip="Transmit levels and mic">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <TextBlock Text="TX" VerticalAlignment="Center" />
-              <TextBlock Text="{Binding DrivePct, StringFormat={}{0:0}%}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
             </StackPanel>
             <Button.Flyout>
               <Flyout Placement="TopEdgeAlignedLeft">
-                <Grid Width="380" Margin="4" ColumnDefinitions="60,*,64" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="14">
+                <Grid Width="420" Margin="4" ColumnDefinitions="60,*,104" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="14">
                   <TextBlock Text="DRIVE" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                  <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding DrivePct}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="2" Text="{Binding DrivePct, StringFormat={}{0:0}%}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding DrivePct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding DriveLine}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
                   <TextBlock Grid.Row="1" Text="TUNE" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                  <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding TunePct}" VerticalAlignment="Center" />
-                  <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding TunePct, StringFormat={}{0:0}%}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                  <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding TunePct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding TuneLine}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
                   <TextBlock Grid.Row="2" Text="MIC" Classes="label" FontSize="12" VerticalAlignment="Center" />
                   <Slider Grid.Row="2" Grid.Column="1" Minimum="-20" Maximum="40" Value="{Binding MicGainDb}" VerticalAlignment="Center"
                           ToolTip.Tip="Mic gain" />

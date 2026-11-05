@@ -204,6 +204,8 @@ Before you transmit, make sure an antenna or dummy load is connected to the ante
 The TX button in the bottom row opens three levels:
 - DRIVE sets output power. It's your RF power control.
 - TUNE sets the power used by the TUNE button. Keep it low.
+
+Each slider shows a percentage of its full travel and the power in watts. With a maximum drive set in Config > Amp, the top of the slider is that maximum.
 - MIC sets microphone gain, with a level meter.
 
 Set MIC by speaking normally and watching the meters. Aim for steady ALC movement rather than maximum. If your audio sounds harsh, turn it down.
@@ -222,7 +224,7 @@ Mon steps through:
 Use headphones. Right-click for the level.
 
 ## Protection
-Config > Amp has a transmit timeout that drops transmit if you stay keyed too long, and a maximum drive that limits DRIVE and TUNE.
+Config > Amp has a transmit timeout that drops transmit if you stay keyed too long, and a maximum drive that sets the top of the DRIVE and TUNE sliders.
 """),
 
         ("Transmit audio", """

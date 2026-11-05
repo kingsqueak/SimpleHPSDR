@@ -580,7 +580,7 @@
                   <NumericUpDown Value="{Binding DriveMaxPct}" Minimum="1" Maximum="100" Increment="1" FormatString="0" Width="140" />
                   <TextBlock Text="%" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock Grid.Row="7" Grid.Column="1" Text="Caps DRIVE and TUNE, and lowers them now if they&apos;re above it." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="7" Grid.Column="1" Text="Sets the top of the DRIVE and TUNE sliders, and lowers them now if they&apos;re above it." Classes="label" FontSize="11" TextWrapping="Wrap" />
                 <TextBlock Grid.Row="8" Text="Supply voltage" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SupplyText}" FontWeight="SemiBold" />
               </Grid>

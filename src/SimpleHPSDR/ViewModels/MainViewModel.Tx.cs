@@ -34,10 +34,28 @@ public sealed partial class MainViewModel
     public bool IsTransmitting => MoxOn || TunOn;
     public double PowerScaleWatts { get; private set; } = 100;
 
+    /// <summary>Config > Amp's maximum drive: the top of the DRIVE and TUNE sliders.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DriveLine), nameof(DriveWattsText), nameof(TuneLine), nameof(TuneWattsText))]
+    private int _driveCeilingPct = 100;
+
+    // The sliders read 100% at the maximum, whatever it's set to.
+    private string OfCeiling(double pct) => $"{pct / Math.Max(1, DriveCeilingPct) * 100:0}%";
+    private string Watts(double pct) => $"{pct / 100 * PowerScaleWatts:0} W";
+
+    public string DriveWattsText => Watts(DrivePct);
+    public string TuneWattsText => Watts(TunePct);
+    public string DriveLine => $"{OfCeiling(DrivePct)}  {Watts(DrivePct)}";
+    public string TuneLine => $"{OfCeiling(TunePct)}  {Watts(TunePct)}";
+
     private void SetPowerScale(int ratedWatts)
     {
         PowerScaleWatts = ratedWatts > 0 ? ratedWatts : 100;
         OnPropertyChanged(nameof(PowerScaleWatts));
+        OnPropertyChanged(nameof(DriveWattsText));
+        OnPropertyChanged(nameof(TuneWattsText));
+        OnPropertyChanged(nameof(DriveLine));
+        OnPropertyChanged(nameof(TuneLine));
     }
 
     private void WireTransmit(StationClient client)
@@ -97,6 +115,7 @@ public sealed partial class MainViewModel
         _applyingTx = true;
         try
         {
+            DriveCeilingPct = s.DriveMaxPct;
             DrivePct = s.DrivePct;
             TunePct = s.TunePct;
             MicGainDb = s.MicGainDb;
@@ -177,11 +196,15 @@ public sealed partial class MainViewModel
 
     partial void OnDrivePctChanged(double value)
     {
+        OnPropertyChanged(nameof(DriveLine));
+        OnPropertyChanged(nameof(DriveWattsText));
         if (!_applyingTx && IsConnected) _driveSender?.Send((int)Math.Round(value));
     }
 
     partial void OnTunePctChanged(double value)
     {
+        OnPropertyChanged(nameof(TuneLine));
+        OnPropertyChanged(nameof(TuneWattsText));
         if (!_applyingTx && IsConnected) _tuneDriveSender?.Send((int)Math.Round(value));
     }
 

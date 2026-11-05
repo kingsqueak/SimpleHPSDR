@@ -1088,6 +1088,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             var s = await _client.GetStateAsync();
+            DriveCeilingPct = s.DriveMaxPct;
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
             PollPureSignal(s);
