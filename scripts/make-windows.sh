@@ -21,7 +21,8 @@ dotnet publish src/SimpleHPSDR/SimpleHPSDR.csproj -c Release -r "$rid" --self-co
   -p:UseAppHost=true -o "$app"
 
 echo "== engine ($rid)"
-dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$rid" \
+engine_version=$(scripts/engine-version.sh)
+dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$rid" -p:VersionPrefix="$engine_version" -p:VersionSuffix= \
   --self-contained true -o "$app/engine"
 # Drop other platforms' native libraries.
 for d in "$app/engine/runtimes/"*; do
