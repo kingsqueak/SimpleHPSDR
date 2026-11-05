@@ -72,7 +72,7 @@ public partial class MainWindow : Window
     private void BuildMenu()
     {
         var help = new NativeMenuItem("SimpleHPSDR Help");
-        help.Click += (_, _) => InfoWindow.Help().ShowDialog(this);
+        help.Click += (_, _) => new HelpWindow().ShowDialog(this);
         var items = new NativeMenu { help };
         if (!OperatingSystem.IsMacOS())
         {

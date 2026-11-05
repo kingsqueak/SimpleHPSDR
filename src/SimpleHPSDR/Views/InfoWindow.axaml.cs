@@ -6,7 +6,7 @@ using SimpleHPSDR.Engine;
 
 namespace SimpleHPSDR.Views;
 
-/// <summary>The Help and About windows: a title, then headed paragraphs.</summary>
+/// <summary>The About and Network help windows: a title, then headed paragraphs.</summary>
 public partial class InfoWindow : Window
 {
     public InfoWindow()
@@ -39,22 +39,6 @@ public partial class InfoWindow : Window
         }
         return w;
     }
-
-    public static InfoWindow Help() => Build("SimpleHPSDR Help", "Most controls have more behind a right-click.",
-    [
-        ("Tuning", "Click the panadapter to tune, or use the wheel; a sideways scroller works too. Drag the panadapter to move the band under the display. Click the frequency to type one. The highlighted digit is the one your tuning step moves; use Step beside it to change it."),
-        ("Right-click for more", "Panadapter: slices. ANF: manual notches. Band: save and recall frequencies. Mode: AM and FM options. Filter buttons: edit a filter. NB and NR: their settings. Zoom: span. SQL: level. PS: two-tone, calibration, saved correction. Mon: level. Signal meter: S-meter trim."),
-        ("Slices", "Right-click the panadapter to add slice B, on the same panadapter or in its own. Click a slice's tag to make it active. The AF slider has an A and a B flag for each slice's level, on top of the blue main AF."),
-        ("Filters", "Drag the edges in the close-up at the top right to set the cuts. In AM, SAM, DSB and FM both sides move together. Config > Filters holds the filter shapes; TX filter follows the RX filter is in Config > TX Audio."),
-        ("Notches", "ANF finds and removes steady tones by itself. Right-click it for manual notches: press Add on panadapter, then click the signal to notch. Each notch has its own width and Remove button."),
-        ("Monitor", "Mon steps through Mon (your mic through the TX chain, without transmitting), TX Mon (while transmitting), Mon+TX and off. It starts at a low level so it won't feed back through speakers."),
-        ("PureSignal", "1. Set the source in Config > PureSignal.\n2. Set the drive level you'll be using.\n3. Turn on PS.\n4. Switch to a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts. Run it again until PS turns green.\n\nThat's it until you change the drive level.\n\nThe PS button is green when on and locked, yellow when on but not locked, and grey when off."),
-        ("Network", "The radio uses UDP, on radio ports 1024 to 1044. If no radio appears, the radio picker's Network help button shows what a firewall must allow on this computer."),
-        ("ID timer", "Click ID 00:00 above the clock to turn on a reminder on the even ten minutes, while connected to a radio. Config > Station chooses beeps or a .wav of your own. If you're transmitting at the mark, it plays when you unkey. It plays on this computer's speakers, never over the air."),
-        ("Parametric EQ", "Tick Parametric in Config > TX Audio > Equalizer for six bands in place of the graphic EQ. Drag a numbered point for frequency and gain, and use the wheel over it for Q. Bands 1 and 6 can be a pass filter or a shelf. The dashed line is what the engine actually does: it uses its own ten-point EQ, so very narrow bands can come out a little shallower."),
-        ("Radio model", "Several radios report the same ID, so choose yours in the radio picker or Config > Radio. It sets the S-meter, PA and PureSignal defaults."),
-        ("Firmware", "Click the radio's name, then Firmware. A failed flash can leave the radio needing recovery, so use only the file made for your exact radio."),
-    ]);
 
     /// <summary>What a firewall has to let through, for this computer.</summary>
     public static InfoWindow Network()

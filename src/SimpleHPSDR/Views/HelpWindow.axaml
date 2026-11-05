@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        x:Class="SimpleHPSDR.Views.HelpWindow"
+        Title="SimpleHPSDR Help" Width="900" Height="680" MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+  <Grid ColumnDefinitions="230,*" RowDefinitions="*,Auto" Margin="14" ColumnSpacing="14" RowSpacing="10">
+    <ListBox Name="Topics" Background="Transparent" />
+    <ScrollViewer Grid.Column="1" Name="Scroller">
+      <StackPanel Name="Body" Spacing="6" Margin="0,0,14,8" />
+    </ScrollViewer>
+    <Button Grid.Row="1" Grid.ColumnSpan="2" Name="CloseButton" Classes="flat accent" Content="Close"
+            HorizontalAlignment="Right" IsDefault="True" IsCancel="True" />
+  </Grid>
+</Window>
