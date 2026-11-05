@@ -5,7 +5,8 @@ namespace SimpleHPSDR.ViewModels;
 /// <summary>Band and mode memory. Each pair, such as 40 m DIGU, keeps its own
 /// frequency, filter, AGC, drive, tune, mic gain, NR and NB. The settings are
 /// saved on leaving a pair and come back on returning; a pair not used yet
-/// keeps what's set now. Choosing a band goes to the mode last used there.
+/// keeps what's set now. Choosing a band goes to the mode last used there, at
+/// its frequency. Choosing a mode leaves the dial alone, as on a radio.
 /// Nothing changes while transmitting.</summary>
 public sealed partial class MainViewModel
 {
@@ -62,7 +63,6 @@ public sealed partial class MainViewModel
         RememberBandMode();
         await ChangeModeAsync(mode);
         var memory = _settings.ModeMemories.GetValueOrDefault(MemoryKey(BandOf(VfoHz), mode));
-        if (memory is { } m && SimpleHPSDR.Band.Find(VfoHz) is { } band && band.Contains(m.Hz) && !VfoLocked) TuneTo(m.Hz);
         await RecallAsync(memory);
     }
 

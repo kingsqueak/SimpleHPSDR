@@ -107,7 +107,7 @@ The small box at the top right shows 6 kHz from the dial as audio frequency, wit
 
         ("Bands and modes", """
 ## Bands
-Click the band button and choose. Each band remembers where you were, and each band and mode together remember settings such as the filter, AGC, drive and noise tools.
+Click the band button and choose. Each band remembers where you were. Each band and mode together remember settings such as the filter, AGC, drive and noise tools, which come back when you return to that mode. Changing mode never moves the dial.
 
 Right-click the band button to save the current frequency, or recall one you saved. It works like a set of memories for that band.
 
