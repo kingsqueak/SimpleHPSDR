@@ -259,7 +259,7 @@ public partial class MainWindow : Window
             Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();
             Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
             if (f.RxId == vm.ActiveRx)
-                FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz);
+                FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric);
             if (f.RxId == 1)
             {
                 if (!vm.ShowPanadapterB) return;

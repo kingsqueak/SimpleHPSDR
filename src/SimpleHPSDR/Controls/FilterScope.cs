@@ -11,9 +11,10 @@ namespace SimpleHPSDR.Controls;
 /// left to right, whatever the sideband (on lower sideband the RF below the
 /// dial is shown mirrored). Cut from the active slice's panadapter frames,
 /// with the receive filter shaded over it. Drag either edge of the shading
-/// to set the filter's low or high cut (10 Hz steps). The scale marks every
-/// 100 Hz, labelled every 500 Hz. The dB range follows what's inside the
-/// 6 kHz, so the signal fills the box.
+/// to set the filter's low or high cut (10 Hz steps). In AM and the other
+/// double-sided modes only the upper side is shown, and its one edge sets both
+/// sides together. The scale marks every 100 Hz, labelled every 500 Hz. The dB
+/// range follows what's inside the 6 kHz, so the signal fills the box.
 /// </summary>
 public sealed class FilterScope : Control
 {
@@ -46,6 +47,7 @@ public sealed class FilterScope : Control
     private int _rx;
     private int _low, _high;
     private int _side = 1;   // +1 upper sideband (RF above the dial), -1 lower
+    private bool _symmetric;
     private enum Edge { None, Low, High }
     private Edge _drag;
 
@@ -57,16 +59,16 @@ public sealed class FilterScope : Control
 
     /// <summary>A display frame from the active slice's receiver, with that
     /// slice's dial and filter.</summary>
-    public void PushFrame(DisplayFrame f, long dialHz, int low, int high)
+    public void PushFrame(DisplayFrame f, long dialHz, int low, int high, bool symmetric)
     {
         _rx = f.RxId;
         _dialHz = dialHz;
         if (_drag == Edge.None)
         {
             (_low, _high) = (low, high);
-            // The filter says which side of the dial is heard; AM and the
-            // like (symmetric) show the upper side.
-            _side = low + high < 0 ? -1 : 1;
+            _symmetric = symmetric;
+            // Otherwise the filter says which side of the dial is heard.
+            _side = symmetric || low + high >= 0 ? 1 : -1;
         }
         if (f.Width == 0 || !f.BodyFlags.HasFlag(DisplayBodyFlags.PanValid)) return;
         var raw = f.PanDb.Span;
@@ -99,9 +101,9 @@ public sealed class FilterScope : Control
         DrawTrace(ctx, plot);
 
         // Passband and its draggable edges
-        double xl = X(_low), xh = X(_high);
+        double xl = X(_low), xh = HighEdgeX();
         ctx.FillRectangle(PassBrush, new Rect(xl, 0, Math.Max(0, xh - xl), plot.Height));
-        foreach (var x in new[] { xl, xh })
+        foreach (var x in _symmetric ? [xh] : new[] { xl, xh })
         {
             ctx.DrawLine(EdgePen, new Point(x, 0), new Point(x, plot.Height));
             ctx.FillRectangle(HandleBrush, new Rect(x - 2.5, plot.Height / 2 - 8, 5, 16), 2.5f);
@@ -178,8 +180,13 @@ public sealed class FilterScope : Control
         }
     }
 
+    // A double-sided filter wider than the box keeps its handle at the right end.
+    private double HighEdgeX() => _symmetric ? Math.Min(X(_high), Bounds.Width - 3) : X(_high);
+
     private Edge EdgeAt(double x) =>
-        Math.Abs(x - X(_low)) <= Grab ? Edge.Low : Math.Abs(x - X(_high)) <= Grab ? Edge.High : Edge.None;
+        Math.Abs(x - HighEdgeX()) <= Grab ? Edge.High
+        : !_symmetric && Math.Abs(x - X(_low)) <= Grab ? Edge.Low
+        : Edge.None;
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
@@ -201,7 +208,8 @@ public sealed class FilterScope : Control
             return;
         }
         int hz = (int)(Math.Round(Offset(Math.Clamp(x, 0, Bounds.Width)) / StepHz) * StepHz);
-        if (_drag == Edge.Low) _low = (int)Math.Min(hz, _high - MinWidthHz);
+        if (_symmetric) (_low, _high) = (-(int)Math.Max(hz, MinWidthHz / 2), (int)Math.Max(hz, MinWidthHz / 2));
+        else if (_drag == Edge.Low) _low = (int)Math.Min(hz, _high - MinWidthHz);
         else _high = (int)Math.Max(hz, _low + MinWidthHz);
         InvalidateVisual();
         FilterDragged?.Invoke(_low, _high);

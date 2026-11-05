@@ -20,6 +20,8 @@ public sealed partial class MainViewModel
 
     public bool ModeIsAm => Mode is RxMode.AM or RxMode.SAM;
     public bool ModeIsFm => Mode == RxMode.FM;
+    /// <summary>Both sidebands are heard, so a filter stays centred on the dial.</summary>
+    public bool FilterIsSymmetric => Mode is RxMode.AM or RxMode.SAM or RxMode.DSB or RxMode.FM;
     public bool ModeHasNoOptions => !ModeIsAm && !ModeIsFm;
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(AmSymmetric))] private bool _amBroadcastOn;
