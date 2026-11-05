@@ -81,6 +81,11 @@ public sealed partial class SettingsViewModel
         var source = PsExternalFeedback ? PsFeedbackSource.External : PsFeedbackSource.Internal;
         if (source != was.PsFeedbackSource)
             await _client.SetPsFeedbackSourceAsync(source);
+        if (AppSettings is { } app && app.PsExternalFeedback != PsExternalFeedback)
+        {
+            app.PsExternalFeedback = PsExternalFeedback;
+            app.Save();
+        }
         bool autoAttenuate = PsAutoAttenuate || PsExternalFeedback;
         if (autoAttenuate != was.PsAutoAttenuate || PsMoxDelaySec != was.PsMoxDelaySec
             || PsLoopDelaySec != was.PsLoopDelaySec || PsAmpDelayNs != was.PsAmpDelayNs

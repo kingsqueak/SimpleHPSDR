@@ -30,7 +30,7 @@ Not affiliated with or endorsed by the Zeus SDR project.
 - **Noise control:** NB1 and NB2, NR1 to NR4 and neural NNR, with their settings
   on right-click.
 - **Transmit:** PureSignal with one-button calibration, CFC, leveler, EQ, phase
-  rotator, monitor and TX profiles that include PureSignal settings.
+  rotator, monitor and TX audio profiles.
 - **Station:** CAT, TCI, antennas, band outputs, PA calibration, transverters and
   amplifier timing.
 - **SWL:** starts in SAM with a station guide from EiBi, in your local time. Click a

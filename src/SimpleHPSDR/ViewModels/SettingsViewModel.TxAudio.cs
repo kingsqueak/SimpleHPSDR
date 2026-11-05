@@ -259,6 +259,26 @@ public sealed partial class SettingsViewModel
         }
     }
 
+    /// <summary>Config came forward: show what changed on the radio meanwhile, unless
+    /// an edit here is still on its way to the engine.</summary>
+    public async Task RefreshLiveAsync()
+    {
+        if (Loading || _pending.Count > 0 || _txLoaded is null) return;
+        try
+        {
+            var s = await _client.GetStateAsync();
+            if (_pending.Count > 0) return;
+            _populating = true;
+            try
+            {
+                PopulatePureSignal(s);
+                PopulateTxAudio(s);
+            }
+            finally { _populating = false; }
+        }
+        catch (Exception) { }
+    }
+
     private async Task FollowAndShowAsync(Func<Task> follow)
     {
         await follow();
@@ -285,7 +305,15 @@ public sealed partial class SettingsViewModel
 
         int lo = (int)Math.Round(TxLowCutHz), hi = (int)Math.Round(TxHighCutHz);
         if (!TxFilterFollowsRx && (lo, hi) != CutsOf(was))
-            await _client.SetTxFilterAsync(was.Mode, lo, hi);
+        {
+            if (AppSettings is { } app)
+            {
+                (app.TxLowCutHz, app.TxHighCutHz) = (lo, hi);
+                app.Save();
+            }
+            // The radio's mode may have moved on since this page was loaded.
+            await _client.SetTxFilterAsync((await _client.GetStateAsync()).Mode, lo, hi);
+        }
 
         var lv = BuildLeveling(was);
         if (lv != (was.TxLeveling ?? new TxLevelingConfig()))

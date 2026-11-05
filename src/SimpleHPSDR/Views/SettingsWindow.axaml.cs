@@ -16,6 +16,8 @@ public partial class SettingsWindow : Window
         supply.Tick += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshSupplyAsync();
         Opened += (_, _) => supply.Start();
         Closed += (_, _) => supply.Stop();
+        // The radio can be used while this is open: catch up on coming back.
+        Activated += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshLiveAsync();
     }
 
     private async void OnCalibratePa(object? sender, RoutedEventArgs e)
@@ -24,10 +26,16 @@ public partial class SettingsWindow : Window
         try
         {
             var calibration = await vm.BeginPaCalibrationAsync();
+            // It transmits, so the radio's controls stay out of reach until it's done.
+            if (Owner is Window main) main.IsEnabled = false;
             await new PaCalWindow { DataContext = calibration }.ShowDialog(this);
             await vm.AfterPaCalibrationAsync();
         }
         catch (Exception ex) { vm.Status = $"PA calibration: {ex.Message}"; }
+        finally
+        {
+            if (Owner is Window main) main.IsEnabled = true;
+        }
     }
 
     private async void OnChooseIdSound(object? sender, RoutedEventArgs e)

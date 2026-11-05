@@ -76,12 +76,29 @@ public sealed partial class MainViewModel
     {
         _psAttnDb = s.PsTxFeedbackAttenuationDb;
         _psExternal = s.PsFeedbackSource == PsFeedbackSource.External;
+        KeepPsFeedbackSource();
         _applyingTx = true;
         PsOn = s.PsEnabled;
         TwoToneOn = s.TwoToneEnabled;
         _applyingTx = false;
         _psStalled = s.PsCalibrationStalled;
         UpdatePsStatus();
+    }
+
+    /// <summary>The feedback source is a station setting: put back the one chosen in
+    /// Config if the engine came up with something else.</summary>
+    private void KeepPsFeedbackSource()
+    {
+        if (_settings.PsExternalFeedback is not { } wanted)
+        {
+            _settings.PsExternalFeedback = _psExternal;
+            _settings.Save();
+        }
+        else if (wanted != _psExternal)
+        {
+            _psExternal = wanted;
+            _ = Try(() => _client!.SetPsFeedbackSourceAsync(wanted ? PsFeedbackSource.External : PsFeedbackSource.Internal));
+        }
     }
 
     /// <summary>From the 1 s state poll: two-tone and the stall flag have no frame.</summary>

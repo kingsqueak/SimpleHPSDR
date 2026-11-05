@@ -61,6 +61,13 @@ public sealed class Settings
     public bool WaterfallPop { get; set; }
     /// <summary>The TX filter's cuts follow the transmitting slice's RX filter.</summary>
     public bool TxFilterFollowsRx { get; set; } = true;
+    /// <summary>The TX cuts of the loaded profile or last set in Config. The engine keeps
+    /// separate cuts for FM and DSB, so the app carries these into every mode.</summary>
+    public int? TxLowCutHz { get; set; }
+    public int? TxHighCutHz { get; set; }
+    /// <summary>PureSignal's feedback source, External when true. It belongs to the
+    /// station, not to a band, mode or TX profile; null until the first connect.</summary>
+    public bool? PsExternalFeedback { get; set; }
     /// <summary>SWL guide: column to sort by, direction, and language shown ("" for all).</summary>
     public string GuideSort { get; set; } = "Status";
     public bool GuideSortAscending { get; set; } = true;

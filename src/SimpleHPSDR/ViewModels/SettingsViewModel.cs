@@ -271,6 +271,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         try { await Task.Delay(ApplyDelay, ct); }
         catch (OperationCanceledException) { return; }
         await ApplyAsync(group);
+        if (_pending.TryGetValue(group, out var current) && current.Token == ct) _pending.Remove(group);
     }
 
     // One group at a time, so engine calls never interleave.

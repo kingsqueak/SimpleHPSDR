@@ -54,7 +54,15 @@ public sealed partial class SettingsViewModel
         await _applyGate.WaitAsync();
         try
         {
-            await _client.SetTxFilterAsync(was.Mode, p.LowCutHz, p.HighCutHz);
+            if (AppSettings is { } cuts)
+            {
+                // The main window carries these into modes the engine keeps apart.
+                (cuts.TxLowCutHz, cuts.TxHighCutHz) = (p.LowCutHz, p.HighCutHz);
+                if (p.TxFilterFollowsRx is { } follows) cuts.TxFilterFollowsRx = follows;
+                cuts.Save();
+                OnPropertyChanged(nameof(TxFilterFollowsRx));
+            }
+            await _client.SetTxFilterAsync((await _client.GetStateAsync()).Mode, p.LowCutHz, p.HighCutHz);
             await _client.SetTxLevelingAsync(p.Leveling);
             await _client.SetLevelerMaxGainAsync(p.LevelerMaxGainDb);
             await _client.SetTxEqAsync(p.Equalizer);
@@ -63,8 +71,6 @@ public sealed partial class SettingsViewModel
             await _client.SetPhaseRotatorAsync(p.PhaseRotator);
             if (p.ReleaseDelayMs is int tail)
                 await _client.SetTxTailDelayAsync(tail);
-            if (p.PureSignal is { } ps)
-                await ApplyProfilePureSignalAsync(ps);
 
             if (AppSettings is { } settings)
                 settings.ParametricEq = p.ParametricEq
@@ -74,7 +80,6 @@ public sealed partial class SettingsViewModel
             try
             {
                 PopulateTxAudio(state);
-                PopulatePureSignal(state);
             }
             finally { _populating = false; }
             TxProfileModified = false;
@@ -102,17 +107,7 @@ public sealed partial class SettingsViewModel
             (int)Math.Round(TxLowCutHz), (int)Math.Round(TxHighCutHz),
             BuildLeveling(was), Math.Round(LevelerMaxGainDb, 1), BuildEq(),
             BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was), (int)Math.Round(ReleaseDelayMs),
-            new TxPureSignalSettings(PsExternalFeedback, PsAutoAttenuate || PsExternalFeedback,
-                (int)Math.Round(PsFeedbackAttenDb), PsMoxDelaySec, PsLoopDelaySec, PsAmpDelayNs, PsHwPeak),
-            ParametricEqOn ? SnapshotParametric() : null);
-    }
-
-    private async Task ApplyProfilePureSignalAsync(TxPureSignalSettings ps)
-    {
-        await _client.SetPsFeedbackSourceAsync(ps.ExternalFeedback ? PsFeedbackSource.External : PsFeedbackSource.Internal);
-        await _client.SetPsAdvancedAsync(new PsAdvancedSetRequest(
-            ps.AutoAttenuate, ps.MoxDelaySec, ps.LoopDelaySec, ps.AmpDelayNs, ps.HwPeak));
-        if (!ps.AutoAttenuate) await _client.SetPsFeedbackAttenuationAsync(ps.FeedbackAttenDb);
+            ParametricEqOn ? SnapshotParametric() : null, TxFilterFollowsRx);
     }
 
     [RelayCommand]

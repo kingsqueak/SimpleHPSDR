@@ -13,6 +13,7 @@ namespace SimpleHPSDR.Views;
 public partial class MainWindow : Window
 {
     private StationGuideWindow? _guide;
+    private SettingsWindow? _settings;
 
     public MainWindow()
     {
@@ -275,7 +276,21 @@ public partial class MainWindow : Window
         };
         vm.CloseGuide = () => { if (_guide is { IsVisible: true }) _guide.Close(); };
         vm.ShowDspPrep = prep => new DspPrepWindow { DataContext = prep }.ShowDialog(this);
-        vm.ShowSettings = settings => new SettingsWindow { DataContext = settings }.ShowDialog(this);
+        vm.ShowSettings = settings =>
+        {
+            var closed = new TaskCompletionSource();
+            var window = new SettingsWindow { DataContext = settings };
+            window.Closed += (_, _) =>
+            {
+                _settings = null;
+                closed.TrySetResult();
+            };
+            _settings = window;
+            window.Show(this);
+            return closed.Task;
+        };
+        vm.FocusSettings = () => _settings?.Activate();
+        vm.CloseSettings = () => _settings?.Close();
         vm.Display += f =>
         {
             Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();

@@ -131,7 +131,7 @@ Click the mode button to choose.
 - AM: full-carrier broadcast and amateur AM.
 - SAM: synchronous AM. It locks to the carrier, which holds up better when a signal fades.
 - FM: narrow FM, usually 10 m and up.
-- DIGL and DIGU: for digital modes. DIGU is the usual choice for FT8 and similar.
+- DIGL and DIGU: for digital modes. DIGU is the usual choice for FT8 and similar. Audio passes straight through in both directions: transmit EQ, compressor, CESSB, CFC, leveler, noise gate and phase rotator stand aside, as do receive noise reduction, blankers, notches and squelch. Their buttons keep your settings for other modes.
 
 ## AM and FM options
 Right-click the mode button in AM, SAM or FM. AM has broadcast-style transmit settings. FM has narrow deviation, CTCSS tones, reverse and the 1750 Hz tone burst.
@@ -243,7 +243,7 @@ Config > Amp has a transmit timeout that drops transmit if you stay keyed too lo
 Config > TX Audio holds everything that shapes your voice, in the order it's processed. All of it is optional.
 
 ## Profiles
-Save your settings under a name and load them later: one for DX, one for ragchewing. Default is built in and can't be overwritten.
+Save your settings under a name and load them later: one for DX, one for ragchewing. Default is built in and can't be overwritten. A profile holds only what's on this TX Audio page, and it applies in every mode, so make a separate profile if you want different settings for AM, say. CW and FreeDV don't use the TX filter. PureSignal settings aren't part of a profile, so the internal or external coupler stays as set in Config on every band and mode.
 
 ## TX filter
 Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. Otherwise set it by hand. 2.8 kHz is a usual SSB width.

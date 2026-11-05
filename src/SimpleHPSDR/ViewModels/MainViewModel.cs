@@ -338,12 +338,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>What the RF button shows.</summary>
     public string RfText => PreampOn ? "pre on" : AttenText;
 
-    /// <summary>Set by the window: shows the settings dialog.</summary>
+    /// <summary>Set by the window: shows Config beside the main window, and
+    /// completes when it closes. The radio stays usable meanwhile.</summary>
     public Func<SettingsViewModel, Task>? ShowSettings { get; set; }
+    /// <summary>Set by the window: closes Config if it's open.</summary>
+    public Action? CloseSettings { get; set; }
+    private bool _settingsOpen;
+    /// <summary>Set by the window: brings an open Config forward.</summary>
+    public Action? FocusSettings { get; set; }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task OpenSettingsAsync()
     {
+        if (_settingsOpen)
+        {
+            FocusSettings?.Invoke();
+            return;
+        }
         if (_client is null || ShowSettings is null) return;
         var settings = new SettingsViewModel(() => _client!)
         {
@@ -355,7 +366,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         settings.PaMaxPowerSaved += SetPowerScale;
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
         _ = settings.LoadAsync();
-        await ShowSettings(settings);
+        _settingsOpen = true;
+        try { await ShowSettings(settings); }
+        finally { _settingsOpen = false; }
         if (IsConnected) await LoadAntennasAsync();
     }
 
@@ -586,6 +599,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task ChooseRadioAsync()
     {
+        // Config talks to the connection this is about to replace.
+        CloseSettings?.Invoke();
         if (ShowRadioPicker is null) return;
         if ((_client is null || _engine.HasExited) && !await StartEngineAgainAsync()) return;
         if (_client is null) return;

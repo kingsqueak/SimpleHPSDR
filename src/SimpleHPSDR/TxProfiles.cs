@@ -6,13 +6,8 @@ using Zeus.Contracts;
 
 namespace SimpleHPSDR;
 
-/// <summary>The PureSignal settings a profile keeps. The learned correction
-/// isn't one of them: that belongs to the moment it was measured.</summary>
-public sealed record TxPureSignalSettings(
-    bool ExternalFeedback, bool AutoAttenuate, int FeedbackAttenDb,
-    double MoxDelaySec, double LoopDelaySec, double AmpDelayNs, double HwPeak);
-
-/// <summary>The TX Audio page and PureSignal settings, saved together under a name.</summary>
+/// <summary>The TX Audio page of Config, saved under a name. Nothing else: older
+/// profiles' PureSignal settings are ignored on load and dropped on the next save.</summary>
 public sealed record TxAudioProfile(
     string Name,
     int LowCutHz,
@@ -24,8 +19,8 @@ public sealed record TxAudioProfile(
     DexpConfig NoiseGate,
     TxPhaseRotatorConfig PhaseRotator,
     int? ReleaseDelayMs = null,   // null in profiles saved before it existed: leave as is
-    TxPureSignalSettings? PureSignal = null,   // likewise
-    ParametricEqSettings? ParametricEq = null) // null: the graphic EQ
+    ParametricEqSettings? ParametricEq = null, // null: the graphic EQ
+    bool? TxFilterFollowsRx = null)            // null in older profiles: leave as is
 {
     public const string DefaultName = "Default";
 
@@ -33,9 +28,7 @@ public sealed record TxAudioProfile(
     /// processing holds with CFC at FFT 16384, with margin (user-tested).</summary>
     public const int DefaultReleaseDelayMs = 275;
 
-    /// <summary>The starting point, from DefaultTxProfile.json: the operator's
-    /// tested setup. It holds no PureSignal settings, as those depend on the
-    /// station, so loading it leaves them alone.</summary>
+    /// <summary>The starting point, from DefaultTxProfile.json: the operator's tested setup.</summary>
     public static TxAudioProfile Default => TxProfileStore.BuiltInDefault;
 }
 
