@@ -21,9 +21,16 @@ public static class IdReminder
     /// volume of 0 to 100. Null if it played, otherwise why it didn't.</summary>
     public static Task<string?> PlayAsync(string? wavPath, int volumePercent) => Task.Run(() =>
     {
-        var path = !string.IsNullOrEmpty(wavPath) && File.Exists(wavPath) ? wavPath : BeepFile();
-        double volume = Math.Clamp(volumePercent, 0, 100) / 100.0;
-        return OperatingSystem.IsWindows() ? PlayWindows(path, volume) : PlayWithTool(path, volume);
+        try
+        {
+            var path = !string.IsNullOrEmpty(wavPath) && File.Exists(wavPath) ? wavPath : BeepFile();
+            double volume = Math.Clamp(volumePercent, 0, 100) / 100.0;
+            return OperatingSystem.IsWindows() ? PlayWindows(path, volume) : PlayWithTool(path, volume);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return $"Couldn't play it: {e.Message}";
+        }
     });
 
     // Written each time, so a change to the tones can't leave an old file.

@@ -21,9 +21,13 @@ public partial class SettingsWindow : Window
     private async void OnCalibratePa(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not SettingsViewModel vm) return;
-        var calibration = await vm.BeginPaCalibrationAsync();
-        await new PaCalWindow { DataContext = calibration }.ShowDialog(this);
-        await vm.AfterPaCalibrationAsync();
+        try
+        {
+            var calibration = await vm.BeginPaCalibrationAsync();
+            await new PaCalWindow { DataContext = calibration }.ShowDialog(this);
+            await vm.AfterPaCalibrationAsync();
+        }
+        catch (Exception ex) { vm.Status = $"PA calibration: {ex.Message}"; }
     }
 
     private async void OnChooseIdSound(object? sender, RoutedEventArgs e)
@@ -32,7 +36,7 @@ public partial class SettingsWindow : Window
         {
             Title = "Choose a sound",
             AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("WAV sound (*.wav)") { Patterns = ["*.wav"] }],
+            FileTypeFilter = [new FilePickerFileType("WAV sound (*.wav)") { Patterns = ["*.wav", "*.WAV"] }],
         });
         if (files.Count > 0 && files[0].TryGetLocalPath() is { } path && DataContext is SettingsViewModel vm)
             vm.SetIdSound(path);

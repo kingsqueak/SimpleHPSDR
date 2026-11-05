@@ -41,6 +41,8 @@ public sealed class Settings
     public bool BandPlanDefaulted { get; set; }
     /// <summary>The parametric TX EQ; the engine holds only its ten-point result.</summary>
     public ParametricEqSettings ParametricEq { get; set; } = ParametricEqSettings.Default;
+    /// <summary>Correction to the PWR display from an external meter, in dB.</summary>
+    public double PowerMeterTrimDb { get; set; }
     /// <summary>ID timer: a reminder on the even ten minutes while connected.</summary>
     public bool IdTimerOn { get; set; }
     /// <summary>A .wav to play for it, or null for the built-in beeps.</summary>
@@ -82,9 +84,21 @@ public sealed class Settings
 
     public void Save()
     {
-        try { File.WriteAllText(FilePath, JsonSerializer.Serialize(this, Options)); }
-        catch (IOException) { }
+        // Written beside the real file and moved over it, so a crash can't
+        // leave half a settings file. Saves can come from more than one thread.
+        lock (SaveGate)
+        {
+            try
+            {
+                var temp = FilePath + ".tmp";
+                File.WriteAllText(temp, JsonSerializer.Serialize(this, Options));
+                File.Move(temp, FilePath, overwrite: true);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        }
     }
+
+    private static readonly object SaveGate = new();
 }
 
 /// <summary>What comes back on returning to a band and mode. Enums as numbers.</summary>

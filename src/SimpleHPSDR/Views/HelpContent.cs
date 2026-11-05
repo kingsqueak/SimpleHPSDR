@@ -310,7 +310,10 @@ The radio keys a carrier at 10, 25 and 50 W on each HF band in turn. Stop ends i
 
 It needs a band plan with every HF band including 60 m, set in Config > Station. If it says the band plan has no legal frequency, choose your licence class or country there.
 
-It uses the radio's own power meter, so the bands end up even with each other, and a good external meter can still fine-tune the absolute watts on the PA page. Run PS CAL again afterwards, since PureSignal is turned off for the run.
+It uses the radio's own power meter, so the bands end up even with each other, but that meter can be several dB out, which can leave real power well above what's shown. Check with an external meter afterwards. Run PS CAL again too, since PureSignal is turned off for the run.
+
+## Correcting power with an external meter
+If you have a meter you trust, key TUNE into a dummy load and note three things: what TUNE is set to, what PWR reads, and what your meter reads. Unkey and enter them under External meter on the PA page. Apply shifts every HF band and corrects the PWR display. Reset to stock puts the stock gains back and clears calibration and the correction.
 
 ## Audio
 Config > Audio chooses your speakers and microphone: a computer mic, or the radio's mic jack with its boost and bias. On Windows, ASIO can be used with an audio interface.

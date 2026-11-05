@@ -114,6 +114,12 @@ public partial class MainWindow : Window
     private async Task ShowBandStackAsync()
     {
         if (Vm is not { IsConnected: true } vm) return;
+        try { await BuildBandStackMenuAsync(vm); }
+        catch (Exception ex) { vm.ShowProblem($"Could not read the band stack: {ex.Message}"); }
+    }
+
+    private async Task BuildBandStackMenuAsync(MainViewModel vm)
+    {
         var items = new List<Control>
         {
             new MenuItem

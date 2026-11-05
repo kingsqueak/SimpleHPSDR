@@ -29,6 +29,11 @@ public sealed partial class MainViewModel
     private async Task SelectBandAsync(Band band)
     {
         if (!IsConnected) return;
+        if (IsTransmitting)
+        {
+            Status = "Unkey before changing band.";
+            return;
+        }
         if (VfoLocked)
         {
             Status = "VFO is locked.";
@@ -49,6 +54,11 @@ public sealed partial class MainViewModel
     private async Task SelectModeAsync(RxMode mode)
     {
         if (!IsConnected) return;
+        if (IsTransmitting)
+        {
+            Status = "Unkey before changing mode.";
+            return;
+        }
         RememberBandMode();
         await ChangeModeAsync(mode);
         var memory = _settings.ModeMemories.GetValueOrDefault(MemoryKey(BandOf(VfoHz), mode));

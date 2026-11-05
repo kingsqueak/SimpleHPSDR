@@ -194,15 +194,23 @@ public sealed partial class SettingsViewModel
     [RelayCommand]
     private async Task TestTciPortAsync()
     {
-        var r = await _client.TestTciPortAsync(TciNetwork ? AllInterfaces : LocalOnly, (int)Math.Round(TciPort));
-        Status = r.Ok ? $"TCI port {TciPort:0} is free." : $"TCI port {TciPort:0}: {r.Error}";
+        try
+        {
+            var r = await _client.TestTciPortAsync(TciNetwork ? AllInterfaces : LocalOnly, (int)Math.Round(TciPort));
+            Status = r.Ok ? $"TCI port {TciPort:0} is free." : $"TCI port {TciPort:0}: {r.Error}";
+        }
+        catch (Exception ex) { Status = $"Could not test the port: {ex.Message}"; }
     }
 
     [RelayCommand]
     private async Task TestCatPortAsync()
     {
-        var r = await _client.TestCatPortAsync(CatNetwork ? AllInterfaces : LocalOnly, (int)Math.Round(CatPort));
-        Status = r.Ok ? $"CAT port {CatPort:0} is free." : $"CAT port {CatPort:0}: {r.Error}";
+        try
+        {
+            var r = await _client.TestCatPortAsync(CatNetwork ? AllInterfaces : LocalOnly, (int)Math.Round(CatPort));
+            Status = r.Ok ? $"CAT port {CatPort:0} is free." : $"CAT port {CatPort:0}: {r.Error}";
+        }
+        catch (Exception ex) { Status = $"Could not test the port: {ex.Message}"; }
     }
 
     [RelayCommand]

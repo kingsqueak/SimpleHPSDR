@@ -13,7 +13,7 @@
       <TextBlock TextWrapping="Wrap"
                  Text="This transmits. On every HF band in turn, the radio keys a carrier at 10, 25 and 50 W and sets that band's PA gain from its own power meter." />
       <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                 Text="The bands end up even with each other, but the watts are only as accurate as the radio's meter. PureSignal is turned off for the run, so run PS CAL again afterwards." />
+                 Text="The bands end up even with each other, but the watts are only as accurate as the radio's meter, which can be several dB out and leave real power higher than shown. Check with an external meter afterwards, and correct it under External meter on the PA page. PureSignal is turned off for the run, so run PS CAL again afterwards." />
       <Border Classes="panel">
         <StackPanel Spacing="8">
           <CheckBox IsChecked="{Binding DummyLoadConfirmed}">

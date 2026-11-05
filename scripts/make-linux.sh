@@ -52,6 +52,7 @@ Exec=simplehpsdr
 Icon=simplehpsdr
 Terminal=false
 Categories=HamRadio;Network;
+StartupWMClass=SimpleHPSDR
 Keywords=sdr;hpsdr;anan;radio;
 EOF
 
@@ -85,6 +86,7 @@ Priority: optional
 Architecture: ${ARCH}
 Installed-Size: ${SIZE}
 Depends: libc6, libstdc++6, libgcc-s1, zlib1g, libssl3t64, libasound2t64, libx11-6, libice6, libsm6, libfontconfig1, libgomp1
+Recommends: pulseaudio-utils | pipewire-bin | alsa-utils
 Maintainer: KC2RGW Chris <2788495+kingsqueak@users.noreply.github.com>
 Homepage: https://github.com/kingsqueak/SimpleHPSDR
 Description: Clean, simple interface for OpenHPSDR radios

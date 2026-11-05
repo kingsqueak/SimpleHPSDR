@@ -427,7 +427,7 @@ public sealed class SpectrumView : Control
             double x = HzToX(hz, r.Width);
             if (x < 0 || x > r.Width) continue;
             ctx.DrawLine(GridPen, new Point(x, r.Top), new Point(x, r.Bottom));
-            var text = new FormattedText((hz / 1e6).ToString(step >= 1000 ? "0.000" : "0.0000"),
+            var text = new FormattedText((hz / 1e6).ToString("0.000"),
                 System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, LabelFace, 11, LabelBrush);
             ctx.DrawText(text, new Point(x + 3, r.Top + 2));
         }

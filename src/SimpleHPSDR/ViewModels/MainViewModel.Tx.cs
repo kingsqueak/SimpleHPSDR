@@ -39,6 +39,17 @@ public sealed partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(DriveLine), nameof(DriveWattsText), nameof(TuneLine), nameof(TuneWattsText))]
     private int _driveCeilingPct = 100;
 
+    // The engine has already lowered anything above a new maximum; no slider
+    // may be open to do it here, so match it, without sending it back.
+    private void ApplyDriveCeiling(int ceilingPct)
+    {
+        DriveCeilingPct = ceilingPct;
+        _applyingTx = true;
+        if (DrivePct > ceilingPct) DrivePct = ceilingPct;
+        if (TunePct > ceilingPct) TunePct = ceilingPct;
+        _applyingTx = false;
+    }
+
     // The sliders read 100% at the maximum, whatever it's set to.
     private string OfCeiling(double pct) => $"{pct / Math.Max(1, DriveCeilingPct) * 100:0}%";
     private string Watts(double pct) => $"{pct / 100 * PowerScaleWatts:0} W";
@@ -106,10 +117,14 @@ public sealed partial class MainViewModel
         // the app default once, on the first connect.
         if (!_settings.ReleaseDelayDefaulted)
         {
-            if (s.TxMoxTailDelayMs == 0)
-                await Try(() => _client!.SetTxTailDelayAsync(TxAudioProfile.DefaultReleaseDelayMs));
-            _settings.ReleaseDelayDefaulted = true;
-            _settings.Save();
+            try
+            {
+                if (s.TxMoxTailDelayMs == 0)
+                    await _client!.SetTxTailDelayAsync(TxAudioProfile.DefaultReleaseDelayMs);
+                _settings.ReleaseDelayDefaulted = true;
+                _settings.Save();
+            }
+            catch (Exception ex) { Status = ex.Message; }   // tried again next connect
         }
 
         _applyingTx = true;
@@ -178,21 +193,55 @@ public sealed partial class MainViewModel
         _ = KeyAsync(() => _client!.SetTunAsync(value), value);
     }
 
+    // Keying goes out one at a time, and an unkey outranks any key-on still
+    // waiting: a slow request must never key the radio after it was told to stop.
+    private readonly SemaphoreSlim _txGate = new(1, 1);
+    private int _txGeneration;
+
+    /// <summary>Send a key-on, unless an unkey came after it was asked for.</summary>
+    private async Task<bool> SendKeyOnAsync(Func<Task> send, int generation)
+    {
+        await _txGate.WaitAsync();
+        try
+        {
+            if (generation != Volatile.Read(ref _txGeneration)) return false;
+            await send();
+            return true;
+        }
+        finally { _txGate.Release(); }
+    }
+
     // If the engine refuses to key, show why and put the button back.
     private async Task KeyAsync(Func<Task> send, bool on)
     {
         try
         {
-            await send();
+            if (on)
+            {
+                if (!await SendKeyOnAsync(send, Volatile.Read(ref _txGeneration))) ClearKeyButtons();
+                return;
+            }
+            bool held = await _txGate.WaitAsync(UnkeyGateWait);
+            try { await send(); }
+            finally { if (held) _txGate.Release(); }
         }
         catch (Exception ex)
         {
             Status = $"Transmit refused: {ex.Message}";
-            _applyingTx = true;
-            if (on) { MoxOn = false; TunOn = false; }
-            _applyingTx = false;
+            if (on) ClearKeyButtons();
         }
     }
+
+    private void ClearKeyButtons()
+    {
+        _applyingTx = true;
+        MoxOn = false;
+        TunOn = false;
+        TwoToneOn = false;
+        _applyingTx = false;
+    }
+
+    private static readonly TimeSpan UnkeyGateWait = TimeSpan.FromSeconds(1.5);
 
     partial void OnDrivePctChanged(double value)
     {
@@ -215,7 +264,7 @@ public sealed partial class MainViewModel
 
     private void UpdateTxMeters(TxMetersV2Frame f)
     {
-        FwdWatts = Math.Max(0, f.FwdWatts);
+        FwdWatts = Math.Max(0, f.FwdWatts) * Math.Pow(10, _settings.PowerMeterTrimDb / 10);
         SwrText = f.Swr is > 0.9f and < 100 ? $"{f.Swr:0.0}:1" : "—";
         AlcText = $"{f.AlcGr:0} dB";
     }
@@ -231,14 +280,21 @@ public sealed partial class MainViewModel
     /// since the radio's PTT can key without this UI knowing yet.</summary>
     private async Task UnkeyAsync()
     {
-        if (_client is null) return;
-        try { await _client.SetMoxAsync(false); } catch (Exception) { }
-        try { await _client.SetTunAsync(false); } catch (Exception) { }
-        if (TwoToneOn) try { await _client.SetTwoToneAsync(false); } catch (Exception) { }
+        if (_client is not { } client) return;
+        Interlocked.Increment(ref _txGeneration);
+        try { _psCalCts?.Cancel(); } catch (ObjectDisposedException) { }
+        bool held = await _txGate.WaitAsync(UnkeyGateWait);
+        try
+        {
+            try { await client.SetMoxAsync(false); } catch (Exception) { }
+            try { await client.SetTunAsync(false); } catch (Exception) { }
+            try { await client.SetTwoToneAsync(false); } catch (Exception) { }
+        }
+        finally { if (held) _txGate.Release(); }
     }
 
     // Shutdown runs on the UI thread or a signal thread; run the HTTP calls on
     // the pool so their continuations can't deadlock against this wait.
     private void UnkeyForShutdown() =>
-        Task.Run(UnkeyAsync).Wait(TimeSpan.FromSeconds(2));
+        Task.Run(UnkeyAsync).Wait(TimeSpan.FromSeconds(3));
 }

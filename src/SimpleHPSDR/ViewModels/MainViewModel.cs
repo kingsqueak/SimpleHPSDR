@@ -444,8 +444,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             var regions = await _client!.GetBandRegionsAsync();
             int preselected = Math.Max(0, regions.FindIndex(r => r.Id == DefaultBandPlan));
+            // The engine starts on Region 1 when nobody has chosen. Anything else
+            // was chosen on purpose, so offer that.
+            var current = await _client.GetBandRegionAsync();
+            if (current != UnchosenBandPlan) preselected = Math.Max(preselected, regions.FindIndex(r => r.Id == current));
             int chosen = await ShowFirstStart([.. regions.Select(r => r.DisplayName)], preselected);
-            await _client.SetBandRegionAsync(regions[Math.Clamp(chosen, 0, regions.Count - 1)].Id);
+            var id = regions[Math.Clamp(chosen, 0, regions.Count - 1)].Id;
+            if (id != current) await _client.SetBandRegionAsync(id);
             _settings.BandPlanDefaulted = true;
             _settings.Save();
         }
@@ -490,10 +495,26 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             else if (v.Receiver == 0 && _sliceA is { } a) _sliceA = a with { VfoHz = v.VfoHz };
             else if (v.Receiver == 1 && _sliceB is { } b) _sliceB = b with { VfoHz = v.VfoHz };
         });
-        _client.StreamClosed += reason => Dispatcher.UIThread.Post(() =>
-        {
-            if (IsConnected) Status = $"Engine stream closed: {reason}";
-        });
+        _client.StreamClosed += reason => Dispatcher.UIThread.Post(() => _ = OnStreamClosedAsync(reason));
+    }
+
+    private bool _lostRadio;
+
+    // The stream carries the meters and the display. Without it nobody can see
+    // what the radio is doing, and the engine only drops MOX for us, not TUNE
+    // or 2-TONE, so unkey at once. If the engine itself died, its handler
+    // takes over; give that a moment to show.
+    private async Task OnStreamClosedAsync(string reason)
+    {
+        if (!IsConnected || _disposed != 0) return;
+        _lostRadio = true;
+        await UnkeyAsync();
+        ClearKeyButtons();
+        Status = $"Lost the engine stream, so transmit was turned off: {reason}";
+        await Task.Delay(2000);
+        if (!IsConnected || _engine.HasExited) return;
+        await DisconnectAsync();
+        Status = "Lost the engine stream, so transmit was turned off. Choose a radio to reconnect.";
     }
 
     // Only asks while on a radio: otherwise (the firmware window included) a
@@ -502,8 +523,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (_disposed != 0) return;
         Status = "The radio engine stopped.";
-        if (!IsConnected) return;
-        var radio = RadioLabel;
+        if (!IsConnected && !_lostRadio) return;
+        _lostRadio = false;
+        var radio = _radio?.Label ?? RadioLabel;
         await DisconnectAsync();
         Status = "The radio engine stopped.";
         var reason = EngineHost.LastFatalLine() ?? $"It exited with code {exitCode}.";
@@ -520,8 +542,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         var radio = _radio;
         // A new engine starts from what it last saved, so carry these across.
-        var (hz, nb, anf) = (VfoHz, NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Value as NbMode?, AnfOn);
+        // Connecting makes slice A active, so it's slice A's dial that's kept.
+        long hz = ActiveRx == 0 ? VfoHz : _sliceA?.VfoHz ?? VfoHz;
+        var (nb, anf) = (NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Value as NbMode?, AnfOn);
         Status = "Restarting the engine…";
+        if (!await StartEngineAgainAsync()) return;
+        if (radio is null)
+        {
+            Status = "Engine restarted. Choose a radio.";
+            return;
+        }
+        if (!await ConnectAsync(radio)) return;
+        TuneTo(hz);
+        await UpdateNrAsync(nr => nr with { NbMode = nb ?? nr.NbMode, AnfEnabled = anf });
+    }
+
+    /// <summary>Stop the engine if it's running and start a new one. Whatever
+    /// happens, Choose radio can try again.</summary>
+    private async Task<bool> StartEngineAgainAsync()
+    {
         await DisconnectAsync();
         _client?.Dispose();
         _client = null;
@@ -533,28 +572,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             Status = $"Engine did not restart: {ex.Message}";
-            return;
+            return false;
         }
         CreateClient();
-        if (radio is null)
-        {
-            Status = "Engine restarted. Choose a radio.";
-            return;
-        }
-        if (!await ConnectAsync(radio)) return;
-        TuneTo(hz);
-        await UpdateNrAsync(nr => nr with { NbMode = nb ?? nr.NbMode, AnfEnabled = anf });
+        return true;
     }
 
     [RelayCommand]
     private async Task ChooseRadioAsync()
     {
-        if (_client is null || ShowRadioPicker is null) return;
-        if (_engine.HasExited)
-        {
-            await RestartEngineAsync();
-            return;
-        }
+        if (ShowRadioPicker is null) return;
+        if ((_client is null || _engine.HasExited) && !await StartEngineAgainAsync()) return;
+        if (_client is null) return;
         if (IsConnected) await DisconnectAsync();
 
         var picker = new RadioPickerViewModel(_client, _settings.AutoConnect);
@@ -575,6 +604,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var client = _client!;
         Status = $"Connecting to {radio.Label}…";
         var deadline = DateTime.UtcNow.AddMinutes(3);
+        var preparingDeadline = DateTime.UtcNow.AddMinutes(30);   // far beyond the slowest machine
         while (true)
         {
             try
@@ -594,7 +624,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 // The engine bakes FFTW plans on first run; connect waits for it,
                 // however long this machine takes. Any other refusal gets 3 minutes.
                 var prep = await client.GetDspPrepAsync();
-                if (prep is not { Building: true } && DateTime.UtcNow >= deadline)
+                if (DateTime.UtcNow >= (prep is { Building: true } ? preparingDeadline : deadline))
                 {
                     Status = $"Could not connect to {radio.Label}: {ex.Message}";
                     return false;
@@ -609,36 +639,53 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             }
         }
 
-        _radio = radio with { TakeOver = false };
-        _settings.LastRadioIp = radio.Ip;
-        _settings.LastRadioMac = radio.Mac;
-        _settings.LastRadioP2 = radio.Protocol2;
-        _settings.LastRadioBoardId = radio.BoardId;
-        _settings.Save();
+        // The radio is ours from here: a failure must let it go again, not
+        // leave it connected with nothing showing.
+        try
+        {
+            _radio = radio with { TakeOver = false };
+            _settings.LastRadioIp = radio.Ip;
+            _settings.LastRadioMac = radio.Mac;
+            _settings.LastRadioP2 = radio.Protocol2;
+            _settings.LastRadioBoardId = radio.BoardId;
+            _settings.Save();
 
-        // Policy: if the radio will transmit there, SimpleHPSDR allows it. No
-        // region band plan gets in the way.
-        await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
-        var state = await client.GetStateAsync();
-        bool firstFilters = await ApplyFilterDefaultsAsync();
-        await ApplyStateAsync(state);
-        ActiveRx = 0;
-        UpdateSlices(state);
-        LoadSpanRates(radio.Protocol2, state.SampleRate);
-        await LoadDisplayTuningAsync();
-        await LoadAntennasAsync();
-        await LoadTransmitAsync(state);
-        LoadPureSignal(state);
-        await LoadMonitorAsync();
-        await LoadNotchesAsync();
-        if (firstFilters && Filters.FirstOrDefault(f => f.SlotName == DefaultFilterSlot) is { } start)
-            await SelectFilterAsync(start);
-        await client.OpenStreamAsync();
-        IsConnected = true;
-        _statePoll.Start();
-        RadioLabel = radio.Label;
-        Status = $"Connected to {radio.Label}";
-        return true;
+            // Policy: if the radio will transmit there, SimpleHPSDR allows it. No
+            // region band plan gets in the way.
+            await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
+            var state = await client.GetStateAsync();
+            bool firstFilters = await ApplyFilterDefaultsAsync();
+            await ApplyStateAsync(state);
+            ActiveRx = 0;
+            UpdateSlices(state);
+            LoadSpanRates(radio.Protocol2, state.SampleRate);
+            await LoadDisplayTuningAsync();
+            await LoadAntennasAsync();
+            await LoadTransmitAsync(state);
+            LoadPureSignal(state);
+            await LoadMonitorAsync();
+            await LoadNotchesAsync();
+            if (firstFilters && Filters.FirstOrDefault(f => f.SlotName == DefaultFilterSlot) is { } start)
+                await SelectFilterAsync(start);
+            await client.OpenStreamAsync();
+            IsConnected = true;
+            _lostRadio = false;
+            _statePoll.Start();
+            RadioLabel = radio.Label;
+            Status = $"Connected to {radio.Label}";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await UnkeyAsync();
+            try { await client.DisconnectAsync(radio.Protocol2); } catch (Exception) { }
+            IsConnected = false;
+            _statePoll.Stop();
+            RadioLabel = "No radio";
+            DisplayReset?.Invoke();
+            Status = $"Could not finish connecting to {radio.Label}: {ex.Message}";
+            return false;
+        }
     }
 
     private async Task DisconnectAsync()
@@ -700,6 +747,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Text of the blue Mode button.</summary>
     public string ModeLabel => Mode.ToString();
 
+    private const long MinTuneHz = 10_000, MaxTuneHz = 60_000_000;
+
     public void TuneTo(long hz)
     {
         if (!IsConnected) return;
@@ -708,7 +757,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Status = "VFO is locked.";
             return;
         }
-        hz = Math.Clamp(hz, 10_000, 60_000_000);
+        hz = Math.Clamp(hz, MinTuneHz, MaxTuneHz);
         SetVfoLocal(hz);
         if (SimpleHPSDR.Band.Find(hz) is { } band) _settings.BandMemory[band.Name] = hz;
         _vfoSender.Send(hz);
@@ -744,7 +793,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var text = FrequencyEntry.Trim().Replace(',', '.');
         if (double.TryParse(text, System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var v) && v > 0)
-            TuneTo((long)Math.Round(v < 100 ? v * 1e6 : v * 1e3));
+        {
+            long hz = (long)Math.Round(v < 100 ? v * 1e6 : v * 1e3);
+            if (hz is >= MinTuneHz and <= MaxTuneHz) TuneTo(hz);
+            else Status = "Enter a frequency from 0.01 to 60 MHz.";
+        }
         CancelFrequencyEntry();
     }
 
@@ -894,7 +947,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ("F4", "3k", -3000, -80), ("F5", "2.8k", -2800, -100),
     ];
     private const string DefaultFilterSlot = "F2";
-    private const string DefaultBandPlan = "IARU_R2";
+    private const string DefaultBandPlan = "IARU_R2", UnchosenBandPlan = "IARU_R1";
 
     // AM and SAM; the widths are the whole passband. Raise the version when
     // these change so existing installs get them.
@@ -1031,10 +1084,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             var nr = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
             await SendNrAsync(change(nr));
         });
-        var applied = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
-        Mark(NoiseBlankers, applied.NbMode);
-        Mark(NoiseReductions, applied.NrMode);
-        AnfOn = applied.AnfEnabled;
+        await Try(async () =>
+        {
+            var applied = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
+            Mark(NoiseBlankers, applied.NbMode);
+            Mark(NoiseReductions, applied.NrMode);
+            AnfOn = applied.AnfEnabled;
+        });
     }
 
     [RelayCommand]
@@ -1088,7 +1144,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             var s = await _client.GetStateAsync();
-            DriveCeilingPct = s.DriveMaxPct;
+            ApplyDriveCeiling(s.DriveMaxPct);
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
             PollPureSignal(s);
@@ -1150,6 +1206,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         RememberBandMode();
         _settings.Save();
         try { _statePoll.Stop(); } catch (InvalidOperationException) { }  // signal thread
+        try { _clockTimer.Stop(); _cpuTimer.Stop(); } catch (InvalidOperationException) { }
         UnkeyForShutdown();
         if (_client is not null && _radio is not null)
         {
@@ -1188,5 +1245,6 @@ internal sealed class Latest<T>(Func<T, Task> send) where T : struct
         {
             Busy = false;
         }
+        if (_pending is { } late) Send(late);   // arrived as the loop ended
     }
 }

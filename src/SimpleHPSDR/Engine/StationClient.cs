@@ -232,6 +232,10 @@ public sealed class StationClient : IDisposable
     public Task SetBandRegionAsync(string regionId) =>
         PostAsync("api/bands/current", new BandPlanCurrentSetRequest(regionId));
 
+    /// <summary>The engine's stock PA table for the connected radio.</summary>
+    public async Task<PaSettingsDto> GetPaDefaultsAsync() =>
+        (await _http.GetFromJsonAsync<PaSettingsDto>("api/pa-settings/defaults", Json))!;
+
     public async Task<PaCalStatus> GetPaCalibrationAsync() =>
         (await _http.GetFromJsonAsync<PaCalStatus>("api/pa-settings/calibration", Json))!;
 
@@ -342,7 +346,7 @@ public sealed class StationClient : IDisposable
     public Task AddBandStackAsync(string band, BandStackAddRequest entry) =>
         PostAsync($"api/bands/stack/{Uri.EscapeDataString(band)}", entry);
     public async Task RemoveBandStackAsync(string band, int id) =>
-        (await _http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}")).EnsureSuccessStatusCode();
+        await Checked(_http.DeleteAsync($"api/bands/stack/{Uri.EscapeDataString(band)}/{id}"));
     /// <summary>The engine's FFTW planning state, or null if it can't say.</summary>
     public async Task<DspPrep?> GetDspPrepAsync(CancellationToken ct = default)
     {
@@ -387,7 +391,7 @@ public sealed class StationClient : IDisposable
     public async Task<RadioVariant> GetRadioVariantAsync() =>
         (await _http.GetFromJsonAsync<RadioVariant>("api/radio/variant", Json))!;
     public async Task SetRadioVariantAsync(OrionMkIIVariant v) =>
-        (await _http.PutAsJsonAsync("api/radio/variant", new { variant = v.ToString() }, Json)).EnsureSuccessStatusCode();
+        await Checked(_http.PutAsJsonAsync("api/radio/variant", new { variant = v.ToString() }, Json));
 
     // ---- filters, station hardware and mode options ----
     public Task SetRxFilterWindowAsync(BandpassWindow w) => PostAsync("api/rx/filter-window", new BandpassWindowSetRequest(w));
@@ -397,21 +401,21 @@ public sealed class StationClient : IDisposable
     public async Task<RfFilterSettingsDto> GetRfFiltersAsync() =>
         (await _http.GetFromJsonAsync<RfFilterSettingsDto>("api/radio/rf-filters", Json))!;
     public async Task SetRfFiltersAsync(RfFilterSettingsSetRequest r) =>
-        (await _http.PutAsJsonAsync("api/radio/rf-filters", r, Json)).EnsureSuccessStatusCode();
+        await Checked(_http.PutAsJsonAsync("api/radio/rf-filters", r, Json));
 
     public sealed record PttInput(bool Enabled);
     public async Task<bool> GetPttInputAsync() =>
         (await _http.GetFromJsonAsync<PttInput>("api/radio/ptt-status", Json))!.Enabled;
     public async Task SetPttInputAsync(bool on) =>
-        (await _http.PutAsJsonAsync("api/radio/ptt-status", new PttEnableSetRequest(on), Json)).EnsureSuccessStatusCode();
+        await Checked(_http.PutAsJsonAsync("api/radio/ptt-status", new PttEnableSetRequest(on), Json));
     public async Task<SerialPttStatus> GetSerialPttAsync() =>
         (await _http.GetFromJsonAsync<SerialPttStatus>("api/radio/serial-ptt", Json))!;
     public async Task SetSerialPttAsync(SerialPttConfig c) =>
-        (await _http.PutAsJsonAsync("api/radio/serial-ptt", c, Json)).EnsureSuccessStatusCode();
+        await Checked(_http.PutAsJsonAsync("api/radio/serial-ptt", c, Json));
     public async Task<TransverterSettingsDto> GetTransverterAsync() =>
         (await _http.GetFromJsonAsync<TransverterSettingsDto>("api/radio/transverter", Json))!;
     public async Task SetTransverterAsync(TransverterSettingsSetRequest r) =>
-        (await _http.PutAsJsonAsync("api/radio/transverter", r, Json)).EnsureSuccessStatusCode();
+        await Checked(_http.PutAsJsonAsync("api/radio/transverter", r, Json));
     public Task SetDiversityAsync(DiversitySetRequest r) => PostAsync("api/rx/diversity", r);
 
     public async Task<AmBroadcastConfig> GetAmBroadcastAsync() =>
@@ -430,9 +434,9 @@ public sealed class StationClient : IDisposable
     public async Task<List<CfcPresetDto>> GetCfcPresetsAsync() =>
         (await _http.GetFromJsonAsync<CfcPresetList>("api/tx/cfc/presets", Json))!.Presets;
     public async Task SaveCfcPresetAsync(string name, CfcConfig c) =>
-        (await _http.PutAsJsonAsync($"api/tx/cfc/presets/{Uri.EscapeDataString(name)}", new CfcSetRequest(c), Json)).EnsureSuccessStatusCode();
+        await Checked(_http.PutAsJsonAsync($"api/tx/cfc/presets/{Uri.EscapeDataString(name)}", new CfcSetRequest(c), Json));
     public async Task DeleteCfcPresetAsync(string name) =>
-        (await _http.DeleteAsync($"api/tx/cfc/presets/{Uri.EscapeDataString(name)}")).EnsureSuccessStatusCode();
+        await Checked(_http.DeleteAsync($"api/tx/cfc/presets/{Uri.EscapeDataString(name)}"));
 
     // ---- amplifier and calibration ----
     public Task SetPreKeyDelayAsync(int ms) => PostAsync("api/tx/prekey-delay", new TxPreKeyDelaySetRequest(ms));
@@ -511,6 +515,14 @@ public sealed class StationClient : IDisposable
         await ThrowIfFailed(r, ct);
     }
 
+    // For requests whose reply isn't used: frees the connection and reports
+    // the engine's own reason on failure.
+    private static async Task Checked(Task<HttpResponseMessage> call)
+    {
+        using var r = await call;
+        await ThrowIfFailed(r);
+    }
+
     private static async Task ThrowIfFailed(HttpResponseMessage r, CancellationToken ct = default)
     {
         if (r.IsSuccessStatusCode) return;
@@ -543,6 +555,8 @@ public sealed class StationClient : IDisposable
         _ = Task.Run(() => ReceiveLoop(_ws, _wsCts.Token));
     }
 
+    private const int MaxFrameBytes = 64 * 1024 * 1024;
+
     private async Task ReceiveLoop(ClientWebSocket ws, CancellationToken ct)
     {
         var buf = new byte[256 * 1024];
@@ -555,7 +569,12 @@ public sealed class StationClient : IDisposable
                 ValueWebSocketReceiveResult r;
                 do
                 {
-                    if (len == buf.Length) Array.Resize(ref buf, buf.Length * 2);
+                    if (len == buf.Length)
+                    {
+                        if (buf.Length >= MaxFrameBytes)
+                            throw new InvalidDataException("The engine sent an oversized frame.");
+                        Array.Resize(ref buf, buf.Length * 2);
+                    }
                     r = await ws.ReceiveAsync(buf.AsMemory(len), ct);
                     len += r.Count;
                 } while (!r.EndOfMessage);
@@ -601,7 +620,7 @@ public sealed class StationClient : IDisposable
                     break;
             }
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidDataException or IndexOutOfRangeException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidDataException or IndexOutOfRangeException or System.Text.Json.JsonException or NotSupportedException)
         {
             // A frame shape we don't understand; skip it.
         }

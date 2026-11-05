@@ -43,6 +43,7 @@ public sealed partial class MainViewModel
         }
 
         var client = _client;
+        int generation = Volatile.Read(ref _txGeneration);
         using var cts = _psCalCts = new CancellationTokenSource();
         PsCalibrating = true;
         try
@@ -66,7 +67,9 @@ public sealed partial class MainViewModel
                 await Task.Delay(150, cts.Token);
 
                 Status = $"PS CAL: cycle {cycle} of {PsCalCycles}, keying 2-TONE…";
-                await client.SetTwoToneAsync(true);
+                cts.Token.ThrowIfCancellationRequested();
+                if (!await SendKeyOnAsync(() => client.SetTwoToneAsync(true), generation))
+                    throw new OperationCanceledException();
                 var outcome = await WatchCalibrationAsync(cts.Token);
                 await client.SetTwoToneAsync(false);
 

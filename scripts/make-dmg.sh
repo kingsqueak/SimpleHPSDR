@@ -35,6 +35,7 @@ done
 find "$app/Contents" -name '*.pdb' -delete
 
 cp src/SimpleHPSDR/Assets/AppIcon.icns "$app/Contents/Resources/"
+cp LICENSE "$app/Contents/Resources/"
 
 cat > "$app/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

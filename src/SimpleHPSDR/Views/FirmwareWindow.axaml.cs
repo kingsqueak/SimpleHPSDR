@@ -21,7 +21,7 @@ public partial class FirmwareWindow : Window
         {
             Title = "Choose firmware",
             AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("Radio firmware (*.rbf)") { Patterns = ["*.rbf"] }],
+            FileTypeFilter = [new FilePickerFileType("Radio firmware (*.rbf)") { Patterns = ["*.rbf", "*.RBF"] }],
         });
         if (files.Count > 0 && files[0].TryGetLocalPath() is { } path && DataContext is FirmwareViewModel vm)
             vm.LoadFile(path);

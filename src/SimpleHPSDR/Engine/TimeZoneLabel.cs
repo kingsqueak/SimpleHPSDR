@@ -27,6 +27,8 @@ public static class TimeZoneLabel
     // "Eastern Daylight Time" is EDT; "GMT Standard Time" keeps its GMT.
     private static string Initials(DateTimeOffset now)
     {
+        // Windows gives the name in its own language, where initials mean nothing.
+        if (System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName != "en") return Offset(now);
         var zone = TimeZoneInfo.Local;
         var name = zone.IsDaylightSavingTime(now) ? zone.DaylightName : zone.StandardName;
         var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);

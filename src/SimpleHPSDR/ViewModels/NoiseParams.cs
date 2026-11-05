@@ -38,7 +38,7 @@ public sealed partial class NoiseParam : ObservableObject
 
     public string Text => $"{Value.ToString(Format)}{Unit}";
     public bool On { get => Value != 0; set => Value = value ? 1 : 0; }
-    public int Option { get => (int)Value; set { if (value >= 0) Value = value; } }
+    public int Option { get => (int)Value; set { if (value >= 0 && value < (Options?.Length ?? int.MaxValue)) Value = value; } }
 
     public void Load(NrConfig nr)
     {

@@ -167,6 +167,9 @@ public sealed partial class MainViewModel
 
     [ObservableProperty] private bool _anfOn;
 
+    /// <summary>A failure in a window's own handler, for the status line.</summary>
+    public void ShowProblem(string message) => Status = message;
+
     /// <summary>The manual notches, for the ANF right-click panel.</summary>
     public ObservableCollection<NotchRow> NotchRows { get; } = [];
     public bool HasNotches => _notches.Count > 0;

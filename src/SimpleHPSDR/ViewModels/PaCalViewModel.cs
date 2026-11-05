@@ -105,6 +105,8 @@ public sealed partial class PaCalViewModel(StationClient client) : ObservableObj
             {
                 // No engine means no transmit; carry on only through a brief hiccup.
                 if (++missed < 8) continue;
+                try { await client.CancelPaCalibrationAsync(); }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException) { }
                 Running = false;
                 Finished = true;
                 ResultText = "Lost contact with the engine during calibration.";

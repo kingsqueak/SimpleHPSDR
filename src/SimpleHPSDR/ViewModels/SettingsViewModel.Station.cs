@@ -327,9 +327,12 @@ public sealed partial class SettingsViewModel
         {
             await _client.SaveCfcPresetAsync(name, BuildCfc(was));
             _populating = true;
-            await LoadCfcPresetsAsync();
-            SelectedCfcPreset = name;
-            _populating = false;
+            try
+            {
+                await LoadCfcPresetsAsync();
+                SelectedCfcPreset = name;
+            }
+            finally { _populating = false; }
             Status = $"CFC preset \"{name}\" saved.";
         }
         catch (Exception ex) { Status = $"Could not save the preset: {ex.Message}"; }
@@ -343,9 +346,12 @@ public sealed partial class SettingsViewModel
         {
             await _client.DeleteCfcPresetAsync(name);
             _populating = true;
-            await LoadCfcPresetsAsync();
-            SelectedCfcPreset = null;
-            _populating = false;
+            try
+            {
+                await LoadCfcPresetsAsync();
+                SelectedCfcPreset = null;
+            }
+            finally { _populating = false; }
             CfcPresetName = "";
         }
         catch (Exception ex) { Status = $"Could not delete the preset: {ex.Message}"; }
