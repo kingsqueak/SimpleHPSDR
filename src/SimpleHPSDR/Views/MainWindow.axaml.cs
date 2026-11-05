@@ -49,6 +49,8 @@ public partial class MainWindow : Window
         Spectrum.TuneRequested += TuneA;
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
         SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
+        Spectrum.PanEnded += () => Vm?.PanEnded();
+        SpectrumB.PanEnded += () => Vm?.PanEnded();
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += ShowSliceMenu;

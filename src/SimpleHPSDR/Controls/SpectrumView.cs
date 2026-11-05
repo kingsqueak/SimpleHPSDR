@@ -110,6 +110,8 @@ public sealed class SpectrumView : Control
     public event Action<long>? TuneRequested;
     /// <summary>The panadapter was dragged: the display centre it should move to.</summary>
     public event Action<long>? PanRequested;
+    /// <summary>The button came up after a drag.</summary>
+    public event Action? PanEnded;
     public event Action<int>? WheelTune;
 
     public SpectrumView()
@@ -372,7 +374,8 @@ public sealed class SpectrumView : Control
         base.OnPointerReleased(e);
         if (_pressAt is { } at)
         {
-            if (!_panning) TuneRequested?.Invoke(XToHz(at.X, Bounds.Width));
+            if (_panning) PanEnded?.Invoke();
+            else TuneRequested?.Invoke(XToHz(at.X, Bounds.Width));
             _pressAt = null;
             _panning = false;
             Cursor = CrossCursor;

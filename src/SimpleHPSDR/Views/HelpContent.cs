@@ -85,7 +85,7 @@ The highlighted digit is the one your step moves. Use Step beside the frequency 
 The padlock stops tuning from here, so you can't bump the dial. Software using CAT or TCI can still tune it.
 
 ## Moving the display
-Drag the panadapter to slide the band under the display.
+Drag the panadapter to slide the band under the display. With CTUN on, a drag that reaches the end of the span pauses for a moment, then the tuned frequency moves to the middle of the display so you can keep going.
 
 CTUN changes what a click does. With it on, the display stays still and only the receive frequency moves, so you can tune across a section of band without the picture sliding.
 
