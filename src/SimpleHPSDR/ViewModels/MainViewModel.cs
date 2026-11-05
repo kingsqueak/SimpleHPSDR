@@ -401,6 +401,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public async Task StartAsync()
     {
+        StartClock();
         try
         {
             await _engine.StartAsync(CancellationToken.None);
