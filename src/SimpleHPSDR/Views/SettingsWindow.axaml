@@ -51,6 +51,8 @@
           <Border Grid.Row="1" Classes="panel">
             <StackPanel Orientation="Horizontal" Spacing="16">
               <CheckBox Content="PA enabled" IsChecked="{Binding PaEnabled}" />
+              <Button Classes="flat" Content="Calibrate…" Click="OnCalibratePa"
+                      ToolTip.Tip="Set every band's PA gain automatically. Asks you to confirm first, and transmits into a dummy load." />
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="Rated power" Classes="label" FontSize="12" />
                 <NumericUpDown Value="{Binding PaMaxPowerWatts}" Minimum="0" Maximum="2000" Increment="1"
@@ -673,6 +675,13 @@
       <TabItem Header="Station">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Expander Header="Band plan" IsExpanded="True" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="8">
+                <ComboBox ItemsSource="{Binding BandPlanNames}" SelectedIndex="{Binding BandPlanIndex}" Width="320" />
+                <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                           Text="SimpleHPSDR doesn't block transmit by band plan. PA calibration uses it to pick its test frequencies, and needs a plan with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland. The IARU regions have no 60 m." />
+              </StackPanel>
+            </Expander>
             <Expander Header="ID timer" IsExpanded="True" HorizontalAlignment="Stretch">
               <StackPanel Spacing="8">
                 <CheckBox Content="Remind me to ID on the even ten minutes" IsChecked="{Binding IdTimerOn}"

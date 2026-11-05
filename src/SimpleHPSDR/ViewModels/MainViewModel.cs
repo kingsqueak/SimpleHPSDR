@@ -358,6 +358,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Set by the window: shows the radio picker and returns the choice.</summary>
     public Func<RadioPickerViewModel, Task<RadioChoice?>>? ShowRadioPicker { get; set; }
     public Func<DspPrepViewModel, Task>? ShowDspPrep { get; set; }
+    /// <summary>Plan names and the one preselected; the index chosen.</summary>
+    public Func<IReadOnlyList<string>, int, Task<int>>? ShowFirstStart { get; set; }
     /// <summary>Radio, reason, log path; true to restart the engine.</summary>
     public Func<string, string, string, Task<bool>>? ShowEngineStopped { get; set; }
     public event Action<DisplayFrame>? Display;
@@ -419,6 +421,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _statePoll.Tick += async (_, _) => await PollStateAsync();
         CreateClient();
         await PrepareDspAsync();
+        await ChooseBandPlanAsync();
 
         if (_settings is { AutoConnect: true, LastRadioIp: not null })
         {
@@ -431,6 +434,25 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return;
         }
         await ChooseRadioAsync();
+    }
+
+    /// <summary>First start: the user picks a band plan, which the engine then keeps.</summary>
+    private async Task ChooseBandPlanAsync()
+    {
+        if (_settings.BandPlanDefaulted || ShowFirstStart is null) return;
+        try
+        {
+            var regions = await _client!.GetBandRegionsAsync();
+            int preselected = Math.Max(0, regions.FindIndex(r => r.Id == DefaultBandPlan));
+            int chosen = await ShowFirstStart([.. regions.Select(r => r.DisplayName)], preselected);
+            await _client.SetBandRegionAsync(regions[Math.Clamp(chosen, 0, regions.Count - 1)].Id);
+            _settings.BandPlanDefaulted = true;
+            _settings.Save();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException)
+        {
+            Status = $"Band plan not set: {ex.Message}";
+        }
     }
 
     /// <summary>Show the engine's first-start preparation, if it's still going.</summary>
@@ -872,6 +894,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ("F4", "3k", -3000, -80), ("F5", "2.8k", -2800, -100),
     ];
     private const string DefaultFilterSlot = "F2";
+    private const string DefaultBandPlan = "IARU_R2";
 
     // AM and SAM; the widths are the whole passband. Raise the version when
     // these change so existing installs get them.

@@ -30,6 +30,14 @@ public sealed record NativeAudioStatus(bool OutputOpen, bool Muted, NativeAudioD
 public sealed record NativeAudioDiagnostics(long UnderrunSamplesTotal, int OutputSampleRateHz, int RingDepthSamples);
 
 /// <summary>A connect attempt the engine refused, with its reason.</summary>
+public sealed record PaCalBandFailure(string Band, string Reason);
+
+/// <summary>The engine's PA calibration: State is idle, running, cancelling,
+/// completed, partial, cancelled or failed.</summary>
+public sealed record PaCalStatus(string State, string? Band, double? TargetWatts, float? MeasuredWatts,
+    int CompletedSteps, int TotalSteps, string? Message, List<string>? PassedBands = null,
+    List<PaCalBandFailure>? FailedBands = null, bool PendingSave = false);
+
 /// <summary>The engine's FFTW planning: phase Idle, Building, Ready or Failed.</summary>
 public sealed record DspPrep(string Phase, string Status)
 {
@@ -212,6 +220,33 @@ public sealed class StationClient : IDisposable
         await ThrowIfFailed(r);
         return (await r.Content.ReadFromJsonAsync<T>(Json))!;
     }
+
+    /// <summary>The band plans the engine offers.</summary>
+    public async Task<List<BandRegion>> GetBandRegionsAsync() =>
+        (await _http.GetFromJsonAsync<List<BandRegion>>("api/bands/regions", Json))!;
+
+    private sealed record CurrentBandPlan(string RegionId);
+    public async Task<string> GetBandRegionAsync() =>
+        (await _http.GetFromJsonAsync<CurrentBandPlan>("api/bands/current", Json))!.RegionId;
+
+    public Task SetBandRegionAsync(string regionId) =>
+        PostAsync("api/bands/current", new BandPlanCurrentSetRequest(regionId));
+
+    public async Task<PaCalStatus> GetPaCalibrationAsync() =>
+        (await _http.GetFromJsonAsync<PaCalStatus>("api/pa-settings/calibration", Json))!;
+
+    /// <summary>Starts transmitting on every HF band. The engine refuses with a reason if it isn't safe to.</summary>
+    public Task StartPaCalibrationAsync(bool amplifierOffConfirmed) =>
+        PostAsync("api/pa-settings/calibration", new { amplifierOffConfirmed });
+
+    public async Task CancelPaCalibrationAsync()
+    {
+        using var r = await _http.DeleteAsync("api/pa-settings/calibration");
+        await ThrowIfFailed(r);
+    }
+
+    public Task SavePaCalibrationAsync() => PostAsync("api/pa-settings/calibration/save", new { });
+    public Task DiscardPaCalibrationAsync() => PostAsync("api/pa-settings/calibration/discard", new { });
 
     public async Task<PaSettingsDto> GetPaSettingsAsync() =>
         (await _http.GetFromJsonAsync<PaSettingsDto>("api/pa-settings", Json))!;

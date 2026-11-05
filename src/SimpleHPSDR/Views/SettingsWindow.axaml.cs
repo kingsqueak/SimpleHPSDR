@@ -18,6 +18,14 @@ public partial class SettingsWindow : Window
         Closed += (_, _) => supply.Stop();
     }
 
+    private async void OnCalibratePa(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel vm) return;
+        var calibration = await vm.BeginPaCalibrationAsync();
+        await new PaCalWindow { DataContext = calibration }.ShowDialog(this);
+        await vm.AfterPaCalibrationAsync();
+    }
+
     private async void OnChooseIdSound(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions

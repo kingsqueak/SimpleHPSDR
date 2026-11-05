@@ -180,6 +180,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 await LoadAmpCalibrationAsync(state);
                 await LoadFiltersStationAsync(state);
                 await LoadCfcPresetsAsync();
+                await LoadBandPlansAsync();
             }
             finally { _populating = false; }
             Status = "Changes apply as you make them.";
@@ -212,6 +213,26 @@ public sealed partial class SettingsViewModel : ObservableObject
         {
             _populating = false;
         }
+    }
+
+    /// <summary>For the PA calibration window. Sends any PA edits first, as
+    /// the engine locks those settings during a run.</summary>
+    public async Task<PaCalViewModel> BeginPaCalibrationAsync()
+    {
+        if (_pending.Remove(Group.Pa, out var cts)) cts.Cancel();
+        await ApplyAsync(Group.Pa);
+        return new PaCalViewModel(_client);
+    }
+
+    /// <summary>Show what calibration left. Undo mustn't reverse it, so it's
+    /// also the new starting point.</summary>
+    public async Task AfterPaCalibrationAsync()
+    {
+        var pa = await _client.GetPaSettingsAsync();
+        _origPa = pa;
+        _populating = true;
+        try { PopulatePa(pa); }
+        finally { _populating = false; }
     }
 
     private void PopulatePa(PaSettingsDto pa)

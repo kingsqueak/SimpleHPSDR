@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        x:Class="SimpleHPSDR.Views.PaCalWindow"
+        x:DataType="vm:PaCalViewModel"
+        Title="PA calibration" Width="560" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="18" Spacing="12">
+    <TextBlock Text="Automatic PA calibration" FontSize="18" FontWeight="SemiBold" />
+
+    <StackPanel Spacing="10" IsVisible="{Binding Idle}">
+      <TextBlock TextWrapping="Wrap"
+                 Text="This transmits. On every HF band in turn, the radio keys a carrier at 10, 25 and 50 W and sets that band's PA gain from its own power meter." />
+      <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                 Text="The bands end up even with each other, but the watts are only as accurate as the radio's meter. PureSignal is turned off for the run, so run PS CAL again afterwards." />
+      <Border Classes="panel">
+        <StackPanel Spacing="8">
+          <CheckBox IsChecked="{Binding DummyLoadConfirmed}">
+            <TextBlock TextWrapping="Wrap" Text="A dummy load rated for 50 W carriers is on the transmit antenna port of every band" />
+          </CheckBox>
+          <CheckBox Content="Any external amplifier is turned off" IsChecked="{Binding AmplifierOffConfirmed}" />
+        </StackPanel>
+      </Border>
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+        <Button Classes="flat" Content="Close" Click="OnClose" IsCancel="True" />
+        <Button Classes="flat accent" Content="Start calibration" Command="{Binding StartCommand}" />
+      </StackPanel>
+    </StackPanel>
+
+    <StackPanel Spacing="10" IsVisible="{Binding Running}">
+      <TextBlock Foreground="{DynamicResource WarnText}" FontWeight="SemiBold" Text="Transmitting. Leave the radio and antenna switching alone." />
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding BandText}" FontSize="18" FontWeight="SemiBold" />
+        <TextBlock Grid.Column="1" Text="{Binding PowerText}" VerticalAlignment="Center" />
+      </Grid>
+      <ProgressBar Minimum="0" Maximum="100" Value="{Binding Percent}" Height="6" />
+      <TextBlock Text="{Binding MessageText}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+      <Button Classes="flat accent" Content="Stop" Command="{Binding StopCommand}" IsCancel="True" IsDefault="True"
+              HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12,12" FontSize="16"
+              IsEnabled="{Binding !Stopping}" ToolTip.Tip="Stops transmitting and puts the PA settings back" />
+    </StackPanel>
+
+    <StackPanel Spacing="10" IsVisible="{Binding Finished}">
+      <TextBlock Text="{Binding ResultText}" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding FailuresText}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WarnText}" />
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" IsVisible="{Binding PendingSave}">
+        <Button Classes="flat" Content="Discard" Command="{Binding DiscardCommand}" />
+        <Button Classes="flat accent" Content="Save the bands that passed" Command="{Binding SaveCommand}" />
+      </StackPanel>
+      <Button Classes="flat accent" Content="Close" Click="OnClose" HorizontalAlignment="Right" IsVisible="{Binding CanClose}" />
+    </StackPanel>
+
+    <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" Foreground="{DynamicResource WarnText}" />
+  </StackPanel>
+</Window>

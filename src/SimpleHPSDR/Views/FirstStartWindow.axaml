@@ -1,0 +1,15 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        x:Class="SimpleHPSDR.Views.FirstStartWindow"
+        Title="Welcome to SimpleHPSDR" Width="480" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="18" Spacing="10">
+    <TextBlock Text="Welcome to SimpleHPSDR" FontSize="18" FontWeight="SemiBold" />
+    <TextBlock Text="Choose the band plan for your region or licence class." TextWrapping="Wrap" />
+    <ListBox Name="Plans" Height="290" />
+    <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+               Text="SimpleHPSDR doesn't block transmit by band plan. PA calibration uses it to pick its test frequencies, and needs a plan with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland. You can change this at any time in Config > Station." />
+    <Button Name="ContinueButton" Classes="flat accent" Content="Continue" HorizontalAlignment="Right" IsDefault="True" />
+  </StackPanel>
+</Window>

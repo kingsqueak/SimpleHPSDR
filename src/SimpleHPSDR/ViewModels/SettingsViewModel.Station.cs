@@ -38,6 +38,37 @@ public sealed partial class SettingsViewModel
     public ObservableCollection<string> SerialPorts { get; } = [];
     public ObservableCollection<TransverterRow> Transverters { get; } = [];
 
+    // ---- band plan: kept by the engine, applied as it changes -----------
+
+    private List<BandRegion> _bandRegions = [];
+    public ObservableCollection<string> BandPlanNames { get; } = [];
+    [ObservableProperty] private int _bandPlanIndex = -1;
+
+    private async Task LoadBandPlansAsync()
+    {
+        _bandRegions = await _client.GetBandRegionsAsync();
+        BandPlanNames.Clear();
+        foreach (var r in _bandRegions) BandPlanNames.Add(r.DisplayName);
+        var current = await _client.GetBandRegionAsync();
+        BandPlanIndex = _bandRegions.FindIndex(r => r.Id == current);
+    }
+
+    partial void OnBandPlanIndexChanged(int value)
+    {
+        if (_populating || value < 0 || value >= _bandRegions.Count) return;
+        _ = SetBandPlanAsync(_bandRegions[value]);
+    }
+
+    private async Task SetBandPlanAsync(BandRegion region)
+    {
+        try
+        {
+            await _client.SetBandRegionAsync(region.Id);
+            Status = $"Band plan: {region.DisplayName}.";
+        }
+        catch (Exception ex) { Status = $"Band plan not changed: {ex.Message}"; }
+    }
+
     // ---- ID timer: an app setting, saved as it changes ------------------
 
     public bool IdTimerOn

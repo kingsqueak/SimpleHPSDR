@@ -14,8 +14,11 @@ SimpleHPSDR runs an OpenHPSDR radio from your computer. The radio connects over 
 ## First start
 The very first start takes around 8 minutes or more while the signal processing is tuned to your computer. A window shows progress. Leave the app open until it finishes. This only happens again after some updates.
 
+## Band plan
+Choose the plan for your region or licence class. You can change it later in Config > Station.
+
 ## Choosing your radio
-The radio picker opens by itself. Pick your radio and press Connect. Several radios report the same ID, so choose yours under Radio model if asked: it sets the S-meter calibration and the power amplifier and PureSignal defaults. Tick "Connect to this radio automatically next time" to skip this.
+The radio picker opens next. Pick your radio and press Connect. Several radios report the same ID, so choose yours under Radio model if asked: it sets the S-meter calibration and the power amplifier and PureSignal defaults. Tick "Connect to this radio automatically next time" to skip this.
 
 If no radio appears, check that it's on and on the same network, or type its address under "Or by address". Network help lists what a firewall has to allow.
 
@@ -292,8 +295,20 @@ Ant in the top row picks this band's transmit and receive antennas. Config > Ant
 
 ## Radio, PA and calibration
 - Radio: your radio model and the light or dark theme.
-- PA: power calibration for each band.
+- PA: power calibration for each band. Calibrate does it automatically.
 - Calibration: S-meter trim, frequency correction using WWV, and overload protection.
+
+## Calibrating the power output
+Config > PA > Calibrate sets each band so that the power you ask for is what you get.
+1. Connect a dummy load rated for 50 W carriers to the transmit antenna port of every band.
+2. Turn off any external amplifier.
+3. Press Calibrate, tick both confirmations and press Start calibration.
+
+The radio keys a carrier at 10, 25 and 50 W on each HF band in turn. Stop ends it at any time and puts the settings back. If only some bands pass, you choose whether to keep those; the others are left as they were.
+
+It needs a band plan with every HF band including 60 m, set in Config > Station. If it says the band plan has no legal frequency, choose your licence class or country there.
+
+It uses the radio's own power meter, so the bands end up even with each other, and a good external meter can still fine-tune the absolute watts on the PA page. Run PS CAL again afterwards, since PureSignal is turned off for the run.
 
 ## Audio
 Config > Audio chooses your speakers and microphone: a computer mic, or the radio's mic jack with its boost and bias. On Windows, ASIO can be used with an audio interface.
@@ -302,6 +317,7 @@ Config > Audio chooses your speakers and microphone: a computer mic, or the radi
 Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Band Outputs switches its bands through the radio's open-collector pins.
 
 ## Also in Config > Station
+- Band plan: the band edges for your region or licence class. It's used for PA calibration; SimpleHPSDR doesn't block transmit by it.
 - PTT: the radio's PTT input, or a foot switch on a serial port. Both can be turned off.
 - Diversity: combines two receive antennas.
 - Transverters: for VHF and up.

@@ -37,6 +37,8 @@ public sealed class Settings
     public double PanFraction { get; set; } = 0.38;
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
+    /// <summary>The band plan has been chosen at first start; the engine keeps it after that.</summary>
+    public bool BandPlanDefaulted { get; set; }
     /// <summary>The parametric TX EQ; the engine holds only its ten-point result.</summary>
     public ParametricEqSettings ParametricEq { get; set; } = ParametricEqSettings.Default;
     /// <summary>ID timer: a reminder on the even ten minutes while connected.</summary>
