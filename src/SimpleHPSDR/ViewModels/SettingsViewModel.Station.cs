@@ -38,6 +38,56 @@ public sealed partial class SettingsViewModel
     public ObservableCollection<string> SerialPorts { get; } = [];
     public ObservableCollection<TransverterRow> Transverters { get; } = [];
 
+    // ---- ID timer: an app setting, saved as it changes ------------------
+
+    public bool IdTimerOn
+    {
+        get => AppSettings?.IdTimerOn ?? false;
+        set
+        {
+            if (AppSettings is null) return;
+            AppSettings.IdTimerOn = value;
+            AppSettings.Save();
+        }
+    }
+
+    public int IdTimerVolume
+    {
+        get => AppSettings?.IdTimerVolume ?? 30;
+        set
+        {
+            if (AppSettings is null || value == AppSettings.IdTimerVolume) return;
+            AppSettings.IdTimerVolume = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IdVolumeText));
+        }
+    }
+
+    public string IdVolumeText => $"{IdTimerVolume}%";
+
+    public string IdSoundName => AppSettings?.IdTimerWav is { } wav ? Path.GetFileName(wav) : "Built-in beeps";
+    public bool HasIdSoundFile => AppSettings?.IdTimerWav is not null;
+
+    public void SetIdSound(string? path)
+    {
+        if (AppSettings is null) return;
+        AppSettings.IdTimerWav = path;
+        AppSettings.Save();
+        IdSoundStatus = "";
+        OnPropertyChanged(nameof(IdSoundName));
+        OnPropertyChanged(nameof(HasIdSoundFile));
+    }
+
+    [RelayCommand]
+    private void UseIdBeeps() => SetIdSound(null);
+
+    [ObservableProperty] private string _idSoundStatus = "";
+
+    [RelayCommand]
+    private async Task TestIdSoundAsync() =>
+        IdSoundStatus = await Engine.IdReminder.PlayAsync(AppSettings?.IdTimerWav, IdTimerVolume) ?? "";
+
     public string[] ThemeNames { get; } = ["System", "Dark", "Light"];
     public int ThemeIndex
     {

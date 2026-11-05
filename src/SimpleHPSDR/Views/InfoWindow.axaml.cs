@@ -50,6 +50,7 @@ public partial class InfoWindow : Window
         ("Monitor", "Mon steps through Mon (your mic through the TX chain, without transmitting), TX Mon (while transmitting), Mon+TX and off. It starts at a low level so it won't feed back through speakers."),
         ("PureSignal", "1. Set the source in Config > PureSignal.\n2. Set the drive level you'll be using.\n3. Turn on PS.\n4. Switch to a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts. Run it again until PS turns green.\n\nThat's it until you change the drive level.\n\nThe PS button is green when on and locked, yellow when on but not locked, and grey when off."),
         ("Network", "The radio uses UDP, on radio ports 1024 to 1044. If no radio appears, the radio picker's Network help button shows what a firewall must allow on this computer."),
+        ("ID timer", "Click ID 00:00 above the clock to turn on a reminder on the even ten minutes, while connected to a radio. Config > Station chooses beeps or a .wav of your own. If you're transmitting at the mark, it plays when you unkey. It plays on this computer's speakers, never over the air."),
         ("Radio model", "Several radios report the same ID, so choose yours in the radio picker or Config > Radio. It sets the S-meter, PA and PureSignal defaults."),
         ("Firmware", "Click the radio's name, then Firmware. A failed flash can leave the radio needing recovery, so use only the file made for your exact radio."),
     ]);

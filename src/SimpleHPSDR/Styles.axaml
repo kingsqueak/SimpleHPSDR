@@ -90,6 +90,36 @@
     <Setter Property="Background" Value="#1E7F4F" />
   </Style>
 
+  <!-- ID timer countdown above the clock: small text you can click. -->
+  <Style Selector="Button.idclock">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.idclock /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+  <Style Selector="Button.idclock:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+  </Style>
+  <Style Selector="Button.idclock:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.idclock.on /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource TextMain}" />
+  </Style>
+
+  <Style Selector="Button.idclock.mark /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Foreground" Value="#2FBF71" />
+  </Style>
+
   <!-- A plain button in the segmented look, for buttons whose lit state
        comes from the model rather than from being clicked (e.g. Pre). -->
   <Style Selector="Button.seg">

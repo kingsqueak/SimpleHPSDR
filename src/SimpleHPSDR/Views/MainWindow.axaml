@@ -708,12 +708,18 @@
     </Border>
 
     <!-- Clock in the bottom corner, over the empty end of the panel -->
-    <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8"
-          HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,10" IsHitTestVisible="False">
-      <TextBlock Text="{Binding LocalZoneText}" Classes="label" FontSize="11" VerticalAlignment="Center" />
-      <TextBlock Grid.Column="1" Text="{Binding LocalTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
-      <TextBlock Grid.Row="1" Text="UTC" Classes="label" FontSize="11" VerticalAlignment="Center" />
-      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ZuluTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
+    <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8"
+          HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,10">
+      <Button Classes="idclock" Classes.on="{Binding IdTimerRunning}" Classes.mark="{Binding IdTimerAtMark}" Content="ID"
+              FontFamily="Inter" FontSize="11" Command="{Binding ToggleIdTimerCommand}"
+              ToolTip.Tip="ID timer: click to turn it on or off. It reminds you on the even ten minutes while connected to a radio." />
+      <Button Grid.Column="1" Classes="idclock" Classes.on="{Binding IdTimerRunning}" Classes.mark="{Binding IdTimerAtMark}"
+              Content="{Binding IdCountdownText}" Command="{Binding ToggleIdTimerCommand}"
+              ToolTip.Tip="ID timer: click to turn it on or off. It reminds you on the even ten minutes while connected to a radio." />
+      <TextBlock Grid.Row="1" Text="{Binding LocalZoneText}" Classes="label" FontSize="11" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LocalTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
+      <TextBlock Grid.Row="2" Text="UTC" Classes="label" FontSize="11" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ZuluTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
     </Grid>
   </Grid>
   </DockPanel>

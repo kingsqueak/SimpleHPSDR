@@ -36,6 +36,12 @@ public sealed class Settings
     public double PanFraction { get; set; } = 0.38;
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
+    /// <summary>ID timer: a reminder on the even ten minutes while connected.</summary>
+    public bool IdTimerOn { get; set; }
+    /// <summary>A .wav to play for it, or null for the built-in beeps.</summary>
+    public string? IdTimerWav { get; set; }
+    /// <summary>ID timer sound level, 0 to 100.</summary>
+    public int IdTimerVolume { get; set; } = 30;
     /// <summary>System, Dark or Light.</summary>
     public string Theme { get; set; } = "System";
     /// <summary>The default SSB filter buttons have been written to the engine.</summary>
