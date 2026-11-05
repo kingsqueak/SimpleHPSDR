@@ -46,6 +46,13 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // Development aid: the guide alone, with no engine or radio.
+            if (Environment.GetEnvironmentVariable("SIMPLEHPSDR_GUIDE_ONLY") != null)
+            {
+                desktop.MainWindow = new StationGuideWindow { DataContext = new StationGuideViewModel(Settings.Load(), _ => { }) };
+                base.OnFrameworkInitializationCompleted();
+                return;
+            }
             MacActivity.Begin("Live radio audio and display");
             SliderWheel.Enable();
             PopupTimeout.Enable();

@@ -287,7 +287,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public string FrequencyDigit => StepDigitIndex < 0 ? "" : FrequencyText[StepDigitIndex].ToString();
     public string FrequencyTail => StepDigitIndex < 0 ? "" : FrequencyText[(StepDigitIndex + 1)..];
 
-    partial void OnVfoHzChanged(long value) => NotifyFrequencyDigits();
+    partial void OnVfoHzChanged(long value)
+    {
+        NotifyFrequencyDigits();
+        RefreshSwlStation();
+    }
 
     private void NotifyFrequencyDigits()
     {
@@ -378,6 +382,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Bands.Add(new Choice(b.Name, b, c => _ = SelectBandAsync((Band)c.Value)));
         foreach (var m in ModeOrder)
             Modes.Add(new Choice(m.ToString(), m, c => _ = SelectModeAsync((RxMode)c.Value)));
+        Modes.Add(new Choice(SwlChoice, SwlChoice, c => _ = SelectSwlAsync()));
         foreach (var s in Steps)
             TuneSteps.Add(new Choice(s >= 1000 ? $"{s / 1000}k" : $"{s}", s, c => SelectStep((int)c.Value)));
         foreach (var (label, mode) in new[] { ("Off", NbMode.Off), ("NB1", NbMode.Nb1), ("NB2", NbMode.Nb2) })

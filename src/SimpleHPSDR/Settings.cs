@@ -61,6 +61,10 @@ public sealed class Settings
     public bool WaterfallPop { get; set; }
     /// <summary>The TX filter's cuts follow the transmitting slice's RX filter.</summary>
     public bool TxFilterFollowsRx { get; set; } = true;
+    /// <summary>SWL guide: column to sort by, direction, and language shown ("" for all).</summary>
+    public string GuideSort { get; set; } = "Status";
+    public bool GuideSortAscending { get; set; } = true;
+    public string GuideLanguage { get; set; } = "";
     /// <summary>Last frequency used on each band, keyed by band name.</summary>
     public Dictionary<string, long> BandMemory { get; set; } = [];
     /// <summary>Settings per band and mode, keyed "40m|DIGU".</summary>

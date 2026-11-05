@@ -12,6 +12,8 @@ namespace SimpleHPSDR.Views;
 
 public partial class MainWindow : Window
 {
+    private StationGuideWindow? _guide;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -259,6 +261,16 @@ public partial class MainWindow : Window
         vm.ShowRadioPicker = picker => new RadioPickerWindow { DataContext = picker }.PickAsync(this);
         vm.ShowEngineStopped = (radio, reason, log) => new EngineStoppedWindow().AskAsync(this, radio, reason, log);
         vm.ShowFirstStart = (plans, preselected) => new FirstStartWindow().ChooseAsync(this, plans, preselected);
+        vm.ShowGuide = () =>
+        {
+            if (_guide is { IsVisible: true })
+            {
+                _guide.Activate();
+                return;
+            }
+            _guide = new StationGuideWindow { DataContext = vm.Guide };
+            _guide.Show(this);
+        };
         vm.ShowDspPrep = prep => new DspPrepWindow { DataContext = prep }.ShowDialog(this);
         vm.ShowSettings = settings => new SettingsWindow { DataContext = settings }.ShowDialog(this);
         vm.Display += f =>

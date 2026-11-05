@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        x:Class="SimpleHPSDR.Views.StationGuideWindow"
+        x:DataType="vm:StationGuideViewModel"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        Title="Station guide" Width="800" Height="600" MinWidth="600" MinHeight="320">
+  <DockPanel Margin="12">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
+      <StackPanel Orientation="Horizontal">
+        <Button Classes="seg" Classes.lit="{Binding FilterNow}" Content="On now" Command="{Binding SetFilterCommand}" CommandParameter="Now" />
+        <Button Classes="seg" Classes.lit="{Binding FilterToday}" Content="Today" Command="{Binding SetFilterCommand}" CommandParameter="Today" />
+        <Button Classes="seg" Classes.lit="{Binding FilterAll}" Content="All" Command="{Binding SetFilterCommand}" CommandParameter="All" />
+      </StackPanel>
+      <TextBox Grid.Column="1" Text="{Binding Search}" PlaceholderText="Search station, country, target or frequency" Margin="8,0" />
+      <ComboBox Grid.Column="2" ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}" Width="150" Margin="0,0,8,0"
+                VerticalAlignment="Center" ToolTip.Tip="Show one language" />
+      <Button Grid.Column="3" Classes="flat" Content="Update" Command="{Binding UpdateCommand}" IsEnabled="{Binding !IsUpdating}" />
+    </Grid>
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+      <TextBlock Text="{Binding SourceStatus}" Classes="label" TextTrimming="CharacterEllipsis" />
+      <TextBlock Grid.Column="1" Text="{Binding Summary}" Classes="label" Margin="8,0,0,0" />
+    </Grid>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="72,74,112,*,110" Margin="10,0,24,4">
+      <Button Classes="head" Content="{Binding KhzHeader}" Command="{Binding SortCommand}" CommandParameter="kHz" />
+      <Button Grid.Column="1" Classes="head" Content="{Binding StatusHeader}" Command="{Binding SortCommand}" CommandParameter="Status" />
+      <Button Grid.Column="2" Classes="head" Content="{Binding TimeHeader}" Command="{Binding SortCommand}" CommandParameter="Time" ToolTip.Tip="{Binding TimeZoneName}" />
+      <Button Grid.Column="3" Classes="head" Content="{Binding StationHeader}" Command="{Binding SortCommand}" CommandParameter="Station" />
+      <Button Grid.Column="4" Classes="head" Content="{Binding LanguageHeader}" Command="{Binding SortCommand}" CommandParameter="Language" />
+    </Grid>
+    <ListBox Classes="guide" ItemsSource="{Binding Items}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:GuideRow">
+          <Button Classes="row" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Command="{Binding TuneCommand}"
+                  ToolTip.Tip="{Binding Detail}">
+            <Grid ColumnDefinitions="72,74,112,*,110">
+              <TextBlock Text="{Binding KhzText}" FontFamily="{StaticResource MonoFont}" />
+              <TextBlock Grid.Column="1" Text="{Binding StateText}" Classes="label" Classes.on="{Binding IsOn}" />
+              <TextBlock Grid.Column="2" Text="{Binding LocalText}" FontFamily="{StaticResource MonoFont}" FontSize="12" VerticalAlignment="Center" />
+              <StackPanel Grid.Column="3">
+                <TextBlock Text="{Binding Station}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Target}" Classes="label" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <TextBlock Grid.Column="4" Text="{Binding Language}" Classes="label" TextTrimming="CharacterEllipsis" />
+            </Grid>
+          </Button>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</Window>

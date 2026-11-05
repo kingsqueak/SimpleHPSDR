@@ -33,6 +33,8 @@ Not affiliated with or endorsed by the Zeus SDR project.
   rotator, monitor and TX profiles that include PureSignal settings.
 - **Station:** CAT, TCI, antennas, band outputs, PA calibration, transverters and
   amplifier timing.
+- **SWL:** starts in SAM with a station guide from EiBi, in your local time. Click a
+  station to tune it.
 - **Firmware loader** for Protocol 2 radios.
 - **Light and dark themes**, following the system.
 

@@ -419,9 +419,25 @@
          while B is on (the window code sizes the second row). -->
     <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0">
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
-        <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
-                        PopMode="{Binding WaterfallPop}"
-                        PanFraction="{Binding PanFraction}" />
+        <Panel>
+          <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
+                          PopMode="{Binding WaterfallPop}"
+                          PanFraction="{Binding PanFraction}" />
+          <!-- SWL: what's scheduled on the tuned frequency. Clicks pass through to the waterfall.
+               Dark in both themes, like the panadapter under it. -->
+          <Border IsVisible="{Binding SwlStationShown}" IsHitTestVisible="False" HorizontalAlignment="Center"
+                  VerticalAlignment="Bottom" Margin="12,0,12,14" Padding="16,8" CornerRadius="8"
+                  Background="#E6171A21" MaxWidth="640">
+            <StackPanel Spacing="1">
+              <TextBlock Text="{Binding SwlStationName}" Foreground="#E6E8EB" FontSize="17" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding SwlStationDetail}" Foreground="#AEB6C2" FontSize="12"
+                         HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SwlStationMore}" IsVisible="{Binding SwlHasMore}" Foreground="#8A93A3" FontSize="11"
+                         HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </Border>
+        </Panel>
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
               BorderBrush="Transparent" IsVisible="{Binding ShowPanadapterB}">

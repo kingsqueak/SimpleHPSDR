@@ -32,6 +32,14 @@ If no radio appears, check that it's on and on the same network, or type its add
 Most controls have more behind a right-click. Hover over anything for a short explanation. Blue means a control is on.
 """),
 
+        ("Shortwave listening", """
+Choose SWL from the Mode menu. The radio goes to SAM with a broadcast filter and the station guide opens. From there it's yours: change the mode or filter as you like and the guide stays open.
+
+The guide lists non-digital stations from EiBi's schedule in your local time, from long wave up. Click a heading to sort, pick a language, or search. Click a station to tune it; your mode doesn't change. While the guide is open, a box at the bottom of the waterfall names what's scheduled on your frequency. Close the guide when you're done.
+
+Schedules can be out of date, and voice utility stations in the list usually need USB rather than SAM.
+"""),
+
         ("Coming from a traditional radio", """
 Nearly everything on a front panel is here under a different name. This is where to find the controls you know.
 

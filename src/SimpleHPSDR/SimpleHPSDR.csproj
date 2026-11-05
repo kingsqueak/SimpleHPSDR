@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="DefaultTxProfile.json" LogicalName="DefaultTxProfile.json" />
+    <EmbeddedResource Include="Assets/eibi-tables.json" LogicalName="eibi-tables.json" />
     <AvaloniaResource Include="Assets/icon.png" />
   </ItemGroup>
 
