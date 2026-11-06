@@ -264,6 +264,7 @@ Before you transmit, make sure an antenna or dummy load is connected to the ante
 ## Keying
 - MOX transmits until you click it again.
 - TUNE sends a steady carrier at the tune level, for antenna tuners.
+- VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. Use headphones: there's no anti-VOX, so speakers can key the radio. It works in voice modes, turns off when you disconnect, and is off each time the app starts.
 - Your microphone's PTT or a foot switch works too, once it's set in Config > Station.
 
 ## The TX button

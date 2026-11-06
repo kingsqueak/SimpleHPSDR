@@ -40,6 +40,7 @@ public partial class MiniWindow : Window
         // Momentary: anything that ends the press ends transmit.
         TxButton.PointerPressed += (_, e) =>
         {
+            if (!e.GetCurrentPoint(TxButton).Properties.IsLeftButtonPressed) return;
             e.Pointer.Capture(TxButton);
             Vm?.MomentaryTxDown();
             e.Handled = true;
@@ -50,6 +51,7 @@ public partial class MiniWindow : Window
             e.Pointer.Capture(null);
         };
         TxButton.PointerCaptureLost += (_, _) => Vm?.MomentaryTxUp();
+        TxButton.PointerExited += (_, _) => Vm?.MomentaryTxUp();
         Deactivated += (_, _) => Vm?.MomentaryTxUp();
         Closed += (_, _) => Vm?.MomentaryTxUp();
     }

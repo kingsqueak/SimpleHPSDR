@@ -52,6 +52,9 @@ public sealed class Settings
     /// <summary>Mini window position; null until it has been used.</summary>
     public int? MiniX { get; set; }
     public int? MiniY { get; set; }
+    /// <summary>VOX: mic level that keys, and how long it holds after you stop.</summary>
+    public double VoxThresholdDb { get; set; } = -30;
+    public double VoxDelayMs { get; set; } = 500;
     /// <summary>Correction to the PWR display from an external meter, in dB.</summary>
     public double PowerMeterTrimDb { get; set; }
     /// <summary>ID timer: a reminder on the even ten minutes while connected.</summary>

@@ -37,7 +37,7 @@ public sealed class TciKeyer(int port) : IDisposable
             while (ws.State == WebSocketState.Open && !_cts.IsCancellationRequested)
                 await ws.ReceiveAsync(buf.AsMemory(), _cts.Token);
         }
-        catch (Exception e) when (e is WebSocketException or OperationCanceledException or ObjectDisposedException) { }
+        catch (Exception) { }   // the next send reconnects or reports it
     }
 
     private async Task SendAsync(string command)

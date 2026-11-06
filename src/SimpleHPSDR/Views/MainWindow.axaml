@@ -598,6 +598,28 @@
                         ToolTip.Tip="Transmit" />
           <ToggleButton Classes="seg tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="64"
                         ToolTip.Tip="Tune carrier at the tune drive level" />
+          <ToggleButton Classes="seg" Content="VOX" IsChecked="{Binding VoxOn}"
+                        ToolTip.Tip="Transmit when you speak. Use headphones, or the speakers will key it. Right-click for its settings.">
+            <ToggleButton.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <Grid Width="380" Margin="4" ColumnDefinitions="80,*,70" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+                  <TextBlock Text="Threshold" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding VoxThresholdDb}" VerticalAlignment="Center"
+                          ToolTip.Tip="Mic level that keys. Set it above your room noise and below your voice." />
+                  <TextBlock Grid.Column="2" Text="{Binding VoxThresholdDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="1" Text="Mic level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ProgressBar Grid.Row="1" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MicLevelDbfs}" MinWidth="0"
+                               VerticalAlignment="Center" Foreground="#3DD68C" Background="{DynamicResource ControlBg}" />
+                  <TextBlock Grid.Row="2" Text="Delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="2" Grid.Column="1" Minimum="100" Maximum="2000" TickFrequency="50" IsSnapToTickEnabled="True"
+                          Value="{Binding VoxDelayMs}" VerticalAlignment="Center" ToolTip.Tip="How long transmit stays on after you stop speaking" />
+                  <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding VoxDelayMs, StringFormat={}{0:0} ms}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Grid.ColumnSpan="3" Classes="label" FontSize="12" TextWrapping="Wrap"
+                             Text="Use headphones: there's no anti-VOX, so speakers can key the radio. Voice modes only, and off each time the app starts." />
+                </Grid>
+              </Flyout>
+            </ToggleButton.ContextFlyout>
+          </ToggleButton>
           <ToggleButton Classes="seg ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" Margin="12,0,0,0"
                         ToolTip.Tip="PureSignal adaptive predistortion. Right-click for two-tone, calibration and status.">
             <ToggleButton.ContextFlyout>

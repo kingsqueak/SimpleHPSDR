@@ -105,7 +105,8 @@ public sealed class FilterScope : Control
 
         // Passband and its draggable edges
         double xl = X(_low), xh = HighEdgeX();
-        ctx.FillRectangle(PassBrush, new Rect(xl, 0, Math.Max(0, xh - xl), plot.Height));
+        // Lower-sideband edges run right to left.
+        ctx.FillRectangle(PassBrush, new Rect(Math.Min(xl, xh), 0, Math.Abs(xh - xl), plot.Height));
         foreach (var x in _symmetric ? [xh] : new[] { xl, xh })
         {
             ctx.DrawLine(EdgePen, new Point(x, 0), new Point(x, plot.Height));

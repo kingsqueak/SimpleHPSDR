@@ -536,9 +536,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            await client.SetRadioSpeakerAsync(_settings.AudioToRadio);
             if (_settings.AudioToRadio && !await client.GetRadioSpeakerAvailableAsync())
-                Status = "This radio has no speaker jack the engine can use. Choose an output in Config > Audio.";
+            {
+                // Nothing would be heard, so go back to the computer.
+                _settings.AudioToRadio = false;
+                _settings.Save();
+                await client.SetRadioSpeakerAsync(false);
+                Dispatcher.UIThread.Post(() => _ = RestartEngineAsync());
+                Status = "This radio has no speaker jack, so audio is back on the computer.";
+                return;
+            }
+            await client.SetRadioSpeakerAsync(_settings.AudioToRadio);
         }
         catch (Exception ex) { Status = $"Radio speaker: {ex.Message}"; }
     }
@@ -741,6 +749,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private async Task DisconnectAsync()
     {
+        VoxOn = false;   // never live on a radio you've just reconnected to
         EndPlacingNotch();
         if (_client is null || _radio is null) return;
         await UnkeyAsync();

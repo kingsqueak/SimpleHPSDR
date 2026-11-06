@@ -73,7 +73,12 @@ public sealed partial class MainViewModel
     {
         _driveSender = new Latest<int>(p => client.SetDriveAsync(p));
         _tuneDriveSender = new Latest<int>(p => client.SetTuneDriveAsync(p));
-        _micGainSender = new Latest<int>(db => client.SetMicGainAsync(db));
+        _micGainSender = new Latest<int>(async db =>
+        {
+            await _micGate.WaitAsync();
+            try { if (_settings.CwHeldMicDb is null) await client.SetMicGainAsync(db); }
+            finally { _micGate.Release(); }
+        });
 
         // Key state from any source: our buttons, the radio's PTT, TCI, timeout.
         client.MoxState += f => Dispatcher.UIThread.Post(() =>
@@ -98,6 +103,7 @@ public sealed partial class MainViewModel
         };
         client.MicPeakDbfs += db =>
         {
+            _micFrameMs = Environment.TickCount64;
             _latestMicDbfs = db;
             if (Interlocked.Exchange(ref _micScheduled, 1) == 0)
                 Dispatcher.UIThread.Post(() =>
@@ -106,6 +112,7 @@ public sealed partial class MainViewModel
                     // Fast attack, slow release.
                     double k = _latestMicDbfs > MicLevelDbfs ? 0.7 : 0.15;
                     MicLevelDbfs += (Math.Max(_latestMicDbfs, -60) - MicLevelDbfs) * k;
+                    if (VoxOn) CheckVox();   // as soon as it's heard, not on the next tick
                 });
         };
     }
@@ -190,10 +197,11 @@ public sealed partial class MainViewModel
 
     partial void OnMoxOnChanged(bool value)
     {
+        if (!value) _voxKeyed = false;   // whoever dropped it, VOX starts afresh
         if (!value && _keyboardHold)   // from the hang, the button or the engine
         {
-            _keyboardHold = false;
-            _ = RestoreMicAfterHoldAsync();
+            _ = EndHoldAsync();
+            return;
         }
         if (_applyingTx || !IsConnected) return;
         CancelPsCalForOperatorKey();
@@ -292,8 +300,14 @@ public sealed partial class MainViewModel
 
     partial void OnMicGainDbChanged(double value)
     {
-        // While a CW hold has the mic muted, this must not bring it back.
-        if (!_applyingTx && IsConnected && _settings.CwHeldMicDb is null) _micGainSender?.Send((int)Math.Round(value));
+        // While a CW hold has the mic muted, this must not bring it back: it
+        // becomes the level to return to.
+        if (_settings.CwHeldMicDb is not null)
+        {
+            if (!_applyingTx) _settings.CwHeldMicDb = (int)Math.Round(value);
+            return;
+        }
+        if (!_applyingTx && IsConnected) _micGainSender?.Send((int)Math.Round(value));
     }
 
     private void UpdateTxMeters(TxMetersV2Frame f)
@@ -319,6 +333,7 @@ public sealed partial class MainViewModel
         try { _psCalCts?.Cancel(); } catch (ObjectDisposedException) { }
         _straightDown = _ditDown = _dahDown = _keyboardHold = false;
         await SendKeyUpAsync();
+        _voxKeyed = false;
         bool held = await _txGate.WaitAsync(UnkeyGateWait);
         try
         {

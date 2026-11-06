@@ -25,6 +25,10 @@ public sealed partial class MainViewModel
     private TciKeyer? _keyer;
     private const int MicMutedDb = -96;   // the engine's floor; the slider stops well above it
     private bool _straightDown, _ditDown, _dahDown, _paddleRunning, _lastWasDit, _keyboardHold;
+    private int _straightPress;
+    // Every mic gain write goes through this, slider included, so none can
+    // land between the mute being proved and MOX going on.
+    private readonly SemaphoreSlim _micGate = new(1, 1);
     private DispatcherTimer? _cwHangTimer;
 
     private bool AnyKeyDown => _straightDown || _ditDown || _dahDown;
@@ -91,39 +95,65 @@ public sealed partial class MainViewModel
         _cwHangTimer?.Stop();
         if (!wasKeyed) return;
         _ = SendKeyUpAsync();
-        if (_keyboardHold) MoxOn = false;   // OnMoxOnChanged restores the mic
+        if (_keyboardHold) MoxOn = false;   // OnMoxOnChanged ends the hold
+    }
+
+    /// <summary>MOX is coming down at the end of a hold. The engine answers once
+    /// the transmit tail has gone, so the mic only returns after that.</summary>
+    private async Task EndHoldAsync()
+    {
+        _keyboardHold = false;
+        if (_client is not { } client) return;
+        await SendMoxOffAsync(client);
+        await RestoreMicAfterHoldAsync();
+    }
+
+    private async Task SendMoxOffAsync(StationClient client)
+    {
+        bool held = await _txGate.WaitAsync(UnkeyGateWait);
+        try { await client.SetMoxAsync(false); }
+        catch (Exception) { }   // the mic stays muted; connect puts it right
+        finally { if (held) _txGate.Release(); }
     }
 
     // Mute before keying, and read it back: without proof MOX never goes on.
+    // The hold is marked inside the gate, so a restore can't slip in after this.
     private async Task MuteMicForHoldAsync()
     {
-        _settings.CwHeldMicDb = (int)Math.Round(MicGainDb);
-        _settings.Save();
-        await _client!.SetMicGainAsync(MicMutedDb);
-        if ((await _client.GetStateAsync()).MicGainDb != MicMutedDb)
-            throw new InvalidOperationException("the mic didn't mute");
+        await _micGate.WaitAsync();
+        try
+        {
+            _settings.CwHeldMicDb ??= (int)Math.Round(MicGainDb);
+            _settings.Save();
+            await _client!.SetMicGainAsync(MicMutedDb);
+            if ((await _client.GetStateAsync()).MicGainDb != MicMutedDb)
+                throw new InvalidOperationException("the mic didn't mute");
+            _keyboardHold = true;
+        }
+        finally { _micGate.Release(); }
         await Task.Delay(60);   // let the gain reach the DSP
     }
 
-    // After MOX is down, so the mic can't come back on air.
+    // Only once MOX is down, and not if keying has started again.
     private async Task RestoreMicAfterHoldAsync()
     {
-        if (_settings.CwHeldMicDb is not int db || _client is not { } client) return;
-        await Task.Delay(150);
-        if (_keyboardHold) return;   // keying started again meanwhile
+        if (_client is not { } client) return;
+        await _micGate.WaitAsync();
         try
         {
+            if (_keyboardHold || _settings.CwHeldMicDb is not int db) return;
             await client.SetMicGainAsync(db);
             _settings.CwHeldMicDb = null;
             _settings.Save();
         }
         catch (Exception ex) { Status = $"Mic gain not restored, it comes back on connect: {ex.Message}"; }
+        finally { _micGate.Release(); }
     }
 
     private async Task SendKeyUpAsync()
     {
         try { if (_keyer is { } k) await k.UpAsync(); }
-        catch (Exception e) when (e is System.Net.WebSockets.WebSocketException or OperationCanceledException or ObjectDisposedException) { }
+        catch (Exception) { }   // the key-down's own time limit lifts it
     }
 
     // The keyer needs the TCI server, and the hold in place before the first element.
@@ -156,7 +186,6 @@ public sealed partial class MainViewModel
             }
             int generation = Volatile.Read(ref _txGeneration);
             await MuteMicForHoldAsync();
-            _keyboardHold = true;
             _applyingTx = true;
             MoxOn = true;
             _applyingTx = false;
@@ -185,14 +214,27 @@ public sealed partial class MainViewModel
             StartCwHang();
             return;
         }
+        int press = ++_straightPress;
         await DownAsync(MaxKeyDownMs);
-        if (!_straightDown) await SendKeyUpAsync();   // released during the send
+        if (!_straightDown)
+        {
+            await SendKeyUpAsync();   // released during the send
+            return;
+        }
+        // The engine lifts the key at the limit. Treat that as a release, so a
+        // key stuck down can't leave the transmitter keyed and silent.
+        await Task.Delay(MaxKeyDownMs);
+        if (_straightDown && press == _straightPress)
+        {
+            _straightDown = false;
+            StartCwHang();
+        }
     }
 
     private async Task DownAsync(int ms)
     {
         try { await _keyer!.DownAsync(ms); }
-        catch (Exception ex) when (ex is System.Net.WebSockets.WebSocketException or OperationCanceledException or ObjectDisposedException)
+        catch (Exception ex)
         {
             CwKeyboardNote = $"Keyboard keying failed: {ex.Message}";
             ReleaseCwKeys();
