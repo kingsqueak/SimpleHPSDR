@@ -152,7 +152,11 @@ Click WPM to open the CW window, which stays open beside the main window. Type a
 Press Decode in the CW window to show received CW as text. It works best on a clean, steady signal with a narrow filter, and it won't match a good ear on a weak or hand-sent signal.
 
 ## Tuning and filters
-In CW the frequency shown is the carrier of the signal, and the filter is centred on the dial. Click a signal or tune it onto the dial line and you'll hear it at a 600 Hz tone. In the close-up, which spans 3 kHz in CW, the scale is that audio tone, so the dial line sits at 600 Hz. Use a narrow filter, 200 to 500 Hz. The receive tone is fixed at 600 Hz, so leave the sidetone there if you want to match signals by ear.
+In CW the frequency shown is the carrier of the signal, and the filter is centred on the dial. Click a signal on the panadapter, or tune until it lines up with the dial line, and you'll hear it at a 600 Hz tone.
+
+The close-up at the top right is your tuning indicator. It spans 3 kHz in CW, and its dial line sits at the 600 Hz CW offset, not at 0. Tune so the signal's peak sits on that line, in the middle of the shaded filter, and you're on frequency.
+
+Use a narrow filter, 200 to 500 Hz. The receive tone is fixed at 600 Hz, so leave the sidetone there if you want to match signals by ear.
 """),
 
         ("Filters", """
