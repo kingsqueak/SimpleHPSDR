@@ -206,7 +206,7 @@ As a guide: 2.4 to 2.8 kHz for SSB voice, 200 to 500 Hz for CW, 6 to 10 kHz for 
 Right-click a filter button to edit its width and label, then Save. Reset to default puts it back.
 
 ## Filter shape
-Config > Filters sets how steep the filters are. Steeper edges add delay and use more computer power, so leave this alone unless you have a reason.
+Config > Filters sets how steep the filters are, as a number of filter taps: Soft is 1,000, Normal 2,000 and Sharp 4,000, and the list goes up from there. More taps give steeper edges but add delay and use more computer power. Minimum phase keeps the delay down at high tap counts. The TX shape is one of the two biggest transmit delays, and Config shows the estimate as you change it.
 """),
 
         ("Receiving", """
@@ -321,7 +321,7 @@ Keeps your level steady as you move around the mic. It's the first thing to turn
 ## CFC
 A compressor working across the whole audio range at once. Compression in dB is the gain given to quiet sounds, and everything is held to the same ceiling, so more dB means more compression. Post gain then shapes the result.
 
-CFC adds delay: the FFT size sets how much. If you raise it, keep the PTT release delay long enough, or the end of each transmission gets cut off.
+CFC adds delay: the FFT size sets how much, from about 16 ms at 2048 to about 166 ms at 16384. Config > TX Audio shows the total delay as you change it.
 
 ## Other tools
 - Speech processor: Compressor and CESSB add talk power. Use them lightly.
@@ -455,7 +455,7 @@ Check RF: too much preamp near strong signals overloads the receiver. Try attenu
 PWR is the radio's own meter and can read low, and everything set from it inherits that. Compare against a meter you trust, and use External meter on the PA page. If you ran Calibrate and power is higher than shown, press Reset to stock first. Keep drive low until it's sorted out, especially with an amplifier connected.
 
 ## End of transmission cut off
-Raise the PTT release delay in Config > TX Audio, especially with CFC at a large FFT size.
+Raise the PTT release delay in Config > TX Audio. The engine already holds transmit for the speech still in the chain, and this adds a short extra wait.
 
 ## PS won't go green
 Check the source in Config > PureSignal, and watch the status on the PS right-click. "Stalled" means the HW peak setting needs adjusting; Adjust HW peak automatically can do it for you.

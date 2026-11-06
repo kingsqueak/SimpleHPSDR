@@ -433,7 +433,10 @@ public sealed class StationClient : IDisposable
     public async Task<string> GetEngineVersionAsync() =>
         (await _http.GetFromJsonAsync<EngineInfo>("api/capabilities", Json))!.Version;
 
-    private sealed record ConnectedBoard(string EffectiveBoard);
+    private sealed record ConnectedBoard(string EffectiveBoard, string? ActiveProtocol);
+    /// <summary>The transmit DSP rate: 48 kHz on Protocol 1, otherwise 96 kHz.</summary>
+    public async Task<int> GetTxDspRateAsync() =>
+        (await _http.GetFromJsonAsync<ConnectedBoard>("api/radio/pa-thermal", Json))!.ActiveProtocol == "P1" ? 48_000 : 96_000;
     /// <summary>The engine's name for the connected board, such as OrionMkII.</summary>
     public async Task<string> GetConnectedBoardAsync() =>
         (await _http.GetFromJsonAsync<ConnectedBoard>("api/radio/pa-thermal", Json))!.EffectiveBoard;

@@ -32,7 +32,7 @@ public sealed partial class TransverterRow(TransverterBandDto b) : ObservableObj
 public sealed partial class SettingsViewModel
 {
     public string[] WindowNames { get; } =
-        ["Soft", "Normal", "Sharp", "8k taps", "16k taps", "32k taps", "64k taps", "128k taps", "256k taps"];
+        ["Soft (1k taps)", "Normal (2k taps)", "Sharp (4k taps)", "8k taps", "16k taps", "32k taps", "64k taps", "128k taps", "256k taps"];
     public string[] PhaseNames { get; } = ["Linear", "Minimum"];
     public string[] DiversityOutputs { get; } = ["Combined", "Reference", "Source"];
     public ObservableCollection<string> SerialPorts { get; } = [];

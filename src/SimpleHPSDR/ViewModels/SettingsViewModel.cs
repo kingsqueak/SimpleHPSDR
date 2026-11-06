@@ -203,6 +203,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 await LoadCfcPresetsAsync();
                 await LoadBandPlansAsync();
                 await LoadHardwareAsync();
+                await LoadTxDelayAsync();
             }
             finally { _populating = false; }
             Status = "Changes apply as you make them.";
@@ -277,6 +278,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     protected override void OnPropertyChanged(PropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
+        UpdateTxDelay(e.PropertyName);
         if (!_populating && e.PropertyName is { } name && GroupOf.TryGetValue(name, out var group))
             Schedule(group);
     }

@@ -28,9 +28,9 @@ public sealed partial class SettingsViewModel
 {
     private StateDto? _txLoaded;
 
-    // PTT release delay: the TX audio pipeline holds about 200 ms of speech
-    // with heavy processing (CFC at FFT 16384), so the radio must stay keyed
-    // that long after PTT release or the end of the over is cut off.
+    // PTT release delay: the engine holds transmit for the speech still in the
+    // chain by itself. This only sets the small extra wait on top, a third of
+    // its value within 20 to 200 ms. At 0 the engine doesn't hold at all.
     [ObservableProperty] private double _releaseDelayMs;
     [ObservableProperty] private int _cfcFftSize = 16384;
     public int[] CfcFftSizes { get; } = [2048, 4096, 8192, 16384];
