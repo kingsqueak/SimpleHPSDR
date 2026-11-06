@@ -148,8 +148,26 @@ Break-in means keying transmits by itself, and the radio drops back to receive a
 ## Sending from the keyboard
 Click WPM to open the CW window, which stays open beside the main window. Type and press Enter, or press a macro. Both transmit straight away, so have your antenna or dummy load connected. Stop or Esc ends it at once and drops anything queued, and so does turning MOX off. Edit macros in the same window.
 
-## Keying from the keyboard (experimental)
-Tick Keyboard keying in the CW window. It needs the TCI server on, in Config > CAT & TCI. While the CW window has focus and you aren't typing in a box, space is a straight key, the left arrow sends dits and the right arrow sends dahs, at your WPM. Reverse paddles swaps the arrows too. Holding both arrows alternates them. These transmit. Transmit stays on between elements for the Hang time (right-click WPM), and at least twice that for the spacebar, so the relays don't follow every element, and your mic is muted for the hold. It's for slow sending and practice, as keyboard timing isn't as steady as a real keyer. It won't start while MOX or TUNE is on, and it needs Break-in on. A key can't stay down longer than 3 seconds, and it lifts if the window loses focus.
+## Keying from the keyboard
+No key handy, or just practising? The keyboard can act as a straight key or a paddle. It's for slow sending and practice, as keyboard timing isn't as steady as a real keyer.
+
+To set it up:
+1. Turn on the TCI server in Config > CAT & TCI. The keyboard keys the radio through it.
+2. Choose CWU or CWL, with Break-in on (right-click WPM).
+3. Click WPM to open the CW window, then tick Keyboard keying. It's off each time the app starts.
+
+Then, with the CW window in front and the cursor not in a text box:
+- Space is a straight key: the tone follows your finger.
+- The left arrow sends dits and the right arrow sends dahs, at your WPM. Hold one to repeat it, or both to alternate. Reverse paddles swaps them.
+- Esc stops everything.
+
+These transmit straight away, so have your antenna or dummy load connected.
+
+Transmit stays on between elements so the relays don't click on each one. For the arrows that's the Hang time (right-click WPM), and for the spacebar it's at least 700 ms, or twice Hang time if that's longer.
+
+Your mic is muted while this happens and comes back after transmit drops, so your voice can't go out between elements. If the app stops mid-way, the mic is put right at the next connect.
+
+For safety, a key can't stay down for more than 3 seconds, it lifts if you click away from the CW window, and keyboard keying won't start while MOX or TUNE is on.
 
 ## Reading CW
 Press Decode in the CW window to show received CW as text. It works best on a clean, steady signal with a narrow filter, and it won't match a good ear on a weak or hand-sent signal.
