@@ -49,14 +49,23 @@ public sealed partial class SettingsViewModel
     private DeviceSelection? _devicesWas;
 
     private DeviceSelection CurrentDevices() =>
-        new(SelectedInput?.Id, SelectedOutput?.Id, SelectedChannel?.Value ?? -1);
+        new(SelectedInput?.Id, RadioJackChosen ? _computerOutputId : SelectedOutput?.Id, SelectedChannel?.Value ?? -1);
+
+    private const string RadioJackId = "radio-speaker-jack";
+    private bool _radioSpeakerAvailable;
+    private string? _computerOutputId;
+
+    private bool RadioJackChosen => SelectedOutput?.Id == RadioJackId;
 
     private void PopulateAudio(AudioDevices devices, AudioFrontEndDto radio)
     {
         Outputs.Clear();
         Outputs.Add(new DeviceOption("System default", null));
         foreach (var d in devices.Outputs.DistinctBy(d => d.Id)) Outputs.Add(new DeviceOption(d.Name, d.Id));
-        SelectedOutput = Outputs.FirstOrDefault(o => o.Id == devices.OutputDeviceId) ?? Outputs[0];
+        bool toRadio = AppSettings?.AudioToRadio == true;
+        if (_radioSpeakerAvailable || toRadio) Outputs.Add(new DeviceOption("Radio speaker jack", RadioJackId));
+        _computerOutputId = devices.OutputDeviceId;
+        SelectedOutput = toRadio ? Outputs[^1] : Outputs.FirstOrDefault(o => o.Id == devices.OutputDeviceId) ?? Outputs[0];
 
         Inputs.Clear();
         Inputs.Add(new DeviceOption("System default", null));
@@ -93,7 +102,9 @@ public sealed partial class SettingsViewModel
         devices ??= await _client.GetAudioDevicesAsync();
         var native = await _client.GetNativeAudioStatusAsync();
         var d = native.Diagnostics;
-        AudioStatus = devices.AsioError is { Length: > 0 } asioErr
+        AudioStatus = AppSettings?.AudioToRadio == true
+            ? "Receive audio plays on the radio's speaker jack. Mon can't play while this is chosen."
+            : devices.AsioError is { Length: > 0 } asioErr
             ? $"ASIO: {asioErr}"
             : devices.Error is { Length: > 0 } err
             ? $"Audio error: {err}"
@@ -107,10 +118,29 @@ public sealed partial class SettingsViewModel
               $" · mic {devices.InputSampleRate / 1000.0:0.#} kHz, {devices.InputChannels} ch";
     }
 
+    // Computer output can only be turned on or off as the engine starts, so
+    // moving to or from the radio's jack restarts it. The radio reconnects.
+    private async Task<bool> ApplyRadioJackAsync()
+    {
+        if (AppSettings is not { } app || RestartEngine is null || RadioJackChosen == app.AudioToRadio) return false;
+        app.AudioToRadio = RadioJackChosen;
+        app.Save();
+        string? output = SelectedOutput?.Id;
+        AudioStatus = "Restarting the engine to change the output…";
+        await RestartEngine();
+        if (!app.AudioToRadio && output is not null)
+            await _client.SetAudioDevicesAsync(SelectedInput?.Id, output, SelectedChannel?.Value ?? -1);
+        _devicesWas = CurrentDevices();
+        await RefreshAudioStatusAsync();
+        AudioSaved?.Invoke();
+        return true;
+    }
+
     // Reopening devices interrupts audio, so only touch them when a device or
     // channel actually changed; the radio's codec settings go separately.
     private async Task ApplyAudioAsync()
     {
+        if (await ApplyRadioJackAsync()) return;
         var sel = CurrentDevices();
         var asio = CurrentAsio();
         bool changed = false;

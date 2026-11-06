@@ -21,6 +21,10 @@ public sealed class EngineHost : IDisposable
     /// <summary>The engine stopped by itself, after starting. Its exit code.</summary>
     public event Action<int>? Stopped;
 
+    /// <summary>Play receive audio on the computer. Off when it goes to the
+    /// radio's speaker jack instead; the engine only reads this at startup.</summary>
+    public bool ComputerAudio { get; set; } = true;
+
     public int Port { get; private set; }
     public Uri BaseUri => new($"http://127.0.0.1:{Port}/");
     public bool HasExited => _process is null || _process.HasExited;
@@ -102,7 +106,7 @@ public sealed class EngineHost : IDisposable
         foreach (var a in new[]
                  {
                      "--port", Port.ToString(),
-                     "--native-audio-output", "true",
+                     "--native-audio-output", ComputerAudio ? "true" : "false",
                  })
             psi.ArgumentList.Add(a);
 

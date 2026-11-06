@@ -87,15 +87,30 @@ public sealed partial class MainViewModel
     private bool _muteA, _muteB;
 
     /// <summary>Marks for the panadapter: both slices' passbands and tags.</summary>
+    // In CW the engine moves the LO by the pitch, so a filter given as an audio
+    // tone around the pitch is really centred on the dial. Without this the
+    // shading sits a pitch away from what's heard.
+    private static int CwShift(RxMode? mode) => mode switch
+    {
+        RxMode.CWU => -CwDefaults.PitchHz,
+        RxMode.CWL => CwDefaults.PitchHz,
+        _ => 0,
+    };
+
+    /// <summary>The audio tone a signal on the dial comes out at; 0 outside CW.</summary>
+    public int CwPitchHz => ModeIsCw ? CwDefaults.PitchHz : 0;
+
     public IReadOnlyList<SliceMark> SliceMarks()
     {
         var marks = new List<SliceMark>(2);
+        int shift = CwShift(Mode);
         if (!SliceBEnabled)
-            return [new SliceMark(0, VfoHz, FilterLowHz, FilterHighHz, "A", true, true, false)];
-        var a = ActiveRx == 0 ? (VfoHz, FilterLowHz, FilterHighHz)
-            : (_sliceA?.VfoHz ?? 0, _sliceA?.FilterLowHz ?? 0, _sliceA?.FilterHighHz ?? 0);
-        var b = ActiveRx == 1 ? (VfoHz, FilterLowHz, FilterHighHz)
-            : (_sliceB?.VfoHz ?? 0, _sliceB?.FilterLowHz ?? 0, _sliceB?.FilterHighHz ?? 0);
+            return [new SliceMark(0, VfoHz, FilterLowHz + shift, FilterHighHz + shift, "A", true, true, false)];
+        int shiftA = CwShift(_sliceA?.Mode), shiftB = CwShift(_sliceB?.Mode);
+        var a = ActiveRx == 0 ? (VfoHz, FilterLowHz + shift, FilterHighHz + shift)
+            : (_sliceA?.VfoHz ?? 0, (_sliceA?.FilterLowHz ?? 0) + shiftA, (_sliceA?.FilterHighHz ?? 0) + shiftA);
+        var b = ActiveRx == 1 ? (VfoHz, FilterLowHz + shift, FilterHighHz + shift)
+            : (_sliceB?.VfoHz ?? 0, (_sliceB?.FilterLowHz ?? 0) + shiftB, (_sliceB?.FilterHighHz ?? 0) + shiftB);
         marks.Add(new SliceMark(0, a.Item1, a.Item2, a.Item3, "A", ActiveRx == 0, TxRx == 0, _muteA));
         marks.Add(new SliceMark(1, b.Item1, b.Item2, b.Item3, "B", ActiveRx == 1, TxRx == 1, _muteB));
         return marks;

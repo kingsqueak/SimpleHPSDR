@@ -329,6 +329,41 @@
               </MenuFlyout>
             </Button.ContextFlyout>
           </Button>
+          <!-- Only in CW -->
+          <Button Name="WpmButton" Classes="seg lit" Content="{Binding CwWpmText}" IsVisible="{Binding ModeIsCw}" Click="OnOpenCw"
+                  ToolTip.Tip="Keyer speed: use the wheel. Click for sending, macros and the decoder. Right-click for keyer settings.">
+            <Button.ContextFlyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <Grid Width="420" Margin="4" ColumnDefinitions="110,*,70" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                  <TextBlock Text="Key" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:MainViewModel.CwKeyerNames}" SelectedIndex="{Binding CwKeyerIndex}" HorizontalAlignment="Stretch" />
+                  <TextBlock Grid.Row="1" Text="Speed" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="1" Grid.Column="1" Minimum="5" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CwWpm}" />
+                  <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding CwWpmText}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="2" Text="Farnsworth" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CwFarnsworthWpm}"
+                          ToolTip.Tip="Characters sent at this speed with wider gaps between them. 0 is off." />
+                  <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding CwFarnsworthWpm}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="3" Text="Weight" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="3" Grid.Column="1" Minimum="33" Maximum="66" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CwWeight}"
+                          ToolTip.Tip="Dot and dash length against the gaps. 50 is normal." />
+                  <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding CwWeight}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="4" Text="Sidetone pitch" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="4" Grid.Column="1" Minimum="300" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwSidetoneHz}" />
+                  <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding CwSidetoneHz, StringFormat={}{0} Hz}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="5" Text="Sidetone level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="5" Grid.Column="1" Minimum="-40" Maximum="0" Value="{Binding CwSidetoneDb}" />
+                  <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding CwSidetoneDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <CheckBox Grid.Row="6" Grid.ColumnSpan="2" Content="Break-in" IsChecked="{Binding CwBreakIn}"
+                            ToolTip.Tip="Keying transmits by itself, and the radio drops back to receive after the hang time" />
+                  <TextBlock Grid.Row="7" Text="Hang time" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="7" Grid.Column="1" Minimum="10" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwHangMs}" />
+                  <TextBlock Grid.Row="7" Grid.Column="2" Text="{Binding CwHangMs, StringFormat={}{0} ms}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <CheckBox Grid.Row="8" Grid.ColumnSpan="2" Content="Reverse paddles" IsChecked="{Binding CwPaddleReverse}" />
+                </Grid>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
           <Button Classes="seg" Classes.lit="{Binding AnfOn}" Content="ANF" Command="{Binding ToggleAnfCommand}"
                   ToolTip.Tip="Automatic notch filter, for steady tones. Right-click for manual notches.">
             <Button.ContextFlyout>

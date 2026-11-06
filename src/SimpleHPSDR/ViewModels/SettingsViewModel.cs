@@ -169,6 +169,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             var radio = await _client.GetRadioAudioAsync();
             var state = await _client.GetStateAsync();
             var antennas = await _client.GetAntennasAsync();
+            _radioSpeakerAvailable = await _client.GetRadioSpeakerAvailableAsync();
             (_origPa, _origDevices, _origRadioAudio, _origState, _origAntennas) = (pa, devices, radio, state, antennas);
 
             Populate(pa, devices, radio, state, antennas);

@@ -46,6 +46,7 @@ public partial class MainWindow : Window
         XitButton.PointerWheelChanged += (_, e) => { Vm?.NudgeXit(WheelClicks(e)); e.Handled = true; };
         RitButton.ContextRequested += (_, e) => { Vm?.ClearRit(); e.Handled = true; };
         XitButton.ContextRequested += (_, e) => { Vm?.ClearXit(); e.Handled = true; };
+        WpmButton.PointerWheelChanged += (_, e) => { Vm?.NudgeCwWpm(WheelClicks(e)); e.Handled = true; };
         BandButton.ContextRequested += async (_, e) => { e.Handled = true; await ShowBandStackAsync(); };
         Spectrum.TuneRequested += TuneA;
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
@@ -181,6 +182,21 @@ public partial class MainWindow : Window
         if (!two) SpectrumB.Clear();
     }
 
+    private CwWindow? _cw;
+
+    // One CW window, which stays open beside this one.
+    private void OnOpenCw(object? sender, RoutedEventArgs e)
+    {
+        if (_cw is not null)
+        {
+            _cw.Activate();
+            return;
+        }
+        _cw = new CwWindow { DataContext = Vm };
+        _cw.Closed += (_, _) => _cw = null;
+        _cw.Show(this);
+    }
+
     // Right-click on the panadapter: add, select, move, mute, remove slices and
     // choose which one transmits.
     private void ShowSliceMenu(long hz)
@@ -296,7 +312,7 @@ public partial class MainWindow : Window
             Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();
             Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
             if (f.RxId == vm.ActiveRx)
-                FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric);
+                FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric, vm.CwPitchHz);
             if (f.RxId == 1)
             {
                 if (!vm.ShowPanadapterB) return;

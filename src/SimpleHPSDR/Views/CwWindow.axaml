@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        x:Class="SimpleHPSDR.Views.CwWindow"
+        x:DataType="vm:MainViewModel"
+        Title="CW" Width="520" Height="460" MinWidth="400" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="14" RowSpacing="10">
+    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+      <ToggleButton Classes="seg" Content="Decode" IsChecked="{Binding CwDecoderOn}"
+                    ToolTip.Tip="Show received CW as text. Works best on a clean, steady signal." />
+      <TextBlock Grid.Column="1" Text="{Binding CwDecodedInfo}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <Button Grid.Column="2" Classes="flat" Content="Clear" Command="{Binding ClearCwDecodedCommand}" />
+      <TextBlock Grid.Column="3" Text="{Binding CwWpmText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+    </Grid>
+
+    <TextBox Grid.Row="1" Text="{Binding CwDecodedText}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+             FontFamily="{StaticResource MonoFont}" VerticalContentAlignment="Top" PlaceholderText="Received text" />
+
+    <ItemsControl Grid.Row="2" ItemsSource="{Binding CwMacros}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:CwMacro">
+          <Button Classes="flat" Content="{Binding Label}" Margin="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                  Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SendCwMacroCommand}" CommandParameter="{Binding}"
+                  ToolTip.Tip="Sends this macro. This transmits." />
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+      <TextBox Name="SendBox" Text="{Binding CwSendText}" PlaceholderText="Type here, Enter sends" />
+      <Button Grid.Column="1" Classes="flat" Content="Send" Command="{Binding SendCwTextCommand}"
+              ToolTip.Tip="Sends this text. This transmits." />
+      <Button Grid.Column="2" Classes="flat accent" Content="Stop" Command="{Binding StopCwCommand}"
+              ToolTip.Tip="Stop sending at once and drop anything queued (Esc)" />
+    </Grid>
+
+    <Expander Grid.Row="4" Header="Edit macros" HorizontalAlignment="Stretch">
+      <ItemsControl ItemsSource="{Binding CwMacros}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:CwMacro">
+            <TextBox Text="{Binding Text}" Margin="2" PlaceholderText="{Binding Number, StringFormat=Macro {0}}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Expander>
+
+    <StackPanel Grid.Row="5" Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="{Binding CwStateText}" Classes="label" FontSize="12" />
+      <TextBlock Text="{Binding CwSendingText}" Classes="label" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="400"
+                 FontFamily="{StaticResource MonoFont}" />
+    </StackPanel>
+  </Grid>
+</Window>

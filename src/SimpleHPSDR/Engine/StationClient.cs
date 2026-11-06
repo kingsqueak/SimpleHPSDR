@@ -84,6 +84,9 @@ public sealed class StationClient : IDisposable
     public event Action<MoxStateFrame>? MoxState;
     public event Action<TxMetersV2Frame>? TxMeters;
     public event Action<float>? MicPeakDbfs;
+    public event Action<CwEngineStatusFrame>? CwStatus;
+    public event Action<CwDecodedTextFrame>? CwDecoded;
+    public event Action<CwSettingsDto>? CwSettings;
     public event Action<PsMetersFrame>? PsMeters;
     public event Action<string>? StreamClosed;
 
@@ -231,6 +234,50 @@ public sealed class StationClient : IDisposable
 
     public Task SetBandRegionAsync(string regionId) =>
         PostAsync("api/bands/current", new BandPlanCurrentSetRequest(regionId));
+
+    public async Task<CwSettingsDto> GetCwSettingsAsync() =>
+        (await _http.GetFromJsonAsync<CwSettingsDto>("api/cw/settings", Json))!;
+
+    public async Task SetCwSettingsAsync(CwSettingsSetRequest patch)
+    {
+        using var r = await _http.PutAsJsonAsync("api/cw/settings", patch, Json);
+        await ThrowIfFailed(r);
+    }
+
+    private sealed record CwAbort(int AbortSeq);
+
+    public async Task<int> GetCwAbortSeqAsync() =>
+        (await _http.GetFromJsonAsync<CwAbort>("api/cw/status", Json))!.AbortSeq;
+
+    /// <summary>Key this text out. The counter makes a send delayed past Stop refuse to key.</summary>
+    public Task SendCwAsync(string text, int abortSeq) =>
+        PostAsync("api/cw/send", new CwSendRequest(text, ExpectedAbortSeq: abortSeq));
+
+    /// <summary>Stop sending now and drop the queue. Returns the new counter.</summary>
+    public async Task<int> AbortCwAsync()
+    {
+        using var r = await _http.PostAsync("api/cw/abort", null);
+        await ThrowIfFailed(r);
+        return (await r.Content.ReadFromJsonAsync<CwAbort>(Json))!.AbortSeq;
+    }
+
+    /// <summary>Ask the engine for decoded CW on the stream.</summary>
+    public async Task SetCwDecoderAsync(bool on)
+    {
+        if (_ws is { State: WebSocketState.Open } ws)
+            await ws.SendAsync(new byte[] { (byte)MsgType.CwDecoderRequest, (byte)(on ? 1 : 0) },
+                WebSocketMessageType.Binary, true, CancellationToken.None);
+    }
+
+    /// <summary>Whether this radio has a speaker jack the engine can feed.</summary>
+    public async Task<bool> GetRadioSpeakerAvailableAsync() =>
+        (await _http.GetFromJsonAsync<RadioSpeakerOutputDto>("api/radio/speaker-output", Json))!.Available;
+
+    public async Task SetRadioSpeakerAsync(bool on)
+    {
+        using var r = await _http.PutAsJsonAsync("api/radio/speaker-output", new RadioSpeakerOutputSetRequest(on), Json);
+        await ThrowIfFailed(r);
+    }
 
     /// <summary>The engine's stock PA table for the connected radio.</summary>
     public async Task<PaSettingsDto> GetPaDefaultsAsync() =>
@@ -614,6 +661,15 @@ public sealed class StationClient : IDisposable
                     break;
                 case MsgType.PsMeters:
                     PsMeters?.Invoke(PsMetersFrame.Deserialize(msg));
+                    break;
+                case MsgType.CwEngineStatus:
+                    CwStatus?.Invoke(CwEngineStatusFrame.Deserialize(msg));
+                    break;
+                case MsgType.CwDecodedText:
+                    CwDecoded?.Invoke(CwDecodedTextFrame.Deserialize(msg));
+                    break;
+                case MsgType.CwSettings:
+                    if (JsonSerializer.Deserialize<CwSettingsDto>(msg[1..], Json) is { } cw) CwSettings?.Invoke(cw);
                     break;
                 case MsgType.MicPeak:
                     MicPeakDbfs?.Invoke(MicPeakFrame.Deserialize(msg).PeakDbfs);

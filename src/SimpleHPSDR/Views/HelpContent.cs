@@ -127,7 +127,7 @@ Right-click the band button to save the current frequency, or recall one you sav
 Click the mode button to choose.
 - LSB: voice below 10 MHz, by amateur custom.
 - USB: voice above 10 MHz, and most digital modes.
-- CWL and CWU: CW, listening below or above the carrier. CW keying from this app hasn't been tested.
+- CWL and CWU: CW, listening below or above the carrier. See the CW topic.
 - AM: full-carrier broadcast and amateur AM.
 - SAM: synchronous AM. It locks to the carrier, which holds up better when a signal fades.
 - FM: narrow FM, usually 10 m and up.
@@ -135,6 +135,24 @@ Click the mode button to choose.
 
 ## AM and FM options
 Right-click the mode button in AM, SAM or FM. AM has broadcast-style transmit settings. FM has narrow deviation, CTCSS tones, reverse and the 1750 Hz tone burst.
+"""),
+
+        ("CW", """
+Choose CWL or CWU with the mode button, and a WPM button appears beside ANF.
+
+## Your paddle or key
+Connect it to the radio. Right-click WPM to choose a straight key or iambic A or B, and to set the speed, weight, sidetone and paddle direction. The wheel over the WPM button changes speed at any time.
+
+Break-in means keying transmits by itself, and the radio drops back to receive after the hang time. Lower hang times let you hear between words.
+
+## Sending from the keyboard
+Click WPM to open the CW window, which stays open beside the main window. Type and press Enter, or press a macro. Both transmit straight away, so have your antenna or dummy load connected. Stop or Esc ends it at once and drops anything queued, and so does turning MOX off. Edit macros in the same window.
+
+## Reading CW
+Press Decode in the CW window to show received CW as text. It works best on a clean, steady signal with a narrow filter, and it won't match a good ear on a weak or hand-sent signal.
+
+## Tuning and filters
+In CW the frequency shown is the carrier of the signal, and the filter is centred on the dial. Click a signal or tune it onto the dial line and you'll hear it at a 600 Hz tone. In the close-up, which spans 3 kHz in CW, the scale is that audio tone, so the dial line sits at 600 Hz. Use a narrow filter, 200 to 500 Hz. The receive tone is fixed at 600 Hz, so leave the sidetone there if you want to match signals by ear.
 """),
 
         ("Filters", """
@@ -341,6 +359,8 @@ Apply shifts every HF band by the gap between what you asked for and what your m
 
 ## Audio
 Config > Audio chooses your speakers and microphone: a computer mic, or the radio's mic jack with its boost and bias. On Windows, ASIO can be used with an audio interface.
+
+If your radio has a speaker or headphone jack, choose Radio speaker jack as the speaker output to hear receive audio there instead of on the computer. Changing to or from it restarts the engine and reconnects, which takes a few seconds. Mon can't play while it's chosen.
 
 ## External amplifier
 Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Band Outputs switches its bands through the radio's open-collector pins.

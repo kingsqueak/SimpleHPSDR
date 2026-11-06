@@ -7,18 +7,19 @@ using Zeus.Contracts;
 namespace SimpleHPSDR.Controls;
 
 /// <summary>
-/// A close-up of the received signal as audio: 0 to 6000 Hz from the dial,
-/// left to right, whatever the sideband (on lower sideband the RF below the
+/// A close-up of the received signal as audio: 0 to 6000 Hz from the dial
+/// (3000 Hz in CW), left to right, whatever the sideband (on lower sideband the RF below the
 /// dial is shown mirrored). Cut from the active slice's panadapter frames,
 /// with the receive filter shaded over it. Drag either edge of the shading
 /// to set the filter's low or high cut (10 Hz steps). In AM and the other
 /// double-sided modes only the upper side is shown, and its one edge sets both
 /// sides together. The scale marks every 100 Hz, labelled every 500 Hz. The dB
-/// range follows what's inside the 6 kHz, so the signal fills the box.
+/// range follows what's inside the span, so the signal fills the box.
 /// </summary>
 public sealed class FilterScope : Control
 {
-    public const double SpanHz = 6000;
+    private const double VoiceSpanHz = 6000, CwSpanHz = 3000;
+    private double SpanHz => _pitch > 0 ? CwSpanHz : VoiceSpanHz;
     private const double StepHz = 10, MinWidthHz = 50;
     private const double ScaleH = 13;         // tick and label strip at the bottom
     private const double Grab = 6;            // pointer distance that takes an edge
@@ -48,6 +49,7 @@ public sealed class FilterScope : Control
     private int _low, _high;
     private int _side = 1;   // +1 upper sideband (RF above the dial), -1 lower
     private bool _symmetric;
+    private int _pitch;   // CW: a signal on the dial is this audio tone; the scale stays audio
     private enum Edge { None, Low, High }
     private Edge _drag;
 
@@ -59,7 +61,7 @@ public sealed class FilterScope : Control
 
     /// <summary>A display frame from the active slice's receiver, with that
     /// slice's dial and filter.</summary>
-    public void PushFrame(DisplayFrame f, long dialHz, int low, int high, bool symmetric)
+    public void PushFrame(DisplayFrame f, long dialHz, int low, int high, bool symmetric, int cwPitchHz = 0)
     {
         _rx = f.RxId;
         _dialHz = dialHz;
@@ -67,6 +69,7 @@ public sealed class FilterScope : Control
         {
             (_low, _high) = (low, high);
             _symmetric = symmetric;
+            _pitch = cwPitchHz;
             // Otherwise the filter says which side of the dial is heard.
             _side = symmetric || low + high >= 0 ? 1 : -1;
         }
@@ -111,7 +114,8 @@ public sealed class FilterScope : Control
 
         // Dial
         var dial = new Pen(new SolidColorBrush(DialColors[Math.Clamp(_rx, 0, 1)]), 1);
-        ctx.DrawLine(dial, new Point(1, 0), new Point(1, plot.Height));
+        double dialX = _pitch == 0 ? 1 : _pitch / SpanHz * b.Width;
+        ctx.DrawLine(dial, new Point(dialX, 0), new Point(dialX, plot.Height));
 
         DrawScale(ctx, b, plot.Bottom);
     }
@@ -123,7 +127,7 @@ public sealed class FilterScope : Control
         if (_cols.Length != cols) _cols = new double[cols];
         for (int i = 0; i < cols; i++)
         {
-            double hz = _dialHz + Offset(i * r.Width / (cols - 1));
+            double hz = _dialHz + Offset(i * r.Width / (cols - 1)) - _side * _pitch;
             double bin = (hz - _centerHz) / _hzPerBin + pan.Length / 2.0;
             int i0 = Math.Clamp((int)Math.Floor(bin), 0, pan.Length - 1);
             int i1 = Math.Min(i0 + 1, pan.Length - 1);

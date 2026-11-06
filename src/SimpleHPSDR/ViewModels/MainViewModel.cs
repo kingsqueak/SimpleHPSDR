@@ -13,7 +13,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 {
     private static readonly RxMode[] ModeOrder =
         [RxMode.LSB, RxMode.USB, RxMode.CWL, RxMode.CWU, RxMode.AM, RxMode.SAM, RxMode.FM, RxMode.DIGL, RxMode.DIGU];
-    private static readonly int[] Steps = [1, 10, 100, 500, 1_000, 5_000, 10_000, 100_000];
+    private static readonly int[] Steps = [1, 5, 10, 100, 500, 1_000, 5_000, 10_000, 100_000];
 
     private readonly Settings _settings = Settings.Load();
     private readonly EngineHost _engine = new();
@@ -424,6 +424,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public async Task StartAsync()
     {
         StartClock();
+        _engine.ComputerAudio = !_settings.AudioToRadio;
         _engine.Stopped += code => Dispatcher.UIThread.Post(() => _ = OnEngineStoppedAsync(code));
         try
         {
@@ -513,7 +514,23 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             else if (v.Receiver == 0 && _sliceA is { } a) _sliceA = a with { VfoHz = v.VfoHz };
             else if (v.Receiver == 1 && _sliceB is { } b) _sliceB = b with { VfoHz = v.VfoHz };
         });
+        _client.CwStatus += f => Dispatcher.UIThread.Post(() => OnCwStatus(f));
+        _client.CwDecoded += f => Dispatcher.UIThread.Post(() => OnCwDecoded(f));
+        _client.CwSettings += s => Dispatcher.UIThread.Post(() => ShowCwSettings(s));
         _client.StreamClosed += reason => Dispatcher.UIThread.Post(() => _ = OnStreamClosedAsync(reason));
+    }
+
+    /// <summary>Keep the engine's speaker output in step with the app's choice,
+    /// and say so if this radio can't honour it, as nothing would be heard.</summary>
+    private async Task ApplyRadioSpeakerAsync(StationClient client)
+    {
+        try
+        {
+            await client.SetRadioSpeakerAsync(_settings.AudioToRadio);
+            if (_settings.AudioToRadio && !await client.GetRadioSpeakerAvailableAsync())
+                Status = "This radio has no speaker jack the engine can use. Choose an output in Config > Audio.";
+        }
+        catch (Exception ex) { Status = $"Radio speaker: {ex.Message}"; }
     }
 
     private bool _lostRadio;
@@ -583,6 +600,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _client?.Dispose();
         _client = null;
         _engine.Dispose();
+        _engine.ComputerAudio = !_settings.AudioToRadio;
         try
         {
             await _engine.StartAsync(CancellationToken.None);
@@ -688,6 +706,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (firstFilters && Filters.FirstOrDefault(f => f.SlotName == DefaultFilterSlot) is { } start)
                 await SelectFilterAsync(start);
             await client.OpenStreamAsync();
+            await LoadCwAsync();
+            if (CwDecoderOn) await client.SetCwDecoderAsync(true);
+            await ApplyRadioSpeakerAsync(client);
             IsConnected = true;
             _lostRadio = false;
             _statePoll.Start();
@@ -888,6 +909,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(Mode));
         OnPropertyChanged(nameof(ModeIsAm));
         OnPropertyChanged(nameof(ModeIsFm));
+        OnPropertyChanged(nameof(ModeIsCw));
         OnPropertyChanged(nameof(ModeHasNoOptions));
         Mark(Modes, mode);
         OnPropertyChanged(nameof(ModeLabel));

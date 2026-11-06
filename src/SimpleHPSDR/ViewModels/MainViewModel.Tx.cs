@@ -183,6 +183,7 @@ public sealed partial class MainViewModel
     {
         if (_applyingTx || !IsConnected) return;
         CancelPsCalForOperatorKey();
+        if (!value && CwSending) _ = StopCwAsync();   // MOX off also ends queued text
         _ = KeyAsync(() => _client!.SetMoxAsync(value), value);
     }
 
@@ -286,6 +287,7 @@ public sealed partial class MainViewModel
         bool held = await _txGate.WaitAsync(UnkeyGateWait);
         try
         {
+            if (CwSending) try { _cwAbortSeq = await client.AbortCwAsync(); } catch (Exception) { }
             try { await client.SetMoxAsync(false); } catch (Exception) { }
             try { await client.SetTunAsync(false); } catch (Exception) { }
             try { await client.SetTwoToneAsync(false); } catch (Exception) { }
