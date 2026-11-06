@@ -274,6 +274,7 @@ public sealed partial class SettingsViewModel
         {
             await _client.SetRadioVariantAsync((OrionMkIIVariant)RadioModelIndex);
             _modelWas = RadioModelIndex;
+            await LoadHardwareAsync();
             Status = "Radio model set. Choose the radio again to reconnect with it.";
         }
         if (_stationWas is not { } was) return;

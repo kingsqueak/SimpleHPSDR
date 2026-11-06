@@ -20,11 +20,31 @@ public sealed partial class PaBandRow(PaBandSettingsDto original) : ObservableOb
     [ObservableProperty] private byte _ocRx = original.OcRx;
     [ObservableProperty] private byte _ocTune = original.OcTune;
 
+    // Anvelina-PRO3 DX outputs: pins 7-10 are bits 0-3 of their own masks.
+    private byte _ocDxTx = original.OcDxTx, _ocDxRx = original.OcDxRx;
+    public bool DxTx7 { get => Dx(_ocDxTx, 0); set => SetDx(ref _ocDxTx, 0, value); }
+    public bool DxTx8 { get => Dx(_ocDxTx, 1); set => SetDx(ref _ocDxTx, 1, value); }
+    public bool DxTx9 { get => Dx(_ocDxTx, 2); set => SetDx(ref _ocDxTx, 2, value); }
+    public bool DxTx10 { get => Dx(_ocDxTx, 3); set => SetDx(ref _ocDxTx, 3, value); }
+    public bool DxRx7 { get => Dx(_ocDxRx, 0); set => SetDx(ref _ocDxRx, 0, value); }
+    public bool DxRx8 { get => Dx(_ocDxRx, 1); set => SetDx(ref _ocDxRx, 1, value); }
+    public bool DxRx9 { get => Dx(_ocDxRx, 2); set => SetDx(ref _ocDxRx, 2, value); }
+    public bool DxRx10 { get => Dx(_ocDxRx, 3); set => SetDx(ref _ocDxRx, 3, value); }
+
+    private static bool Dx(byte mask, int bit) => (mask & (1 << bit)) != 0;
+    private void SetDx(ref byte mask, int bit, bool on,
+        [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        mask = (byte)(on ? mask | (1 << bit) : mask & ~(1 << bit));
+        OnPropertyChanged(name);
+    }
+
     public PaBandSettingsDto Original { get; } = original;
     public string Band => Original.Band;
     public PaBandSettingsDto ToDto() => Original with
     {
         PaGainDb = PaGainDb, DisablePa = DisablePa, OcTx = OcTx, OcRx = OcRx, OcTune = OcTune,
+        OcDxTx = _ocDxTx, OcDxRx = _ocDxRx,
     };
 
     private static bool Bit(byte mask, int pin) => (mask & (1 << (pin - 1))) != 0;
@@ -182,6 +202,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 await LoadFiltersStationAsync(state);
                 await LoadCfcPresetsAsync();
                 await LoadBandPlansAsync();
+                await LoadHardwareAsync();
             }
             finally { _populating = false; }
             Status = "Changes apply as you make them.";
@@ -332,6 +353,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             || _origAntennas is null) return;
         foreach (var cts in _pending.Values) cts.Cancel();
         _pending.Clear();
+        UndoHardware();
 
         // Populate from the originals, but keep comparing against what the
         // engine has now, so only real differences are sent.

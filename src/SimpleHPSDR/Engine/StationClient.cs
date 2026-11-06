@@ -438,6 +438,37 @@ public sealed class StationClient : IDisposable
     public async Task<string> GetConnectedBoardAsync() =>
         (await _http.GetFromJsonAsync<ConnectedBoard>("api/radio/pa-thermal", Json))!.EffectiveBoard;
 
+    // ---- options only some radios have ---------------------------------
+
+    public sealed record BoardFlags(bool HasHl2OptionalToggles, bool SupportsAnvelinaDxOc);
+    public async Task<BoardFlags> GetBoardFlagsAsync() =>
+        (await _http.GetFromJsonAsync<BoardFlags>("api/radio/capabilities", Json))!;
+
+    public async Task<G2OptionsDto> GetG2OptionsAsync() =>
+        (await _http.GetFromJsonAsync<G2OptionsDto>("api/radio/g2-options", Json))!;
+    public Task SetG2OptionsAsync(bool? dither = null, bool? random = null) =>
+        PutAsync("api/radio/g2-options", new G2OptionsSetRequest(dither, random));
+
+    public async Task<Hl2OptionsDto> GetHl2OptionsAsync() =>
+        (await _http.GetFromJsonAsync<Hl2OptionsDto>("api/radio/hl2-options", Json))!;
+    public Task SetHl2OptionsAsync(bool bandVolts) =>
+        PutAsync("api/radio/hl2-options", new Hl2OptionsSetRequest(bandVolts));
+
+    public sealed record Hl2Codec(bool Supported, bool Enabled);
+    public async Task<Hl2Codec> GetHl2CodecAsync() =>
+        (await _http.GetFromJsonAsync<Hl2Codec>("api/radio/hl2-codec", Json))!;
+    public Task SetHl2CodecAsync(bool enabled) =>
+        PutAsync("api/radio/hl2-codec", new { Enabled = enabled });
+
+    public async Task<Hl2GpioDto> GetHl2GpioAsync() =>
+        (await _http.GetFromJsonAsync<Hl2GpioDto>("api/radio/hl2-gpio", Json))!;
+    public Task SetHl2GpioAsync(int bits) =>
+        PutAsync("api/radio/hl2-gpio", new Hl2GpioSetRequest(bits));
+
+    public sealed record Hl2IoBoard(bool Supported, bool Present, byte HardwareVersion, byte FirmwareMajor, byte FirmwareMinor);
+    public async Task<Hl2IoBoard> GetHl2IoBoardAsync() =>
+        (await _http.GetFromJsonAsync<Hl2IoBoard>("api/radio/hl2-io-board", Json))!;
+
     public sealed record RadioVariant(string Variant, bool RequiresConfirmation);
     /// <summary>Which radio behind the OrionMkII board ID: they all report the same one.</summary>
     public async Task<RadioVariant> GetRadioVariantAsync() =>
@@ -560,6 +591,9 @@ public sealed class StationClient : IDisposable
 
     public async Task<FilterPreset[]> GetFilterPresetsAsync(RxMode mode) =>
         await _http.GetFromJsonAsync<FilterPreset[]>($"api/filter/presets?mode={mode}", Json) ?? [];
+
+    private async Task PutAsync<T>(string path, T body) =>
+        await Checked(_http.PutAsJsonAsync(path, body, Json));
 
     private async Task PostAsync<T>(string path, T body, CancellationToken ct = default)
     {

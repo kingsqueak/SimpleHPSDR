@@ -411,6 +411,12 @@ If your radio has a speaker or headphone jack, choose Radio speaker jack as the 
 ## External amplifier
 Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Band Outputs switches its bands through the radio's open-collector pins.
 
+## Options for particular radios
+Config > Hardware has the options only some radios have, in a section for each. A section is greyed out unless the radio that's set has that hardware. The same goes for other pages: a jack, bias, antenna relay or receive input your radio doesn't have stays on the page, greyed out.
+- ADC dither and randomizer: for the ANAN-G2 and G2-1K, and any radio except the Hermes-Lite 2 while it's connected on Protocol 1.
+- Hermes-Lite 2: band volts for an amp, the HL2+ codec, and the four user outputs. It also shows whether an IO board was found.
+- Anvelina-PRO3: the DX outputs, pins 7 to 10, for each band.
+
 ## Also in Config > Station
 - Band plan: the band edges for your region or licence class, or General Coverage for no restrictions. Outside the plan it warns you or blocks transmit, as you choose. PA calibration also uses it; in General Coverage that's the last plan you chose.
 - PTT: the radio's PTT input, or a foot switch on a serial port. Both can be turned off.

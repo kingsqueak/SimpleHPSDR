@@ -20,7 +20,7 @@
       <TabItem Header="Radio">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
-            <Border Classes="panel" IsVisible="{Binding ShowRadioModel}">
+            <Border Classes="panel" IsEnabled="{Binding ShowRadioModel}">
               <StackPanel Spacing="6">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="Radio model" Classes="label" FontSize="12" VerticalAlignment="Center" />
@@ -37,6 +37,65 @@
                 <TextBlock Text="Theme" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <ComboBox ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" Width="180"
                           ToolTip.Tip="System follows the computer's light or dark setting." />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Hardware">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock Text="{Binding HardwareText}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+
+            <TextBlock Text="ADC DITHER AND RANDOMIZER" Classes="label" Margin="2,4,0,0" />
+            <Border Classes="panel" IsEnabled="{Binding HasAdcOptions}">
+              <StackPanel Spacing="6">
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="For the ANAN-G2 and G2-1K, and any radio except the Hermes-Lite 2 while it's connected on Protocol 1. On Protocol 2 the engine only sends these to the G2 family." />
+                <CheckBox Content="ADC dither" IsChecked="{Binding AdcDither}" />
+                <CheckBox Content="ADC randomizer" IsChecked="{Binding AdcRandomizer}" />
+              </StackPanel>
+            </Border>
+
+            <TextBlock Text="HERMES-LITE 2" Classes="label" Margin="2,4,0,0" />
+            <Border Classes="panel" IsEnabled="{Binding HasHl2Options}">
+              <StackPanel Spacing="6">
+                <CheckBox Content="Band volts on the FAN connector, for an amp that switches bands by voltage" IsChecked="{Binding Hl2BandVolts}" />
+                <CheckBox Content="HL2+ audio codec fitted" IsChecked="{Binding Hl2PlusCodec}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="User outputs" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <CheckBox Content="1" IsChecked="{Binding Hl2Gpio1}" MinWidth="0" />
+                  <CheckBox Content="2" IsChecked="{Binding Hl2Gpio2}" MinWidth="0" />
+                  <CheckBox Content="3" IsChecked="{Binding Hl2Gpio3}" MinWidth="0" />
+                  <CheckBox Content="4" IsChecked="{Binding Hl2Gpio4}" MinWidth="0" />
+                </StackPanel>
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap">
+                  <Run Text="IO board: " /><Run Text="{Binding Hl2IoBoardText}" />
+                </TextBlock>
+              </StackPanel>
+            </Border>
+
+            <TextBlock Text="ANVELINA-PRO3" Classes="label" Margin="2,4,0,0" />
+            <Border Classes="panel" IsEnabled="{Binding HasAnvelinaDx}">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Text="DX outputs, pins 7 to 10, for each band." />
+                <Grid ColumnDefinitions="60,190,190" Margin="2,0">
+                  <TextBlock Text="BAND" Classes="label" />
+                  <TextBlock Grid.Column="1" Text="RX PINS" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="2" Text="TX PINS" Classes="label" FontSize="11" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding PaBands}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PaBandRow">
+                      <Grid ColumnDefinitions="60,190,190" Margin="2,1">
+                        <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                        <Border Grid.Column="1"><StackPanel Orientation="Horizontal" Spacing="6"><CheckBox IsChecked="{Binding DxRx7}" Content="7" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx8}" Content="8" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx9}" Content="9" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx10}" Content="10" MinWidth="0" /></StackPanel></Border>
+                        <Border Grid.Column="2"><StackPanel Orientation="Horizontal" Spacing="6"><CheckBox IsChecked="{Binding DxTx7}" Content="7" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx8}" Content="8" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx9}" Content="9" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx10}" Content="10" MinWidth="0" /></StackPanel></Border>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
               </StackPanel>
             </Border>
           </StackPanel>
@@ -157,19 +216,25 @@
               </StackPanel>
             </Border>
 
-            <TextBlock Text="RADIO AUDIO" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasRadioAudio}" />
-            <Border Classes="panel" IsVisible="{Binding HasRadioAudio}">
+            <TextBlock Text="RADIO AUDIO" Classes="label" Margin="2,4,0,0" />
+            <Border Classes="panel" IsEnabled="{Binding HasRadioAudio}">
               <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
                 <TextBlock Text="Transmit audio" Classes="label" FontSize="12" />
                 <ComboBox Grid.Column="1" ItemsSource="{Binding TxSources}" SelectedItem="{Binding SelectedTxSource}"
-                          Width="240" />
+                          Width="240">
+                  <ComboBox.Styles>
+                    <Style Selector="ComboBoxItem" x:DataType="vm:SourceOption">
+                      <Setter Property="IsEnabled" Value="{Binding Available}" />
+                    </Style>
+                  </ComboBox.Styles>
+                </ComboBox>
                 <TextBlock Grid.Row="1" Text="Mic jack" Classes="label" FontSize="12" />
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="16">
                   <CheckBox Content="Boost (+20 dB)" IsChecked="{Binding MicBoost}" />
-                  <CheckBox Content="Bias (electret mics)" IsChecked="{Binding MicBias}" IsVisible="{Binding HasMicBias}" />
+                  <CheckBox Content="Bias (electret mics)" IsChecked="{Binding MicBias}" IsEnabled="{Binding HasMicBias}" />
                 </StackPanel>
-                <TextBlock Grid.Row="2" Text="Line-in gain" Classes="label" FontSize="12" IsVisible="{Binding HasLineIn}" />
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasLineIn}">
+                <TextBlock Grid.Row="2" Text="Line-in gain" Classes="label" FontSize="12" IsEnabled="{Binding HasLineIn}" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsEnabled="{Binding HasLineIn}">
                   <Slider Minimum="0" Maximum="31" Value="{Binding LineInGain}" Width="200"
                           TickFrequency="1" IsSnapToTickEnabled="True" />
                   <TextBlock Text="{Binding LineInGain, StringFormat={}{0:0}}" VerticalAlignment="Center" />
@@ -516,7 +581,7 @@
               <TextBlock Text="BAND" Classes="label" />
               <TextBlock Grid.Column="1" Text="TX ANTENNA" Classes="label" />
               <TextBlock Grid.Column="2" Text="RX ANTENNA" Classes="label" />
-              <TextBlock Grid.Column="3" Text="RX AUX INPUT" Classes="label" IsVisible="{Binding HasRxAux}" />
+              <TextBlock Grid.Column="3" Text="RX AUX INPUT" Classes="label" />
             </Grid>
             <Border Classes="panel">
               <ItemsControl ItemsSource="{Binding Antennas}">
@@ -532,7 +597,7 @@
                                 IsEnabled="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).HasRxRelays}" />
                       <ComboBox Grid.Column="3" ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).RxAuxInputs}"
                                 SelectedItem="{Binding RxAux}" Width="110"
-                                IsVisible="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).HasRxAux}" />
+                                IsEnabled="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).HasRxAux}" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>

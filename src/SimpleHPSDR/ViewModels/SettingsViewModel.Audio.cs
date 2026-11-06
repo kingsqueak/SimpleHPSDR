@@ -15,7 +15,7 @@ public sealed record ChannelOption(string Label, int Value)
     public override string ToString() => Label;
 }
 
-public sealed record SourceOption(string Label, TxAudioSource Source)
+public sealed record SourceOption(string Label, TxAudioSource Source, bool Available = true)
 {
     public override string ToString() => Label;
 }
@@ -85,12 +85,9 @@ public sealed partial class SettingsViewModel
         HasLineIn = radio.HasRadioLineIn;
         TxSources.Clear();
         TxSources.Add(new SourceOption("Computer microphone", TxAudioSource.Host));
-        if (HasRadioAudio)
-        {
-            TxSources.Add(new SourceOption("Radio mic jack", TxAudioSource.RadioMic));
-            if (HasLineIn) TxSources.Add(new SourceOption("Radio line in", TxAudioSource.RadioLineIn));
-            if (radio.HasBalancedXlr) TxSources.Add(new SourceOption("Radio XLR", TxAudioSource.RadioBalancedXlr));
-        }
+        TxSources.Add(new SourceOption("Radio mic jack", TxAudioSource.RadioMic, HasRadioAudio));
+        TxSources.Add(new SourceOption("Radio line in", TxAudioSource.RadioLineIn, HasRadioAudio && HasLineIn));
+        TxSources.Add(new SourceOption("Radio XLR", TxAudioSource.RadioBalancedXlr, HasRadioAudio && radio.HasBalancedXlr));
         SelectedTxSource = TxSources.FirstOrDefault(s => s.Source == radio.Source) ?? TxSources[0];
         MicBoost = radio.MicBoost;
         MicBias = radio.MicBias;
