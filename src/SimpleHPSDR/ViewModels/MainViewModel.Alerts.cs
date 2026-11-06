@@ -55,7 +55,11 @@ public sealed partial class MainViewModel
 
     private void TrackKeyForAlert()
     {
-        if (!IsTransmitting) _planDismissed = false;
+        if (!IsTransmitting)
+        {
+            _planDismissed = _swrWarned = false;
+            _swrWatch.Reset();
+        }
         if (AlertShown && AlertIsWarning != IsTransmitting) ClearAlert();
         if (IsTransmitting) _ = CheckBandPlanAsync();
     }
@@ -72,6 +76,31 @@ public sealed partial class MainViewModel
         _planAlert = false;
         AlertText = "";
         AlertIsWarning = false;
+    }
+
+    // ---- the user's SWR levels, for MOX ---------------------------------
+
+    private readonly SwrWatch _swrWatch = new();
+    private bool _swrWarned;
+
+    /// <summary>TUNE is left out: a tuner sees high SWR while it hunts.</summary>
+    private void CheckSwr(double swr, long nowMs)
+    {
+        if (TunOn) return;
+        double warnAt = _settings.SwrWarnAt, stopAt = _settings.SwrStopAt;
+        switch (_swrWatch.Observe(swr, warnAt, stopAt, nowMs))
+        {
+            case SwrWatch.Result.Stop:
+                _swrWatch.Reset();
+                OnAlert(new AlertFrame(AlertKind.SwrTrip, $"SWR {swr:0.0}:1 is above your {stopAt:0.0}:1 limit, so transmit stopped"));
+                break;
+            case SwrWatch.Result.Warn when !_swrWarned && (!AlertShown || _planAlert):
+                _swrWarned = true;
+                _planAlert = false;
+                AlertIsWarning = true;
+                AlertText = $"SWR {swr:0.0}:1 is above your {warnAt:0.0}:1 warning level";
+                break;
+        }
     }
 
     // ---- Warn only: the engine's guard is off, so look here -------------

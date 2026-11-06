@@ -269,7 +269,7 @@ Before you transmit, make sure an antenna or dummy load is connected to the ante
 
 ## When transmit stops by itself
 The engine protects the radio, and a red banner in the main and mini windows says why it stopped you. It stays until you click Dismiss or transmit again.
-- SWR too high: sustained SWR above the limit. Check the antenna and tuner before transmitting again.
+- SWR too high: SWR stayed above the limit for half a second. Check the antenna and tuner before transmitting again. The engine always stops MOX at 2.5:1, and TUNE at 6:1 above 35 W. You can set a lower limit for MOX, and an amber warning before it, in Config > Amp.
 - TX timeout: you were keyed longer than the limit in Config > Amp. An amber warning appears shortly before, while you can still unkey. It goes when you do.
 - Out of band: with Block transmit set in Config > Station, your band plan doesn't allow the frequency or mode, so transmit stopped or never started. With Warn only, an amber banner tells you instead and you stay on the air. General Coverage does neither.
 - External fault: hardware connected to the radio reported a problem.

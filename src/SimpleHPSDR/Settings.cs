@@ -42,6 +42,10 @@ public sealed class Settings
     /// <summary>No band plan restrictions at all. The engine still holds a
     /// plan, which PA calibration uses for its test frequencies.</summary>
     public bool GeneralCoverage { get; set; }
+    /// <summary>SWR levels for MOX: an amber warning, and where the app stops
+    /// transmit. The engine still stops MOX at 2.5:1 by itself.</summary>
+    public double SwrWarnAt { get; set; } = 2.0;
+    public double SwrStopAt { get; set; } = SwrWatch.EngineLimit;
     /// <summary>Outside the band plan: block transmit, or only warn.</summary>
     public bool BandPlanBlocks { get; set; }
     /// <summary>The parametric TX EQ; the engine holds only its ten-point result.</summary>

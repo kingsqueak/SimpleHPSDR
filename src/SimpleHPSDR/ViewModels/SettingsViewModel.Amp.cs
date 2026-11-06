@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SimpleHPSDR.Engine;
 using Zeus.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
@@ -13,6 +14,30 @@ public sealed partial class SettingsViewModel
     private sealed record CalValues(double Trim, double Ppm, bool ExtRef, double ExtPpm, int AdcMax, int AdcHold);
     private AmpValues? _ampWas, _ampOrig;
     private CalValues? _calWas, _calOrig;
+
+    // ---- SWR levels: app settings, saved as they change -----------------
+
+    public double SwrWarnAt
+    {
+        get => AppSettings?.SwrWarnAt ?? 2.0;
+        set
+        {
+            if (AppSettings is null) return;
+            AppSettings.SwrWarnAt = value;
+            AppSettings.Save();
+        }
+    }
+
+    public double SwrStopAt
+    {
+        get => AppSettings?.SwrStopAt ?? SwrWatch.EngineLimit;
+        set
+        {
+            if (AppSettings is null) return;
+            AppSettings.SwrStopAt = Math.Min(value, SwrWatch.EngineLimit);
+            AppSettings.Save();
+        }
+    }
 
     [ObservableProperty] private double _preKeyDelayMs;
     [ObservableProperty] private double _rxResumeDelayMs;
