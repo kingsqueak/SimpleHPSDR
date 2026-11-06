@@ -148,6 +148,9 @@ Break-in means keying transmits by itself, and the radio drops back to receive a
 ## Sending from the keyboard
 Click WPM to open the CW window, which stays open beside the main window. Type and press Enter, or press a macro. Both transmit straight away, so have your antenna or dummy load connected. Stop or Esc ends it at once and drops anything queued, and so does turning MOX off. Edit macros in the same window.
 
+## Keying from the keyboard (experimental)
+Tick Keyboard keying in the CW window. It needs the TCI server on, in Config > CAT & TCI. While the CW window has focus and you aren't typing in a box, space is a straight key, the left arrow sends dits and the right arrow sends dahs, at your WPM. Reverse paddles swaps the arrows too. Holding both arrows alternates them. These transmit. Transmit stays on between elements for the Hang time (right-click WPM), and at least twice that for the spacebar, so the relays don't follow every element, and your mic is muted for the hold. It's for slow sending and practice, as keyboard timing isn't as steady as a real keyer. It won't start while MOX or TUNE is on, and it needs Break-in on. A key can't stay down longer than 3 seconds, and it lifts if the window loses focus.
+
 ## Reading CW
 Press Decode in the CW window to show received CW as text. It works best on a clean, steady signal with a narrow filter, and it won't match a good ear on a weak or hand-sent signal.
 

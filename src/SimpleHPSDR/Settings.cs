@@ -43,6 +43,9 @@ public sealed class Settings
     public ParametricEqSettings ParametricEq { get; set; } = ParametricEqSettings.Default;
     /// <summary>Receive audio goes to the radio's speaker jack, not the computer.</summary>
     public bool AudioToRadio { get; set; }
+    /// <summary>The real mic gain while a CW keyboard hold has it muted; set back on
+    /// the next connect if the app stops mid-hold.</summary>
+    public int? CwHeldMicDb { get; set; }
     /// <summary>Correction to the PWR display from an external meter, in dB.</summary>
     public double PowerMeterTrimDb { get; set; }
     /// <summary>ID timer: a reminder on the even ten minutes while connected.</summary>

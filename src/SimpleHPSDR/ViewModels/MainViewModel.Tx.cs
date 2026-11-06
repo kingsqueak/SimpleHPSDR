@@ -112,6 +112,15 @@ public sealed partial class MainViewModel
 
     private async Task LoadTransmitAsync(StateDto s)
     {
+        // The app stopped during a CW hold: the engine still has the mic muted.
+        if (_settings.CwHeldMicDb is int heldMic)
+        {
+            await Try(() => _client!.SetMicGainAsync(heldMic));
+            s = s with { MicGainDb = heldMic };
+            _settings.CwHeldMicDb = null;
+            _settings.Save();
+        }
+
         // The engine ships with no PTT release delay, which cuts off the end
         // of every over (the TX processing holds ~210 ms of speech). Give it
         // the app default once, on the first connect.
@@ -181,6 +190,11 @@ public sealed partial class MainViewModel
 
     partial void OnMoxOnChanged(bool value)
     {
+        if (!value && _keyboardHold)   // from the hang, the button or the engine
+        {
+            _keyboardHold = false;
+            _ = RestoreMicAfterHoldAsync();
+        }
         if (_applyingTx || !IsConnected) return;
         CancelPsCalForOperatorKey();
         if (!value && CwSending) _ = StopCwAsync();   // MOX off also ends queued text
@@ -260,7 +274,8 @@ public sealed partial class MainViewModel
 
     partial void OnMicGainDbChanged(double value)
     {
-        if (!_applyingTx && IsConnected) _micGainSender?.Send((int)Math.Round(value));
+        // While a CW hold has the mic muted, this must not bring it back.
+        if (!_applyingTx && IsConnected && _settings.CwHeldMicDb is null) _micGainSender?.Send((int)Math.Round(value));
     }
 
     private void UpdateTxMeters(TxMetersV2Frame f)
@@ -284,6 +299,8 @@ public sealed partial class MainViewModel
         if (_client is not { } client) return;
         Interlocked.Increment(ref _txGeneration);
         try { _psCalCts?.Cancel(); } catch (ObjectDisposedException) { }
+        _straightDown = _ditDown = _dahDown = _keyboardHold = false;
+        await SendKeyUpAsync();
         bool held = await _txGate.WaitAsync(UnkeyGateWait);
         try
         {
@@ -291,6 +308,7 @@ public sealed partial class MainViewModel
             try { await client.SetMoxAsync(false); } catch (Exception) { }
             try { await client.SetTunAsync(false); } catch (Exception) { }
             try { await client.SetTwoToneAsync(false); } catch (Exception) { }
+            await RestoreMicAfterHoldAsync();
         }
         finally { if (held) _txGate.Release(); }
     }

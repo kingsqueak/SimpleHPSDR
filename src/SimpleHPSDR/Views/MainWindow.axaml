@@ -356,7 +356,8 @@
                   <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding CwSidetoneDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" Margin="8,0,0,0" />
                   <CheckBox Grid.Row="6" Grid.ColumnSpan="2" Content="Break-in" IsChecked="{Binding CwBreakIn}"
                             ToolTip.Tip="Keying transmits by itself, and the radio drops back to receive after the hang time" />
-                  <TextBlock Grid.Row="7" Text="Hang time" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="7" Text="Hang time" Classes="label" FontSize="12" VerticalAlignment="Center"
+                             ToolTip.Tip="How long transmit stays on after keying, for a key on the radio or the keyboard." />
                   <Slider Grid.Row="7" Grid.Column="1" Minimum="10" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwHangMs}" />
                   <TextBlock Grid.Row="7" Grid.Column="2" Text="{Binding CwHangMs, StringFormat={}{0} ms}" VerticalAlignment="Center" Margin="8,0,0,0" />
                   <CheckBox Grid.Row="8" Grid.ColumnSpan="2" Content="Reverse paddles" IsChecked="{Binding CwPaddleReverse}" />

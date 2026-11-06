@@ -6,11 +6,15 @@
         x:DataType="vm:MainViewModel"
         Title="CW" Width="520" Height="460" MinWidth="400" MinHeight="360"
         WindowStartupLocation="CenterOwner">
-  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="14" RowSpacing="10">
+  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="14" RowSpacing="10">
     <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
       <ToggleButton Classes="seg" Content="Decode" IsChecked="{Binding CwDecoderOn}"
                     ToolTip.Tip="Show received CW as text. Works best on a clean, steady signal." />
-      <TextBlock Grid.Column="1" Text="{Binding CwDecodedInfo}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+        <CheckBox Content="Keyboard keying" IsChecked="{Binding CwKeyboardOn}"
+                  ToolTip.Tip="While this window has focus: space is a straight key, left arrow sends dits, right arrow sends dahs. These transmit. Off each time the app starts." />
+        <TextBlock Text="{Binding CwDecodedInfo}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      </StackPanel>
       <Button Grid.Column="2" Classes="flat" Content="Clear" Command="{Binding ClearCwDecodedCommand}" />
       <TextBlock Grid.Column="3" Text="{Binding CwWpmText}" VerticalAlignment="Center" FontWeight="SemiBold" />
     </Grid>
@@ -51,6 +55,9 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
     </Expander>
+
+    <TextBlock Grid.Row="6" Text="{Binding CwKeyboardNote}" FontSize="12" TextWrapping="Wrap"
+               Foreground="{DynamicResource WarnText}" />
 
     <StackPanel Grid.Row="5" Orientation="Horizontal" Spacing="8">
       <TextBlock Text="{Binding CwStateText}" Classes="label" FontSize="12" />

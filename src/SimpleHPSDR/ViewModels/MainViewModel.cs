@@ -910,6 +910,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ModeIsAm));
         OnPropertyChanged(nameof(ModeIsFm));
         OnPropertyChanged(nameof(ModeIsCw));
+        if (!ModeIsCw) ReleaseCwKeys();
         OnPropertyChanged(nameof(ModeHasNoOptions));
         Mark(Modes, mode);
         OnPropertyChanged(nameof(ModeLabel));
@@ -1256,6 +1257,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             try { Task.Run(() => client.DisconnectAsync(p2)).Wait(TimeSpan.FromSeconds(2)); }
             catch (Exception) { }
         }
+        _keyer?.Dispose();
         _client?.Dispose();
         _engine.Dispose();
     }

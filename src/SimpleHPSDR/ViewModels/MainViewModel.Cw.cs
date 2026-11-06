@@ -109,7 +109,11 @@ public sealed partial class MainViewModel
     partial void OnCwBreakInChanged(bool value) => SendCwSettings();
     partial void OnCwHangMsChanged(int value) => SendCwSettings();
     partial void OnCwWeightChanged(int value) => SendCwSettings();
-    partial void OnCwPaddleReverseChanged(bool value) => SendCwSettings();
+    partial void OnCwPaddleReverseChanged(bool value)
+    {
+        SendCwSettings();
+        _ditDown = _dahDown = false;   // a held arrow changes meaning, so let it go
+    }
     partial void OnCwFarnsworthWpmChanged(int value) => SendCwSettings();
 
     /// <summary>The wheel over the WPM button.</summary>
