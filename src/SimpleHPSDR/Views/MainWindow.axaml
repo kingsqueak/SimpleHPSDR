@@ -63,7 +63,7 @@
   <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
 
     <!-- Top: radio, frequency, meter -->
-    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,10">
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
       <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <Button Classes="flat" Command="{Binding ChooseRadioCommand}" ToolTip.Tip="{Binding RadioLabel}">
@@ -250,6 +250,16 @@
           </Grid>
         </Grid>
       </Border>
+
+      <Button Grid.Column="3" Classes="seg" Click="OnOpenMini" Margin="8,0,0,0" Padding="4,8" MinWidth="0" VerticalAlignment="Stretch"
+              ToolTip.Tip="Switch to the small window: VFO, meters, Mute and TX. Close it to come back.">
+        <StackPanel VerticalAlignment="Center" Spacing="-1">
+          <TextBlock Text="M" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="I" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="N" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="I" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+        </StackPanel>
+      </Button>
     </Grid>
 
     <!-- Band / mode / filter rows -->

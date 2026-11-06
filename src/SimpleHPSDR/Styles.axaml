@@ -120,6 +120,17 @@
     <Setter Property="Foreground" Value="#2FBF71" />
   </Style>
 
+  <!-- Mini window: Mute goes red when on; TX is green, red while keyed. -->
+  <Style Selector="Border.minibutton">
+    <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="0,12" />
+  </Style>
+  <Style Selector="Border.minibutton.muted"><Setter Property="Background" Value="#D92D33" /></Style>
+  <Style Selector="Border.minibutton.muted TextBlock"><Setter Property="Foreground" Value="White" /></Style>
+  <Style Selector="Border.minibutton.tx"><Setter Property="Background" Value="#1E7F4F" /></Style>
+  <Style Selector="Border.minibutton.tx.keyed"><Setter Property="Background" Value="#D92D33" /></Style>
+
   <!-- A plain button in the segmented look, for buttons whose lit state
        comes from the model rather than from being clicked (e.g. Pre). -->
   <Style Selector="Button.seg">

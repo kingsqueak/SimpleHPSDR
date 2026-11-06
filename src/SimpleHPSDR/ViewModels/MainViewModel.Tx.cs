@@ -208,6 +208,24 @@ public sealed partial class MainViewModel
         _ = KeyAsync(() => _client!.SetTunAsync(value), value);
     }
 
+    private bool _momentaryTx;
+
+    /// <summary>The mini window's TX button went down. Only what this press
+    /// keyed is unkeyed by its release, so MOX from elsewhere is left alone.</summary>
+    public void MomentaryTxDown()
+    {
+        if (!IsConnected || MoxOn || TunOn) return;
+        _momentaryTx = true;
+        MoxOn = true;
+    }
+
+    public void MomentaryTxUp()
+    {
+        if (!_momentaryTx) return;
+        _momentaryTx = false;
+        MoxOn = false;
+    }
+
     // Keying goes out one at a time, and an unkey outranks any key-on still
     // waiting: a slow request must never key the radio after it was told to stop.
     private readonly SemaphoreSlim _txGate = new(1, 1);

@@ -1,0 +1,69 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        xmlns:c="using:SimpleHPSDR.Controls"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        x:Class="SimpleHPSDR.Views.MiniWindow"
+        x:DataType="vm:MainViewModel"
+        Title="SimpleHPSDR" MinWidth="240" MinHeight="150">
+  <!-- Everything scales with the window -->
+  <Viewbox Stretch="Uniform" Margin="10">
+    <StackPanel Width="400" Spacing="10">
+      <Panel>
+      <Panel Name="FrequencyPanel" Background="Transparent" Cursor="Hand"
+             ToolTip.Tip="Use the wheel to tune, or click to type a frequency">
+        <TextBlock FontFamily="{StaticResource MonoFont}" Classes.tx="{Binding IsTransmitting}"
+                   IsVisible="{Binding !EditingFrequency}" FontSize="44" FontWeight="SemiBold" HorizontalAlignment="Center">
+          <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="{DynamicResource StepDigit}" /><Run Text="{Binding FrequencyTail}" />
+        </TextBlock>
+        <TextBox Name="FrequencyEntryBox" Text="{Binding FrequencyEntry}" IsVisible="{Binding EditingFrequency}"
+                 FontFamily="{StaticResource MonoFont}" FontSize="30" PlaceholderText="MHz or kHz" />
+      </Panel>
+      <Button Name="FullButton" Classes="flat" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="4" MinWidth="0"
+              ToolTip.Tip="Back to the full window">
+        <Viewbox Width="14" Height="14">
+          <Path Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="2.5"
+                Data="M14 3 H21 V10 M21 3 L13 11 M10 21 H3 V14 M3 21 L11 13" />
+        </Viewbox>
+      </Button>
+      </Panel>
+
+      <Border Classes="panel">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="SIGNAL" Classes="label" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <TextBlock Text="{Binding SUnits}" Width="62" Margin="12,0,0,0" FontFamily="{StaticResource MonoFont}" FontSize="13"
+                       FontWeight="SemiBold" />
+            <TextBlock Text="pk" Classes="label" FontSize="11" Margin="0,1,4,0" />
+            <TextBlock Text="{Binding PeakSUnits}" Width="56" FontFamily="{StaticResource MonoFont}" FontSize="13" />
+            <TextBlock Text="{Binding SignalDbm, StringFormat={}{0:0} dBm}" Width="80" FontFamily="{StaticResource MonoFont}"
+                       FontSize="13" TextAlignment="Right" Foreground="{DynamicResource TextMuted}" />
+          </StackPanel>
+          <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}"
+                       Height="8" Margin="0,6,0,0" />
+          <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,8,0,0">
+            <TextBlock Text="PWR" Classes="label" FontSize="11" VerticalAlignment="Center" />
+            <ProgressBar Grid.Column="1" Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}"
+                         MinWidth="0" Height="8" VerticalAlignment="Center" Foreground="#E5484D" Background="{DynamicResource ControlBg}" />
+            <TextBlock Grid.Column="2" Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" TextAlignment="Right"
+                       VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Grid.Column="3" Text="SWR" Classes="label" FontSize="11" Margin="4,0,0,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="4" Text="{Binding SwrText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Grid.Column="5" Text="ALC" Classes="label" FontSize="11" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="6" Text="{Binding AlcText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+        <Border Name="MuteButton" Classes="minibutton" Classes.muted="{Binding Muted}" Cursor="Hand">
+          <TextBlock Text="MUTE" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
+        </Border>
+        <Border Name="TxButton" Grid.Column="1" Classes="minibutton tx" Classes.keyed="{Binding MoxOn}" Cursor="Hand"
+                ToolTip.Tip="Transmits while held down">
+          <TextBlock Text="TX" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="White" />
+        </Border>
+      </Grid>
+    </StackPanel>
+  </Viewbox>
+</Window>

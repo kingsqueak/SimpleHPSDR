@@ -375,6 +375,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Set by the window: shows the radio picker and returns the choice.</summary>
     public Func<RadioPickerViewModel, Task<RadioChoice?>>? ShowRadioPicker { get; set; }
     public Func<DspPrepViewModel, Task>? ShowDspPrep { get; set; }
+    public (double Width, double Height) MiniSize => (_settings.MiniWidth, _settings.MiniHeight);
+    public (int X, int Y)? MiniPosition =>
+        _settings.MiniX is int x && _settings.MiniY is int y ? (x, y) : null;
+
+    public void RememberMiniWindow(double width, double height, int x, int y)
+    {
+        (_settings.MiniWidth, _settings.MiniHeight) = (width, height);
+        (_settings.MiniX, _settings.MiniY) = (x, y);
+        _settings.Save();
+    }
     /// <summary>Plan names and the one preselected; the index chosen.</summary>
     public Func<IReadOnlyList<string>, int, Task<int>>? ShowFirstStart { get; set; }
     /// <summary>Radio, reason, log path; true to restart the engine.</summary>

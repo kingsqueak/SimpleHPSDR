@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -110,7 +111,7 @@ public partial class MainWindow : Window
         bool narrow = width < FullTopBarWidth;
         RadioText.MaxWidth = narrow ? 96 : double.PositiveInfinity;
         StatusText.MaxWidth = narrow ? 230 : 300;
-        SignalPanel.Width = Math.Clamp(width - 760, 236, 300);
+        SignalPanel.Width = Math.Clamp(width - 800, 236, 300);
         SignalLabel.IsVisible = SignalPanel.Width >= 290;
     }
 
@@ -180,6 +181,24 @@ public partial class MainWindow : Window
         PanBorderA.BorderBrush = two && vm.ActiveRx == 0 ? ActiveOutline[0] : Brushes.Transparent;
         PanBorderB.BorderBrush = two && vm.ActiveRx == 1 ? ActiveOutline[1] : Brushes.Transparent;
         if (!two) SpectrumB.Clear();
+    }
+
+    // The mini window replaces this one until it's closed.
+    private void OnOpenMini(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { } vm) return;
+        var (width, height) = vm.MiniSize;
+        var mini = new MiniWindow { DataContext = vm, Width = width, Height = height };
+        // Back where it was, unless that screen has gone.
+        if (vm.MiniPosition is { } at && Screens.ScreenFromPoint(new PixelPoint(at.X, at.Y)) is not null)
+        {
+            mini.WindowStartupLocation = WindowStartupLocation.Manual;
+            mini.Position = new PixelPoint(at.X, at.Y);
+        }
+        mini.Closing += (_, _) => vm.RememberMiniWindow(mini.Width, mini.Height, mini.Position.X, mini.Position.Y);
+        mini.Closed += (_, _) => Dispatcher.UIThread.Post(Show);
+        mini.Show();
+        Hide();
     }
 
     private CwWindow? _cw;
@@ -334,9 +353,15 @@ public partial class MainWindow : Window
         LayoutPanadapters();
     }
 
+    private bool _started;
+
+    // This also fires when the window comes back after being hidden for the
+    // mini window, and starting twice would restart the engine.
     protected override async void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        if (_started) return;
+        _started = true;
         if (Vm is { } vm) await vm.StartAsync();
     }
 }

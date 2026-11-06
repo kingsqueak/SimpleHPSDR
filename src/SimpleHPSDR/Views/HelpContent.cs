@@ -94,6 +94,17 @@ CTUN changes what a click does. With it on, the display stays still and only the
 - Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the zoomed span.
 """),
 
+        ("Mini window", """
+The MINI button to the right of the meters swaps the main window for a small one you can keep in a corner of the screen. Drag its edges to any size and everything scales to fit.
+
+- The frequency tunes with the wheel, or click it to type one.
+- Below it are the signal, power, SWR and ALC meters.
+- MUTE turns red while the audio is muted.
+- TX is green and turns red while transmitting. It only transmits while you hold it down, and it unkeys when you let go or click away.
+
+The small arrows at the top right, or closing the mini window, bring the main window back. If MOX or TUNE is already on, TX does nothing.
+"""),
+
         ("Reading the display", """
 ## Panadapter
 The upper graph shows signal strength across the band, with frequency left to right and level up the side. The flat grassy line at the bottom is the noise floor. Anything standing above it is a signal or interference.
