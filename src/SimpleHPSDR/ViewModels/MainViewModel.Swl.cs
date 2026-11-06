@@ -43,6 +43,11 @@ public sealed partial class MainViewModel
 
     private void RefreshSwlStation()
     {
+        if (DrmActive)
+        {
+            ShowDrmStation(null);
+            return;
+        }
         var found = SwlActive && _guide is { } guide ? guide.OnAirAt(VfoHz / 1000.0) : [];
         SwlStationShown = found.Count > 0;
         if (found.Count == 0) return;
@@ -87,6 +92,7 @@ public sealed partial class MainViewModel
             Status = "Unkey before changing mode.";
             return;
         }
+        TurnDrmOff();
         var hadMemory = _settings.ModeMemories.ContainsKey(MemoryKey(BandOf(VfoHz), RxMode.SAM));
         await SelectModeAsync(RxMode.SAM);
         if (!hadMemory) await ApplyFilterAsync(-SwlFilterHz, SwlFilterHz);

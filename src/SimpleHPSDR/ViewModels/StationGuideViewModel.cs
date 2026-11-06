@@ -40,6 +40,8 @@ public sealed partial class StationGuideViewModel : ObservableObject
     private static readonly TimeSpan MaxAge = TimeSpan.FromDays(3);
     private static string Dir => Directory.CreateDirectory(Path.Combine(EngineHost.DataDir, "schedule")).FullName;
 
+    private static string DrmDir => Directory.CreateDirectory(Path.Combine(Dir, "drm")).FullName;
+    private readonly bool _drm;
     private readonly Settings _settings;
     private readonly Action<double> _tune;
     private readonly DispatcherTimer _clock;
@@ -75,13 +77,17 @@ public sealed partial class StationGuideViewModel : ObservableObject
 
     private string Header(string column, string title) => column == _sort ? $"{title} {(_ascending ? "▲" : "▼")}" : title;
 
-    public StationGuideViewModel(Settings settings, Action<double> tune)
+    public string Title => _drm ? "DRM stations" : "Station guide";
+
+    /// <summary><paramref name="drm"/> lists DRM broadcasts from EiBi and DRMDX
+    /// instead of EiBi's analog ones.</summary>
+    public StationGuideViewModel(Settings settings, Action<double> tune, bool drm = false)
     {
-        (_settings, _tune) = (settings, tune);
+        (_settings, _tune, _drm) = (settings, tune, drm);
         _sort = settings.GuideSort;
         _ascending = settings.GuideSortAscending;
         Load();
-        if (settings.GuideLanguage != "")
+        if (!drm && settings.GuideLanguage != "")
         {
             if (!Languages.Contains(settings.GuideLanguage)) Languages.Add(settings.GuideLanguage);
             Language = settings.GuideLanguage;
@@ -98,7 +104,8 @@ public sealed partial class StationGuideViewModel : ObservableObject
         IsRunning = true;
         _clock.Start();
         Apply();
-        if (CurrentFile() is not { } f || DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > MaxAge) _ = UpdateAsync();
+        if (_drm ? DrmStale() : CurrentFile() is not { } f || DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > MaxAge)
+            _ = UpdateAsync();
     }
 
     public void Stop()
@@ -128,8 +135,52 @@ public sealed partial class StationGuideViewModel : ObservableObject
         return File.Exists(now) ? now : null;
     }
 
+    private static bool DrmStale() => DrmSchedule.Sources(DrmDir).Any(s =>
+    {
+        var path = Path.Combine(DrmDir, s.File);
+        return !File.Exists(path) || DateTime.UtcNow - File.GetLastWriteTimeUtc(path) > MaxAge;
+    });
+
+    private void LoadDrm()
+    {
+        _all = DrmSchedule.Load(DrmDir);
+        _fileNote = _all.Count > 0 ? "From EiBi and DRMDX. Schedules can be out of date." : "No schedule downloaded yet.";
+        SourceStatus = _fileNote;
+        UpdateLanguages();
+    }
+
+    /// <summary>Fetch every list. One failing keeps its cached copy.</summary>
+    private async Task UpdateDrmAsync()
+    {
+        var failed = new List<string>();
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        http.DefaultRequestHeaders.UserAgent.ParseAdd($"SimpleHPSDR/{App.Version}");
+        foreach (var s in DrmSchedule.Sources(DrmDir))
+        {
+            try
+            {
+                var bytes = await http.GetByteArrayAsync(s.Url);
+                var dest = Path.Combine(DrmDir, s.File);
+                await File.WriteAllBytesAsync(dest + ".tmp", bytes);
+                File.Move(dest + ".tmp", dest, true);
+            }
+            catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException or UnauthorizedAccessException)
+            {
+                failed.Add(s.Title);
+            }
+        }
+        LoadDrm();
+        Apply();
+        if (failed.Count > 0) SourceStatus = $"{_fileNote} Couldn't update {string.Join(", ", failed)}.";
+    }
+
     private void Load()
     {
+        if (_drm)
+        {
+            LoadDrm();
+            return;
+        }
         var file = CurrentFile() ?? Directory.GetFiles(Dir, "sked-*.csv").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
         if (file is null)
         {
@@ -155,6 +206,12 @@ public sealed partial class StationGuideViewModel : ObservableObject
     {
         if (IsUpdating) return;
         IsUpdating = true;
+        if (_drm)
+        {
+            await UpdateDrmAsync();
+            IsUpdating = false;
+            return;
+        }
         var season = EibiSeason.Code(DateOnly.FromDateTime(DateTime.UtcNow));
         try
         {
@@ -189,8 +246,11 @@ public sealed partial class StationGuideViewModel : ObservableObject
     partial void OnLanguageChanged(string value)
     {
         if (string.IsNullOrEmpty(value)) return; // rebuilding the list clears the selection for a moment
-        _settings.GuideLanguage = value == AllLanguages ? "" : value;
-        _settings.Save();
+        if (!_drm)
+        {
+            _settings.GuideLanguage = value == AllLanguages ? "" : value;
+            _settings.Save();
+        }
         Apply();
     }
 

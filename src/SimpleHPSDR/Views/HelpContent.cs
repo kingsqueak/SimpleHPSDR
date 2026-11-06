@@ -33,6 +33,11 @@ Most controls have more behind a right-click. Hover over anything for a short ex
 """),
 
         ("Shortwave listening", """
+## DRM
+Where the DRM decoder is installed, the Mode menu has DRM. It needs the TCI server on, in Config > CAT & TCI. Choosing it opens a list of DRM broadcasts: click one to tune it, or tune by hand. DRM stations are listed by the centre of their channel. CTUN turns off while DRM is on and comes back afterwards.
+
+While DRM is on, a DRM button appears beside Mode, and a box at the bottom of the waterfall shows the station, how the signal is doing and any text message it sends. Mute and AF work as usual. Click the button to open the list again. Right-click it to pick another service on stations that carry more than one, or to turn DRM off. DRM is receive only.
+
 Choose SWL from the Mode menu. The radio defaults to SAM, with a 10 kHz broadcast filter if SAM has no saved settings on that band, and the station guide opens. SAM is only the starting point: change the mode or filter as you like and SWL stays on.
 
 While SWL is on, an SWL button appears beside Mode. Click it to open the guide; you can close the guide at any time and SWL carries on. Right-click the button to turn SWL off.

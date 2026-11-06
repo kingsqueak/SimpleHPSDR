@@ -420,6 +420,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var m in ModeOrder)
             Modes.Add(new Choice(m.ToString(), m, c => _ = SelectModeAsync((RxMode)c.Value)));
         Modes.Add(new Choice(SwlChoice, SwlChoice, c => _ = SelectSwlAsync()));
+        if (DrmNative.Available) Modes.Add(new Choice(DrmChoice, DrmChoice, c => _ = SelectDrmAsync()));
         foreach (var s in Steps)
             TuneSteps.Add(new Choice(s >= 1000 ? $"{s / 1000}k" : $"{s}", s, c => SelectStep((int)c.Value)));
         foreach (var (label, mode) in new[] { ("Off", NbMode.Off), ("NB1", NbMode.Nb1), ("NB2", NbMode.Nb2) })
@@ -767,6 +768,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task DisconnectAsync()
     {
         VoxOn = false;   // never live on a radio you've just reconnected to
+        TurnDrmOff();
         EndPlacingNotch();
         if (_client is null || _radio is null) return;
         await UnkeyAsync();
@@ -795,7 +797,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AnfOn = s.Nr?.AnfEnabled ?? false;
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
-            Muted = s.Rx1Muted;
+            if (!DrmActive) Muted = s.Rx1Muted;
             ZoomLevel = s.ZoomLevel;
             CtunOn = s.CtunEnabled;
             await SetModeLocalAsync(s.Mode, s.FilterPresetName);
@@ -1160,6 +1162,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnAfGainDbChanged(double value)
     {
+        UpdateDrmVolume();
         OnPropertyChanged(nameof(AfGainText));
         OnPropertyChanged(nameof(AfTip));
         if (!_applyingState && IsConnected) _afSender.Send(Math.Round(value));
@@ -1220,7 +1223,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnMutedChanged(bool value)
     {
-        if (!_applyingState && IsConnected) _ = Try(() => _client!.SetMuteAsync(value));
+        if (DrmActive) UpdateDrmVolume();   // the engine stays muted for DRM
+        else if (!_applyingState && IsConnected) _ = Try(() => _client!.SetMuteAsync(value));
     }
 
     // Display frames arrive at 30/s on the socket thread. Queue them and drain
@@ -1327,6 +1331,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             catch (Exception) { }
         }
         _keyer?.Dispose();
+        if (DrmActive && _ctunBeforeDrm && _client is { } engine)   // the engine remembers it
+            try { Task.Run(() => engine.SetCtunAsync(true)).Wait(TimeSpan.FromSeconds(1)); } catch (Exception) { }
+        StopDrmDecoder();
         _client?.Dispose();
         _engine.Dispose();
     }

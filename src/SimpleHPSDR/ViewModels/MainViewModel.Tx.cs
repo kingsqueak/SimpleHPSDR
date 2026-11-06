@@ -93,6 +93,7 @@ public sealed partial class MainViewModel
             UpdatePsStatus();   // also tracks key-down time for PureSignal
             TrackKeyForMonitor();
             TrackKeyForAlert();
+            UpdateDrmVolume();
         });
         client.TxMeters += f =>
         {

@@ -346,7 +346,7 @@ public partial class MainWindow : Window
                 _guide.Activate();
                 return;
             }
-            _guide = new StationGuideWindow { DataContext = vm.Guide };
+            _guide = new StationGuideWindow { DataContext = vm.ActiveGuide };
             _guide.Show(this);
         };
         vm.CloseGuide = () => { if (_guide is { IsVisible: true }) _guide.Close(); };

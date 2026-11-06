@@ -345,6 +345,18 @@
               </Flyout>
             </Button.ContextFlyout>
           </Button>
+          <!-- Only while DRM is on -->
+          <Button Classes="seg lit" Content="DRM" IsVisible="{Binding DrmActive}" Command="{Binding OpenGuideCommand}"
+                  ToolTip.Tip="Open the DRM station list. Right-click to turn DRM off.">
+            <Button.ContextFlyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Open station list" Command="{Binding OpenGuideCommand}" />
+                <MenuItem Header="Service" ItemsSource="{Binding DrmServices}" IsVisible="{Binding DrmHasServices}"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                <MenuItem Header="Turn DRM off" Command="{Binding TurnDrmOffCommand}" />
+              </MenuFlyout>
+            </Button.ContextFlyout>
+          </Button>
           <!-- Only while SWL is on -->
           <Button Classes="seg lit" Content="SWL" IsVisible="{Binding SwlActive}" Command="{Binding OpenGuideCommand}"
                   ToolTip.Tip="Open the station guide. Right-click to turn SWL off.">
