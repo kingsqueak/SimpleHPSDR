@@ -736,9 +736,43 @@
               </Flyout>
             </Button.ContextFlyout>
           </Button>
-          <Button Classes="seg" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}"
+          <Button Name="RxLevButton" Classes="seg" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}"
                   VerticalAlignment="Center" Margin="0,0,14,0"
-                  ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on)" />
+                  ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on). Right-click for its settings.">
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft" Opening="OnRxLevelerOpening">
+                <Grid Name="RxLevPanel" Width="380" Margin="4" ColumnDefinitions="100,*,64" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.ColumnSpan="3" Text="RX leveler" FontWeight="SemiBold" />
+                  <TextBlock Grid.Row="1" Text="Settings" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" SelectedIndex="{Binding RxLevModeIndex}" HorizontalAlignment="Stretch">
+                    <ComboBoxItem Content="Auto" />
+                    <ComboBoxItem Content="Custom" />
+                  </ComboBox>
+                  <TextBlock Grid.Row="2" Text="Target level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="2" Grid.Column="1" Value="{Binding RxLevTargetDb}" Minimum="-30" Maximum="-6" SmallChange="1"
+                          TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding RxLevTargetDb, StringFormat={}{0:0} dB}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Text="Max boost" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="3" Grid.Column="1" Value="{Binding RxLevMaxBoostDb}" Minimum="0" Maximum="24" SmallChange="1"
+                          TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding RxLevMaxBoostDb, StringFormat={}{0:0} dB}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="4" Text="Attack" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="4" Grid.Column="1" Value="{Binding RxLevAttackMs}" Minimum="20" Maximum="2000" SmallChange="10"
+                          TickFrequency="10" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding RxLevAttackMs, StringFormat={}{0:0} ms}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="5" Text="Release" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="5" Grid.Column="1" Value="{Binding RxLevReleaseMs}" Minimum="20" Maximum="5000" SmallChange="10"
+                          TickFrequency="10" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding RxLevReleaseMs, StringFormat={}{0:0} ms}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="6" Text="Hang" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="6" Grid.Column="1" Value="{Binding RxLevHangMs}" Minimum="0" Maximum="2000" SmallChange="10"
+                          TickFrequency="10" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="6" Grid.Column="2" Text="{Binding RxLevHangMs, StringFormat={}{0:0} ms}" FontSize="12" VerticalAlignment="Center" />
+                  <Button Grid.Row="7" Grid.ColumnSpan="3" Classes="flat" Content="Reset to defaults" Command="{Binding ResetRxLevelerCommand}" />
+                </Grid>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="6">
           <Button Classes="seg" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}"

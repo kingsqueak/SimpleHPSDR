@@ -214,7 +214,7 @@ Config > Filters sets how steep the filters are. Steeper edges add delay and use
 - AF sets the overall level. Its A and B flags set each slice's own level on top of that.
 - Mute silences the receiver.
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.
-- RX Lev brings weak stations up to a steady listening level.
+- RX Lev brings weak stations up to a steady listening level. Right-click it for its settings. Auto uses the engine's own values. Custom lets you set the target level, the most boost it may add, how fast it comes up (attack), how fast it backs down (release), and how long it holds before backing down (hang).
 
 ## RF: preamp and attenuator
 Click RF to open the front end. Each click steps through preamp, 0 dB and 10 to 30 dB of attenuation. Auto ATT adds attenuation by itself if the receiver overloads, and is best left on. On a noisy band, attenuation can improve what you hear: if the noise drops and the signal doesn't, keep it.

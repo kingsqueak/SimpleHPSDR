@@ -387,6 +387,8 @@ public sealed class StationClient : IDisposable
     public Task SwapVfosAsync() => PostAsync("api/vfo/swap", new { });
     public Task SetSquelchAsync(SquelchConfig squelch) => PostAsync("api/rx/squelch", new SquelchSetRequest(squelch));
     public Task SetRxLevelerAsync(bool on) => PostAsync("api/rx/leveler", new RxLevelerSetRequest(on));
+    public Task SetRxLevelerConfigAsync(bool on, RxLevelerConfig config) =>
+        PostAsync("api/rx/leveler/config", new RxLevelerConfigSetRequest(on, config));
     public async Task<List<NotchDto>> GetNotchesAsync() =>
         (await _http.GetFromJsonAsync<List<NotchDto>>("api/rx/notches", Json))!;
     /// <summary>The whole notch list. Centres are RF frequencies in Hz.</summary>

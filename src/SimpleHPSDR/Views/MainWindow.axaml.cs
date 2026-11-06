@@ -272,6 +272,8 @@ public partial class MainWindow : Window
 
     private void OnSMeterTrimOpening(object? sender, EventArgs e) => _ = Vm?.LoadSMeterTrimAsync();
 
+    private void OnRxLevelerOpening(object? sender, EventArgs e) => _ = Vm?.LoadRxLevelerAsync();
+
     // The NB and NR popups show what the engine has when they open.
     private void OnNbParamsOpening(object? sender, EventArgs e)
     {
