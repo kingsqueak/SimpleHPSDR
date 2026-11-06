@@ -43,28 +43,51 @@ public sealed partial class SettingsViewModel
     private List<BandRegion> _bandRegions = [];
     public ObservableCollection<string> BandPlanNames { get; } = [];
     [ObservableProperty] private int _bandPlanIndex = -1;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(BandPlanRestricts))] private bool _generalCoverage;
+
+    /// <summary>"Warn only" then "Block transmit".</summary>
+    [ObservableProperty] private int _bandPlanActionIndex;
+    public bool BandPlanRestricts => !GeneralCoverage;
 
     private async Task LoadBandPlansAsync()
     {
         _bandRegions = await _client.GetBandRegionsAsync();
         BandPlanNames.Clear();
         foreach (var r in _bandRegions) BandPlanNames.Add(r.DisplayName);
+        BandPlanNames.Add(MainViewModel.GeneralCoverageName);
         var current = await _client.GetBandRegionAsync();
-        BandPlanIndex = _bandRegions.FindIndex(r => r.Id == current);
+        GeneralCoverage = AppSettings?.GeneralCoverage == true;
+        BandPlanActionIndex = AppSettings?.BandPlanBlocks == true ? 1 : 0;
+        BandPlanIndex = GeneralCoverage ? _bandRegions.Count : _bandRegions.FindIndex(r => r.Id == current);
     }
 
     partial void OnBandPlanIndexChanged(int value)
     {
-        if (_populating || value < 0 || value >= _bandRegions.Count) return;
-        _ = SetBandPlanAsync(_bandRegions[value]);
+        if (_populating || value < 0 || value > _bandRegions.Count) return;
+        _ = SetBandPlanAsync(value < _bandRegions.Count ? _bandRegions[value] : null);
     }
 
-    private async Task SetBandPlanAsync(BandRegion region)
+    partial void OnBandPlanActionIndexChanged(int value)
     {
+        if (_populating) return;
+        _ = SetBandPlanAsync(BandPlanIndex < _bandRegions.Count ? _bandRegions[BandPlanIndex] : null);
+    }
+
+    /// <summary>A null region is General Coverage, which leaves the engine's
+    /// plan where it was for PA calibration.</summary>
+    private async Task SetBandPlanAsync(BandRegion? region)
+    {
+        if (AppSettings is not { } app) return;
         try
         {
-            await _client.SetBandRegionAsync(region.Id);
-            Status = $"Band plan: {region.DisplayName}.";
+            if (region is not null) await _client.SetBandRegionAsync(region.Id);
+            bool blocks = BandPlanActionIndex == 1;
+            await _client.SetBandPlanGuardIgnoredAsync(region is null || !blocks);
+            GeneralCoverage = app.GeneralCoverage = region is null;
+            app.BandPlanBlocks = blocks;
+            app.Save();
+            Status = region is null ? "General Coverage: no band plan restrictions."
+                : $"Band plan: {region.DisplayName}, {(blocks ? "blocks transmit outside it" : "warns outside it")}.";
         }
         catch (Exception ex) { Status = $"Band plan not changed: {ex.Message}"; }
     }

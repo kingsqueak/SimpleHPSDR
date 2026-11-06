@@ -39,6 +39,11 @@ public sealed class Settings
     public bool SliceBOwnPanadapter { get; set; } = true;
     /// <summary>The band plan has been chosen at first start; the engine keeps it after that.</summary>
     public bool BandPlanDefaulted { get; set; }
+    /// <summary>No band plan restrictions at all. The engine still holds a
+    /// plan, which PA calibration uses for its test frequencies.</summary>
+    public bool GeneralCoverage { get; set; }
+    /// <summary>Outside the band plan: block transmit, or only warn.</summary>
+    public bool BandPlanBlocks { get; set; }
     /// <summary>The parametric TX EQ; the engine holds only its ten-point result.</summary>
     public ParametricEqSettings ParametricEq { get; set; } = ParametricEqSettings.Default;
     /// <summary>Receive audio goes to the radio's speaker jack, not the computer.</summary>

@@ -76,6 +76,7 @@ public sealed partial class MainViewModel
     /// <summary>From engine state (connect and the 1 s poll).</summary>
     private void UpdateOperating(StateDto s)
     {
+        if (IsTransmitting) _ = CheckBandPlanAsync(s);
         _applyingOperating = true;
         RitOn = s.RitEnabled;
         XitOn = s.XitEnabled;

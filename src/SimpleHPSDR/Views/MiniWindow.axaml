@@ -28,6 +28,8 @@
       </Button>
       </Panel>
 
+      <!-- The banner covers the meters so the window keeps its scale -->
+      <Panel>
       <Border Classes="panel">
         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Text="SIGNAL" Classes="label" />
@@ -54,6 +56,14 @@
           </Grid>
         </Grid>
       </Border>
+        <Border Classes="alert" Classes.warning="{Binding AlertIsWarning}" IsVisible="{Binding AlertShown}">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <TextBlock Text="{Binding AlertText}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Classes="flat" Content="Dismiss" FontSize="13" Padding="6,2" VerticalAlignment="Center"
+                    Command="{Binding DismissAlertCommand}" />
+          </Grid>
+        </Border>
+      </Panel>
 
       <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
         <Border Name="MuteButton" Classes="minibutton" Classes.muted="{Binding Muted}" Cursor="Hand">

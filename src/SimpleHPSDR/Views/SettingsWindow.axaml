@@ -698,8 +698,15 @@
             <Expander Header="Band plan" IsExpanded="True" HorizontalAlignment="Stretch">
               <StackPanel Spacing="8">
                 <ComboBox ItemsSource="{Binding BandPlanNames}" SelectedIndex="{Binding BandPlanIndex}" Width="320" />
+                <StackPanel Orientation="Horizontal" Spacing="10" IsEnabled="{Binding BandPlanRestricts}">
+                  <TextBlock Text="Outside the plan" Classes="label" VerticalAlignment="Center" />
+                  <ComboBox SelectedIndex="{Binding BandPlanActionIndex}" Width="180">
+                    <ComboBoxItem Content="Warn only" />
+                    <ComboBoxItem Content="Block transmit" />
+                  </ComboBox>
+                </StackPanel>
                 <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                           Text="SimpleHPSDR doesn't block transmit by band plan. PA calibration uses it to pick its test frequencies, and needs a plan with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland. The IARU regions have no 60 m." />
+                           Text="Warn only shows an amber banner if you transmit outside the plan. Block transmit stops it. General Coverage has no restrictions, so staying legal is up to you. PA calibration uses the plan to pick its test frequencies, and needs one with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland. The IARU regions have no 60 m. In General Coverage it uses the last plan you chose." />
               </StackPanel>
             </Expander>
             <Expander Header="ID timer" IsExpanded="True" HorizontalAlignment="Stretch">

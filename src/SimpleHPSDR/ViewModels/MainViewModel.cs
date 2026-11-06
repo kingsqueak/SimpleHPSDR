@@ -477,8 +477,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             // was chosen on purpose, so offer that.
             var current = await _client.GetBandRegionAsync();
             if (current != UnchosenBandPlan) preselected = Math.Max(preselected, regions.FindIndex(r => r.Id == current));
-            int chosen = await ShowFirstStart([.. regions.Select(r => r.DisplayName)], preselected);
-            var id = regions[Math.Clamp(chosen, 0, regions.Count - 1)].Id;
+            int chosen = await ShowFirstStart([.. regions.Select(r => r.DisplayName), GeneralCoverageName], preselected);
+            _settings.GeneralCoverage = chosen == regions.Count;
+            // General Coverage still leaves the engine a plan for PA calibration.
+            var id = regions[_settings.GeneralCoverage ? preselected : Math.Clamp(chosen, 0, regions.Count - 1)].Id;
             if (id != current) await _client.SetBandRegionAsync(id);
             _settings.BandPlanDefaulted = true;
             _settings.Save();
@@ -518,6 +520,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         WireTransmit(_client);
         WirePureSignal(_client);
         WireMonitor(_client);
+        WireAlerts(_client);
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
             if (v.Receiver == ActiveRx) { if (!_vfoSender.Busy) SetVfoLocal(v.VfoHz); }
@@ -706,9 +709,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _settings.LastRadioBoardId = radio.BoardId;
             _settings.Save();
 
-            // Policy: if the radio will transmit there, SimpleHPSDR allows it. No
-            // region band plan gets in the way.
-            await Try(() => client.SetBandPlanGuardIgnoredAsync(true));
+            // The engine's guard only runs when the user chose Block transmit.
+            await Try(() => client.SetBandPlanGuardIgnoredAsync(_settings.GeneralCoverage || !_settings.BandPlanBlocks));
             var state = await client.GetStateAsync();
             bool firstFilters = await ApplyFilterDefaultsAsync();
             await ApplyStateAsync(state);
@@ -1009,6 +1011,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ("F4", "3k", -3000, -80), ("F5", "2.8k", -2800, -100),
     ];
     private const string DefaultFilterSlot = "F2";
+    public const string GeneralCoverageName = "General Coverage (no restrictions)";
     private const string DefaultBandPlan = "IARU_R2", UnchosenBandPlan = "IARU_R1";
 
     // AM and SAM; the widths are the whole passband. Raise the version when

@@ -9,7 +9,7 @@
     <TextBlock Text="Choose the band plan for your region or licence class." TextWrapping="Wrap" />
     <ListBox Name="Plans" Height="290" />
     <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-               Text="SimpleHPSDR doesn't block transmit by band plan. PA calibration uses it to pick its test frequencies, and needs a plan with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland. You can change this at any time in Config > Station." />
+               Text="Transmitting outside the plan shows a warning, and you can make it block in Config &gt; Station. General Coverage has no restrictions. PA calibration uses the plan to pick its test frequencies, and needs one with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland." />
     <Button Name="ContinueButton" Classes="flat accent" Content="Continue" HorizontalAlignment="Right" IsDefault="True" />
   </StackPanel>
 </Window>

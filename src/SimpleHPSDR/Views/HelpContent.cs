@@ -15,7 +15,7 @@ SimpleHPSDR runs an OpenHPSDR radio from your computer. The radio connects over 
 The very first start takes around 8 minutes or more while the signal processing is tuned to your computer. A window shows progress. Leave the app open until it finishes. This only happens again after some updates.
 
 ## Band plan
-Choose the plan for your region or licence class. You can change it later in Config > Station.
+Choose the plan for your region or licence class, or General Coverage for no restrictions. You can change it later in Config > Station, where you also choose whether going outside the plan warns you or blocks transmit.
 
 ## Choosing your radio
 The radio picker opens next. Pick your radio and press Connect. Several radios report the same ID, so choose yours under Radio model if asked: it sets the S-meter calibration and the power amplifier and PureSignal defaults. Tick "Connect to this radio automatically next time" to skip this.
@@ -267,6 +267,15 @@ Before you transmit, make sure an antenna or dummy load is connected to the ante
 - VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. Use headphones: there's no anti-VOX, so speakers can key the radio. It works in voice modes, turns off when you disconnect, and is off each time the app starts.
 - Your microphone's PTT or a foot switch works too, once it's set in Config > Station.
 
+## When transmit stops by itself
+The engine protects the radio, and a red banner in the main and mini windows says why it stopped you. It stays until you click Dismiss or transmit again.
+- SWR too high: sustained SWR above the limit. Check the antenna and tuner before transmitting again.
+- TX timeout: you were keyed longer than the limit in Config > Amp. An amber warning appears shortly before, while you can still unkey. It goes when you do.
+- Out of band: with Block transmit set in Config > Station, your band plan doesn't allow the frequency or mode, so transmit stopped or never started. With Warn only, an amber banner tells you instead and you stay on the air. General Coverage does neither.
+- External fault: hardware connected to the radio reported a problem.
+
+VOX turns itself off after any of these, so it can't key straight back into the same fault. PS CAL, queued CW and two-tone stop too. If you use a paddle, it stays off until you transmit once some other way, such as MOX.
+
 ## The TX button
 The TX button in the bottom row opens three levels:
 - DRIVE sets output power. It's your RF power control.
@@ -403,7 +412,7 @@ If your radio has a speaker or headphone jack, choose Radio speaker jack as the 
 Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Band Outputs switches its bands through the radio's open-collector pins.
 
 ## Also in Config > Station
-- Band plan: the band edges for your region or licence class. It's used for PA calibration; SimpleHPSDR doesn't block transmit by it.
+- Band plan: the band edges for your region or licence class, or General Coverage for no restrictions. Outside the plan it warns you or blocks transmit, as you choose. PA calibration also uses it; in General Coverage that's the last plan you chose.
 - PTT: the radio's PTT input, or a foot switch on a serial port. Both can be turned off.
 - Diversity: combines two receive antennas.
 - Transverters: for VHF and up.

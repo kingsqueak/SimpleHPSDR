@@ -60,6 +60,13 @@
   <!-- A menu in the window on Windows and Linux. On macOS these menus are in
        the menu bar and this draws nothing. -->
   <NativeMenuBar DockPanel.Dock="Top" />
+  <Border Classes="alert" Classes.warning="{Binding AlertIsWarning}" IsVisible="{Binding AlertShown}" DockPanel.Dock="Top" Margin="12,8,12,0">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+      <TextBlock Text="{Binding AlertText}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+      <Button Grid.Column="1" Classes="flat" Content="Dismiss" FontSize="13" Padding="6,2" VerticalAlignment="Center"
+              Command="{Binding DismissAlertCommand}" />
+    </Grid>
+  </Border>
   <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
 
     <!-- Top: radio, frequency, meter -->

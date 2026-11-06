@@ -90,6 +90,7 @@ public sealed partial class MainViewModel
             if (!IsTransmitting) ResetTxMeters();
             UpdatePsStatus();   // also tracks key-down time for PureSignal
             TrackKeyForMonitor();
+            TrackKeyForAlert();
         });
         client.TxMeters += f =>
         {

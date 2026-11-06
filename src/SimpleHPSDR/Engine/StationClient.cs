@@ -84,6 +84,7 @@ public sealed class StationClient : IDisposable
     public event Action<MoxStateFrame>? MoxState;
     public event Action<TxMetersV2Frame>? TxMeters;
     public event Action<float>? MicPeakDbfs;
+    public event Action<AlertFrame>? Alert;
     public event Action<CwEngineStatusFrame>? CwStatus;
     public event Action<CwDecodedTextFrame>? CwDecoded;
     public event Action<CwSettingsDto>? CwSettings;
@@ -228,7 +229,9 @@ public sealed class StationClient : IDisposable
     public async Task<List<BandRegion>> GetBandRegionsAsync() =>
         (await _http.GetFromJsonAsync<List<BandRegion>>("api/bands/regions", Json))!;
 
-    private sealed record CurrentBandPlan(string RegionId);
+    public sealed record CurrentBandPlan(string RegionId, BandRegion Region, List<BandSegment> Segments);
+    public async Task<CurrentBandPlan> GetBandPlanAsync() =>
+        (await _http.GetFromJsonAsync<CurrentBandPlan>("api/bands/current", Json))!;
     public async Task<string> GetBandRegionAsync() =>
         (await _http.GetFromJsonAsync<CurrentBandPlan>("api/bands/current", Json))!.RegionId;
 
@@ -670,6 +673,9 @@ public sealed class StationClient : IDisposable
                     break;
                 case MsgType.CwSettings:
                     if (JsonSerializer.Deserialize<CwSettingsDto>(msg[1..], Json) is { } cw) CwSettings?.Invoke(cw);
+                    break;
+                case MsgType.Alert:
+                    Alert?.Invoke(AlertFrame.Deserialize(msg));
                     break;
                 case MsgType.MicPeak:
                     MicPeakDbfs?.Invoke(MicPeakFrame.Deserialize(msg).PeakDbfs);
