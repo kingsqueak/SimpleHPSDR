@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SimpleHPSDR.Engine;
+using SimpleHPSDR.Platform;
 using Zeus.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
@@ -102,7 +103,7 @@ public sealed partial class SettingsViewModel
         AudioStatus = AppSettings?.AudioToRadio == true
             ? "Receive audio plays on the radio's speaker jack. Mon can't play while this is chosen."
             : devices.AsioError is { Length: > 0 } asioErr
-            ? $"ASIO: {asioErr}"
+            ? $"ASIO: {asioErr}" + (_asioCheck is not null && AsioDriverCheck.Applies(asioErr) ? $" {_asioCheck}" : "")
             : devices.Error is { Length: > 0 } err
             ? $"Audio error: {err}"
             : devices.Backend == AsioBackend

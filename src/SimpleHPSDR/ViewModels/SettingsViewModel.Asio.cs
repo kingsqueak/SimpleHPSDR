@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Engine;
+using SimpleHPSDR.Platform;
 
 namespace SimpleHPSDR.ViewModels;
 
@@ -120,13 +121,22 @@ public sealed partial class SettingsViewModel
         {
             ShowRoute(await _client.SetAudioRouteAsync(request));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // The engine has gone back to the previous route: show that.
             ShowRoute(await _client.GetAudioDevicesAsync());
+            if (asio.Backend == AsioBackend && asio.DriverId is { } id && AsioDriverCheck.Applies(ex.Message))
+            {
+                _asioCheck = await AsioDriverCheck.DescribeAsync(id);
+                if (_asioCheck is not null) throw new InvalidOperationException($"{ex.Message} {_asioCheck}", ex);
+            }
             throw;
         }
     }
+
+    /// <summary>What the Windows check found after the last failed driver
+    /// change, added to the engine's ASIO error on the status line.</summary>
+    private string? _asioCheck;
 
     private void ShowRoute(AudioDevices devices)
     {

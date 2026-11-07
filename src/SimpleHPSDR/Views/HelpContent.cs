@@ -448,6 +448,19 @@ A window offers Restart engine, which reconnects with transmit off. It's worth k
 ## Audio or mic problems
 Check Config > Audio. If you hear crackling on ASIO, use a larger buffer.
 
+## ASIO won't stay selected
+If a driver fails, the app goes back to System audio and the status line on the Audio page says why. Most failures come from one of these:
+- Another program has the interface. Many ASIO drivers let only one program use them at a time. Close DAWs, other radio programs and anything else using the interface, then choose ASIO again.
+- Windows is using the interface too. If it's the Windows default playback or recording device, some drivers refuse to start. In Windows Sound settings, make another device the default, then choose ASIO again.
+- The interface is unplugged, switched off or asleep. Reconnect it and choose ASIO again.
+- The driver is 32-bit only, or was left behind when the interface was removed. The status says so. Install the maker's current 64-bit driver, or remove the old one.
+- The driver can't run at 48 kHz, which the radio needs. If its own settings lock another rate, open Driver panel and change it to 48 kHz.
+If ASIO is selected but you hear nothing or the radio gets no mic, the channels are probably wrong. Speaker output and Computer mic list every output and input the interface has. Pick the ones your speakers and mic are actually plugged into.
+
+ASIO4ALL and other generic drivers work, but use the interface's own driver when it has one.
+
+When the status says "Could not instantiate the selected ASIO driver", it adds a Windows check with an error code. Include that whole line in a bug report.
+
 ## Weak or distorted receive
 Check RF: too much preamp near strong signals overloads the receiver. Try attenuation, and leave Auto ATT on.
 
