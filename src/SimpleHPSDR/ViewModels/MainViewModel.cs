@@ -16,6 +16,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private static readonly int[] Steps = [1, 5, 10, 100, 500, 1_000, 5_000, 10_000, 100_000];
 
     private readonly Settings _settings = Settings.Load();
+
+    /// <summary>The app's settings, for the window code (layout choice).</summary>
+    public Settings AppSettings => _settings;
     private readonly EngineHost _engine = new();
     private StationClient? _client;
     private RadioChoice? _radio;

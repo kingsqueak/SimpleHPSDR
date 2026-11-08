@@ -5,7 +5,7 @@
         Icon="avares://SimpleHPSDR/Assets/icon.png"
         x:Class="SimpleHPSDR.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="SimpleHPSDR" Width="1200" Height="760" MinWidth="900" MinHeight="560">
+        Title="SimpleHPSDR" Width="1200" Height="760" MinWidth="900" MinHeight="500">
 
   <Window.Styles>
     <!-- The theme's horizontal slider lays out 50 high, twice a button; pull
@@ -617,7 +617,7 @@
 
     <!-- Transmit -->
     <Border Grid.Row="4" Classes="panel" Margin="0,10,0,0">
-      <!-- What's used every minute stays out; the rest is in the TX and RF popups.
+      <!-- What's used every minute stays out; the rest is in the TX and RFG popups.
            The AF row always starts its own line. -->
       <StackPanel Spacing="6">
       <WrapPanel ItemSpacing="24" LineSpacing="6">
@@ -648,7 +648,7 @@
               </Flyout>
             </ToggleButton.ContextFlyout>
           </ToggleButton>
-          <ToggleButton Classes="seg ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" Margin="12,0,0,0"
+          <ToggleButton Classes="seg ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" Margin="12,0,4,0"
                         ToolTip.Tip="PureSignal adaptive predistortion. Right-click for two-tone, calibration and status.">
             <ToggleButton.ContextFlyout>
               <Flyout Placement="TopEdgeAlignedLeft">
@@ -722,9 +722,9 @@
           </Button>
         </StackPanel>
       </WrapPanel>
-      <WrapPanel ItemSpacing="24" LineSpacing="6" Margin="0,0,130,0">
+      <WrapPanel ItemSpacing="18" LineSpacing="6" Margin="0,0,130,0">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,6,0">
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,12,0">
             <TextBlock Text="AF" Classes="label" />
             <c:AfSlider Value="{Binding AfGainDb}" TrimA="{Binding SliceAfA}" TrimB="{Binding SliceAfB}"
                         ShowTrims="{Binding HasSliceB}" Width="150" VerticalAlignment="Center"
@@ -735,7 +735,7 @@
             </StackPanel>
             <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
           </StackPanel>
-          <Button Classes="seg" Classes.lit="{Binding SquelchOn}" Padding="8,2" MinWidth="40" Margin="0" VerticalAlignment="Center"
+          <Button Classes="seg" Classes.lit="{Binding SquelchOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"
                   Command="{Binding ToggleSquelchCommand}" ToolTip.Tip="Squelch: click on or off, right-click for the level (blue = on)">
             <StackPanel Spacing="-3">
               <TextBlock Text="SQL" FontSize="12" HorizontalAlignment="Center" />
@@ -758,7 +758,7 @@
             </Button.ContextFlyout>
           </Button>
           <Button Name="RxLevButton" Classes="seg" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}"
-                  VerticalAlignment="Center" Margin="0,0,14,0"
+                  VerticalAlignment="Center"
                   ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on). Right-click for its settings.">
             <Button.ContextFlyout>
               <Flyout Placement="TopEdgeAlignedLeft" Opening="OnRxLevelerOpening">
@@ -799,10 +799,10 @@
           <Button Classes="seg" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}"
                   VerticalAlignment="Center"
                   ToolTip.Tip="Full duplex: keep hearing the receivers while transmitting (needs a separate RX antenna or a cross-band slice). Blue = on, grey = off." />
-          <Button Classes="seg" Classes.lit="{Binding AutoAtt}" Padding="10,3" Margin="12,0,0,0" VerticalAlignment="Center"
+          <Button Classes="seg" Classes.lit="{Binding AutoAtt}" Padding="8,2" Margin="12,0,4,0" VerticalAlignment="Center"
                   ToolTip.Tip="Front end: attenuator and preamp (blue = auto attenuation on)">
-            <StackPanel Spacing="-1">
-              <TextBlock Text="RF" FontSize="12" HorizontalAlignment="Center" />
+            <StackPanel Spacing="-3">
+              <TextBlock Text="RFG" FontSize="12" HorizontalAlignment="Center" />
               <TextBlock Text="{Binding RfText}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
             </StackPanel>
             <Button.Flyout>
@@ -834,7 +834,7 @@
             <TextBlock Text="OVL" FontSize="11" FontWeight="SemiBold" Foreground="White" />
           </Border>
           <Button Classes="seg" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}"
-                  Padding="8,2" MinWidth="44" Margin="12,0,0,0" VerticalAlignment="Center"
+                  Padding="8,2" MinWidth="44" Margin="12,0,4,0" VerticalAlignment="Center"
                   ToolTip.Tip="AGC: blue = auto (the engine sets the AGC gain), grey = manual (choose the speed)">
             <StackPanel Spacing="-3">
               <TextBlock Text="AGC" FontSize="12" HorizontalAlignment="Center" />

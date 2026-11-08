@@ -171,6 +171,24 @@ public sealed partial class SettingsViewModel
         }
     }
 
+    public string[] LayoutNames => Platform.LayoutMode.Names;
+    public int LayoutIndex
+    {
+        get => Math.Max(0, Array.IndexOf(Platform.LayoutMode.Names, AppSettings?.Layout));
+        set
+        {
+            if (AppSettings is null || value < 0) return;
+            AppSettings.Layout = Platform.LayoutMode.Names[value];
+            AppSettings.Save();
+            Platform.LayoutMode.NotifySettingChanged();
+            OnPropertyChanged(nameof(LayoutStatus));
+        }
+    }
+    /// <summary>What the layout is now and why, under the choice.</summary>
+    public string LayoutStatus => AppSettings is null ? "" :
+        Platform.LayoutMode.Describe(AppSettings) + " The touch layout isn't built yet, so the window looks the same either way.";
+    public bool LayoutOverridden => Platform.LayoutMode.Override is not null;
+
     public string[] RadioModelNames => RadioModels.Names;
     /// <summary>Only the OrionMkII family needs telling apart.</summary>
     [ObservableProperty] private bool _showRadioModel;

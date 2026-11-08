@@ -86,6 +86,9 @@ public sealed class Settings
     public int TxWaterfallRangeDb { get; set; } = 70;
     /// <summary>System, Dark or Light.</summary>
     public string Theme { get; set; } = "System";
+    /// <summary>Main window layout: Automatic (touch on screens narrower
+    /// than 1080), Desktop or Touch.</summary>
+    public string Layout { get; set; } = "Automatic";
     /// <summary>The default SSB filter buttons have been written to the engine.</summary>
     public bool FilterDefaultsApplied { get; set; }
     /// <summary>The same for the AM and SAM buttons.</summary>

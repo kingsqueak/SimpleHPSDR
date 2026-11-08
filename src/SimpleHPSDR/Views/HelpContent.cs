@@ -57,7 +57,7 @@ Nearly everything on a front panel is here under a different name. This is where
 - Band scope: the panadapter. The waterfall below it is the same picture over time.
 - AF gain: the AF slider.
 - RF gain: the AGC-T slider, which sets where AGC starts working.
-- Preamp and attenuator: RF.
+- Preamp and attenuator: RFG.
 - IF width or filter: the filter buttons, or drag the edges in the close-up.
 - Noise blanker: NB. Noise reduction: NR. Notch: ANF, with manual notches on its right-click.
 - Second VFO or sub-receiver: slice B.
@@ -221,8 +221,8 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.
 - RX Lev brings weak stations up to a steady listening level. Right-click it for its settings. Auto uses the engine's own values. Custom lets you set the target level, the most boost it may add, how fast it comes up (attack), how fast it backs down (release), and how long it holds before backing down (hang).
 
-## RF: preamp and attenuator
-Click RF to open the front end. Each click steps through preamp, 0 dB and 10 to 30 dB of attenuation. Auto ATT adds attenuation by itself if the receiver overloads, and is best left on. On a noisy band, attenuation can improve what you hear: if the noise drops and the signal doesn't, keep it.
+## RFG: preamp and attenuator
+Click RFG to open the front end. Each click steps through preamp, 0 dB and 10 to 30 dB of attenuation. Auto ATT adds attenuation by itself if the receiver overloads, and is best left on. On a noisy band, attenuation can improve what you hear: if the noise drops and the signal doesn't, keep it.
 
 ## AGC
 AGC keeps the audio level steady as signals change. On the AGC button, blue is automatic. Grey is manual, where you choose the speed: slow for steady voice, fast for quick changes such as CW.
@@ -467,7 +467,7 @@ ASIO4ALL and other generic drivers work, but use the interface's own driver when
 When the status says "Could not instantiate the selected ASIO driver", it adds a Windows check with an error code. Include that whole line in a bug report.
 
 ## Weak or distorted receive
-Check RF: too much preamp near strong signals overloads the receiver. Try attenuation, and leave Auto ATT on.
+Check RFG: too much preamp near strong signals overloads the receiver. Try attenuation, and leave Auto ATT on.
 
 ## Power doesn't match another meter
 PWR is the radio's own meter and can read low, and everything set from it inherits that. Compare against a meter you trust, and use External meter on the PA page. If you ran Calibrate and power is higher than shown, press Reset to stock first. Keep drive low until it's sorted out, especially with an amplifier connected.

@@ -39,6 +39,17 @@
                           ToolTip.Tip="System follows the computer's light or dark setting." />
               </StackPanel>
             </Border>
+            <Border Classes="panel">
+              <StackPanel Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Layout" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox ItemsSource="{Binding LayoutNames}" SelectedIndex="{Binding LayoutIndex}" Width="180"
+                            IsEnabled="{Binding !LayoutOverridden}"
+                            ToolTip.Tip="Automatic uses the touch layout on screens narrower than 1080, such as a radio's front panel, and the desktop layout everywhere else." />
+                </StackPanel>
+                <TextBlock Text="{Binding LayoutStatus}" Classes="label" FontSize="11" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
       </TabItem>
