@@ -23,6 +23,8 @@ mkdir -p "$STAGE/DEBIAN" "$APP/engine" "$STAGE/usr/bin" "$STAGE/usr/share/applic
     "$STAGE/usr/share/icons/hicolor/512x512/apps" "$STAGE/usr/share/doc/simplehpsdr" dist
 
 dotnet publish src/SimpleHPSDR/SimpleHPSDR.csproj -c Release -r "$RID" --self-contained true -o "$APP"
+# The ONNX Runtime package also drops its Windows DLLs here; DeepCW uses the .so.
+rm -f "$APP/onnxruntime.dll" "$APP/onnxruntime_providers_shared.dll"
 engine_version=$(scripts/engine-version.sh)
 dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$RID" -p:VersionPrefix="$engine_version" -p:VersionSuffix= \
     --self-contained true -o "$APP/engine"

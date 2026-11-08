@@ -437,6 +437,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             });
         WireNoiseButtons();
         Mark(TuneSteps, _settings.TuneStepHz);
+        LoadCwDecoderChoice();
         _specMinDb = _settings.SpecMinDb;
         _specMaxDb = _settings.SpecMaxDb;
         _autoSpectrum = _settings.AutoSpectrum;

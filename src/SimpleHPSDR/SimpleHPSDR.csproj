@@ -18,12 +18,15 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.5" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- DeepCW CW decoder. No osx-x64 native library: DeepCW is unavailable on Intel Macs. -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.0" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="DefaultTxProfile.json" LogicalName="DefaultTxProfile.json" />
     <EmbeddedResource Include="Assets/eibi-tables.json" LogicalName="eibi-tables.json" />
     <AvaloniaResource Include="Assets/icon.png" />
+    <None Include="DeepCw/model.onnx;DeepCw/model.onnx.json;DeepCw/LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -181,7 +181,7 @@ Your mic is muted while this happens and comes back after transmit drops, so you
 For safety, a key can't stay down for more than 3 seconds, it lifts if you click away from the CW window, and keyboard keying won't start while MOX or TUNE is on.
 
 ## Reading CW
-Press Decode in the CW window to show received CW as text. It works best on a clean, steady signal with a narrow filter, and it won't match a good ear on a weak or hand-sent signal.
+Press Decode in the CW window to show the active slice's CW as text. The box beside it picks the decoder. Engine is the radio engine's own: it prints each character at once and does well on a clean, steady signal with a narrow filter. DeepCW is a neural-network decoder that copies weak, fading and hand-sent CW far better, but prints about 2 to 4 seconds behind. DeepCW takes its audio from the TCI server, so turn that on in Config > CAT & TCI first. It isn't available on Intel Macs.
 
 ## Tuning and filters
 In CW the frequency shown is the carrier of the signal, and the filter is centred on the dial. Click a signal on the panadapter, or tune until it lines up with the dial line, and you'll hear it at a 600 Hz tone.

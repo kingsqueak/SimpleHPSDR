@@ -19,6 +19,7 @@ mkdir -p "$app/engine"
 echo "== app ($rid)"
 dotnet publish src/SimpleHPSDR/SimpleHPSDR.csproj -c Release -r "$rid" --self-contained true \
   -p:UseAppHost=true -o "$app"
+rm -f "$app"/onnxruntime*.lib   # import libraries, not needed at run time
 
 echo "== engine ($rid)"
 engine_version=$(scripts/engine-version.sh)

@@ -24,6 +24,9 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/engine" "$stage"
 echo "== app ($rid)"
 dotnet publish src/SimpleHPSDR/SimpleHPSDR.csproj -c Release -r "$rid" --self-contained true \
   -p:UseAppHost=true -o "$app/Contents/MacOS"
+# The ONNX Runtime package also drops its Windows DLLs here; DeepCW uses the dylib.
+# There is no osx-x64 dylib: DeepCW says it's unavailable on Intel Macs.
+rm -f "$app/Contents/MacOS/onnxruntime.dll" "$app/Contents/MacOS/onnxruntime_providers_shared.dll"
 
 echo "== engine ($rid)"
 engine_version=$(scripts/engine-version.sh)

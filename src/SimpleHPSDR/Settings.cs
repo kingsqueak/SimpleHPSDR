@@ -14,6 +14,8 @@ public sealed class Settings
     public bool AutoConnect { get; set; }
     public int SampleRate { get; set; } = 192_000;
     public int TuneStepHz { get; set; } = 100;
+    /// <summary>CW window decoder: "Engine" or "DeepCW".</summary>
+    public string CwDecoder { get; set; } = "Engine";
     /// <summary>A click on the panadapter tunes to the nearest whole step.</summary>
     public bool SnapClickToStep { get; set; } = true;
     /// <summary>Keep PureSignal's HW peak just under the signal's measured

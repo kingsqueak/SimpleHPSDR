@@ -160,6 +160,7 @@ public sealed partial class MainViewModel
     partial void OnCwDecoderOnChanged(bool value)
     {
         if (IsConnected) _ = Try(() => _client!.SetCwDecoderAsync(value));
+        UpdateDeepCw();
     }
 
     private void OnCwStatus(CwEngineStatusFrame f)
@@ -173,8 +174,8 @@ public sealed partial class MainViewModel
     private void OnCwDecoded(CwDecodedTextFrame f)
     {
         if (f.Receiver != ActiveRx) return;
-        var text = CwDecodedText + f.Text;
-        CwDecodedText = text.Length > MaxDecodedChars ? text[^MaxDecodedChars..] : text;
-        CwDecodedInfo = f.Wpm > 0 ? $"{f.Wpm} WPM" + (f.PitchHz > 0 ? $", {f.PitchHz} Hz" : "") : "";
+        if (!DeepCwSelected) AppendCwDecoded(f.Text);   // with DeepCW chosen, only its speed and pitch are used
+        (_cwInfoWpm, _cwInfoPitch) = (f.Wpm, f.PitchHz);
+        ShowCwDecoderInfo();
     }
 }
