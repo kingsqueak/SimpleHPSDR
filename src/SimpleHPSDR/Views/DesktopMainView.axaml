@@ -350,7 +350,7 @@
     <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0">
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
-          <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
+          <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
                           PopMode="{Binding WaterfallPop}"
                           PanFraction="{Binding PanFraction}" />
           <!-- SWL: what's scheduled on the tuned frequency. Clicks pass through to the waterfall.
@@ -371,7 +371,7 @@
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
               BorderBrush="Transparent" IsVisible="{Binding ShowPanadapterB}">
-        <c:SpectrumView Name="SpectrumB" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
+        <c:SpectrumView Name="SpectrumB" Fling="True" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
       </Border>
     </Grid>
 

@@ -274,6 +274,45 @@ foreach (var t in typeof(InputElement).Assembly.GetTypes().Where(t => t.IsPublic
     tw.Close(); sw2.Close();
 }
 
+// ---- Flick to glide on the spectrum ----
+{
+    var fv = new SimpleHPSDR.Controls.SpectrumView { Fling = true };
+    typeof(SimpleHPSDR.Controls.SpectrumView).GetField("_hzPerPixel", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(fv, 1.0);
+    typeof(SimpleHPSDR.Controls.SpectrumView).GetField("_wfWidth", BindingFlags.NonPublic | BindingFlags.Instance)?.SetValue(fv, 800);
+    var pans = new List<(DateTime T, long Hz)>(); int ended = 0;
+    fv.PanRequested += hz => pans.Add((DateTime.UtcNow, hz));
+    fv.PanEnded += () => ended++;
+    var fw2 = new Window { Content = fv, Width = 800, Height = 300 }; fw2.Show(); Pump();
+    void Drag(double from, double to, int stepMs, int pauseMs)
+    {
+        pans.Clear(); ended = 0;
+        fw2.MouseDown(new Point(from, 100), MouseButton.Left);
+        for (int i = 1; i <= 10; i++)
+        {
+            fw2.MouseMove(new Point(from + (to - from) * i / 10, 100));
+            Dispatcher.UIThread.RunJobs(); Thread.Sleep(stepMs);
+        }
+        Thread.Sleep(pauseMs);
+        fw2.MouseUp(new Point(to, 100), MouseButton.Left);
+        int atRelease = pans.Count;
+        // The headless dispatcher doesn't deliver this timer's ticks, so step
+        // the glide by hand at its own 16 ms pace while its timer is on.
+        var step = typeof(SimpleHPSDR.Controls.SpectrumView).GetMethod("FlingStep", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var timerField = typeof(SimpleHPSDR.Controls.SpectrumView).GetField("_flingTimer", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var until = DateTime.UtcNow.AddSeconds(3);
+        while (DateTime.UtcNow < until && timerField.GetValue(fv) is DispatcherTimer { IsEnabled: true })
+        {
+            Thread.Sleep(16);
+            step.Invoke(fv, null);
+        }
+        report.AppendLine($"PROBE fling {from}->{to} in {10 * stepMs} ms, pause {pauseMs} ms: pans during drag {atRelease}, after release {pans.Count - atRelease}, last Hz {(pans.Count > 0 ? pans[^1].Hz : 0)}, glide ms {(pans.Count > atRelease ? (pans[^1].T - pans[atRelease].T).TotalMilliseconds : 0):0}, PanEnded {ended}");
+    }
+    Drag(500, 300, 8, 0);     // quick flick
+    Drag(500, 300, 40, 0);    // slow drag
+    Drag(500, 300, 8, 200);   // quick, then held still before release
+    fw2.Close();
+}
+
 // ---- A height-limited flyout presenter scrolls (what ScreenFit relies on) ----
 var tall = new StackPanel { Children = { new Border { Height = 900, Width = 300 } } };
 var fp = new FlyoutPresenter { Content = tall, MaxHeight = 519 };

@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Zeus.Contracts;
 
 namespace SimpleHPSDR.Controls;
@@ -136,6 +138,10 @@ public sealed class SpectrumView : Control
     public event Action<long>? PanRequested;
     /// <summary>The button came up after a drag.</summary>
     public event Action? PanEnded;
+
+    /// <summary>A quick drag released while still moving keeps the display
+    /// gliding and slowing down, as a phone list does.</summary>
+    public bool Fling { get; set; }
     public event Action<int>? WheelTune;
     /// <summary>A pinch (trackpad or two fingers): +1 zoom in, -1 zoom out.</summary>
     public event Action<int>? ZoomRequested;
@@ -422,6 +428,16 @@ public sealed class SpectrumView : Control
     private bool _pressIsTouch;
     private int _touches;
     private Point? _pressAt;
+
+    // Flick to glide: the last moves of a pan give its speed at release.
+    private const double FlingMinSpeed = 600;     // px/s at release to glide at all
+    private const double FlingStopSpeed = 40;     // px/s where it stops
+    private const double FlingFriction = 4;       // slowing, 1/s: glides v/4 px in all
+    private static readonly TimeSpan FlingWindow = TimeSpan.FromMilliseconds(80);
+    private readonly List<(long Ticks, double X)> _moves = [];
+    private DispatcherTimer? _flingTimer;
+    private double _flingV, _flingX, _flingOriginX;
+    private long _flingCenterHz, _flingLast;
     private long _pressCenterHz;
     private bool _panning;
 
@@ -446,6 +462,9 @@ public sealed class SpectrumView : Control
                 int bins = _pan?.Length ?? _wfWidth;
                 double hz = (at.X - p.X) * bins / Bounds.Width * _hzPerPixel;
                 PanRequested?.Invoke(_pressCenterHz + (long)Math.Round(hz));
+                long now = Stopwatch.GetTimestamp();
+                _moves.Add((now, p.X));
+                while (_moves.Count > 2 && Stopwatch.GetElapsedTime(_moves[0].Ticks, now) > FlingWindow) _moves.RemoveAt(0);
                 Cursor = PanCursor;
                 _hover = null;
                 e.Handled = true;
@@ -455,6 +474,62 @@ public sealed class SpectrumView : Control
         Cursor = OverGrip(p) ? ResizeCursor : CrossCursor;
         _hover = OverGrip(p) ? null : p;
         InvalidateVisual();
+    }
+
+    // At release: glide on if the pan was still moving fast, measured over its
+    // last moves (a drag that stopped before release doesn't glide).
+    private bool StartFling(double originX)
+    {
+        if (!Fling || _moves.Count < 2 || Bounds.Width <= 0) return false;
+        long now = Stopwatch.GetTimestamp();
+        var (t0, x0) = _moves[0];
+        var (t1, x1) = _moves[^1];
+        double dt = Stopwatch.GetElapsedTime(t0, t1).TotalSeconds;
+        if (dt <= 0 || Stopwatch.GetElapsedTime(t1, now) > FlingWindow) return false;
+        double v = (x1 - x0) / dt;
+        if (Math.Abs(v) < FlingMinSpeed) return false;
+        _flingV = v;
+        _flingX = x1;
+        _flingOriginX = originX;
+        _flingCenterHz = _pressCenterHz;
+        _flingLast = now;
+        if (_flingTimer is null)
+        {
+            _flingTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+            _flingTimer.Tick += (_, _) => FlingStep();
+        }
+        _flingTimer.Start();
+        return true;
+    }
+
+    private void FlingStep()
+    {
+        long now = Stopwatch.GetTimestamp();
+        double dt = Stopwatch.GetElapsedTime(_flingLast, now).TotalSeconds;
+        _flingLast = now;
+        _flingX += _flingV * dt;
+        _flingV *= Math.Exp(-FlingFriction * dt);
+        int bins = _pan?.Length ?? _wfWidth;
+        if (Bounds.Width > 0)
+        {
+            double hz = (_flingOriginX - _flingX) * bins / Bounds.Width * _hzPerPixel;
+            PanRequested?.Invoke(_flingCenterHz + (long)Math.Round(hz));
+        }
+        if (Math.Abs(_flingV) < FlingStopSpeed) StopFling();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        StopFling();
+    }
+
+    // A glide ends by itself, or when the display is pressed again.
+    private void StopFling()
+    {
+        if (_flingTimer is not { IsEnabled: true } t) return;
+        t.Stop();
+        PanEnded?.Invoke();
     }
 
     // A second finger turns the press into a pinch: no tune, no pan.
@@ -472,7 +547,7 @@ public sealed class SpectrumView : Control
         if (e.Pointer.Type == PointerType.Touch) _touches = Math.Max(0, _touches - 1);
         if (_pressAt is { } at)
         {
-            if (_panning) PanEnded?.Invoke();
+            if (_panning && !StartFling(at.X)) PanEnded?.Invoke();
             else TuneRequested?.Invoke(XToHz(at.X, Bounds.Width));
             _pressAt = null;
             _panning = false;
@@ -711,6 +786,8 @@ public sealed class SpectrumView : Control
             e.Handled = true;
             return;
         }
+        StopFling();
+        _moves.Clear();
         _pressAt = pos;
         _pressIsTouch = e.Pointer.Type != PointerType.Mouse;
         _pressCenterHz = _centerHz;

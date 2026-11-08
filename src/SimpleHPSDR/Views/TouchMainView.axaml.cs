@@ -156,6 +156,8 @@ public partial class TouchMainView : UserControl
         (TopLevel.GetTopLevel(this) as MainWindow)?.ToggleFullScreen();
     }
 
+    private void ToggleSnap(object? sender, RoutedEventArgs e) => Vm?.ToggleSnapClickToStep();
+
     // ---- RIT / XIT -----------------------------------------------------
 
     private void RitDown(object? sender, RoutedEventArgs e) => Vm?.NudgeRit(-1);

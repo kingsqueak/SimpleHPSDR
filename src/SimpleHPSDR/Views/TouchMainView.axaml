@@ -445,8 +445,13 @@
           <StackPanel><TextBlock Text="Step" HorizontalAlignment="Center" /><TextBlock Text="{Binding StepLabel}" Classes="sub" /></StackPanel>
           <Button.Flyout>
             <Flyout Placement="TopEdgeAlignedRight">
-              <ItemsControl ItemsSource="{Binding TuneSteps}" ItemTemplate="{StaticResource ChoiceTile}"
-                            ItemsPanel="{StaticResource Grid4}" Width="340" />
+              <StackPanel Width="340" Spacing="6">
+                <ItemsControl ItemsSource="{Binding TuneSteps}" ItemTemplate="{StaticResource ChoiceTile}"
+                              ItemsPanel="{StaticResource Grid4}" />
+                <Button Classes="seg t" Classes.lit="{Binding SnapClickToStep}" Content="Snap clicks to step"
+                        HorizontalAlignment="Stretch" Margin="3,0" Click="ToggleSnap"
+                        ToolTip.Tip="A click on the panadapter tunes to the nearest whole step (blue = on)" />
+              </StackPanel>
             </Flyout>
           </Button.Flyout>
         </Button>
@@ -470,7 +475,7 @@
       <Grid Name="PanGrid" RowDefinitions="*,0">
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
-          <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
+          <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
                           PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" />
           <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
             <TextBlock Text="{Binding ZoomSpanText}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
@@ -480,7 +485,7 @@
         </Panel>
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
-        <c:SpectrumView Name="SpectrumB" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
+        <c:SpectrumView Name="SpectrumB" Fling="True" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
       </Border>
       </Grid>
     </DockPanel>
