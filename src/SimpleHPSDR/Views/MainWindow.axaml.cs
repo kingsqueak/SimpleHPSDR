@@ -24,6 +24,8 @@ public partial class MainWindow : Window
         // RIT and XIT stay full size beside the VFO, which takes what's left.
         VfoArea.SizeChanged += (_, _) => FitVfo();
         OffsetButtons.SizeChanged += (_, _) => FitVfo();
+        VfoDigitWheel.Attach(FrequencyReadout, () => Vm);
+        if (StepButton.Flyout is MenuFlyout stepMenu) stepMenu.Opening += (_, _) => FillStepMenu(stepMenu);
         FrequencyPanel.PointerWheelChanged += (_, e) =>
         {
             Vm?.TuneBySteps(WheelClicks(e));
@@ -66,7 +68,7 @@ public partial class MainWindow : Window
         // Slice B's own panadapter tunes slice B, making it active first.
         SpectrumB.TuneRequested += hz =>
         {
-            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(1, hz);
+            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(1, vm.ClickFrequency(hz));
         };
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += ShowSliceMenu;
@@ -113,6 +115,28 @@ public partial class MainWindow : Window
         StatusText.MaxWidth = narrow ? 230 : 300;
         SignalPanel.Width = Math.Clamp(width - 800, 236, 300);
         SignalLabel.IsVisible = SignalPanel.Width >= 290;
+    }
+
+    // The tuning steps, and whether a panadapter click snaps to the step.
+    private void FillStepMenu(MenuFlyout menu)
+    {
+        menu.Items.Clear();
+        if (Vm is not { } vm) return;
+        foreach (var c in vm.TuneSteps)
+            menu.Items.Add(new MenuItem
+            {
+                Header = c.Label, Command = c.Select,
+                ToggleType = MenuItemToggleType.Radio, IsChecked = c.IsSelected,
+            });
+        menu.Items.Add(new Separator());
+        var snap = new MenuItem
+        {
+            Header = "Snap clicks to step",
+            ToggleType = MenuItemToggleType.CheckBox, IsChecked = vm.SnapClickToStep,
+        };
+        ToolTip.SetTip(snap, "A click on the panadapter tunes to the nearest whole step");
+        snap.Click += (_, _) => vm.ToggleSnapClickToStep();
+        menu.Items.Add(snap);
     }
 
     private static int WheelClicks(PointerWheelEventArgs e) => Math.Sign(SliderWheel.Amount(e));
@@ -163,6 +187,7 @@ public partial class MainWindow : Window
     private void TuneA(long hz)
     {
         if (Vm is not { } vm || vm.TryPlaceNotch(hz)) return;
+        hz = vm.ClickFrequency(hz);
         if (vm.ShowPanadapterB) _ = vm.TuneSliceAsync(0, hz);
         else vm.TuneTo(hz);
     }
@@ -297,6 +322,8 @@ public partial class MainWindow : Window
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+        // An empty MenuFlyout never opens, so fill it now; Opening refreshes the ticks.
+        if (StepButton.Flyout is MenuFlyout stepMenu) FillStepMenu(stepMenu);
         if (Vm is not { } vm) return;
         vm.ShowRadioPicker = picker => new RadioPickerWindow { DataContext = picker }.PickAsync(this);
         vm.ShowEngineStopped = (radio, reason, log) => new EngineStoppedWindow().AskAsync(this, radio, reason, log);

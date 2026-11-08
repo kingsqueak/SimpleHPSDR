@@ -15,6 +15,7 @@ public partial class MiniWindow : Window
     public MiniWindow()
     {
         InitializeComponent();
+        VfoDigitWheel.Attach(FrequencyReadout, () => Vm);
         FrequencyPanel.PointerWheelChanged += (_, e) =>
         {
             Vm?.TuneBySteps(Math.Sign(SliderWheel.Amount(e)));

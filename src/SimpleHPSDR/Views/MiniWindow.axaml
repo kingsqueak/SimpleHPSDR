@@ -11,8 +11,8 @@
     <StackPanel Width="400" Spacing="10">
       <Panel>
       <Panel Name="FrequencyPanel" Background="Transparent" Cursor="Hand"
-             ToolTip.Tip="Use the wheel to tune, or click to type a frequency">
-        <TextBlock FontFamily="{StaticResource MonoFont}" Classes.tx="{Binding IsTransmitting}"
+             ToolTip.Tip="Wheel over a digit tunes that digit, elsewhere by the step. Click to type a frequency.">
+        <TextBlock Name="FrequencyReadout" FontFamily="{StaticResource MonoFont}" Classes.tx="{Binding IsTransmitting}"
                    IsVisible="{Binding !EditingFrequency}" FontSize="44" FontWeight="SemiBold" HorizontalAlignment="Center">
           <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="{DynamicResource StepDigit}" /><Run Text="{Binding FrequencyTail}" />
         </TextBlock>

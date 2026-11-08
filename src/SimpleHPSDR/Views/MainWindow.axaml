@@ -133,7 +133,7 @@
       <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="10" HorizontalAlignment="Center">
         <Viewbox Name="VfoScale" Stretch="Uniform" StretchDirection="DownOnly">
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
-                ToolTip.Tip="Click to type a frequency (kHz or MHz); wheel tunes by the step">
+                ToolTip.Tip="Click to type a frequency (kHz or MHz). The wheel over a digit tunes that digit; elsewhere it tunes by the step.">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <!-- Active slice letter, and where transmit is when it's the other slice -->
             <StackPanel VerticalAlignment="Center" IsVisible="{Binding HasSliceB}" Spacing="0">
@@ -148,7 +148,7 @@
             </StackPanel>
             <!-- Click the frequency to type one in its place -->
             <Panel MinWidth="230">
-              <TextBlock FontFamily="{StaticResource MonoFont}"
+              <TextBlock Name="FrequencyReadout" FontFamily="{StaticResource MonoFont}"
                          Classes.tx="{Binding IsTransmitting}" IsVisible="{Binding !EditingFrequency}"
                          FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center">
                 <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="{DynamicResource StepDigit}" /><Run Text="{Binding FrequencyTail}" />
@@ -160,11 +160,11 @@
             <TextBlock Text="Hz" Classes="label" FontSize="14" VerticalAlignment="Center" Margin="0,14,0,0" />
             <!-- Step and lock beside the Hz. A press here doesn't start typing a frequency. -->
             <StackPanel VerticalAlignment="Center" Spacing="4">
-              <Button Classes="seg" Content="Step" FontSize="11" Padding="6,1" MinWidth="0" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+              <Button Name="StepButton" Classes="seg" Content="Step" FontSize="11" Padding="6,1" MinWidth="0" Margin="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                       ToolTip.Tip="{Binding StepLabel, StringFormat=Tuning step for the wheel: {0}}">
+                <!-- Filled when it opens: the steps, then Snap clicks to step -->
                 <Button.Flyout>
-                  <MenuFlyout ItemsSource="{Binding TuneSteps}" Placement="BottomEdgeAlignedLeft"
-                              ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                  <MenuFlyout Placement="BottomEdgeAlignedLeft" />
                 </Button.Flyout>
               </Button>
                 <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"

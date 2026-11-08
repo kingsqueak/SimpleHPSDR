@@ -276,13 +276,27 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         get
         {
-            int fromRight = (int)Math.Floor(Math.Log10(StepHz));
+            int fromRight = _hoverDigitPlace >= 0 ? _hoverDigitPlace : (int)Math.Floor(Math.Log10(StepHz));
             var text = FrequencyText;
             for (int i = text.Length - 1; i >= 0; i--)
                 if (char.IsDigit(text[i]) && fromRight-- == 0) return i;
             return -1;
         }
     }
+    // The digit under the pointer, as a power of ten (0 = Hz), or -1. It takes
+    // the highlight while the pointer is there, and the wheel tunes that place.
+    private int _hoverDigitPlace = -1;
+    public int HoverDigitPlace
+    {
+        get => _hoverDigitPlace;
+        set
+        {
+            if (_hoverDigitPlace == value) return;
+            _hoverDigitPlace = value;
+            NotifyFrequencyDigits();
+        }
+    }
+
     public string FrequencyHead => StepDigitIndex < 0 ? FrequencyText : FrequencyText[..StepDigitIndex];
     public string FrequencyDigit => StepDigitIndex < 0 ? "" : FrequencyText[StepDigitIndex].ToString();
     public string FrequencyTail => StepDigitIndex < 0 ? "" : FrequencyText[(StepDigitIndex + 1)..];
@@ -835,9 +849,41 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             : floor + (steps + 1) * step);
     }
 
+    /// <summary>Wheel over one VFO digit: move that digit, leaving the ones
+    /// below it alone.</summary>
+    public void TuneDigit(int place, int steps)
+    {
+        if (steps == 0 || place is < 0 or > 7) return;
+        long unit = (long)Math.Pow(10, place);
+        long hz = VfoHz + steps * unit;
+        if (hz < MinTuneHz || hz > MaxTuneHz) return;
+        TuneTo(hz);
+    }
+
+    public bool SnapClickToStep => _settings.SnapClickToStep;
+
+    public void ToggleSnapClickToStep()
+    {
+        _settings.SnapClickToStep = !_settings.SnapClickToStep;
+        _settings.Save();
+        OnPropertyChanged(nameof(SnapClickToStep));
+        Status = _settings.SnapClickToStep
+            ? $"Panadapter clicks snap to the {StepLabel} step."
+            : "Panadapter clicks tune to the exact frequency.";
+    }
+
+    /// <summary>A panadapter click's frequency, rounded to the step when snapping is on.</summary>
+    public long ClickFrequency(long hz)
+    {
+        if (!_settings.SnapClickToStep || StepHz <= 1) return hz;
+        long step = StepHz;
+        return (long)Math.Round(hz / (double)step, MidpointRounding.AwayFromZero) * step;
+    }
+
     public void BeginFrequencyEntry()
     {
         if (!IsConnected) return;
+        HoverDigitPlace = -1;   // the readout hides, so it never sees the pointer leave
         FrequencyEntry = "";
         EditingFrequency = true;
     }
