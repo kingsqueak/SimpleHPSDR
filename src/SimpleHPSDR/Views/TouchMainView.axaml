@@ -37,7 +37,7 @@
           </StackPanel>
           <Button Grid.Column="1" Classes="seg t" Content="✕" Click="CloseDrawer" ToolTip.Tip="Close" />
         </Grid>
-        <TabControl Padding="0">
+        <TabControl Name="DrawerTabs" Padding="0" SelectionChanged="OnDrawerTabChanged">
           <!-- Receive tab -->
           <TabItem Header="Receive">
             <ScrollViewer>
@@ -266,7 +266,6 @@
                   <Button Classes="seg t" Content="Guide" Command="{Binding OpenGuideCommand}" />
                   <Button Classes="seg t" Content="CW" Click="OnOpenCw" />
                   <Button Classes="seg t" Content="Mini" Click="OnOpenMini" />
-                  <Button Classes="seg t" Content="Help" Click="OnOpenHelp" />
                   <Button Classes="seg t" Content="Full screen" Click="OnFullScreen" ToolTip.Tip="Full screen on or off" />
                 </WrapPanel>
                 <TextBlock Text="ID TIMER" Classes="head" />
@@ -282,6 +281,8 @@
               </StackPanel>
             </ScrollViewer>
           </TabItem>
+          <!-- Opens the Help window; the drawer stays on the tab it was on -->
+          <TabItem Name="HelpTab" Header="Help" />
         </TabControl>
       </DockPanel>
     </SplitView.Pane>

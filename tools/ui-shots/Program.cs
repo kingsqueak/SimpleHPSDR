@@ -123,6 +123,7 @@ foreach (var (slot, lbl, lo, hi) in new[] { ("F1", "5.0k", 63, 5000), ("F2", "4.
 void Notify(object o, string n) => o.GetType().GetMethod("OnPropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance, [typeof(string)])!.Invoke(o, [n]);
 var main = new MainWindow { DataContext = vm };
 SimpleHPSDR.Platform.LayoutMode.Watch(main, vm.AppSettings);
+SimpleHPSDR.Platform.TouchWindows.Enable();
 typeof(MainWindow).GetField("_started", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(main, true);
 var mainPrefix = SimpleHPSDR.Platform.LayoutMode.Override == "Touch" ? "touch-" : "";
 foreach (var (w, h, n0) in new[] { (1200.0, 760.0, "main-1200x760-desktop"), (900.0, 532.0, "main-900x532"), (W, H, "main-1024x535"), (W, 600.0, "main-1024x600-fullscreen") })

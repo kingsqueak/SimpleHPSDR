@@ -100,6 +100,30 @@ Then choose your radio. Several radios report the same ID, so pick your model in
 the radio picker or in Config > Radio. It sets the S-meter calibration and the PA
 and PureSignal defaults.
 
+## Small touch screens
+
+On a screen narrower than 1080 pixels, such as the 1024x600 front panel of
+some radios, SimpleHPSDR switches to a layout with large buttons and opens
+full screen. Config > Radio > Layout picks Automatic, Desktop or Touch;
+`simplehpsdr --touch` or `--desktop` overrides it for one run. Everything in
+it works with a mouse as well as a finger, and a long press does what a
+right-click does.
+
+To start it when a Raspberry Pi desktop logs in, create
+`~/.config/autostart/simplehpsdr.desktop`:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=SimpleHPSDR
+Exec=simplehpsdr
+```
+
+(Raspberry Pi OS also runs `~/.config/labwc/autostart`; a line `simplehpsdr &`
+there does the same.) The touch layout has been tried with a mouse so far, and
+the autostart steps aren't tested on a Pi yet; reports from touch-screen users
+are welcome.
+
 ## Build
 
 Requires the .NET 10 SDK.

@@ -110,6 +110,27 @@ The MINI button to the right of the meters swaps the main window for a small one
 The small arrows at the top right, or closing the mini window, bring the main window back. If MOX or TUNE is already on, TX does nothing.
 """),
 
+        ("Touch screens and small screens", """
+On a small screen, such as a radio's 1024 by 600 front panel, SimpleHPSDR shows a layout with large buttons instead of the desktop one. Config > Radio > Layout chooses: Automatic uses it on screens narrower than 1080, or pick Desktop or Touch. Everything in it works with a mouse too.
+
+## On screen
+- Top: the drawer (☰), band, mode, the frequency, the meter, MOX and TUNE.
+- Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT.
+- ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window and Full screen.
+
+## Tuning
+- Drag the frequency sideways: each 20 pixels is one step. The wheel works too.
+- Tap the frequency for a keypad: type the number, then press MHz or kHz.
+- Tap the spectrum to tune; drag it to slide the band. Let go while still moving and it glides on and slows down.
+- Pinch the spectrum to zoom (two fingers, or a Mac trackpad), or use − and + in its corner.
+
+## Long press
+Holding a finger still for half a second does what a right-click does: on Band it opens the band stack, on the spectrum the slice menu, on most buttons their settings. With a mouse, holding the button down on a button does the same.
+
+## Other windows
+While the touch layout is on, Config, the station guide and the other windows open with the same large controls, and on a small screen they fill it.
+"""),
+
         ("Reading the display", """
 ## Panadapter
 The upper graph shows signal strength across the band, with frequency left to right and level up the side. The flat grassy line at the bottom is the noise floor. Anything standing above it is a signal or interference.

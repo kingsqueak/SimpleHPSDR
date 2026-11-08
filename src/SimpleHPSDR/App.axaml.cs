@@ -60,6 +60,7 @@ public partial class App : Application
             PopupTimeout.Enable();
             ScreenFit.Enable();
             LongPress.Enable();
+            TouchWindows.Enable();
             var vm = new MainViewModel();
             ApplyTheme(vm.Theme);
             var main = new MainWindow { DataContext = vm };

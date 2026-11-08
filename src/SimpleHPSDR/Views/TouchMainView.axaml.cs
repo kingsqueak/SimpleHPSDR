@@ -98,8 +98,18 @@ public partial class TouchMainView : UserControl
         (TopLevel.GetTopLevel(this) as MainWindow)?.OpenCw();
     }
 
-    private void OnOpenHelp(object? sender, RoutedEventArgs e)
+    // The Help tab opens the Help window and goes back to the tab before it.
+    private int _lastDrawerTab;
+
+    private void OnDrawerTabChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (DrawerTabs is null) return;
+        if (!ReferenceEquals(DrawerTabs.SelectedItem, HelpTab))
+        {
+            _lastDrawerTab = DrawerTabs.SelectedIndex;
+            return;
+        }
+        DrawerTabs.SelectedIndex = _lastDrawerTab;
         Drawer.IsPaneOpen = false;
         if (TopLevel.GetTopLevel(this) is Window w) _ = new HelpWindow().ShowDialog(w);
     }
