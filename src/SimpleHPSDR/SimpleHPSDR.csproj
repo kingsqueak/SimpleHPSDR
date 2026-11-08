@@ -25,6 +25,7 @@
   <ItemGroup>
     <EmbeddedResource Include="DefaultTxProfile.json" LogicalName="DefaultTxProfile.json" />
     <EmbeddedResource Include="Assets/eibi-tables.json" LogicalName="eibi-tables.json" />
+    <EmbeddedResource Include="Cw/cw-words.txt" LogicalName="cw-words.txt" />
     <AvaloniaResource Include="Assets/icon.png" />
     <None Include="DeepCw/model.onnx;DeepCw/model.onnx.json;DeepCw/LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

@@ -155,7 +155,11 @@ public sealed partial class MainViewModel
     private Task StopCwAsync() => Try(async () => _cwAbortSeq = await _client!.AbortCwAsync());
 
     [RelayCommand]
-    private void ClearCwDecoded() => CwDecodedText = "";
+    private void ClearCwDecoded()
+    {
+        _cwDecodedRaw = "";
+        CwDecodedText = "";
+    }
 
     /// <summary>The main window's spectrum for a slice: strongest signal between two
     /// frequencies, at least so many dB over the noise, or null.</summary>

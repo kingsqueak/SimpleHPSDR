@@ -25,8 +25,11 @@ public sealed partial class MainViewModel
     private int _deepCwGeneration;
     private string _deepCwNote = "";
 
-    private void LoadCwDecoderChoice() =>
+    private void LoadCwDecoderChoice()
+    {
         CwDecoderIndex = _settings.CwDecoder == "DeepCW" ? 1 : 0;
+        CwWordForming = _settings.CwWordForming;
+    }
 
     partial void OnCwDecoderIndexChanged(int value)
     {
@@ -119,10 +122,27 @@ public sealed partial class MainViewModel
         });
     }
 
+    // What the decoder printed; the window shows it with word spaces put back
+    // when Words is on.
+    private string _cwDecodedRaw = "";
+
     private void AppendCwDecoded(string text)
     {
-        var all = CwDecodedText + text;
-        CwDecodedText = all.Length > MaxDecodedChars ? all[^MaxDecodedChars..] : all;
+        var all = _cwDecodedRaw + text;
+        _cwDecodedRaw = all.Length > MaxDecodedChars ? all[^MaxDecodedChars..] : all;
+        ShowCwDecoded();
+    }
+
+    private void ShowCwDecoded() =>
+        CwDecodedText = CwWordForming ? SimpleHPSDR.Cw.CwWordFormer.Form(_cwDecodedRaw) : _cwDecodedRaw;
+
+    [ObservableProperty] private bool _cwWordForming = true;
+
+    partial void OnCwWordFormingChanged(bool value)
+    {
+        _settings.CwWordForming = value;
+        _settings.Save();
+        ShowCwDecoded();
     }
 
     private int _cwInfoWpm, _cwInfoPitch;

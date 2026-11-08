@@ -16,6 +16,8 @@
                   ToolTip.Tip="Engine: the radio engine's decoder, instant, best on clean signals. DeepCW: a neural-network decoder that copies weak, fading and hand-sent CW far better, about 2 to 4 seconds behind. DeepCW needs the TCI server on (Config &gt; CAT &amp; TCI)." />
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+        <CheckBox Content="Words" IsChecked="{Binding CwWordForming}"
+                  ToolTip.Tip="Put back word spaces the decoder missed: CQSSK1XMK1XM reads CQ SS K1XM K1XM. A run is split only when every piece is a known CW word, callsign, report or number; garbled copy is left as printed." />
         <CheckBox Content="Keyboard keying" IsChecked="{Binding CwKeyboardOn}"
                   ToolTip.Tip="While this window has focus: space is a straight key, left arrow sends dits, right arrow sends dahs. These transmit. Off each time the app starts." />
         <TextBlock Text="{Binding CwDecodedInfo}" Classes="label" FontSize="12" VerticalAlignment="Center" />
