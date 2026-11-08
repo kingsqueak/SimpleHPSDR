@@ -1,0 +1,448 @@
+<!-- The main window's large-target layout for small screens (a 1024×600 radio
+     panel). Everything works with a mouse; fingers get extras later. The
+     everyday controls are on screen; the rest is in the ☰ drawer. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimpleHPSDR.ViewModels"
+             xmlns:c="using:SimpleHPSDR.Controls"
+             x:Class="SimpleHPSDR.Views.TouchMainView"
+             x:DataType="vm:MainViewModel">
+  <UserControl.Styles>
+    <!-- Large targets: 48 px tall, at least 64 wide -->
+    <Style Selector="Button.seg.t, ToggleButton.seg.t">
+      <Setter Property="MinHeight" Value="48" />
+      <Setter Property="MinWidth" Value="64" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="Padding" Value="12,4" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.sub">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="Opacity" Value="0.8" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.head">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="Margin" Value="0,10,0,2" />
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="MinHeight" Value="48" />
+      <Setter Property="Padding" Value="10,4" />
+    </Style>
+    <Style Selector="CheckBox.t">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="FontSize" Value="15" />
+    </Style>
+  </UserControl.Styles>
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://SimpleHPSDR/Views/MainResources.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <!-- A picker grid's button: lit when chosen; choosing closes the picker -->
+      <DataTemplate x:Key="ChoiceTile" x:DataType="vm:Choice">
+        <Button Classes="seg t" Classes.lit="{Binding IsSelected}" Content="{Binding Label}" Margin="3"
+                HorizontalAlignment="Stretch" Command="{Binding Select}" Click="ClosePicker" />
+      </DataTemplate>
+      <ItemsPanelTemplate x:Key="Grid4"><UniformGrid Columns="4" /></ItemsPanelTemplate>
+      <ItemsPanelTemplate x:Key="Grid3"><UniformGrid Columns="3" /></ItemsPanelTemplate>
+    </ResourceDictionary>
+  </UserControl.Resources>
+
+  <SplitView Name="Drawer" DisplayMode="Overlay" PanePlacement="Left" OpenPaneLength="440"
+             PaneBackground="{DynamicResource PanelBg}">
+    <!-- ================= the drawer ================= -->
+    <SplitView.Pane>
+      <DockPanel Margin="10">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding RadioLabel}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding Status}" Classes="label" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="seg t" Content="✕" Click="CloseDrawer" ToolTip.Tip="Close" />
+        </Grid>
+        <TabControl Padding="0">
+          <!-- Receive tab -->
+          <TabItem Header="Receive">
+            <ScrollViewer>
+              <StackPanel Spacing="4" Margin="0,4,8,8">
+                <TextBlock Text="NOISE" Classes="head" />
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Classes.lit="{Binding AnfOn}" Content="ANF" Command="{Binding ToggleAnfCommand}" />
+                  <Button Classes="seg t" Classes.lit="{Binding NbOn}" ToolTip.Tip="Noise blanker">
+                    <StackPanel><TextBlock Text="NB" HorizontalAlignment="Center" /><TextBlock Text="{Binding NbLabel}" Classes="sub" /></StackPanel>
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop" Opening="OnNbParamsOpening">
+                        <StackPanel Spacing="8" Width="380">
+                          <ItemsControl ItemsSource="{Binding NoiseBlankers}" ItemTemplate="{StaticResource ChoiceTile}"
+                                        ItemsPanel="{StaticResource Grid3}" />
+                          <ContentControl Content="{Binding NbParams}" ContentTemplate="{StaticResource NoisePanelView}" />
+                        </StackPanel>
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg t" Classes.lit="{Binding NrOn}" ToolTip.Tip="Noise reduction">
+                    <StackPanel><TextBlock Text="NR" HorizontalAlignment="Center" /><TextBlock Text="{Binding NrLabel}" Classes="sub" /></StackPanel>
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop" Opening="OnNrParamsOpening">
+                        <StackPanel Spacing="8" Width="380">
+                          <ItemsControl ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource ChoiceTile}"
+                                        ItemsPanel="{StaticResource Grid3}" />
+                          <ContentControl Content="{Binding NrParams}" ContentTemplate="{StaticResource NoisePanelView}" />
+                        </StackPanel>
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg t" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}" />
+                </WrapPanel>
+
+                <TextBlock Text="SQUELCH" Classes="head" />
+                <Grid ColumnDefinitions="Auto,*,60" ColumnSpacing="10">
+                  <Button Classes="seg t" Classes.lit="{Binding SquelchOn}" Content="SQL" Command="{Binding ToggleSquelchCommand}" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding SquelchLevel}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding SquelchText}" VerticalAlignment="Center" />
+                </Grid>
+
+                <TextBlock Text="AGC" Classes="head" />
+                <Grid ColumnDefinitions="Auto,*,60" ColumnSpacing="10">
+                  <Button Classes="seg t" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}">
+                    <StackPanel><TextBlock Text="AGC" HorizontalAlignment="Center" /><TextBlock Text="{Binding AgcSubLabel}" Classes="sub" /></StackPanel>
+                  </Button>
+                  <Slider Grid.Column="1" Minimum="30" Maximum="120" Value="{Binding AgcTopDb}" VerticalAlignment="Center"
+                          ToolTip.Tip="AGC threshold (AGC-T)" />
+                  <TextBlock Grid.Column="2" Text="{Binding AgcTopText}" VerticalAlignment="Center" />
+                </Grid>
+
+                <TextBlock Text="FRONT END" Classes="head" />
+                <Grid ColumnDefinitions="Auto,*,60" ColumnSpacing="10">
+                  <TextBlock Text="ATT" Classes="label" FontSize="13" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="31" Value="{Binding AttenDb}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding AttenText}" VerticalAlignment="Center" />
+                </Grid>
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <ToggleButton Classes="seg t" Content="Auto ATT" IsChecked="{Binding AutoAtt}" />
+                  <Button Classes="seg t" Classes.lit="{Binding PreampOn}" Command="{Binding CyclePreCommand}">
+                    <StackPanel><TextBlock Text="Pre" HorizontalAlignment="Center" /><TextBlock Text="{Binding PreLabel}" Classes="sub" /></StackPanel>
+                  </Button>
+                  <Button Classes="seg t" IsEnabled="{Binding AntennaBoxesEnabled}">
+                    <StackPanel><TextBlock Text="RX ant" HorizontalAlignment="Center" /><TextBlock Text="{Binding RxAntLabel}" Classes="sub" /></StackPanel>
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ItemsControl ItemsSource="{Binding RxAntennas}" ItemTemplate="{StaticResource ChoiceTile}"
+                                      ItemsPanel="{StaticResource Grid3}" Width="300" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg t" IsEnabled="{Binding AntennaBoxesEnabled}">
+                    <StackPanel><TextBlock Text="TX ant" HorizontalAlignment="Center" /><TextBlock Text="{Binding TxAntLabel}" Classes="sub" /></StackPanel>
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ItemsControl ItemsSource="{Binding TxAntennas}" ItemTemplate="{StaticResource ChoiceTile}"
+                                      ItemsPanel="{StaticResource Grid3}" Width="300" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                </WrapPanel>
+
+                <TextBlock Text="DISPLAY" Classes="head" />
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}" />
+                  <Button Classes="seg t" Classes.lit="{Binding AutoSpectrum}" Content="Auto" Command="{Binding ToggleAutoSpectrumCommand}"
+                          ToolTip.Tip="Spectrum range follows the noise floor" />
+                  <Button Classes="seg t">
+                    <StackPanel><TextBlock Text="Span" HorizontalAlignment="Center" /><TextBlock Text="{Binding SpanLabel}" Classes="sub" /></StackPanel>
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ItemsControl ItemsSource="{Binding SpanRates}" ItemTemplate="{StaticResource ChoiceTile}"
+                                      ItemsPanel="{StaticResource Grid3}" Width="360" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                </WrapPanel>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <!-- Transmit tab -->
+          <TabItem Header="Transmit">
+            <ScrollViewer>
+              <StackPanel Spacing="4" Margin="0,4,8,8">
+                <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+                  <ToggleButton Classes="seg t" Content="VOX" IsChecked="{Binding VoxOn}" />
+                  <ToggleButton Classes="seg t ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" />
+                  <Button Classes="seg t" Classes.lit="{Binding MonitorOn}" Content="{Binding MonitorLabel}"
+                          Command="{Binding CycleMonitorCommand}" ToolTip.Tip="Mon, TX Mon, Mon+TX, off" />
+                </WrapPanel>
+                <TextBlock Text="DRIVE" Classes="head" />
+                <Grid ColumnDefinitions="*,70" ColumnSpacing="10">
+                  <Slider Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding DrivePct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
+                </Grid>
+                <TextBlock Text="TUNE DRIVE" Classes="head" />
+                <Grid ColumnDefinitions="*,70" ColumnSpacing="10">
+                  <Slider Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding TunePct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding TuneLine}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </Grid>
+                <TextBlock Text="MIC GAIN" Classes="head" />
+                <Grid ColumnDefinitions="*,70" ColumnSpacing="10">
+                  <Slider Minimum="-20" Maximum="40" Value="{Binding MicGainDb}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding MicGainDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" />
+                </Grid>
+                <TextBlock Text="MONITOR LEVEL" Classes="head" />
+                <Grid ColumnDefinitions="*,70" ColumnSpacing="10">
+                  <Slider Minimum="0" Maximum="100" Value="{Binding MonitorPct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding MonitorPctText}" VerticalAlignment="Center" />
+                </Grid>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <!-- Slices tab -->
+          <TabItem Header="Slices">
+            <ScrollViewer>
+              <StackPanel Spacing="4" Margin="0,4,8,8">
+                <TextBlock Text="RIT (receive offset)" Classes="head" />
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Classes.lit="{Binding RitOn}" IsEnabled="{Binding RitUsable}" Command="{Binding ToggleRitCommand}">
+                    <StackPanel><TextBlock Text="RIT" HorizontalAlignment="Center" /><TextBlock Text="{Binding RitText}" Classes="sub" /></StackPanel>
+                  </Button>
+                  <Button Classes="seg t" Content="− 10" IsEnabled="{Binding RitUsable}" Click="RitDown" />
+                  <Button Classes="seg t" Content="+ 10" IsEnabled="{Binding RitUsable}" Click="RitUp" />
+                  <Button Classes="seg t" Content="Clear" IsEnabled="{Binding RitUsable}" Click="RitClear" />
+                </WrapPanel>
+                <TextBlock Text="XIT (transmit offset)" Classes="head" />
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Classes.lit="{Binding XitOn}" Command="{Binding ToggleXitCommand}">
+                    <StackPanel><TextBlock Text="XIT" HorizontalAlignment="Center" /><TextBlock Text="{Binding XitText}" Classes="sub" /></StackPanel>
+                  </Button>
+                  <Button Classes="seg t" Content="− 10" Click="XitDown" />
+                  <Button Classes="seg t" Content="+ 10" Click="XitUp" />
+                  <Button Classes="seg t" Content="Clear" Click="XitClear" />
+                </WrapPanel>
+                <TextBlock Text="SLICES" Classes="head" />
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding HasSliceB}" />
+                  <Button Classes="seg t" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}" />
+                  <Button Classes="seg t" Classes.lit="{Binding VfoLocked}" Content="Lock VFO" Command="{Binding ToggleVfoLockCommand}" />
+                </WrapPanel>
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
+                           Text="To add, move or remove slice B, right-click the spectrum (long-press on a touch screen)." />
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <!-- Station tab -->
+          <TabItem Header="Station">
+            <ScrollViewer>
+              <StackPanel Spacing="4" Margin="0,4,8,8">
+                <WrapPanel ItemSpacing="6" LineSpacing="6" Margin="0,8,0,0">
+                  <Button Classes="seg t" Content="Radio…" Command="{Binding ChooseRadioCommand}" />
+                  <Button Classes="seg t" Content="Config" Command="{Binding OpenSettingsCommand}" IsEnabled="{Binding IsConnected}" />
+                  <Button Classes="seg t" Content="Guide" Command="{Binding OpenGuideCommand}" />
+                  <Button Classes="seg t" Content="CW" Click="OnOpenCw" />
+                  <Button Classes="seg t" Content="Mini" Click="OnOpenMini" />
+                  <Button Classes="seg t" Content="Help" Click="OnOpenHelp" />
+                </WrapPanel>
+                <TextBlock Text="ID TIMER" Classes="head" />
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Content="{Binding IdCountdownText}" Command="{Binding ToggleIdTimerCommand}" />
+                  <StackPanel VerticalAlignment="Center" Margin="8,0,0,0">
+                    <TextBlock Text="{Binding LocalTimeText}" FontSize="15" />
+                    <TextBlock Text="{Binding ZuluTimeText}" Classes="label" />
+                  </StackPanel>
+                </WrapPanel>
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"
+                           Text="This is the large-button layout for small screens. Config &gt; Radio &gt; Layout switches it." />
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+        </TabControl>
+      </DockPanel>
+    </SplitView.Pane>
+
+    <!-- ================= the main screen ================= -->
+    <DockPanel Margin="8">
+      <Border Classes="alert" Classes.warning="{Binding AlertIsWarning}" IsVisible="{Binding AlertShown}" DockPanel.Dock="Top" Margin="0,0,0,6">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+          <TextBlock Text="{Binding AlertText}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+          <Button Grid.Column="1" Classes="seg t" Content="Dismiss" Command="{Binding DismissAlertCommand}" />
+        </Grid>
+      </Border>
+
+      <!-- Top bar: drawer, band, mode, frequency, meter, transmit -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,0,0,6">
+        <Button Classes="seg t" Content="☰" FontSize="20" Click="OpenDrawer" ToolTip.Tip="More controls" />
+        <Button Grid.Column="1" Classes="seg t lit" MinWidth="76">
+          <StackPanel><TextBlock Text="{Binding BandLabel}" HorizontalAlignment="Center" /><TextBlock Text="Band" Classes="sub" /></StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft">
+              <ItemsControl ItemsSource="{Binding Bands}" ItemTemplate="{StaticResource ChoiceTile}"
+                            ItemsPanel="{StaticResource Grid4}" Width="380" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Button Grid.Column="2" Classes="seg t lit" MinWidth="76">
+          <StackPanel><TextBlock Text="{Binding ModeLabel}" HorizontalAlignment="Center" /><TextBlock Text="Mode" Classes="sub" /></StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft">
+              <ItemsControl ItemsSource="{Binding Modes}" ItemTemplate="{StaticResource ChoiceTile}"
+                            ItemsPanel="{StaticResource Grid4}" Width="380" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+
+        <!-- Drag sideways to tune, wheel to tune, click for the keypad -->
+        <Border Grid.Column="3" Name="VfoBox" Classes="panel" Padding="10,0" Background="{DynamicResource PanelBg}"
+                Cursor="SizeWestEast" ToolTip.Tip="Drag sideways or use the wheel to tune by the step. Click to type a frequency.">
+          <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Border CornerRadius="4" Padding="6,0" VerticalAlignment="Center" IsVisible="{Binding HasSliceB}"
+                      Classes.sliceA="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=A}"
+                      Classes.sliceB="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=B}">
+                <TextBlock Text="{Binding ActiveSliceLabel}" FontSize="16" FontWeight="Bold" Foreground="White" />
+              </Border>
+              <TextBlock FontFamily="{StaticResource MonoFont}" Classes.tx="{Binding IsTransmitting}"
+                         FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center">
+                <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="{DynamicResource StepDigit}" /><Run Text="{Binding FrequencyTail}" />
+              </TextBlock>
+              <TextBlock Text="🔒" FontSize="16" VerticalAlignment="Center" IsVisible="{Binding VfoLocked}" />
+            </StackPanel>
+          </Viewbox>
+          <FlyoutBase.AttachedFlyout>
+            <Flyout Placement="Bottom">
+              <StackPanel Width="300" Spacing="6">
+                <Border Classes="panel" Background="{DynamicResource ControlBg}">
+                  <TextBlock Name="KeypadText" FontFamily="{StaticResource MonoFont}" FontSize="26" TextAlignment="Right" MinHeight="34" />
+                </Border>
+                <UniformGrid Columns="3" Name="KeypadGrid">
+                  <Button Classes="seg t" Content="7" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="8" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="9" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="4" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="5" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="6" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="1" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="2" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="3" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="." Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="0" Margin="3" HorizontalAlignment="Stretch" Click="KeyDigit" />
+                  <Button Classes="seg t" Content="⌫" Margin="3" HorizontalAlignment="Stretch" Click="KeyBack" />
+                  <Button Classes="seg t lit" Content="MHz" Margin="3" HorizontalAlignment="Stretch" Click="KeyMhz" />
+                  <Button Classes="seg t lit" Content="kHz" Margin="3" HorizontalAlignment="Stretch" Click="KeyKhz" />
+                  <Button Classes="seg t" Content="Cancel" Margin="3" HorizontalAlignment="Stretch" Click="KeyCancel" />
+                </UniformGrid>
+              </StackPanel>
+            </Flyout>
+          </FlyoutBase.AttachedFlyout>
+        </Border>
+
+        <!-- Signal: one reading; while keyed, power and SWR -->
+        <Border Grid.Column="4" Classes="panel" Width="200" Padding="10,4" VerticalAlignment="Stretch">
+          <StackPanel VerticalAlignment="Center" Spacing="3">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding SUnits}" FontFamily="{StaticResource MonoFont}" FontSize="15" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="1" Text="{Binding SignalDbm, StringFormat={}{0:0} dBm}" FontFamily="{StaticResource MonoFont}"
+                         FontSize="12" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+            </Grid>
+            <c:SMeterBar Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}" Squelch="{Binding SquelchMark}" Height="8" />
+            <TextBlock FontSize="11" Foreground="{DynamicResource TextMuted}">
+              <Run Text="{Binding FwdWatts, StringFormat={}{0:0} W}" /><Run Text="   SWR " /><Run Text="{Binding SwrText}" />
+            </TextBlock>
+          </StackPanel>
+        </Border>
+        <ToggleButton Grid.Column="5" Classes="seg t tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="72" />
+        <ToggleButton Grid.Column="6" Classes="seg t tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="72" />
+      </Grid>
+
+      <!-- Bottom bar: listening and tuning -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,6,0,0">
+        <TextBlock Text="AF" Classes="label" FontSize="13" Margin="4,0,0,0" />
+        <Grid Grid.Column="1" ColumnDefinitions="*,46" ColumnSpacing="6">
+          <Slider Minimum="-50" Maximum="20" Value="{Binding AfGainDb}" VerticalAlignment="Center" ToolTip.Tip="Volume" />
+          <TextBlock Grid.Column="1" Text="{Binding AfGainText}" VerticalAlignment="Center" />
+        </Grid>
+        <TextBlock Grid.Column="2" Text="DRV" Classes="label" FontSize="13" Margin="6,0,0,0" />
+        <Grid Grid.Column="3" ColumnDefinitions="*,46" ColumnSpacing="6">
+          <Slider Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding DrivePct}" VerticalAlignment="Center"
+                  ToolTip.Tip="Transmit drive" />
+          <TextBlock Grid.Column="1" Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
+        </Grid>
+        <ToggleButton Grid.Column="4" Classes="seg t" Content="Mute" IsChecked="{Binding Muted}" />
+        <Button Grid.Column="5" Classes="seg t" ToolTip.Tip="Receive filter">
+          <StackPanel><TextBlock Text="Filter" HorizontalAlignment="Center" /><TextBlock Text="{Binding FilterText}" Classes="sub" /></StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="TopEdgeAlignedLeft">
+              <ItemsControl ItemsSource="{Binding Filters}" Width="300">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FilterSlot">
+                    <Button Classes="seg t" Classes.lit="{Binding IsSelected}" Content="{Binding Label}" Margin="3"
+                            HorizontalAlignment="Stretch" Command="{Binding SelectCommand}" Click="ClosePicker" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Button Grid.Column="6" Classes="seg t" Classes.lit="{Binding NbOn}">
+          <StackPanel><TextBlock Text="NB" HorizontalAlignment="Center" /><TextBlock Text="{Binding NbLabel}" Classes="sub" /></StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="TopEdgeAlignedLeft">
+              <ItemsControl ItemsSource="{Binding NoiseBlankers}" ItemTemplate="{StaticResource ChoiceTile}"
+                            ItemsPanel="{StaticResource Grid3}" Width="300" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Button Grid.Column="7" Classes="seg t" Classes.lit="{Binding NrOn}">
+          <StackPanel><TextBlock Text="NR" HorizontalAlignment="Center" /><TextBlock Text="{Binding NrLabel}" Classes="sub" /></StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="TopEdgeAlignedLeft">
+              <ItemsControl ItemsSource="{Binding NoiseReductions}" ItemTemplate="{StaticResource ChoiceTile}"
+                            ItemsPanel="{StaticResource Grid3}" Width="300" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Button Grid.Column="8" Classes="seg t">
+          <StackPanel><TextBlock Text="Step" HorizontalAlignment="Center" /><TextBlock Text="{Binding StepLabel}" Classes="sub" /></StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="TopEdgeAlignedRight">
+              <ItemsControl ItemsSource="{Binding TuneSteps}" ItemTemplate="{StaticResource ChoiceTile}"
+                            ItemsPanel="{StaticResource Grid4}" Width="340" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Button Grid.Column="9" Classes="seg t" Classes.lit="{Binding RitOn}" IsEnabled="{Binding RitUsable}">
+          <StackPanel><TextBlock Text="RIT" HorizontalAlignment="Center" /><TextBlock Text="{Binding RitText}" Classes="sub" /></StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="TopEdgeAlignedRight">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button Classes="seg t" Classes.lit="{Binding RitOn}" Content="On/Off" Command="{Binding ToggleRitCommand}" />
+                <Button Classes="seg t" Content="− 10" Click="RitDown" />
+                <Button Classes="seg t" Content="+ 10" Click="RitUp" />
+                <Button Classes="seg t" Content="Clear" Click="RitClear" />
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+      </Grid>
+
+      <!-- Spectrum and waterfall, with zoom buttons in the corner -->
+      <Border CornerRadius="8" ClipToBounds="True">
+        <Panel>
+          <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
+                          PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" />
+          <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
+            <TextBlock Text="{Binding ZoomSpanText}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
+            <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel)" />
+            <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel)" />
+          </StackPanel>
+        </Panel>
+      </Border>
+    </DockPanel>
+  </SplitView>
+</UserControl>

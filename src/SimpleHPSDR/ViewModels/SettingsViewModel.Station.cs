@@ -186,7 +186,7 @@ public sealed partial class SettingsViewModel
     }
     /// <summary>What the layout is now and why, under the choice.</summary>
     public string LayoutStatus => AppSettings is null ? "" :
-        Platform.LayoutMode.Describe(AppSettings) + " The touch layout isn't built yet, so the window looks the same either way.";
+        Platform.LayoutMode.Describe(AppSettings);
     public bool LayoutOverridden => Platform.LayoutMode.Override is not null;
 
     public string[] RadioModelNames => RadioModels.Names;

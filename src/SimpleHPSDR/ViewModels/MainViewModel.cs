@@ -37,8 +37,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _radioLabel = "No radio";
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(FrequencyText))]
     private long _vfoHz;
-    [ObservableProperty] private int _filterLowHz;
-    [ObservableProperty] private int _filterHighHz;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(FilterText))] private int _filterLowHz;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(FilterText))] private int _filterHighHz;
+
+    /// <summary>The receive filter's width, for the touch layout's Filter button.</summary>
+    public string FilterText
+    {
+        get
+        {
+            int w = Math.Abs(FilterHighHz - FilterLowHz);
+            return w == 0 ? "" : w >= 1000 ? $"{w / 1000.0:0.0#}k" : $"{w}";
+        }
+    }
     [ObservableProperty] private double _afGainDb;
     [ObservableProperty] private double _attenDb;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(PreLabel))] [NotifyPropertyChangedFor(nameof(RfText))]

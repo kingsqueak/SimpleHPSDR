@@ -11,7 +11,7 @@ public enum UiLayout { Desktop, Touch }
 /// work area is narrower than 1080 (the screen, not the window: narrowing a
 /// window on a big monitor never swaps the layout). The setting can force
 /// either, and --touch / --desktop (or SIMPLEHPSDR_LAYOUT) override it for
-/// one run. The touch layout itself doesn't exist yet; this only decides.
+/// one run. The main window shows the layout this decides.
 /// </summary>
 public static class LayoutMode
 {

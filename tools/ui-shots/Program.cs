@@ -123,21 +123,40 @@ void Notify(object o, string n) => o.GetType().GetMethod("OnPropertyChanged", Bi
 var main = new MainWindow { DataContext = vm };
 SimpleHPSDR.Platform.LayoutMode.Watch(main, vm.AppSettings);
 typeof(MainWindow).GetField("_started", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(main, true);
-foreach (var (w, h, n) in new[] { (1200.0, 760.0, "main-1200x760-desktop"), (W, H, "main-1024x535"), (W, 600.0, "main-1024x600-fullscreen") })
+var mainPrefix = SimpleHPSDR.Platform.LayoutMode.Override == "Touch" ? "touch-" : "";
+foreach (var (w, h, n0) in new[] { (1200.0, 760.0, "main-1200x760-desktop"), (900.0, 532.0, "main-900x532"), (W, H, "main-1024x535"), (W, 600.0, "main-1024x600-fullscreen") })
 {
     Make(main, w, h);
     if (!main.IsVisible) main.Show();
-    Shot(main, n);
+    Shot(main, mainPrefix + n0);
+}
+// Touch layout: the drawer on each tab
+if (main.GetVisualDescendants().OfType<SplitView>().FirstOrDefault() is { } drawer)
+{
+    Make(main, W, 600);
+    drawer.IsPaneOpen = true;
+    // The pane slides open: let the animation run to the end.
+    for (int t = 0; t < 120; t++) { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); }
+    foreach (var c in drawer.GetVisualDescendants().OfType<Control>().Where(c => c.Name is { Length: > 0 } && c.Name.Contains("Pane")))
+        report.AppendLine($"PROBE drawer part {c.Name} {c.GetType().Name} {c.Bounds}");
+    report.AppendLine($"PROBE drawer OpenPaneLength {drawer.OpenPaneLength}");
+    var dtabs = drawer.GetVisualDescendants().OfType<TabControl>().First();
+    for (int i = 0; i < dtabs.ItemCount; i++)
+    {
+        dtabs.SelectedIndex = i;
+        Shot(main, $"touch-drawer-{i}-{(dtabs.Items[i] as TabItem)?.Header}");
+    }
+    drawer.IsPaneOpen = false;
 }
 // natural minimum: as declared
 report.AppendLine($"MainWindow declared MinWidth/MinHeight: 900/560 (window manager will refuse 535)");
 Make(main, W, H);
 // CW mode and slice B variants
 SetProp(vm, "SliceBEnabled", true); Notify(vm, "HasSliceB");
-Shot(main, "main-1024x535-sliceB");
+Shot(main, mainPrefix + "main-1024x535-sliceB");
 SetProp(vm, "SliceBEnabled", false); Notify(vm, "HasSliceB");
 SetProp(vm, "Mode", Zeus.Contracts.RxMode.CWU); Notify(vm, "ModeIsCw"); Notify(vm, "ModeLabel");
-Shot(main, "main-1024x535-cw");
+Shot(main, mainPrefix + "main-1024x535-cw");
 SetProp(vm, "Mode", Zeus.Contracts.RxMode.USB); Notify(vm, "ModeIsCw"); Notify(vm, "ModeLabel");
 
 // ---- Flyouts: render each flyout's content in its own window ----
@@ -154,7 +173,7 @@ foreach (var c in main.GetLogicalDescendants().OfType<Control>().ToList())
             host.Content = new Border { Padding = new Thickness(8), Child = content };
             host.Show();
             Pump();
-            var nm = $"flyout-{fi:00}-{new string(Label(c).Where(char.IsLetterOrDigit).ToArray())}";
+            var nm = $"{mainPrefix}flyout-{fi:00}-{new string(Label(c).Where(char.IsLetterOrDigit).ToArray())}";
             Shot(host, nm);
             host.Content = null; fl.Content = content;
             host.Close();

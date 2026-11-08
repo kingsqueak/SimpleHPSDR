@@ -10,7 +10,7 @@ namespace SimpleHPSDR.Views;
 /// <summary>
 /// The main window: menus, dialogs, the mini and CW windows, and starting
 /// the engine. What's drawn below the menu bar is a layout view: the desktop
-/// one, or (to come) the large-target one for small screens.
+/// one, or the large-target one for small screens (Config > Radio > Layout).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -21,7 +21,17 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         BuildMenu();
-        ViewHost.Content = new DesktopMainView();
+        ShowLayout(LayoutMode.Current);
+        LayoutMode.Changed += ShowLayout;
+        Closed += (_, _) => LayoutMode.Changed -= ShowLayout;
+    }
+
+    /// <summary>The desktop layout, or the large-target one; both use the same view model.</summary>
+    private void ShowLayout(UiLayout layout)
+    {
+        bool touch = layout == UiLayout.Touch;
+        if (ViewHost.Content is TouchMainView == touch && ViewHost.Content is not null) return;
+        ViewHost.Content = touch ? new TouchMainView() : new DesktopMainView();
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;

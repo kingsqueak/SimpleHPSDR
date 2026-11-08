@@ -28,6 +28,8 @@ public partial class DesktopMainView : UserControl
         VfoArea.SizeChanged += (_, _) => FitVfo();
         OffsetButtons.SizeChanged += (_, _) => FitVfo();
         StepLockButtons.SizeChanged += (_, _) => FitVfo();
+        SwapButtons.SizeChanged += (_, _) => FitVfo();
+        SwapButtons.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) FitVfo(); };
         VfoDigitWheel.Attach(FrequencyReadout, () => Vm);
         if (StepButton.Flyout is MenuFlyout stepMenu) stepMenu.Opening += (_, _) => FillStepMenu(stepMenu);
         FrequencyPanel.PointerWheelChanged += (_, e) =>
@@ -93,9 +95,11 @@ public partial class DesktopMainView : UserControl
 
     private void FitVfo()
     {
-        const double Gap = 10, SwapWidth = 44;
-        VfoScale.MaxWidth = Math.Max(0, VfoArea.Bounds.Width - StepLockButtons.Bounds.Width - OffsetButtons.Bounds.Width
-                                         - 3 * Gap - SwapWidth);
+        // The buttons beside the frequency keep their size (their gaps are
+        // margins, so A⇄B takes no room while hidden); the frequency gets the rest.
+        double others = StepLockButtons.DesiredSize.Width + OffsetButtons.DesiredSize.Width
+                        + (SwapButtons.IsVisible ? SwapButtons.DesiredSize.Width : 0);
+        VfoScale.MaxWidth = Math.Max(0, VfoArea.Bounds.Width - others);
     }
 
     private void FitTopBar(double width)
