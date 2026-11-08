@@ -30,7 +30,7 @@ rm -f "$app/Contents/MacOS/onnxruntime.dll" "$app/Contents/MacOS/onnxruntime_pro
 
 echo "== engine ($rid)"
 engine_version=$(scripts/engine-version.sh)
-dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$rid" -p:VersionPrefix="$engine_version" -p:VersionSuffix= \
+dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$rid" -p:Version="$engine_version" \
   --self-contained true -o "$app/Contents/Resources/engine"
 # Drop other platforms' native libraries.
 for d in "$app/Contents/Resources/engine/runtimes/"*; do

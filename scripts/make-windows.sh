@@ -24,7 +24,7 @@ scripts/build-drm.sh "$rid" "$app"   # the optional DRM decoder
 
 echo "== engine ($rid)"
 engine_version=$(scripts/engine-version.sh)
-dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$rid" -p:VersionPrefix="$engine_version" -p:VersionSuffix= \
+dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$rid" -p:Version="$engine_version" \
   --self-contained true -o "$app/engine"
 # Drop other platforms' native libraries.
 for d in "$app/engine/runtimes/"*; do

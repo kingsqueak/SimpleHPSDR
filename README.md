@@ -138,6 +138,15 @@ dotnet run --project src/SimpleHPSDR
 `scripts/make-dmg.sh`, `scripts/make-linux.sh` and `scripts/make-windows.sh` build the packages. Set
 `SIMPLEHPSDR_ENGINE` to use an engine binary elsewhere.
 
+The `external/station-engine` submodule follows
+[kingsqueak/station-engine](https://github.com/kingsqueak/station-engine): a Zeus
+release tag plus patches sent upstream that Zeus hasn't released yet, tagged like
+`v2.0.68-simplehpsdr.1`. Now that's v2.0.68 with ADC dither and randomizer for the
+ANAN-7000DLE and 8000DLE
+([#15](https://github.com/Zeus-SDR/station-engine/pull/15)) and the G2 front-panel
+CAT port ([#16](https://github.com/Zeus-SDR/station-engine/pull/16)). Once Zeus
+releases them, the submodule goes back to Zeus-SDR/station-engine.
+
 ## Firewalls
 
 The radio uses UDP only, on radio ports 1024 to 1044 in both directions. This

@@ -27,7 +27,7 @@ dotnet publish src/SimpleHPSDR/SimpleHPSDR.csproj -c Release -r "$RID" --self-co
 rm -f "$APP/onnxruntime.dll" "$APP/onnxruntime_providers_shared.dll"
 scripts/build-drm.sh "$RID" "$APP"   # the optional DRM decoder
 engine_version=$(scripts/engine-version.sh)
-dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$RID" -p:VersionPrefix="$engine_version" -p:VersionSuffix= \
+dotnet publish external/station-engine/StationEngine/StationEngine.csproj -c Release -r "$RID" -p:Version="$engine_version" \
     --self-contained true -o "$APP/engine"
 # Drop other platforms' native libraries.
 for d in "$APP/engine/runtimes/"*; do
