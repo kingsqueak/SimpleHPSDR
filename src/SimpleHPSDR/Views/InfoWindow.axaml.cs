@@ -34,8 +34,8 @@ public partial class InfoWindow : Window
         w.Line(subtitle, 12, FontWeight.Normal, 0, muted: true);
         foreach (var (head, text) in sections)
         {
-            w.Line(head, 14, FontWeight.SemiBold, 10);
-            w.Line(text, 13, FontWeight.Normal, 0);
+            if (head.Length > 0) w.Line(head, 14, FontWeight.SemiBold, 10);
+            w.Line(text, 13, FontWeight.Normal, head.Length > 0 ? 0 : 10);
         }
         return w;
     }
@@ -79,12 +79,35 @@ public partial class InfoWindow : Window
         TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0),
     });
 
+    /// <summary>What Help > Check for Updates found.</summary>
+    public static InfoWindow Update(string current, UpdateChecker.Release? latest)
+    {
+        if (latest is null)
+        {
+            var w = Build("Couldn't check for updates", $"You have version {current}.",
+                [("", "GitHub didn't answer. Check the internet connection, or look at the Releases page yourself.")]);
+            w.Link("Open the Releases page", UpdateChecker.ReleasesPage);
+            return w;
+        }
+        if (!UpdateChecker.IsNewer(latest.Version, current))
+            return Build("SimpleHPSDR is up to date", $"Version {current} is the latest.", []);
+        var n = Build($"SimpleHPSDR {latest.Version} is available", $"You have version {current}.",
+            [("", "The Releases page has the new version and what's changed. Download and install it from there when you're ready; your settings are kept.")]);
+        n.Link($"Open the {latest.Version} release page", latest.Page);
+        return n;
+    }
+
+    private void Link(string text, string url) => Body.Children.Add(new HyperlinkButton
+    {
+        Content = text, NavigateUri = new Uri(url), Padding = new Thickness(0), Margin = new Thickness(0, 8, 0, 0),
+    });
+
     public static InfoWindow About(string version, string engine) => Build("SimpleHPSDR", $"Version {version}",
     [
         ("About", "A small, clean interface for OpenHPSDR radios. By Chris, KC2RGW."),
         ("License", "GNU General Public License, version 3 or later. It comes with no warranty."),
         ("Station guide", "The SWL guide uses EiBi's shortwave schedule by Eike Bierwirth (eibispace.de). Its code tables come from Dream and DecDRM."),
         ("Radio engine", $"SimpleHPSDR stands on Station Engine {engine}, the radio and DSP engine from the Zeus SDR project. Its principal developers are Douglas J. Cerrato, KB2UKA, and Christian Suarez, N9WAR, with thanks to them and its contributors. GPL-2.0-or-later. SimpleHPSDR is an independent project, not affiliated with or endorsed by Zeus SDR."),
-        ("With thanks to", "WDSP by Warren Pratt, NR0V. The firmware loader follows TAPR's HPSDRProgrammer and deskHPSDR by Heiko Amft, DL1BZ. Interface built with Avalonia."),
+        ("With thanks to", "WDSP by Warren Pratt, NR0V. The firmware loader follows TAPR's HPSDRProgrammer and deskHPSDR by Heiko Amft, DL1BZ. The DeepCW CW decoder model is by e04 (MIT License), run with Microsoft's ONNX Runtime. Interface built with Avalonia."),
     ]);
 }

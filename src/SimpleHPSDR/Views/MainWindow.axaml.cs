@@ -7,6 +7,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Threading;
 using SimpleHPSDR.Controls;
+using SimpleHPSDR.Engine;
 using SimpleHPSDR.ViewModels;
 
 namespace SimpleHPSDR.Views;
@@ -82,7 +83,14 @@ public partial class MainWindow : Window
     {
         var help = new NativeMenuItem("SimpleHPSDR Help");
         help.Click += (_, _) => new HelpWindow().ShowDialog(this);
-        var items = new NativeMenu { help };
+        var check = new NativeMenuItem("Check for Updates…");
+        check.Click += async (_, _) =>
+        {
+            var latest = await UpdateChecker.FetchLatestAsync();
+            if (latest is not null) Vm?.ShowUpdate(latest);
+            await InfoWindow.Update(App.Version, latest).ShowDialog(this);
+        };
+        var items = new NativeMenu { help, check };
         if (!OperatingSystem.IsMacOS())
         {
             var about = new NativeMenuItem("About SimpleHPSDR");
@@ -325,6 +333,7 @@ public partial class MainWindow : Window
         // An empty MenuFlyout never opens, so fill it now; Opening refreshes the ticks.
         if (StepButton.Flyout is MenuFlyout stepMenu) FillStepMenu(stepMenu);
         if (Vm is not { } vm) return;
+        _ = vm.CheckForUpdatesAtStartAsync();
         vm.FindSignalHz = (rx, lo, hi, db) =>
             (rx == 1 && vm.ShowPanadapterB ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
         vm.ShowRadioPicker = picker => new RadioPickerWindow { DataContext = picker }.PickAsync(this);

@@ -18,6 +18,8 @@ public sealed class Settings
     public string CwDecoder { get; set; } = "Engine";
     /// <summary>Put back word spaces the CW decoder missed.</summary>
     public bool CwWordForming { get; set; } = true;
+    /// <summary>The release whose update note was closed with ✕.</summary>
+    public string? UpdateDismissedVersion { get; set; }
     /// <summary>A click on the panadapter tunes to the nearest whole step.</summary>
     public bool SnapClickToStep { get; set; } = true;
     /// <summary>Keep PureSignal's HW peak just under the signal's measured
