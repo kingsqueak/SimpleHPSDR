@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Avalonia.LogicalTree;
@@ -222,6 +223,51 @@ var pinch = typeof(InputElement).Assembly.GetTypes().FirstOrDefault(t => t.Name 
 report.AppendLine($"PROBE PinchGestureRecognizer: {pinch?.FullName} public={pinch?.IsPublic}");
 foreach (var t in typeof(InputElement).Assembly.GetTypes().Where(t => t.IsPublic && t.Name.EndsWith("GestureRecognizer")))
     report.AppendLine($"PROBE recognizer: {t.FullName}");
+
+// ---- Long press = right-click (mouse: buttons only) ----
+{
+    SimpleHPSDR.Controls.LongPress.Enable();
+    void Hold(Window w, Point at, int ms)
+    {
+        w.MouseDown(at, MouseButton.Left);
+        var until = DateTime.UtcNow.AddMilliseconds(ms);
+        while (DateTime.UtcNow < until) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(20); }
+        w.MouseUp(at, MouseButton.Left);
+        Pump();
+    }
+    int clicks = 0;
+    var flyout = new Flyout { Content = new TextBlock { Text = "menu" } };
+    var hb = new Button { Content = "hold me", Width = 120, Height = 48, ContextFlyout = flyout };
+    hb.Click += (_, _) => clicks++;
+    var hw = new Window { Content = hb, Width = 300, Height = 200 }; hw.Show(); Pump();
+    Hold(hw, new Point(60, 100), 100);
+    report.AppendLine($"PROBE menu button, short press: clicks {clicks}, menu {flyout.IsOpen}");
+    clicks = 0; Hold(hw, new Point(60, 100), 1200);
+    report.AppendLine($"PROBE menu button, long press: clicks {clicks}, menu {flyout.IsOpen}");
+    flyout.Hide(); hw.Close();
+
+    int plain = 0;
+    var pb = new Button { Content = "MOX-like", Width = 120, Height = 48 };
+    pb.Click += (_, _) => plain++;
+    var plw = new Window { Content = pb, Width = 300, Height = 200 }; plw.Show(); Pump();
+    Hold(plw, new Point(60, 100), 1200);
+    report.AppendLine($"PROBE plain button, slow click: clicks {plain}");
+    plw.Close();
+
+    var sv = new SimpleHPSDR.Controls.SpectrumView();
+    int tunes = 0, menus = 0;
+    sv.TuneRequested += _ => tunes++;
+    sv.MenuRequested += _ => menus++;
+    var sw2 = new Window { Content = sv, Width = 600, Height = 300 }; sw2.Show(); Pump();
+    Hold(sw2, new Point(300, 80), 1200);
+    report.AppendLine($"PROBE spectrum, mouse held still: tunes {tunes}, slice menus {menus}");
+
+    var tb = new TextBox { Text = "select me", Width = 200 };
+    var tw = new Window { Content = tb, Width = 300, Height = 200 }; tw.Show(); Pump();
+    Hold(tw, new Point(150, 100), 1200);
+    report.AppendLine($"PROBE text box, mouse held: context menu {tb.ContextFlyout?.IsOpen == true || (tb.ContextMenu?.IsOpen ?? false)}");
+    tw.Close(); sw2.Close();
+}
 
 // ---- A height-limited flyout presenter scrolls (what ScreenFit relies on) ----
 var tall = new StackPanel { Children = { new Border { Height = 900, Width = 300 } } };

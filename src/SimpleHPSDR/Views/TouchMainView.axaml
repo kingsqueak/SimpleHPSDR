@@ -324,7 +324,8 @@
       <!-- Top bar: drawer, band, mode, frequency, meter, transmit -->
       <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,0,0,6">
         <Button Classes="seg t" Content="☰" FontSize="20" Click="OpenDrawer" ToolTip.Tip="More controls" />
-        <Button Grid.Column="1" Classes="seg t lit" MinWidth="76">
+        <Button Grid.Column="1" Name="BandButton" Classes="seg t lit" MinWidth="76"
+                ToolTip.Tip="Choose a band. Long-press or right-click for frequencies saved on this band.">
           <StackPanel><TextBlock Text="{Binding BandLabel}" HorizontalAlignment="Center" /><TextBlock Text="Band" Classes="sub" /></StackPanel>
           <Button.Flyout>
             <Flyout Placement="BottomEdgeAlignedLeft">

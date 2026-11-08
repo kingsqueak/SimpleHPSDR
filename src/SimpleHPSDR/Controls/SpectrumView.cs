@@ -146,6 +146,18 @@ public sealed class SpectrumView : Control
         // rectangle so rows can't blend across the ring seam.
         RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.HighQuality);
         Cursor = CrossCursor;
+        // A long press (LongPress turns it into a context request) opens the
+        // slice menu where it started, as a right-click does. A right-click
+        // opens it on press already, and leaves no press pending here.
+        ContextRequested += (_, e) =>
+        {
+            if (_pressAt is not { } at) return;
+            _pressAt = null;
+            _panning = false;
+            _hover = null;
+            MenuRequested?.Invoke(XToHz(at.X, Bounds.Width));
+            e.Handled = true;
+        };
     }
 
     public void PushFrame(DisplayFrame f)

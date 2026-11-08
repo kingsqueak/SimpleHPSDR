@@ -36,6 +36,8 @@ public partial class TouchMainView : UserControl
             e.Handled = true;
         };
 
+        BandButton.ContextRequested += async (_, e) => { e.Handled = true; await MainMenus.ShowBandStackAsync(Vm, BandButton); };
+
         Spectrum.TuneRequested += hz =>
         {
             if (Vm is not { } vm || vm.TryPlaceNotch(hz)) return;

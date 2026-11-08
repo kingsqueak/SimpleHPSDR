@@ -59,6 +59,7 @@ public partial class App : Application
             SliderWheel.Enable();
             PopupTimeout.Enable();
             ScreenFit.Enable();
+            LongPress.Enable();
             var vm = new MainViewModel();
             ApplyTheme(vm.Theme);
             var main = new MainWindow { DataContext = vm };
