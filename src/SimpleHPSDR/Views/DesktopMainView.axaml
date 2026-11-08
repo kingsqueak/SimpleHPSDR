@@ -1,0 +1,846 @@
+<!-- The main window's desktop layout: everything below the menu bar. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimpleHPSDR.ViewModels"
+             xmlns:c="using:SimpleHPSDR.Controls"
+             x:Class="SimpleHPSDR.Views.DesktopMainView"
+             x:DataType="vm:MainViewModel">
+  <UserControl.Styles>
+    <!-- The theme's horizontal slider lays out 50 high, twice a button; pull
+         it in so slider rows are as tight as the band and filter rows. The
+         thumb still draws in full. -->
+    <Style Selector="Slider:horizontal">
+      <Setter Property="Margin" Value="0,-14" />
+    </Style>
+  </UserControl.Styles>
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://SimpleHPSDR/Views/MainResources.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <DockPanel>
+  <Border Classes="alert" Classes.warning="{Binding AlertIsWarning}" IsVisible="{Binding AlertShown}" DockPanel.Dock="Top" Margin="12,8,12,0">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+      <TextBlock Text="{Binding AlertText}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center" />
+      <Button Grid.Column="1" Classes="flat" Content="Dismiss" FontSize="13" Padding="6,2" VerticalAlignment="Center"
+              Command="{Binding DismissAlertCommand}" />
+    </Grid>
+  </Border>
+  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
+
+    <!-- Top: radio, frequency, meter -->
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
+      <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="flat" Command="{Binding ChooseRadioCommand}" ToolTip.Tip="{Binding RadioLabel}">
+            <TextBlock Name="RadioText" Text="{Binding RadioLabel}" TextTrimming="CharacterEllipsis" />
+          </Button>
+          <Button Classes="flat" Content="Config" Command="{Binding OpenSettingsCommand}"
+                  IsEnabled="{Binding IsConnected}" ToolTip.Tip="Configuration" />
+          <Button Classes="seg" Padding="10,3" IsEnabled="{Binding IsConnected}" VerticalAlignment="Center"
+                  ToolTip.Tip="Panadapter span (receiver sample rate)">
+            <StackPanel Spacing="-1">
+              <TextBlock Text="Span" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding SpanLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding SpanRates}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
+          <!-- Antennas for the current band: one button, lit when TX and RX differ -->
+          <Button Classes="seg" Classes.lit="{Binding AntennasDiffer}" Padding="10,3" VerticalAlignment="Center"
+                  IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="TX and RX antenna for this band">
+            <StackPanel Spacing="-1">
+              <TextBlock Text="Ant" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding AntennaText}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Spacing="4" VerticalAlignment="Center">
+                  <Button Classes="seg ant" IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="TX antenna for this band">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="TX" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding TxAntLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button.Flyout>
+                      <MenuFlyout ItemsSource="{Binding TxAntennas}" Placement="BottomEdgeAlignedLeft"
+                                  ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg ant" IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="RX antenna for this band">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="RX" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding RxAntLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button.Flyout>
+                      <MenuFlyout ItemsSource="{Binding RxAntennas}" Placement="BottomEdgeAlignedLeft"
+                                  ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                    </Button.Flyout>
+                  </Button>
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
+        <TextBlock Name="StatusText" Text="{Binding Status}" Classes="label" FontSize="11" MaxWidth="300" HorizontalAlignment="Left"
+                   TextTrimming="CharacterEllipsis" Margin="2,0,0,0" />
+        <!-- A newer release: a link to it, and a ✕ that hides it until the next one -->
+        <StackPanel Orientation="Horizontal" Spacing="2" Margin="2,0,0,0"
+                    IsVisible="{Binding UpdateNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <HyperlinkButton Content="{Binding UpdateNote}" NavigateUri="{Binding UpdatePage}" FontSize="11" Padding="0"
+                           Foreground="{DynamicResource TextMuted}"
+                           ToolTip.Tip="Opens the Releases page, where you can download it. Nothing is downloaded or installed by the app." />
+          <Button Classes="flat" Content="✕" FontSize="9" Padding="4,0" MinWidth="0" MinHeight="0" VerticalAlignment="Center"
+                  Command="{Binding DismissUpdateCommand}" ToolTip.Tip="Hide this until the next version" />
+        </StackPanel>
+      </StackPanel>
+
+      <!-- Only the frequency shrinks when the window is narrow -->
+      <Panel Name="VfoArea" Grid.Column="1" Margin="8,0">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" HorizontalAlignment="Center">
+        <Viewbox Name="VfoScale" Stretch="Uniform" StretchDirection="DownOnly">
+        <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
+                ToolTip.Tip="Click to type a frequency (kHz or MHz). The wheel over a digit tunes that digit; elsewhere it tunes by the step.">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <!-- Active slice letter, and where transmit is when it's the other slice -->
+            <StackPanel VerticalAlignment="Center" IsVisible="{Binding HasSliceB}" Spacing="0">
+              <Border CornerRadius="4" Padding="6,0" HorizontalAlignment="Center"
+                      Classes.sliceA="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=A}"
+                      Classes.sliceB="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=B}"
+                      ToolTip.Tip="Active slice: the VFO, band, mode, filter and AF act on it">
+                <TextBlock Text="{Binding ActiveSliceLabel}" FontSize="16" FontWeight="Bold" Foreground="White" />
+              </Border>
+              <TextBlock Text="{Binding SplitText}" FontSize="9" Foreground="{DynamicResource TxText}" HorizontalAlignment="Center"
+                         ToolTip.Tip="Transmit is on the other slice (split)" />
+            </StackPanel>
+            <!-- Click the frequency to type one in its place -->
+            <Panel MinWidth="230">
+              <TextBlock Name="FrequencyReadout" FontFamily="{StaticResource MonoFont}"
+                         Classes.tx="{Binding IsTransmitting}" IsVisible="{Binding !EditingFrequency}"
+                         FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center">
+                <Run Text="{Binding FrequencyHead}" /><Run Text="{Binding FrequencyDigit}" Foreground="{DynamicResource StepDigit}" /><Run Text="{Binding FrequencyTail}" />
+              </TextBlock>
+              <TextBox Name="FrequencyEntryBox" Text="{Binding FrequencyEntry}" IsVisible="{Binding EditingFrequency}"
+                       FontFamily="{StaticResource MonoFont}" FontSize="30" Width="230" VerticalAlignment="Center"
+                       PlaceholderText="MHz or kHz" />
+            </Panel>
+            <TextBlock Text="Hz" Classes="label" FontSize="14" VerticalAlignment="Center" Margin="0,14,0,0" />
+          </StackPanel>
+        </Border>
+        </Viewbox>
+        <!-- Step and lock beside the frequency, the same height as RIT and XIT.
+             Outside the scaled frequency box so they keep their size. -->
+        <StackPanel Name="StepLockButtons" Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+          <Button Name="StepButton" Classes="seg ant" Content="Step" FontSize="12" Height="24" Padding="8,0" MinWidth="44"
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  ToolTip.Tip="{Binding StepLabel, StringFormat=Tuning step for the wheel: {0}}">
+            <!-- Filled when it opens: the steps, then Snap clicks to step -->
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft" />
+            </Button.Flyout>
+          </Button>
+          <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
+                  Height="24" Padding="8,0" MinWidth="44"
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it.">
+            <Viewbox Width="15" Height="15">
+              <Canvas Width="24" Height="24">
+                <Path Data="M4 11h16v11H4z" Fill="{Binding $parent[Button].Foreground}" />
+                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 9 0v4" IsVisible="{Binding VfoLocked}" StrokeThickness="2.5"
+                      Stroke="{Binding $parent[Button].Foreground}" />
+                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 8.6-1.9" IsVisible="{Binding !VfoLocked}" StrokeThickness="2.5"
+                      Stroke="{Binding $parent[Button].Foreground}" />
+              </Canvas>
+            </Viewbox>
+          </Button>
+        </StackPanel>
+        <!-- Offsets, stacked like the antenna boxes -->
+        <StackPanel Name="OffsetButtons" Grid.Column="2" Spacing="4" VerticalAlignment="Center">
+          <Button Name="RitButton" Classes="seg ant" Classes.lit="{Binding RitOn}" IsEnabled="{Binding RitUsable}" Command="{Binding ToggleRitCommand}" Padding="6,3" MinWidth="0" HorizontalAlignment="Stretch"
+                  ToolTip.Tip="RIT: receive offset, slice A only. Click on or off, wheel 10 Hz a click, right-click to clear.">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="RIT" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding RitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                         MinWidth="21" TextAlignment="Right" />
+            </StackPanel>
+          </Button>
+          <Button Name="XitButton" Classes="seg ant" Classes.lit="{Binding XitOn}" Command="{Binding ToggleXitCommand}" Padding="6,3" MinWidth="0" HorizontalAlignment="Stretch"
+                  ToolTip.Tip="XIT: transmit offset. Click on or off, wheel 10 Hz a click, right-click to clear.">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="XIT" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding XitText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                         MinWidth="21" TextAlignment="Right" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+        <StackPanel Grid.Column="3" Spacing="4" VerticalAlignment="Center">
+          <Button Classes="seg ant" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsVisible="{Binding HasSliceB}"
+                  FontSize="11" MinWidth="0" Padding="4,3" ToolTip.Tip="Swap the frequencies of slices A and B" />
+        </StackPanel>
+      </Grid>
+      </Panel>
+
+      <Border Name="SignalPanel" Grid.Column="2" Classes="panel" Width="300" VerticalAlignment="Center">
+        <Border.ContextFlyout>
+          <Flyout Placement="BottomEdgeAlignedRight" Opening="OnSMeterTrimOpening">
+            <StackPanel Width="300" Spacing="8" Margin="4">
+              <TextBlock Text="S-meter trim" FontWeight="SemiBold" />
+              <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                         Text="Moves the signal reading up or down. 6 dB is one S-unit. Only the reading changes, not what you hear." />
+              <Grid ColumnDefinitions="*,70">
+                <Slider Minimum="-20" Maximum="20" SmallChange="0.5" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                        Value="{Binding SMeterTrimDb}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding SMeterTrimText}" FontSize="12" Margin="8,0,0,0"
+                           VerticalAlignment="Center" />
+              </Grid>
+              <Button Classes="flat" Content="Reset to 0" Command="{Binding ResetSMeterTrimCommand}" />
+            </StackPanel>
+          </Flyout>
+        </Border.ContextFlyout>
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Name="SignalLabel" Text="SIGNAL" Classes="label" />
+          <!-- Fixed-width slots so the readings don't shift as they change -->
+          <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <TextBlock Text="{Binding SUnits}" Width="62" Margin="12,0,0,0" FontFamily="{StaticResource MonoFont}" FontSize="13"
+                       FontWeight="SemiBold" TextAlignment="Left" />
+            <TextBlock Text="pk" Classes="label" FontSize="11" Margin="0,1,4,0" />
+            <TextBlock Text="{Binding PeakSUnits}" Width="56" FontFamily="{StaticResource MonoFont}"
+                       FontSize="13" TextAlignment="Left" ToolTip.Tip="Peak RMS, held 3 s" />
+            <TextBlock Text="{Binding SignalDbm, StringFormat={}{0:0} dBm}" Width="80" FontFamily="{StaticResource MonoFont}"
+                       FontSize="13" TextAlignment="Right" Foreground="{DynamicResource TextMuted}" />
+          </StackPanel>
+          <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}" Squelch="{Binding SquelchMark}"
+                       Height="8" Margin="0,6,0,0"
+                       ToolTip.Tip="Blue below S4, green S4-S9, orange to S9+15, red from S9+20. White mark: peak, held 3 s. Yellow mark: squelch, while it's on." />
+          <!-- Transmit meters -->
+          <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6"
+                Margin="0,8,0,0">
+            <TextBlock Text="PWR" Classes="label" FontSize="11" VerticalAlignment="Center" />
+            <ProgressBar Grid.Column="1" Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}"
+                         MinWidth="0" Height="8" VerticalAlignment="Center" Foreground="#E5484D" Background="{DynamicResource ControlBg}" />
+            <TextBlock Grid.Column="2" Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" TextAlignment="Right"
+                       VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Grid.Column="3" Text="SWR" Classes="label" FontSize="11" Margin="4,0,0,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="4" Text="{Binding SwrText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Grid.Column="5" Text="ALC" Classes="label" FontSize="11" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="6" Text="{Binding AlcText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Button Grid.Column="3" Classes="seg" Click="OnOpenMini" Margin="8,0,0,0" Padding="4,8" MinWidth="0" VerticalAlignment="Stretch"
+              ToolTip.Tip="Switch to the small window: VFO, meters, Mute and TX. Close it to come back.">
+        <StackPanel VerticalAlignment="Center" Spacing="-1">
+          <TextBlock Text="M" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="I" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="N" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+          <TextBlock Text="I" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" />
+        </StackPanel>
+      </Button>
+    </Grid>
+
+    <!-- Band / mode / filter rows -->
+    <Border Grid.Row="1" Classes="panel" Margin="0,0,0,10">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="12">
+        <TextBlock Grid.Row="0" Text="BAND" Classes="label" />
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="12">
+          <Button Name="BandButton" Classes="seg lit" Content="{Binding BandLabel}" MinWidth="64"
+                  ToolTip.Tip="Choose a band. Right-click to save or recall frequencies on this band.">
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding Bands}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
+          <TextBlock Text="MODE" Classes="label" Margin="12,0,0,0" />
+          <Button Classes="seg lit" Content="{Binding ModeLabel}" MinWidth="64"
+                  ToolTip.Tip="Choose a mode. In AM and FM, right-click for its options.">
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding Modes}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+            <Button.ContextFlyout>
+              <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnModeOptionsOpening">
+                <Panel Width="340" Margin="4">
+                  <StackPanel Spacing="8" IsVisible="{Binding ModeIsAm}">
+                    <TextBlock Text="AM transmit" FontWeight="SemiBold" />
+                    <CheckBox Content="Broadcast-style AM (asymmetric peaks)" IsChecked="{Binding AmBroadcastOn}" />
+                    <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmBroadcastOn}">
+                      <TextBlock Text="Positive peak" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                      <Slider Grid.Column="1" Minimum="100" Maximum="150" Value="{Binding AmPositivePeak}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="{Binding AmPositiveText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                    </Grid>
+                  <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmBroadcastOn}">
+                    <TextBlock Text="Negative peak" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                    <Slider Grid.Column="1" Minimum="80" Maximum="100" Value="{Binding AmNegativePeak}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding AmNegativeText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  </Grid>
+                    <CheckBox Content="Pre-emphasis" IsChecked="{Binding AmPreEmphasis}" IsVisible="{Binding AmBroadcastOn}" />
+                    <CheckBox Content="Invert polarity" IsChecked="{Binding AmInvert}" IsVisible="{Binding AmBroadcastOn}" />
+                  <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmSymmetric}">
+                    <TextBlock Text="Carrier level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                    <Slider Grid.Column="1" Minimum="0" Maximum="125" Value="{Binding AmCarrierPct}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding AmCarrierText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  </Grid>
+                  </StackPanel>
+                  <StackPanel Spacing="8" IsVisible="{Binding ModeIsFm}">
+                    <TextBlock Text="FM" FontWeight="SemiBold" />
+                    <CheckBox Content="Narrow (2.5 kHz deviation, otherwise 5 kHz)" IsChecked="{Binding FmNarrow}" />
+                    <Grid ColumnDefinitions="110,*">
+                      <CheckBox Content="CTCSS" IsChecked="{Binding FmCtcssOn}" />
+                      <ComboBox Grid.Column="1" ItemsSource="{Binding CtcssTones}" SelectedItem="{Binding FmCtcssTone}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                    <Grid ColumnDefinitions="110,*">
+                      <TextBlock Text="RX tone squelch" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                      <ComboBox Grid.Column="1" ItemsSource="{Binding FmToneModes}" SelectedIndex="{Binding FmRxToneIndex}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                    <Grid ColumnDefinitions="110,*">
+                      <TextBlock Text="Repeater shift" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                      <ComboBox Grid.Column="1" ItemsSource="{Binding FmShiftNames}" SelectedIndex="{Binding FmShiftIndex}" HorizontalAlignment="Stretch" />
+                    </Grid>
+                    <CheckBox Content="Reverse" IsChecked="{Binding FmReverse}" />
+                    <CheckBox Content="1750 Hz tone burst at the start of each over" IsChecked="{Binding FmBurstOnKey}" />
+                  </StackPanel>
+                  <TextBlock Text="Options are available in AM, SAM and FM." Classes="label" FontSize="12"
+                             IsVisible="{Binding ModeHasNoOptions}" />
+                </Panel>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+          <!-- Only while DRM is on -->
+          <Button Classes="seg lit" Content="DRM" IsVisible="{Binding DrmActive}" Command="{Binding OpenGuideCommand}"
+                  ToolTip.Tip="Open the DRM station list. Right-click to turn DRM off.">
+            <Button.ContextFlyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Open station list" Command="{Binding OpenGuideCommand}" />
+                <MenuItem Header="Service" ItemsSource="{Binding DrmServices}" IsVisible="{Binding DrmHasServices}"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                <MenuItem Header="Turn DRM off" Command="{Binding TurnDrmOffCommand}" />
+              </MenuFlyout>
+            </Button.ContextFlyout>
+          </Button>
+          <!-- Only while SWL is on -->
+          <Button Classes="seg lit" Content="SWL" IsVisible="{Binding SwlActive}" Command="{Binding OpenGuideCommand}"
+                  ToolTip.Tip="Open the station guide. Right-click to turn SWL off.">
+            <Button.ContextFlyout>
+              <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                <MenuItem Header="Open station guide" Command="{Binding OpenGuideCommand}" />
+                <MenuItem Header="Turn SWL off" Command="{Binding TurnSwlOffCommand}" />
+              </MenuFlyout>
+            </Button.ContextFlyout>
+          </Button>
+          <!-- Only in CW -->
+          <Button Name="WpmButton" Classes="seg lit" Content="{Binding CwWpmText}" IsVisible="{Binding ModeIsCw}" Click="OnOpenCw"
+                  ToolTip.Tip="Keyer speed: use the wheel. Click for sending, macros and the decoder. Right-click for keyer settings.">
+            <Button.ContextFlyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <Grid Width="420" Margin="4" ColumnDefinitions="110,*,70" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                  <TextBlock Text="Key" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:MainViewModel.CwKeyerNames}" SelectedIndex="{Binding CwKeyerIndex}" HorizontalAlignment="Stretch" />
+                  <TextBlock Grid.Row="1" Text="Speed" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="1" Grid.Column="1" Minimum="5" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CwWpm}" />
+                  <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding CwWpmText}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="2" Text="Farnsworth" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="50" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CwFarnsworthWpm}"
+                          ToolTip.Tip="Characters sent at this speed with wider gaps between them. 0 is off." />
+                  <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding CwFarnsworthWpm}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="3" Text="Weight" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="3" Grid.Column="1" Minimum="33" Maximum="66" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CwWeight}"
+                          ToolTip.Tip="Dot and dash length against the gaps. 50 is normal." />
+                  <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding CwWeight}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="4" Text="Sidetone pitch" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="4" Grid.Column="1" Minimum="300" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwSidetoneHz}" />
+                  <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding CwSidetoneHz, StringFormat={}{0} Hz}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <TextBlock Grid.Row="5" Text="Sidetone level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="5" Grid.Column="1" Minimum="-40" Maximum="0" Value="{Binding CwSidetoneDb}" />
+                  <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding CwSidetoneDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <CheckBox Grid.Row="6" Grid.ColumnSpan="2" Content="Break-in" IsChecked="{Binding CwBreakIn}"
+                            ToolTip.Tip="Keying transmits by itself, and the radio drops back to receive after the hang time" />
+                  <TextBlock Grid.Row="7" Text="Hang time" Classes="label" FontSize="12" VerticalAlignment="Center"
+                             ToolTip.Tip="How long transmit stays on after keying, for a key on the radio or the keyboard." />
+                  <Slider Grid.Row="7" Grid.Column="1" Minimum="10" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwHangMs}" />
+                  <TextBlock Grid.Row="7" Grid.Column="2" Text="{Binding CwHangMs, StringFormat={}{0} ms}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                  <CheckBox Grid.Row="8" Grid.ColumnSpan="2" Content="Reverse paddles" IsChecked="{Binding CwPaddleReverse}" />
+                </Grid>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+          <Button Classes="seg" Classes.lit="{Binding AnfOn}" Content="ANF" Command="{Binding ToggleAnfCommand}"
+                  ToolTip.Tip="Automatic notch filter, for steady tones. Right-click for manual notches.">
+            <Button.ContextFlyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Spacing="8" Margin="4" Width="320">
+                  <TextBlock Text="Manual notches" FontWeight="SemiBold" />
+                  <TextBlock Text="None yet." Classes="label" FontSize="12" IsVisible="{Binding !HasNotches}" />
+                  <ItemsControl ItemsSource="{Binding NotchRows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:NotchRow">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
+                          <TextBlock Text="{Binding Frequency}" VerticalAlignment="Center" />
+                          <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:NotchRow.WidthNames}"
+                                    SelectedIndex="{Binding WidthIndex}" Width="96" />
+                          <Button Grid.Column="2" Classes="flat" Content="Remove" Command="{Binding RemoveCommand}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="flat accent" Content="Add on panadapter" Command="{Binding PlaceNotchCommand}" Click="CloseFlyout"
+                            ToolTip.Tip="The next click on the panadapter places a notch" />
+                    <Button Classes="flat" Content="Clear all" Command="{Binding ClearNotchesCommand}" IsVisible="{Binding HasNotches}" />
+                  </StackPanel>
+                </StackPanel>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+        </StackPanel>
+        <TextBlock Grid.Row="1" Text="FILTER" Classes="label" />
+        <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Filters}" VerticalAlignment="Center">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:FilterSlot">
+              <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}" MinWidth="52"
+                      Command="{Binding SelectCommand}" ToolTip.Tip="Right-click to edit this filter">
+                <Button.ContextFlyout>
+                  <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnFilterEditOpening">
+                    <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8"
+                          ColumnSpacing="10" Margin="4" Width="300">
+                      <TextBlock Grid.ColumnSpan="2" FontWeight="SemiBold">
+                        <Run Text="Filter" /> <Run Text="{Binding SlotName}" /> <Run Text="·" /> <Run Text="{Binding Mode}" />
+                      </TextBlock>
+                      <TextBlock Grid.Row="1" Text="Label" Classes="label" FontSize="12" />
+                      <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditLabel}" Width="150" MaxLength="8" />
+                      <TextBlock Grid.Row="2" Text="Low" Classes="label" FontSize="12" />
+                      <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding EditLowHz}" Minimum="-12000" Maximum="12000"
+                                     Increment="10" FormatString="0" Width="150" />
+                      <TextBlock Grid.Row="3" Text="High" Classes="label" FontSize="12" />
+                      <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding EditHighHz}" Minimum="-12000" Maximum="12000"
+                                     Increment="10" FormatString="0" Width="150" />
+                      <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="{Binding EdgeHint}" Classes="label" FontSize="11" />
+                      <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
+                        <Button Classes="flat accent" Content="Save" Command="{Binding SaveCommand}" Click="CloseFlyout" />
+                        <Button Classes="flat" Content="Reset to default" Command="{Binding ResetCommand}" Click="CloseFlyout" />
+                        <Button Classes="flat" Content="Cancel" Click="CloseFlyout" />
+                      </StackPanel>
+                    </Grid>
+                  </Flyout>
+                </Button.ContextFlyout>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Grid.Row="0" Grid.Column="2" Text="NB" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
+        <Button Grid.Row="0" Grid.Column="3" Classes="seg" Classes.lit="{Binding NbOn}" Content="{Binding NbLabel}" MinWidth="64"
+                VerticalAlignment="Center" ToolTip.Tip="Noise blanker for impulse noise. Right-click for its settings.">
+          <Button.Flyout>
+            <MenuFlyout ItemsSource="{Binding NoiseBlankers}" Placement="BottomEdgeAlignedLeft"
+                        ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+          </Button.Flyout>
+          <Button.ContextFlyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnNbParamsOpening">
+              <ContentControl Content="{Binding NbParams}" ContentTemplate="{StaticResource NoisePanelView}" />
+            </Flyout>
+          </Button.ContextFlyout>
+        </Button>
+        <!-- Close-up of the received signal with the filter: drag its edges -->
+        <c:FilterScope Name="FilterScope" Grid.Column="4" Grid.RowSpan="2" Margin="12,0,0,0"
+                       ToolTip.Tip="6 kHz around the dial with the receive filter shaded. Drag an edge to set the low or high cut. Scale: audio frequency in Hz." />
+        <TextBlock Grid.Row="1" Grid.Column="2" Text="NR" Classes="label" Margin="12,0,0,0" VerticalAlignment="Center" />
+        <Button Grid.Row="1" Grid.Column="3" Classes="seg" Classes.lit="{Binding NrOn}" Content="{Binding NrLabel}" MinWidth="64"
+                VerticalAlignment="Center" ToolTip.Tip="Noise reduction. Right-click for its settings.">
+          <Button.Flyout>
+            <MenuFlyout ItemsSource="{Binding NoiseReductions}" Placement="BottomEdgeAlignedLeft"
+                        ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+          </Button.Flyout>
+          <Button.ContextFlyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnNrParamsOpening">
+              <ContentControl Content="{Binding NrParams}" ContentTemplate="{StaticResource NoisePanelView}" />
+            </Flyout>
+          </Button.ContextFlyout>
+        </Button>
+      </Grid>
+    </Border>
+
+    <!-- Spectrum and waterfall: slice A's receiver on top, slice B's below
+         while B is on (the window code sizes the second row). -->
+    <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0">
+      <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
+        <Panel>
+          <c:SpectrumView Name="Spectrum" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
+                          PopMode="{Binding WaterfallPop}"
+                          PanFraction="{Binding PanFraction}" />
+          <!-- SWL: what's scheduled on the tuned frequency. Clicks pass through to the waterfall.
+               Dark in both themes, like the panadapter under it. -->
+          <Border IsVisible="{Binding SwlStationShown}" IsHitTestVisible="False" HorizontalAlignment="Center"
+                  VerticalAlignment="Bottom" Margin="12,0,12,14" Padding="16,8" CornerRadius="8"
+                  Background="#E6171A21" MaxWidth="640">
+            <StackPanel Spacing="1">
+              <TextBlock Text="{Binding SwlStationName}" Foreground="#E6E8EB" FontSize="17" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding SwlStationDetail}" Foreground="#AEB6C2" FontSize="12"
+                         HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SwlStationMore}" IsVisible="{Binding SwlHasMore}" Foreground="#8A93A3" FontSize="11"
+                         HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </Border>
+        </Panel>
+      </Border>
+      <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
+              BorderBrush="Transparent" IsVisible="{Binding ShowPanadapterB}">
+        <c:SpectrumView Name="SpectrumB" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
+      </Border>
+    </Grid>
+
+    <!-- Panadapter controls -->
+    <!-- CPU readout at the right end of the panadapter controls row -->
+    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="14" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <TextBlock Text="{Binding TciStatusText}" IsVisible="{Binding TciStatusShown}" Foreground="{DynamicResource TextMuted}"
+                 FontSize="11" VerticalAlignment="Center" ToolTip.Tip="TCI server: address, port and connected programs" />
+      <TextBlock Text="{Binding CpuText}" ToolTip.Tip="{Binding CpuDetail}"
+                   Classes="cpu" FontSize="11" VerticalAlignment="Center"
+                   Classes.warn="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
+                   Classes.bad="{Binding CpuLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}" />
+    </StackPanel>
+    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="4" Margin="0,8,0,0">
+      <Button Classes="seg" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}"
+              ToolTip.Tip="CTUN: clicking the panadapter moves only the receive frequency; the display stays put (blue = on)" />
+      <Button Classes="seg" Classes.lit="{Binding ZoomOn}" Padding="10,3" Command="{Binding ToggleZoomCommand}"
+              ToolTip.Tip="Zoom: click for full span (grey) or zoomed (blue). Right-click to set the zoomed span.">
+        <StackPanel Spacing="-1">
+          <TextBlock Text="Zoom" FontSize="12" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding ZoomLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+        </StackPanel>
+        <Button.ContextFlyout>
+          <Flyout Placement="TopEdgeAlignedLeft">
+            <Grid Width="300" Margin="4" ColumnDefinitions="60,*,70">
+              <TextBlock Text="Span" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Column="1" Minimum="1" Maximum="5" SmallChange="0.1" TickFrequency="0.1" IsSnapToTickEnabled="True"
+                      Value="{Binding ZoomSlider}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" Text="{Binding ZoomSpanText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+            </Grid>
+          </Flyout>
+        </Button.ContextFlyout>
+      </Button>
+      <Button Classes="seg" Classes.lit="{Binding AutoSpectrum}" Content="Auto" Margin="16,0,0,0"
+              Command="{Binding ToggleAutoSpectrumCommand}"
+              ToolTip.Tip="Spec Min/Max follow the noise floor, 50 dB range (blue = on); moving a slider turns it off" />
+      <Button Classes="seg" Content="Display" VerticalAlignment="Center"
+              ToolTip.Tip="Spectrum range, resolution, waterfall speed and POP">
+        <Button.Flyout>
+          <Flyout Placement="TopEdgeAlignedLeft">
+            <Grid Width="340" Margin="4" ColumnDefinitions="74,*,60" RowDefinitions="Auto,Auto,Auto" RowSpacing="14">
+              <TextBlock Text="Spec Min" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Column="1" Minimum="-160" Maximum="-40" Value="{Binding SpecMinDb}" VerticalAlignment="Center"
+                      TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Bottom of the panadapter trace (dB)" />
+              <TextBlock Grid.Column="2" Text="{Binding SpecMinDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0"
+                         VerticalAlignment="Center" FontSize="12" />
+              <TextBlock Grid.Row="1" Text="Spec Max" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Row="1" Grid.Column="1" Minimum="-130" Maximum="0" Value="{Binding SpecMaxDb}" VerticalAlignment="Center"
+                      TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Top of the panadapter trace (dB)" />
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SpecMaxDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0"
+                         VerticalAlignment="Center" FontSize="12" />
+              <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
+                <Button Classes="seg" Padding="10,3" VerticalAlignment="Center"
+                        ToolTip.Tip="Display resolution (FFT size): bigger shows finer detail, at more CPU">
+                  <StackPanel Spacing="-1">
+                    <TextBlock Text="Res" FontSize="12" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding ResolutionLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+                  </StackPanel>
+                  <Button.Flyout>
+                    <MenuFlyout ItemsSource="{Binding Resolutions}" Placement="TopEdgeAlignedLeft"
+                                ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                  </Button.Flyout>
+                </Button>
+                <Button Classes="seg" Padding="10,3" VerticalAlignment="Center" ToolTip.Tip="Waterfall speed (rows per second)">
+                  <StackPanel Spacing="-1">
+                    <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding SpeedLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+                  </StackPanel>
+                  <Button.Flyout>
+                    <MenuFlyout ItemsSource="{Binding WaterfallSpeeds}" Placement="TopEdgeAlignedLeft"
+                                ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                  </Button.Flyout>
+                </Button>
+                <Button Classes="seg" Classes.lit="{Binding WaterfallPop}" Content="POP" Command="{Binding ToggleWaterfallPopCommand}"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="POP: the waterfall follows the noise floor and lifts weak signals out of the noise (blue = on)" />
+              </StackPanel>
+            </Grid>
+          </Flyout>
+        </Button.Flyout>
+      </Button>
+      <StackPanel Orientation="Horizontal" Spacing="6" Margin="12,0,0,0" IsVisible="{Binding AgcTopShown}">
+        <TextBlock Text="AGC-T" Classes="label" VerticalAlignment="Center" />
+        <Slider Minimum="30" Maximum="120" Value="{Binding AgcTopDb}" Width="100" VerticalAlignment="Center"
+                ToolTip.Tip="AGC threshold: raise it until the yellow line sits just above the noise. Moving this turns auto AGC off." />
+        <TextBlock Text="{Binding AgcTopText}" Width="44" VerticalAlignment="Center" FontSize="12" />
+      </StackPanel>
+    </StackPanel>
+
+    <!-- Transmit -->
+    <Border Grid.Row="4" Classes="panel" Margin="0,10,0,0">
+      <!-- What's used every minute stays out; the rest is in the TX and RFG popups.
+           The AF row always starts its own line. -->
+      <StackPanel Spacing="6">
+      <WrapPanel ItemSpacing="24" LineSpacing="6">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <ToggleButton Classes="seg tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="64"
+                        ToolTip.Tip="Transmit" />
+          <ToggleButton Classes="seg tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="64"
+                        ToolTip.Tip="Tune carrier at the tune drive level" />
+          <ToggleButton Classes="seg" Content="VOX" IsChecked="{Binding VoxOn}"
+                        ToolTip.Tip="Transmit when you speak. Use headphones, or the speakers will key it. Right-click for its settings.">
+            <ToggleButton.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <Grid Width="380" Margin="4" ColumnDefinitions="80,*,70" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+                  <TextBlock Text="Threshold" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding VoxThresholdDb}" VerticalAlignment="Center"
+                          ToolTip.Tip="Mic level that keys. Set it above your room noise and below your voice." />
+                  <TextBlock Grid.Column="2" Text="{Binding VoxThresholdDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="1" Text="Mic level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ProgressBar Grid.Row="1" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MicLevelDbfs}" MinWidth="0"
+                               VerticalAlignment="Center" Foreground="#3DD68C" Background="{DynamicResource ControlBg}" />
+                  <TextBlock Grid.Row="2" Text="Delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="2" Grid.Column="1" Minimum="100" Maximum="2000" TickFrequency="50" IsSnapToTickEnabled="True"
+                          Value="{Binding VoxDelayMs}" VerticalAlignment="Center" ToolTip.Tip="How long transmit stays on after you stop speaking" />
+                  <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding VoxDelayMs, StringFormat={}{0:0} ms}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Grid.ColumnSpan="3" Classes="label" FontSize="12" TextWrapping="Wrap"
+                             Text="Use headphones: there's no anti-VOX, so speakers can key the radio. Voice modes only, and off each time the app starts." />
+                </Grid>
+              </Flyout>
+            </ToggleButton.ContextFlyout>
+          </ToggleButton>
+          <ToggleButton Classes="seg ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" Margin="12,0,4,0"
+                        ToolTip.Tip="PureSignal adaptive predistortion. Right-click for two-tone, calibration and status.">
+            <ToggleButton.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <StackPanel Spacing="8" Margin="4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <ToggleButton Classes="seg tx" Content="2-TONE" IsChecked="{Binding TwoToneOn}"
+                                  ToolTip.Tip="Transmit the two-tone test signal (for PureSignal calibration and IMD checks)" />
+                    <ToggleButton Classes="seg tx" Content="PS CAL" IsChecked="{Binding PsCalibrating, Mode=OneWay}"
+                                  Command="{Binding CalibratePsCommand}"
+                                  ToolTip.Tip="Key 2-TONE in up to four 3-second bursts until PureSignal calibrates, adjusting HW peak between bursts. Press again to cancel." />
+                    <Border Classes="ps" Classes.ok="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ok}"
+                            Classes.warn="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
+                            Classes.bad="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}"
+                            ToolTip.Tip="PureSignal state. Feedback level (FB) is best around 128-181.">
+                      <TextBlock FontSize="11" FontWeight="SemiBold">
+                        <Run Text="{Binding PsStatus}" />
+                        <Run Text="{Binding PsFeedbackText}" />
+                      </TextBlock>
+                    </Border>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Classes="flat" Content="Save correction" Command="{Binding SavePsCorrectionCommand}"
+                          ToolTip.Tip="Keep what PureSignal has learned, to bring back without recalibrating" />
+                  <Button Classes="flat" Content="Restore" Command="{Binding RestorePsCorrectionCommand}" />
+                </StackPanel>
+                </StackPanel>
+              </Flyout>
+            </ToggleButton.ContextFlyout>
+          </ToggleButton>
+          <Button Classes="seg" Classes.lit="{Binding MonitorOn}" Content="{Binding MonitorLabel}" MinWidth="64"
+                  Command="{Binding CycleMonitorCommand}" VerticalAlignment="Center"
+                  ToolTip.Tip="Click to step through Mon (hear your mic through the TX chain without transmitting), TX Mon (hear yourself while transmitting), Mon+TX (both), and off. Right-click for the level.">
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <Grid Width="280" Margin="4" ColumnDefinitions="60,*,48">
+                  <TextBlock Text="Level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="100" Value="{Binding MonitorPct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding MonitorPctText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                </Grid>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+          <Button Classes="seg" VerticalAlignment="Center"
+                  ToolTip.Tip="Transmit levels and mic">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="TX" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <Grid Width="420" Margin="4" ColumnDefinitions="60,*,104" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="14">
+                  <TextBlock Text="DRIVE" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding DrivePct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding DriveLine}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                  <TextBlock Grid.Row="1" Text="TUNE" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding TunePct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding TuneLine}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                  <TextBlock Grid.Row="2" Text="MIC" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="2" Grid.Column="1" Minimum="-20" Maximum="40" Value="{Binding MicGainDb}" VerticalAlignment="Center"
+                          ToolTip.Tip="Mic gain" />
+                  <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding MicGainDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
+                  <Border Grid.Row="3" Background="{DynamicResource ControlBg}" CornerRadius="5" Padding="6,3" HorizontalAlignment="Left"
+                          VerticalAlignment="Center" ToolTip.Tip="{Binding MicSourceDetail}">
+                    <TextBlock Text="{Binding MicSourceLabel}" FontSize="11" FontWeight="SemiBold" />
+                  </Border>
+                  <ProgressBar Grid.Row="3" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MicLevelDbfs}" MinWidth="0" Height="6"
+                               VerticalAlignment="Center" Foreground="#3DD68C" Background="{DynamicResource ControlBg}" ToolTip.Tip="Mic level (dBFS)" />
+                </Grid>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
+      </WrapPanel>
+      <WrapPanel ItemSpacing="18" LineSpacing="6" Margin="0,0,130,0">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,12,0">
+            <TextBlock Text="AF" Classes="label" />
+            <c:AfSlider Value="{Binding AfGainDb}" TrimA="{Binding SliceAfA}" TrimB="{Binding SliceAfB}"
+                        ShowTrims="{Binding HasSliceB}" Width="150" VerticalAlignment="Center"
+                        ToolTip.Tip="{Binding AfTip}" />
+            <StackPanel VerticalAlignment="Center" Width="44">
+              <TextBlock Text="{Binding AfGainText}" FontSize="12" />
+              <TextBlock Text="{Binding SliceAfText}" FontSize="9" Opacity="0.75" IsVisible="{Binding HasSliceB}" />
+            </StackPanel>
+            <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
+          </StackPanel>
+          <Button Classes="seg" Classes.lit="{Binding SquelchOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"
+                  Command="{Binding ToggleSquelchCommand}" ToolTip.Tip="Squelch: click on or off, right-click for the level (blue = on)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="SQL" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding SquelchText}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <StackPanel Width="280" Spacing="8" Margin="4">
+                  <TextBlock Text="Squelch" FontWeight="SemiBold" />
+                  <Grid ColumnDefinitions="*,44">
+                    <Slider Minimum="0" Maximum="100" Value="{Binding SquelchLevel}" VerticalAlignment="Center"
+                            IsEnabled="{Binding !SquelchAdaptive}" />
+                    <TextBlock Grid.Column="1" Text="{Binding SquelchText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+                  </Grid>
+                  <CheckBox Content="Adaptive (follows the band noise)" IsChecked="{Binding SquelchAdaptive}" />
+                  <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                             Text="Adaptive opens just above the band noise and doesn't use the level. Untick it to set the level yourself." />
+                </StackPanel>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+          <Button Name="RxLevButton" Classes="seg" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}"
+                  VerticalAlignment="Center"
+                  ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on). Right-click for its settings.">
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft" Opening="OnRxLevelerOpening">
+                <Grid Name="RxLevPanel" Width="380" Margin="4" ColumnDefinitions="100,*,64" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.ColumnSpan="3" Text="RX leveler" FontWeight="SemiBold" />
+                  <TextBlock Grid.Row="1" Text="Settings" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" SelectedIndex="{Binding RxLevModeIndex}" HorizontalAlignment="Stretch">
+                    <ComboBoxItem Content="Auto" />
+                    <ComboBoxItem Content="Custom" />
+                  </ComboBox>
+                  <TextBlock Grid.Row="2" Text="Target level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="2" Grid.Column="1" Value="{Binding RxLevTargetDb}" Minimum="-30" Maximum="-6" SmallChange="1"
+                          TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding RxLevTargetDb, StringFormat={}{0:0} dB}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Text="Max boost" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="3" Grid.Column="1" Value="{Binding RxLevMaxBoostDb}" Minimum="0" Maximum="24" SmallChange="1"
+                          TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding RxLevMaxBoostDb, StringFormat={}{0:0} dB}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="4" Text="Attack" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="4" Grid.Column="1" Value="{Binding RxLevAttackMs}" Minimum="20" Maximum="2000" SmallChange="10"
+                          TickFrequency="10" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding RxLevAttackMs, StringFormat={}{0:0} ms}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="5" Text="Release" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="5" Grid.Column="1" Value="{Binding RxLevReleaseMs}" Minimum="20" Maximum="5000" SmallChange="10"
+                          TickFrequency="10" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding RxLevReleaseMs, StringFormat={}{0:0} ms}" FontSize="12" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="6" Text="Hang" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Row="6" Grid.Column="1" Value="{Binding RxLevHangMs}" Minimum="0" Maximum="2000" SmallChange="10"
+                          TickFrequency="10" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Row="6" Grid.Column="2" Text="{Binding RxLevHangMs, StringFormat={}{0:0} ms}" FontSize="12" VerticalAlignment="Center" />
+                  <Button Grid.Row="7" Grid.ColumnSpan="3" Classes="flat" Content="Reset to defaults" Command="{Binding ResetRxLevelerCommand}" />
+                </Grid>
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="seg" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}"
+                  VerticalAlignment="Center"
+                  ToolTip.Tip="Full duplex: keep hearing the receivers while transmitting (needs a separate RX antenna or a cross-band slice). Blue = on, grey = off." />
+          <Button Classes="seg" Classes.lit="{Binding AutoAtt}" Padding="8,2" Margin="12,0,4,0" VerticalAlignment="Center"
+                  ToolTip.Tip="Front end: attenuator and preamp (blue = auto attenuation on)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="RFG" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding RfText}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <Grid Width="320" Margin="4" ColumnDefinitions="60,*,64" RowDefinitions="Auto,Auto" RowSpacing="14">
+                  <TextBlock Text="ATT" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="31" Value="{Binding AttenDb}" VerticalAlignment="Center"
+                          TickFrequency="1" IsSnapToTickEnabled="True" />
+                  <TextBlock Grid.Column="2" Text="{Binding AttenText}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12"
+                             ToolTip.Tip="Manual attenuation, plus any added automatically" />
+                  <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
+                    <ToggleButton Classes="seg" Content="Auto ATT" IsChecked="{Binding AutoAtt}"
+                                  ToolTip.Tip="Automatic attenuation: adds attenuation when the ADC overloads (blue = on)" />
+                    <Button Classes="seg" Classes.lit="{Binding PreampOn}" Command="{Binding CyclePreCommand}" Padding="8,2" MinWidth="44"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Front end: preamp on → 0 dB → −10 → −20 → −30 dB (attenuator). Blue = preamp on.">
+                      <StackPanel Spacing="-3">
+                        <TextBlock Text="Pre" FontSize="12" HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding PreLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </Grid>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+          <Border Background="#E5484D" CornerRadius="4" Padding="6,2" IsVisible="{Binding AdcOverload}"
+                  VerticalAlignment="Center" ToolTip.Tip="ADC overload">
+            <TextBlock Text="OVL" FontSize="11" FontWeight="SemiBold" Foreground="White" />
+          </Border>
+          <Button Classes="seg" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}"
+                  Padding="8,2" MinWidth="44" Margin="12,0,4,0" VerticalAlignment="Center"
+                  ToolTip.Tip="AGC: blue = auto (the engine sets the AGC gain), grey = manual (choose the speed)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="AGC" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding AgcSubLabel}" FontSize="8"
+                         HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+          </Button>
+          <Button Classes="seg" Padding="8,2" VerticalAlignment="Center" IsVisible="{Binding AgcManual}"
+                  ToolTip.Tip="AGC speed (manual)">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding AgcSpeedLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout ItemsSource="{Binding AgcSpeedChoices}" Placement="BottomEdgeAlignedLeft"
+                          ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+            </Button.Flyout>
+          </Button>
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding AgcFixedShown}">
+            <Slider Minimum="-20" Maximum="120" Value="{Binding AgcFixedGainDb}" Width="80" VerticalAlignment="Center"
+                    ToolTip.Tip="Fixed receive gain while AGC is off" />
+            <TextBlock Text="{Binding AgcFixedText}" Width="44" VerticalAlignment="Center" FontSize="12" />
+          </StackPanel>
+        </StackPanel>
+      </WrapPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Clock in the bottom corner, over the empty end of the panel -->
+    <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8"
+          HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,10">
+      <Button Classes="idclock" Classes.on="{Binding IdTimerRunning}" Classes.mark="{Binding IdTimerAtMark}" Content="ID"
+              FontFamily="Inter" FontSize="11" Command="{Binding ToggleIdTimerCommand}"
+              ToolTip.Tip="ID timer: click to turn it on or off. It reminds you on the even ten minutes while connected to a radio." />
+      <Button Grid.Column="1" Classes="idclock" Classes.on="{Binding IdTimerRunning}" Classes.mark="{Binding IdTimerAtMark}"
+              Content="{Binding IdCountdownText}" Command="{Binding ToggleIdTimerCommand}"
+              ToolTip.Tip="ID timer: click to turn it on or off. It reminds you on the even ten minutes while connected to a radio." />
+      <TextBlock Grid.Row="1" Text="{Binding LocalZoneText}" Classes="label" FontSize="11" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LocalTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
+      <TextBlock Grid.Row="2" Text="UTC" Classes="label" FontSize="11" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ZuluTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
+    </Grid>
+  </Grid>
+  </DockPanel>
+</UserControl>

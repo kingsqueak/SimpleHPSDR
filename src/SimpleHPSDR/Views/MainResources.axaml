@@ -1,0 +1,44 @@
+<!-- Resources shared by the main window's layouts -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="using:SimpleHPSDR.ViewModels"
+                    xmlns:c="using:SimpleHPSDR.Controls">
+  <!-- Menu items for a dropdown of Choice objects (step, band, mode) -->
+  <ControlTheme x:Key="ChoiceMenuItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:Choice">
+    <Setter Property="Header" Value="{Binding Label}" />
+    <Setter Property="Command" Value="{Binding Select}" />
+    <Setter Property="ToggleType" Value="Radio" />
+    <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=OneWay}" />
+  </ControlTheme>
+  <DataTemplate x:Key="SegButton" x:DataType="vm:Choice">
+    <!-- A plain button lit by the model: a ToggleButton would flip itself
+         on click and could show the wrong state. -->
+    <Button Classes="seg" Classes.lit="{Binding IsSelected}" Content="{Binding Label}"
+            Command="{Binding Select}" />
+  </DataTemplate>
+  <!-- NB and NR settings, shown on right-click -->
+  <DataTemplate x:Key="NoisePanelView" x:DataType="vm:NoisePanel">
+    <StackPanel Width="360" Spacing="10" Margin="4">
+      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+      <TextBlock Text="{Binding Note}" IsVisible="{Binding HasNote}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+      <ItemsControl ItemsSource="{Binding Rows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:NoiseParam">
+            <Grid ColumnDefinitions="110,*,64" Margin="0,4">
+              <TextBlock Text="{Binding Label}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Column="1" IsVisible="{Binding IsSlider}" Minimum="{Binding Min}" Maximum="{Binding Max}"
+                      SmallChange="{Binding Step}" TickFrequency="{Binding Step}" IsSnapToTickEnabled="True"
+                      Value="{Binding Value}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="2" IsVisible="{Binding IsSlider}" Text="{Binding Text}" FontSize="12"
+                         Margin="8,0,0,0" VerticalAlignment="Center" />
+              <CheckBox Grid.Column="1" IsVisible="{Binding IsToggle}" IsChecked="{Binding On}" />
+              <ComboBox Grid.Column="1" Grid.ColumnSpan="2" IsVisible="{Binding IsOptions}" ItemsSource="{Binding Options}"
+                        SelectedIndex="{Binding Option}" HorizontalAlignment="Stretch" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button Classes="flat" Content="Reset to defaults" Command="{Binding ResetCommand}" IsVisible="{Binding HasRows}" />
+    </StackPanel>
+  </DataTemplate>
+</ResourceDictionary>
