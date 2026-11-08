@@ -120,6 +120,22 @@ public sealed partial class SettingsViewModel
 
     public string IdVolumeText => $"{IdTimerVolume}%";
 
+    public int TxWaterfallRangeDb
+    {
+        get => AppSettings?.TxWaterfallRangeDb ?? 70;
+        set
+        {
+            value = Math.Clamp(value, 0, 80);
+            if (AppSettings is null || value == AppSettings.TxWaterfallRangeDb) return;
+            AppSettings.TxWaterfallRangeDb = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(TxWaterfallRangeText));
+        }
+    }
+
+    public string TxWaterfallRangeText => TxWaterfallRangeDb == 0 ? "Off" : $"{TxWaterfallRangeDb} dB";
+
     public string IdSoundName => AppSettings?.IdTimerWav is { } wav ? Path.GetFileName(wav) : "Built-in beeps";
     public bool HasIdSoundFile => AppSettings?.IdTimerWav is not null;
 

@@ -359,6 +359,8 @@ public partial class MainWindow : Window
         {
             Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();
             Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
+            Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
+            Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
             if (f.RxId == vm.ActiveRx)
                 FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric, vm.CwPitchHz);
             if (f.RxId == 1)

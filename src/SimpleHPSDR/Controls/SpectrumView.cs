@@ -90,6 +90,30 @@ public sealed class SpectrumView : Control
     /// <summary>Smoothed noise floor estimate (dB), for automatic ranging.</summary>
     public double NoiseFloorDb => _floorDb;
 
+    /// <summary>While transmitting: new waterfall rows span this many dB below
+    /// the transmit signal's peak, so the audio's shape shows. 0 uses the
+    /// receive range.</summary>
+    public double TxRangeDb { get; set; }
+    private double _txPeakDb = double.NaN;
+
+    /// <summary>Keyed: the trace slides down so the transmit signal stays on
+    /// screen, and the noise-floor estimate holds still.</summary>
+    public bool Transmitting { get; set; }
+    private double _txTracePeakDb = double.NaN;
+    // While keyed, the transmit peak sits this far down from the top of the trace.
+    private const double TxHeadroom = 0.15;
+
+    /// <summary>The trace's dB range: the Spec Min/Max one, moved down by
+    /// just enough while keyed that the transmit peak sits below the top.
+    /// The span stays the same, so the shape compares with receive.</summary>
+    private (double Lo, double Hi) TraceRange()
+    {
+        double lo = SpecMinDb, hi = SpecMaxDb, span = Math.Max(1, hi - lo);
+        if (!Transmitting || double.IsNaN(_txTracePeakDb)) return (lo, hi);
+        double lift = Math.Max(0, _txTracePeakDb - (hi - TxHeadroom * span));
+        return (lo + lift, hi + lift);
+    }
+
     /// <summary>Slices to draw (A, and B when on).</summary>
     public IReadOnlyList<SliceMark> Slices { get; set; } = [];
 
@@ -159,7 +183,18 @@ public sealed class SpectrumView : Control
                 for (int i = 0; i < _pan.Length; i++)
                     _pan[i] += (raw[i] - _pan[i]) * TraceAlpha;
             _avgCenterHz = f.CenterHz;
-            TrackFloor(_pan);
+            if (Transmitting)
+            {
+                // Peak of the trace: up at once, down slowly, so the scale doesn't pump with speech.
+                double peak = _pan.Max();
+                _txTracePeakDb = double.IsNaN(_txTracePeakDb) || peak > _txTracePeakDb
+                    ? peak : _txTracePeakDb + (peak - _txTracePeakDb) * 0.03;
+            }
+            else
+            {
+                _txTracePeakDb = double.NaN;
+                TrackFloor(_pan);   // keyed frames would drag the receive floor up
+            }
         }
         if (f.BodyFlags.HasFlag(DisplayBodyFlags.WfValid))
             AddWaterfallRow(f.WfDb.Span);
@@ -229,7 +264,19 @@ public sealed class SpectrumView : Control
         var dst = new Span<uint>((byte*)fb.Address + _wfRow * fb.RowBytes, _wfWidth);
         // Same range as the trace: Spec Min is the darkest colour, Spec Max the brightest.
         double floor = SpecMinDb, scale = 255.0 / Math.Max(1, SpecMaxDb - SpecMinDb);
-        if (PopMode)
+        if (TxRangeDb > 0)
+        {
+            // Follow the row's peak: up at once, down slowly, so a pause in
+            // speech doesn't stretch the noise floor to full brightness.
+            float peak = float.MinValue;
+            foreach (var v in row) if (v > peak) peak = v;
+            _txPeakDb = double.IsNaN(_txPeakDb) || peak > _txPeakDb ? peak : _txPeakDb + (peak - _txPeakDb) * 0.05;
+            double top = _txPeakDb + 1;
+            floor = top - TxRangeDb;
+            scale = 255.0 / TxRangeDb;
+        }
+        else _txPeakDb = double.NaN;
+        if (PopMode && TxRangeDb <= 0)
         {
             // The floor comes from the waterfall data itself: the 30th
             // percentile of the row, eased so rows don't flicker.
@@ -281,7 +328,8 @@ public sealed class SpectrumView : Control
     private void DrawAgcLine(DrawingContext ctx, Rect r)
     {
         if (double.IsNaN(AgcLineDb)) return;
-        double hi = SpecMaxDb, range = Math.Max(1, hi - SpecMinDb);
+        var (lo, hi) = TraceRange();
+        double range = Math.Max(1, hi - lo);
         double y = Math.Floor(r.Top + (hi - AgcLineDb) / range * r.Height) + 0.5;
         if (y < r.Top || y > r.Bottom) return;
         ctx.DrawLine(AgcPen, new Point(0, y), new Point(r.Width, y));
@@ -408,7 +456,8 @@ public sealed class SpectrumView : Control
     private void DrawGrid(DrawingContext ctx, Rect r)
     {
         // Level lines every 10 dB (20 dB on a wide range), labelled at the left.
-        double lo = SpecMinDb, hi = SpecMaxDb, range = Math.Max(1, hi - lo);
+        var (lo, hi) = TraceRange();
+        double range = Math.Max(1, hi - lo);
         double dbStep = range > 80 ? 20 : 10;
         for (double db = Math.Ceiling(lo / dbStep) * dbStep; db < hi; db += dbStep)
         {
@@ -446,7 +495,8 @@ public sealed class SpectrumView : Control
     private void DrawTrace(DrawingContext ctx, Rect r)
     {
         if (_pan is not { Length: > 1 } pan) return;
-        double top = SpecMaxDb, span = Math.Max(1, SpecMaxDb - SpecMinDb);
+        var (bottom, top) = TraceRange();
+        double span = Math.Max(1, top - bottom);
         var geo = new StreamGeometry();
         using (var g = geo.Open())
         {

@@ -32,6 +32,8 @@ public sealed partial class MainViewModel
     [ObservableProperty] private string _micSourceLabel = "PC";
     [ObservableProperty] private string _micSourceDetail = "";
     public bool IsTransmitting => MoxOn || TunOn;
+    /// <summary>The waterfall's range below the transmit peak while keyed, or 0 (receive range).</summary>
+    public double TxWaterfallRangeDb => IsTransmitting ? _settings.TxWaterfallRangeDb : 0;
     public double PowerScaleWatts { get; private set; } = 100;
 
     /// <summary>Config > Amp's maximum drive: the top of the DRIVE and TUNE sliders.</summary>
