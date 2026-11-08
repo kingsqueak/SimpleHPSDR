@@ -1,7 +1,8 @@
 name: Packages
 
 # Builds the macOS DMGs, deb, RPM and Arch packages for x86-64 and arm64, and
-# the Windows zip. Runs on a version tag (v*) or by hand; the packages are the
+# the Windows zip. The debs are also checked on Debian 13 (Trixie), which is
+# what Raspberry Pi OS is based on. Runs on a version tag (v*) or by hand; the packages are the
 # run's artifacts.
 on:
   push:
@@ -45,6 +46,47 @@ jobs:
             dist/*.rpm
             dist/*.pkg.tar.zst
           if-no-files-found: error
+
+  # The same debs are what Raspberry Pi OS Trixie (64-bit) and Debian 13 users
+  # install: check they install with apt there, every bundled library loads,
+  # and the app starts and stays up.
+  trixie:
+    if: ${{ !inputs.windows_only }}
+    needs: linux
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-26.04-arm
+            arch: ARM64
+          - runner: ubuntu-26.04
+            arch: X64
+    runs-on: ${{ matrix.runner }}
+    container: debian:trixie
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: simplehpsdr-linux-${{ matrix.arch }}
+          path: dist
+      - name: Install the deb with apt
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ./dist/simplehpsdr_*.deb
+      - name: Check every bundled library resolves
+        run: |
+          missing=$(find /usr/lib/simplehpsdr -type f \( -name '*.so*' -o -name SimpleHPSDR -o -name StationEngine \) \
+            -exec ldd {} \; 2>/dev/null | grep 'not found' | sort -u || true)
+          [ -z "$missing" ] || { echo "$missing"; exit 1; }
+      - name: Start it under a virtual display
+        run: |
+          apt-get install -y --no-install-recommends xvfb xauth
+          export HOME=$(mktemp -d)
+          set +e
+          timeout 30 xvfb-run -a simplehpsdr > run.log 2>&1
+          code=$?
+          set -e
+          tail -40 run.log
+          # 124: still running when the timeout stopped it, which is the pass.
+          [ "$code" -eq 124 ] || { echo "simplehpsdr exited with $code"; exit 1; }
 
   dmg:
     if: ${{ !inputs.windows_only }}

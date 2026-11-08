@@ -59,6 +59,22 @@ sudo dnf install ./simplehpsdr-*.rpm        # Fedora
 sudo pacman -U ./simplehpsdr-*.pkg.tar.zst  # Arch
 ```
 
+**Raspberry Pi OS Trixie (and Debian 13):** use the 64-bit Raspberry Pi OS on a
+Pi 4 or Pi 5; the 32-bit edition can't run it. Download the `arm64` .deb from the
+latest release (on a PC with x86-64 Debian 13, the `amd64` one), then in a terminal:
+
+```sh
+cd ~/Downloads
+sudo apt update
+sudo apt install ./simplehpsdr_*_arm64.deb
+```
+
+apt fetches anything else it needs. SimpleHPSDR is then in the applications menu
+(or run `simplehpsdr`). To update, install the new .deb the same way; to
+remove it, `sudo apt remove simplehpsdr`. Each release's debs are installed and
+started on Debian 13 in CI. The first-start tuning below takes much longer on a
+Pi than on a desktop computer, so leave it running.
+
 **Windows 10 or 11 (x64), preview:** unzip the folder anywhere you can write to
 and run `SimpleHPSDR.exe`; nothing needs installing, and the .NET and Visual C++
 runtimes are included. The app isn't signed, so SmartScreen warns the first time:
