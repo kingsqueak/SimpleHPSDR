@@ -72,9 +72,13 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends ./dist/simplehpsdr_*.deb
       - name: Check every bundled library resolves
+        # Each library is looked up beside its neighbours, as the engine loads
+        # its own FFTW before WDSP. liblttng-ust is only for .NET's optional
+        # tracing library (libcoreclrtraceptprovider.so) and isn't needed.
         run: |
-          missing=$(find /usr/lib/simplehpsdr -type f \( -name '*.so*' -o -name SimpleHPSDR -o -name StationEngine \) \
-            -exec ldd {} \; 2>/dev/null | grep 'not found' | sort -u || true)
+          missing=$(find /usr/lib/simplehpsdr -type f \( -name '*.so*' -o -name SimpleHPSDR -o -name StationEngine \) |
+            while read -r f; do LD_LIBRARY_PATH=$(dirname "$f") ldd "$f" 2>/dev/null | sed "s|^|$f: |"; done |
+            grep 'not found' | grep -v 'liblttng-ust' | sort -u || true)
           [ -z "$missing" ] || { echo "$missing"; exit 1; }
       - name: Start it under a virtual display
         run: |
