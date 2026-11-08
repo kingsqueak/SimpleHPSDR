@@ -28,8 +28,12 @@ internal static partial class DrmNative
     {
         if (Environment.GetEnvironmentVariable("SIMPLEHPSDR_DRM_LIB") is { Length: > 0 } env) yield return env;
         yield return Path.Combine(AppContext.BaseDirectory, FileName);
+        // Development trees: this repository's submodule, or SimpleDream checked out beside it.
         for (var d = new DirectoryInfo(AppContext.BaseDirectory); d is not null; d = d.Parent)
+        {
+            yield return Path.Combine(d.FullName, "external", "SimpleDream", "native", "target", "release", FileName);
             yield return Path.Combine(d.FullName, "SimpleDream", "native", "target", "release", FileName);
+        }
     }
 
     private static nint Find() =>

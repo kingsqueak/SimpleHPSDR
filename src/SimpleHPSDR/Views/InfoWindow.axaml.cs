@@ -108,6 +108,6 @@ public partial class InfoWindow : Window
         ("License", "GNU General Public License, version 3 or later. It comes with no warranty."),
         ("Station guide", "The SWL guide uses EiBi's shortwave schedule by Eike Bierwirth (eibispace.de). Its code tables come from Dream and DecDRM."),
         ("Radio engine", $"SimpleHPSDR stands on Station Engine {engine}, the radio and DSP engine from the Zeus SDR project. Its principal developers are Douglas J. Cerrato, KB2UKA, and Christian Suarez, N9WAR, with thanks to them and its contributors. GPL-2.0-or-later. SimpleHPSDR is an independent project, not affiliated with or endorsed by Zeus SDR."),
-        ("With thanks to", "WDSP by Warren Pratt, NR0V. The firmware loader follows TAPR's HPSDRProgrammer and deskHPSDR by Heiko Amft, DL1BZ. The DeepCW CW decoder model is by e04 (MIT License), run with Microsoft's ONNX Runtime. Interface built with Avalonia."),
+        ("With thanks to", "WDSP by Warren Pratt, NR0V. The firmware loader follows TAPR's HPSDRProgrammer and deskHPSDR by Heiko Amft, DL1BZ. The DeepCW CW decoder model is by e04 (MIT License), run with Microsoft's ONNX Runtime. DRM decoding by DecDRM (GPL-2.0-or-later) with FDK-AAC, Opus and libxaac, through SimpleDream's bridge. Interface built with Avalonia."),
     ]);
 }

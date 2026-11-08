@@ -140,6 +140,9 @@ SimpleHPSDR stands on Station Engine, the radio and DSP engine from the Zeus SDR
 project, whose principal developers are Douglas J. Cerrato, KB2UKA, and Christian
 Suarez, N9WAR. WDSP is by Warren Pratt, NR0V. The firmware loader follows TAPR's
 HPSDRProgrammer and deskHPSDR by Heiko Amft, DL1BZ.
+DRM decoding is by DecDRM (GPL-2.0-or-later), through SimpleDream's bridge
+(https://github.com/kingsqueak/SimpleDream), with FDK-AAC (Fraunhofer's licence),
+Opus and libxaac; their licences are in the packages' drm-licenses folder.
 The DeepCW CW decoder model is by e04 (https://github.com/e04/deepcw-engine, MIT
 License), run with Microsoft's ONNX Runtime (MIT License).
 

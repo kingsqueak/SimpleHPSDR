@@ -17,6 +17,10 @@ on:
 permissions:
   contents: read
 
+# The DRM decoder must build; packages never ship without it by accident.
+env:
+  DRM_REQUIRED: '1'
+
 jobs:
   linux:
     if: ${{ !inputs.windows_only }}

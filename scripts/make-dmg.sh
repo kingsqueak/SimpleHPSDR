@@ -38,10 +38,13 @@ for d in "$app/Contents/Resources/engine/runtimes/"*; do
 done
 find "$app/Contents" -name '*.pdb' -delete
 
-# A local build can add the optional DRM decoder: DRM_LIB=path/to/libsimpledream_native.dylib
+# The optional DRM decoder (see scripts/build-drm.sh). DRM_LIB=path/to/libsimpledream_native.dylib
+# uses a ready-built one instead.
 if [ -n "${DRM_LIB:-}" ]; then
   cp "$DRM_LIB" "$app/Contents/MacOS/"
   install_name_tool -id "@rpath/$(basename "$DRM_LIB")" "$app/Contents/MacOS/$(basename "$DRM_LIB")"
+else
+  scripts/build-drm.sh "$rid" "$app/Contents/MacOS"
 fi
 
 cp src/SimpleHPSDR/Assets/AppIcon.icns "$app/Contents/Resources/"

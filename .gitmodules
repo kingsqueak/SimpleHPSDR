@@ -1,3 +1,6 @@
 [submodule "external/station-engine"]
 	path = external/station-engine
 	url = https://github.com/Zeus-SDR/station-engine.git
+[submodule "external/SimpleDream"]
+	path = external/SimpleDream
+	url = https://github.com/kingsqueak/SimpleDream.git
