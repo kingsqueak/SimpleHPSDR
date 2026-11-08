@@ -394,8 +394,10 @@ This phase alone makes the app usable on a small screen with a mouse.
 
 **Long press done 2026-11-08** (aaab70c): a half-second hold opens a
 control's right-click menu in both layouts; the spectrum opens its slice
-menu. Mouse holds count on buttons only. Still to do: finger drag
-threshold, fling, pinch, MOX/TUNE press delay.
+menu. Mouse holds count on buttons only. Pinch zoom (trackpad and two
+fingers) and the 12 px finger drag threshold done too (1faf0d3). Still to
+do: fling. No MOX/TUNE press delay: the user finds them right as they are
+(2026-11-08).
 
 These take only touch presses. Checked on the Mac by trackpad pinch and by
 tests that feed made-up pointer sequences (see "Mouse first").
@@ -431,5 +433,6 @@ radio; Phase 3 needs a touch-screen owner's report.
 1. Is the touch target the G2 Ultra's own panel (app running on the radio's
    built-in Pi), a separate Pi with a screen, or both?
 2. Full screen in touch mode: OK to hide the Pi taskbar while it runs?
-3. MOX/TUNE press delay on touch: wanted, or does it get in the way?
+3. MOX/TUNE press delay on touch: not wanted; they work well as they are
+   (decided 2026-11-08).
 4. Slice B in touch mode: one panadapter with both markers, as proposed?
