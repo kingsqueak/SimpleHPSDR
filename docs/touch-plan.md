@@ -412,6 +412,12 @@ Released marked "untested on touch hardware" until a touch-radio owner reports.
 
 ### Phase 4: the other windows and polish
 
+**Done 2026-11-08** (aad47ed): other windows take the touch styles and fill
+a small screen (Platform/TouchWindows.cs); Help topic "Touch screens and
+small screens"; README "Small touch screens" with Pi autostart (untested on
+a Pi); Help as a drawer tab. Flick to glide added too (5f5ef9c). What's left
+is Phase 0: trying it on a real Pi with a touch screen.
+
 - Config in touch mode: full screen, tabs down the left side in one column,
   48 px rows, keypad for numbers.
 - Station guide: bigger filter buttons, tap a row to tune, long-press for the
