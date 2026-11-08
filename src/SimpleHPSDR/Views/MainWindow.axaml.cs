@@ -32,7 +32,16 @@ public partial class MainWindow : Window
         bool touch = layout == UiLayout.Touch;
         if (ViewHost.Content is TouchMainView == touch && ViewHost.Content is not null) return;
         ViewHost.Content = touch ? new TouchMainView() : new DesktopMainView();
+        // A small screen chosen automatically gets the whole screen; the
+        // desktop layout always gets a normal window back.
+        if (touch && Vm is { } vm && LayoutMode.Choice(vm.AppSettings) == LayoutMode.Automatic)
+            WindowState = WindowState.FullScreen;
+        else if (!touch && WindowState == WindowState.FullScreen)
+            WindowState = WindowState.Normal;
     }
+
+    public void ToggleFullScreen() =>
+        WindowState = WindowState == WindowState.FullScreen ? WindowState.Normal : WindowState.FullScreen;
 
     private MainViewModel? Vm => DataContext as MainViewModel;
 

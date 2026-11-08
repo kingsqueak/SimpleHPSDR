@@ -188,8 +188,6 @@ public partial class DesktopMainView : UserControl
         if (Vm is { } vm) _ = vm.LoadNoisePanelAsync(vm.NrParams);
     }
 
-    private void CloseFlyout(object? sender, RoutedEventArgs e) => MainMenus.CloseFlyout(sender);
-
     // ---- display frames: only while this layout is on screen ----------
 
     private MainViewModel? _wired;

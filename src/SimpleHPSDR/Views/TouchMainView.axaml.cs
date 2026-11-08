@@ -94,6 +94,45 @@ public partial class TouchMainView : UserControl
         if (Vm is { } vm) _ = vm.LoadNoisePanelAsync(vm.NrParams);
     }
 
+    private void OnModeOptionsOpening(object? sender, EventArgs e) => _ = Vm?.LoadModeOptionsAsync();
+
+    private void OnRxLevelerOpening(object? sender, EventArgs e) => _ = Vm?.LoadRxLevelerAsync();
+
+    private void OnSMeterTrimOpening(object? sender, EventArgs e) => _ = Vm?.LoadSMeterTrimAsync();
+
+    private void OnMeterClicked(object? sender, PointerReleasedEventArgs e)
+    {
+        if (sender is Control c && e.InitialPressMouseButton == MouseButton.Left) FlyoutBase.ShowAttachedFlyout(c);
+    }
+
+    // The chosen filter's label and edges, in their own popup.
+    private void EditFilter(object? sender, RoutedEventArgs e)
+    {
+        if (Vm?.Filters.FirstOrDefault(f => f.IsSelected) is not { } slot)
+        {
+            if (Vm is { } vm) vm.Status = "Choose a filter first: a dragged filter has no slot to edit.";
+            return;
+        }
+        MainMenus.CloseFlyout(sender);
+        slot.BeginEdit();
+        var editor = new Flyout
+        {
+            Placement = PlacementMode.TopEdgeAlignedLeft,
+            Content = new ContentControl
+            {
+                Content = slot,
+                ContentTemplate = this.FindResource("FilterEditPanel") as Avalonia.Controls.Templates.IDataTemplate,
+            },
+        };
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => editor.ShowAt(FilterButton));
+    }
+
+    private void OnFullScreen(object? sender, RoutedEventArgs e)
+    {
+        Drawer.IsPaneOpen = false;
+        (TopLevel.GetTopLevel(this) as MainWindow)?.ToggleFullScreen();
+    }
+
     // ---- RIT / XIT -----------------------------------------------------
 
     private void RitDown(object? sender, RoutedEventArgs e) => Vm?.NudgeRit(-1);

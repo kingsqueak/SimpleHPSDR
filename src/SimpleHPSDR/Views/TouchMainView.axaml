@@ -100,6 +100,22 @@
                   </Button>
                   <Button Classes="seg t" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}" />
                 </WrapPanel>
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Content="⚙ Notches">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource NotchesPanel}" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg t" Content="⚙ RX Lev">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop" Opening="OnRxLevelerOpening">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RxLevelerPanel}" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                </WrapPanel>
 
                 <TextBlock Text="SQUELCH" Classes="head" />
                 <Grid ColumnDefinitions="Auto,*,60" ColumnSpacing="10">
@@ -154,6 +170,13 @@
                   <Button Classes="seg t" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}" />
                   <Button Classes="seg t" Classes.lit="{Binding AutoSpectrum}" Content="Auto" Command="{Binding ToggleAutoSpectrumCommand}"
                           ToolTip.Tip="Spectrum range follows the noise floor" />
+                  <Button Classes="seg t" Content="⚙ Display">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DisplayPanel}" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
                   <Button Classes="seg t">
                     <StackPanel><TextBlock Text="Span" HorizontalAlignment="Center" /><TextBlock Text="{Binding SpanLabel}" Classes="sub" /></StackPanel>
                     <Button.Flyout>
@@ -177,6 +200,29 @@
                   <ToggleButton Classes="seg t ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" />
                   <Button Classes="seg t" Classes.lit="{Binding MonitorOn}" Content="{Binding MonitorLabel}"
                           Command="{Binding CycleMonitorCommand}" ToolTip.Tip="Mon, TX Mon, Mon+TX, off" />
+                </WrapPanel>
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Content="⚙ VOX">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource VoxPanel}" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg t" Content="⚙ PS">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource PsPanel}" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg t" Content="⚙ CW keyer">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CwKeyerPanel}" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
                 </WrapPanel>
                 <TextBlock Text="DRIVE" Classes="head" />
                 <Grid ColumnDefinitions="*,70" ColumnSpacing="10">
@@ -247,6 +293,7 @@
                   <Button Classes="seg t" Content="CW" Click="OnOpenCw" />
                   <Button Classes="seg t" Content="Mini" Click="OnOpenMini" />
                   <Button Classes="seg t" Content="Help" Click="OnOpenHelp" />
+                  <Button Classes="seg t" Content="Full screen" Click="OnFullScreen" ToolTip.Tip="Full screen on or off" />
                 </WrapPanel>
                 <TextBlock Text="ID TIMER" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
@@ -289,9 +336,12 @@
         <Button Grid.Column="2" Classes="seg t lit" MinWidth="76">
           <StackPanel><TextBlock Text="{Binding ModeLabel}" HorizontalAlignment="Center" /><TextBlock Text="Mode" Classes="sub" /></StackPanel>
           <Button.Flyout>
-            <Flyout Placement="BottomEdgeAlignedLeft">
-              <ItemsControl ItemsSource="{Binding Modes}" ItemTemplate="{StaticResource ChoiceTile}"
-                            ItemsPanel="{StaticResource Grid4}" Width="380" />
+            <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnModeOptionsOpening">
+              <StackPanel Spacing="10" Width="380">
+                <ItemsControl ItemsSource="{Binding Modes}" ItemTemplate="{StaticResource ChoiceTile}"
+                              ItemsPanel="{StaticResource Grid4}" />
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModeOptionsPanel}" />
+              </StackPanel>
             </Flyout>
           </Button.Flyout>
         </Button>
@@ -342,7 +392,13 @@
         </Border>
 
         <!-- Signal: one reading; while keyed, power and SWR -->
-        <Border Grid.Column="4" Classes="panel" Width="200" Padding="10,4" VerticalAlignment="Stretch">
+        <Border Grid.Column="4" Classes="panel" Width="200" Padding="10,4" VerticalAlignment="Stretch" Cursor="Hand"
+                PointerReleased="OnMeterClicked" ToolTip.Tip="Click for the S-meter trim">
+          <FlyoutBase.AttachedFlyout>
+            <Flyout Placement="Bottom" Opening="OnSMeterTrimOpening">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SMeterTrimPanel}" />
+            </Flyout>
+          </FlyoutBase.AttachedFlyout>
           <StackPanel VerticalAlignment="Center" Spacing="3">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock Text="{Binding SUnits}" FontFamily="{StaticResource MonoFont}" FontSize="15" FontWeight="SemiBold" />
@@ -373,11 +429,12 @@
           <TextBlock Grid.Column="1" Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
         </Grid>
         <ToggleButton Grid.Column="4" Classes="seg t" Content="Mute" IsChecked="{Binding Muted}" />
-        <Button Grid.Column="5" Classes="seg t" ToolTip.Tip="Receive filter">
+        <Button Grid.Column="5" Name="FilterButton" Classes="seg t" ToolTip.Tip="Receive filter">
           <StackPanel><TextBlock Text="Filter" HorizontalAlignment="Center" /><TextBlock Text="{Binding FilterText}" Classes="sub" /></StackPanel>
           <Button.Flyout>
             <Flyout Placement="TopEdgeAlignedLeft">
-              <ItemsControl ItemsSource="{Binding Filters}" Width="300">
+              <StackPanel Width="300">
+              <ItemsControl ItemsSource="{Binding Filters}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:FilterSlot">
@@ -386,6 +443,8 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
+                <Button Classes="seg t" Content="⚙ Edit this filter" HorizontalAlignment="Stretch" Margin="3,6,3,0" Click="EditFilter" />
+              </StackPanel>
             </Flyout>
           </Button.Flyout>
         </Button>
