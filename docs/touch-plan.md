@@ -362,6 +362,15 @@ the CW window and the new Layout row. The long-press bridge moved to Phase 3.
 
 ### Phase 2: the large-target layout (mouse-driven)
 
+**Done 2026-11-08** (49dd2af, d7098f5, 34b337e, and the touch-sized panels):
+DesktopMainView split out unchanged; TouchMainView with top and bottom
+bars, pickers as button grids, frequency drag/wheel and keypad, AF and
+drive sliders, zoom −/+ and Ctrl+wheel, a drawer with Receive, Transmit,
+Slices and Station tabs; the desktop's settings popups shared through
+MainResources.axaml; Full screen (automatic on a small screen); touch
+styles in TouchStyles.axaml also size the shared panels' controls. Not
+done: the filter close-up and slice B's own panadapter in the touch layout.
+
 - Split `MainWindow` into `DesktopMainView` (unchanged) and the new
   `TouchMainView`; move the event wiring from `MainWindow.axaml.cs` into the
   views. This is the riskiest step: lots of wiring moves, so the screenshot
@@ -382,6 +391,11 @@ All tested on the Mac by mouse at 1024×600 and 1024×535 (Layout: Touch).
 This phase alone makes the app usable on a small screen with a mouse.
 
 ### Phase 3: finger extras
+
+**Long press done 2026-11-08** (aaab70c): a half-second hold opens a
+control's right-click menu in both layouts; the spectrum opens its slice
+menu. Mouse holds count on buttons only. Still to do: finger drag
+threshold, fling, pinch, MOX/TUNE press delay.
 
 These take only touch presses. Checked on the Mac by trackpad pinch and by
 tests that feed made-up pointer sequences (see "Mouse first").

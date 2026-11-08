@@ -8,36 +8,7 @@
              x:Class="SimpleHPSDR.Views.TouchMainView"
              x:DataType="vm:MainViewModel">
   <UserControl.Styles>
-    <!-- Large targets: 48 px tall, at least 64 wide -->
-    <Style Selector="Button.seg.t, ToggleButton.seg.t">
-      <Setter Property="MinHeight" Value="48" />
-      <Setter Property="MinWidth" Value="64" />
-      <Setter Property="FontSize" Value="15" />
-      <Setter Property="Padding" Value="12,4" />
-      <Setter Property="Margin" Value="0" />
-      <Setter Property="CornerRadius" Value="6" />
-      <Setter Property="HorizontalContentAlignment" Value="Center" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
-    </Style>
-    <Style Selector="TextBlock.sub">
-      <Setter Property="FontSize" Value="10" />
-      <Setter Property="Opacity" Value="0.8" />
-      <Setter Property="HorizontalAlignment" Value="Center" />
-    </Style>
-    <Style Selector="TextBlock.head">
-      <Setter Property="FontSize" Value="12" />
-      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
-      <Setter Property="Margin" Value="0,10,0,2" />
-    </Style>
-    <Style Selector="TabItem">
-      <Setter Property="FontSize" Value="16" />
-      <Setter Property="MinHeight" Value="48" />
-      <Setter Property="Padding" Value="10,4" />
-    </Style>
-    <Style Selector="CheckBox.t">
-      <Setter Property="MinHeight" Value="44" />
-      <Setter Property="FontSize" Value="15" />
-    </Style>
+    <StyleInclude Source="avares://SimpleHPSDR/Views/TouchStyles.axaml" />
   </UserControl.Styles>
   <UserControl.Resources>
     <ResourceDictionary>

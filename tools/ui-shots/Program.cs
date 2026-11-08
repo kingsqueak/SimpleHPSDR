@@ -148,6 +148,7 @@ if (main.GetVisualDescendants().OfType<SplitView>().FirstOrDefault() is { } draw
         Shot(main, $"touch-drawer-{i}-{(dtabs.Items[i] as TabItem)?.Header}");
     }
     drawer.IsPaneOpen = false;
+    for (int t = 0; t < 120; t++) { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); }
 }
 // natural minimum: as declared
 report.AppendLine($"MainWindow declared MinWidth/MinHeight: 900/560 (window manager will refuse 535)");
@@ -170,6 +171,10 @@ foreach (var c in main.GetLogicalDescendants().OfType<Control>().ToList())
         {
             fi++;
             var host = new Window { DataContext = c.DataContext, SizeToContent = SizeToContent.WidthAndHeight };
+            // Popups opened from the touch layout get its styles, as in the app.
+            if (mainPrefix.Length > 0)
+                host.Styles.Add(new Avalonia.Markup.Xaml.Styling.StyleInclude(new Uri("avares://SimpleHPSDR/"))
+                    { Source = new Uri("avares://SimpleHPSDR/Views/TouchStyles.axaml") });
             fl.Content = null;
             host.Content = new Border { Padding = new Thickness(8), Child = content };
             host.Show();
