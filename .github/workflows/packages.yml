@@ -41,6 +41,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends ruby rpm libarchive-tools zstd libasound2-dev pkg-config
           sudo gem install --no-document fpm
       - name: Build the packages
+        # The DRM decoder is built in Debian 12 so it runs on older glibc.
+        env:
+          DRM_DOCKER_IMAGE: rust:1.89-bookworm
         run: ./scripts/make-linux.sh
       - uses: actions/upload-artifact@v4
         with:

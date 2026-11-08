@@ -29,8 +29,28 @@ skip() {
   echo "build-drm: $1; building without DRM" >&2
   exit 0
 }
-command -v cargo > /dev/null || skip "no cargo (Rust)"
 [ -f "$crate/Cargo.toml" ] || skip "external/SimpleDream is missing (git submodule update --init --recursive)"
+
+# On Linux, DRM_DOCKER_IMAGE builds it in an older distribution's container,
+# so it needs no newer glibc than that (CI: Debian 12, glibc 2.36). Built on
+# the host, it needs the host's, which may be newer than the users' systems.
+case "$rid" in
+  linux-*)
+    if [ -n "${DRM_DOCKER_IMAGE:-}" ]; then
+      rm -rf .drm-out && mkdir .drm-out
+      # Runs as root to install the build tools, then hands its files back.
+      docker run --rm -v "$PWD:/w" -w /w -e DRM_REQUIRED=1 -e OWNER="$(id -u):$(id -g)" "$DRM_DOCKER_IMAGE" sh -c \
+        'apt-get update -qq && apt-get install -y -qq --no-install-recommends cmake libasound2-dev pkg-config > /dev/null \
+         && scripts/build-drm.sh "$0" /w/.drm-out; status=$?; \
+         chown -R "$OWNER" /w/.drm-out external/SimpleDream/native/target 2> /dev/null; exit $status' "$rid"
+      cp -R .drm-out/. "$out/"
+      rm -rf .drm-out
+      echo "build-drm: built in $DRM_DOCKER_IMAGE -> $out"
+      exit 0
+    fi ;;
+esac
+
+command -v cargo > /dev/null || skip "no cargo (Rust)"
 
 # Match the app's minimum macOS.
 export MACOSX_DEPLOYMENT_TARGET=14.0

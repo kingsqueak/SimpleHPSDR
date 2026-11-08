@@ -5,3 +5,4 @@ artifacts/
 .idea/
 *.user
 .DS_Store
+.drm-out/
