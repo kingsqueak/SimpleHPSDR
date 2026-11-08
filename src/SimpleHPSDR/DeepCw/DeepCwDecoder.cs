@@ -45,6 +45,10 @@ public sealed class DeepCwDecoder : IDisposable
     private long _audioBase;
     private long _nextEndSample;
     private bool _hasTranscript;
+    private volatile bool _dead;
+    private long _skipToFrame;   // under _audioLock: audio was dropped, restart the stitcher here   // the worker stopped: drop audio rather than pile it up
+    // More than this waiting means the worker can't keep up: drop the oldest.
+    private const int MaxPendingSeconds = 30;
     private readonly AutoResetEvent _wake = new(false);
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _worker;
@@ -104,6 +108,7 @@ public sealed class DeepCwDecoder : IDisposable
     /// <summary>48 kHz mono receive audio.</summary>
     public void Push(ReadOnlySpan<float> audio48k)
     {
+        if (_dead) return;
         lock (_audioLock)
         {
             foreach (var x in audio48k)
@@ -111,6 +116,17 @@ public sealed class DeepCwDecoder : IDisposable
                 if (!_decimator.Push(x, out float y)) continue;
                 if (_audioCount == _audio.Length) Array.Resize(ref _audio, _audio.Length * 2);
                 _audio[_audioCount++] = y;
+            }
+            int max = (int)(MaxSegmentSeconds + MaxPendingSeconds) * _meta.SampleRate;
+            if (_audioCount > max)
+            {
+                // Behind by more than half a minute: skip ahead to the newest audio.
+                int drop = _audioCount - (int)(MaxSegmentSeconds * _meta.SampleRate);
+                Array.Copy(_audio, drop, _audio, 0, _audioCount - drop);
+                _audioCount -= drop;
+                _audioBase += drop;
+                _nextEndSample = Math.Max(_nextEndSample, _audioBase + (long)(MinPendingSeconds * _meta.SampleRate));
+                _skipToFrame = (_audioBase + _stitcher.HopLength - 1) / _stitcher.HopLength;   // the worker applies it
             }
         }
         _wake.Set();
@@ -131,7 +147,14 @@ public sealed class DeepCwDecoder : IDisposable
                     lock (_audioLock)
                     {
                         if (_audioBase + _audioCount < _nextEndSample) break;
-                        startFrame = _stitcher.WindowStartFrame(_nextEndSample);
+                        if (_skipToFrame > 0)
+                        {
+                            _stitcher.SkipTo(_skipToFrame);
+                            _skipToFrame = 0;
+                        }
+                        // Never before the oldest audio kept.
+                        startFrame = Math.Max(_stitcher.WindowStartFrame(_nextEndSample),
+                            (_audioBase + _stitcher.HopLength - 1) / _stitcher.HopLength);
                         long startSample = startFrame * _stitcher.HopLength;
                         int from = (int)(startSample - _audioBase), to = (int)(_nextEndSample - _audioBase);
                         window = _audio.AsSpan(from, to - from).ToArray();
@@ -156,6 +179,7 @@ public sealed class DeepCwDecoder : IDisposable
         }
         catch (Exception e) when (!_stop.IsCancellationRequested)
         {
+            _dead = true;
             Failed?.Invoke($"DeepCW stopped: {e.Message}");
         }
     }
@@ -181,11 +205,14 @@ public sealed class DeepCwDecoder : IDisposable
 
     public void Dispose()
     {
+        _dead = true;
         _stop.Cancel();
         _wake.Set();
-        try { _worker.Wait(2000); } catch (AggregateException) { }
-        _session.Dispose();
-        _wake.Dispose();
+        bool stopped;
+        try { stopped = _worker.Wait(5000); } catch (AggregateException) { stopped = true; }
+        // Freeing the session while the worker is still inside Run would crash: if it
+        // hasn't come out, leave the session to the garbage collector.
+        if (stopped) _session.Dispose();
     }
 
     // ---- model metadata ----
@@ -378,6 +405,16 @@ public sealed class DeepCwDecoder : IDisposable
         }
 
         public long ContextStartFrame => Math.Max(0, _frozenEnd - _leftContextFrames);
+
+        /// <summary>Audio before this frame was dropped: start afresh from there.</summary>
+        public void SkipTo(long frame)
+        {
+            if (frame <= _committedEnd) return;
+            _rowBase = _committedEnd = _frozenEnd = _coveredEnd = frame;
+            _rows = 0;
+            _previousSymbol = "none";
+            _blankFrames = 0;
+        }
 
         public long WindowStartFrame(long endSample) =>
             Math.Max(ContextStartFrame, (long)Math.Ceiling((endSample - _maxSegmentSamples) / (double)HopLength));

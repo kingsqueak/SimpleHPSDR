@@ -21,7 +21,8 @@ case "$rid" in
   linux-x64)   target=x86_64-unknown-linux-gnu;  lib=libsimpledream_native.so ;;
   linux-arm64) target=aarch64-unknown-linux-gnu; lib=libsimpledream_native.so ;;
   win-x64)     target=x86_64-pc-windows-msvc;    lib=simpledream_native.dll ;;
-  *) echo "build-drm: no DRM decoder for $rid" >&2; exit 0 ;;
+  *) if [ "${DRM_REQUIRED:-0}" = 1 ]; then echo "build-drm: no DRM decoder for $rid" >&2; exit 1; fi
+     echo "build-drm: no DRM decoder for $rid" >&2; exit 0 ;;
 esac
 
 skip() {

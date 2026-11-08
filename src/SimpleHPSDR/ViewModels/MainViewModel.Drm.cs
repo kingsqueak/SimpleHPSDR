@@ -51,20 +51,38 @@ public sealed partial class MainViewModel
     /// <summary>The list for whichever of SWL and DRM is on.</summary>
     public StationGuideViewModel ActiveGuide => DrmActive ? DrmGuide : Guide;
 
-    private void Drm(object o) => DrmNative.Command(_drm, JsonSerializer.Serialize(o));
+    private void Drm(object o)
+    {
+        lock (_drmLock)
+            if (_drm != 0) DrmNative.Command(_drm, JsonSerializer.Serialize(o));
+    }
 
     private double DrmGain => Muted || IsTransmitting ? 0 : Math.Min(Math.Pow(10, AfGainDb / 20), 4);
     private void UpdateDrmVolume() { if (_drm != 0) Drm(new { cmd = "volume", gain = DrmGain }); }
 
+    private bool _drmStarting;
+    private readonly object _drmLock = new();   // the native decoder isn't freed while IQ or a poll is in it
+
+    /// <summary>Keyed since DRM start began: say so and stop before touching the radio.</summary>
+    private bool DrmStartKeyed()
+    {
+        if (!IsTransmitting) return false;
+        Status = "Unkey before changing mode.";
+        return true;
+    }
+
     private async Task SelectDrmAsync()
     {
-        if (!IsConnected || DrmActive) return;
-        if (IsTransmitting)
-        {
-            Status = "Unkey before changing mode.";
-            return;
-        }
+        if (!IsConnected || DrmActive || _drmStarting || DrmStartKeyed()) return;
+        _drmStarting = true;
+        try { await StartDrmAsync(); }
+        finally { _drmStarting = false; }
+    }
+
+    private async Task StartDrmAsync()
+    {
         int port;
+        string host;
         try
         {
             var tci = await _client!.GetTciStatusAsync();
@@ -74,17 +92,22 @@ public sealed partial class MainViewModel
                 return;
             }
             port = tci.CurrentPort;
+            host = tci.CurrentBindAddress is null or "" or "0.0.0.0" or "::" or "*" ? "127.0.0.1" : tci.CurrentBindAddress;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException)
         {
             Status = $"DRM not started: {ex.Message}";
             return;
         }
+        // Every await is a chance for PTT or VOX to key: check again before each radio change.
+        if (!IsConnected || DrmStartKeyed()) return;
 
         if (SwlActive) TurnSwlOff();
         var hadMemory = _settings.ModeMemories.ContainsKey(MemoryKey(BandOf(VfoHz), RxMode.SAM));
         await SelectModeAsync(RxMode.SAM);
+        if (!IsConnected || DrmStartKeyed()) return;
         if (!hadMemory) await ApplyFilterAsync(-DrmFilterHz, DrmFilterHz);
+        if (!IsConnected || DrmStartKeyed()) return;
 
         // A list click has to move the radio and the display, so CTUN goes off
         // for as long as DRM is on and comes back afterwards.
@@ -103,9 +126,13 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(ActiveGuide));
         await Try(() => _client!.SetMuteAsync(true));   // the decoder's audio replaces the engine's
 
-        var iq = new TciIq("127.0.0.1", port, 0);
+        var iq = new TciIq(host, port, ActiveRx);
         var handle = _drm;
-        iq.IqReceived += (samples, rate) => DrmNative.PushIq(handle, samples, rate, _drmShiftHz, _drmMirror);
+        iq.IqReceived += (samples, rate) =>
+        {
+            lock (_drmLock)
+                if (_drm == handle) DrmNative.PushIq(handle, samples, rate, _drmShiftHz, _drmMirror);
+        };
         iq.Changed += () =>
         {
             _drmShiftHz = iq.VfoHz - iq.DdsHz;
@@ -142,8 +169,11 @@ public sealed partial class MainViewModel
         _drmTimer = null;
         _drmIq?.Dispose();
         _drmIq = null;
-        if (_drm != 0) DrmNative.Destroy(_drm);
-        _drm = 0;
+        lock (_drmLock)
+        {
+            if (_drm != 0) DrmNative.Destroy(_drm);
+            _drm = 0;
+        }
         DrmServices.Clear();
         OnPropertyChanged(nameof(DrmHasServices));
     }
@@ -163,9 +193,13 @@ public sealed partial class MainViewModel
 
     private void PollDrm()
     {
-        if (_drm == 0) return;
-        DrmNative.Events(_drm);
-        var json = DrmNative.Status(_drm);
+        string json;
+        lock (_drmLock)
+        {
+            if (_drm == 0) return;
+            DrmNative.Events(_drm);
+            json = DrmNative.Status(_drm);
+        }
         if (json.Length == 0) return;
         using var doc = JsonDocument.Parse(json);
         var r = doc.RootElement;

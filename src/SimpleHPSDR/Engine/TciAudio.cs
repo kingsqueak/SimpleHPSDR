@@ -147,9 +147,10 @@ public sealed class TciAudio : IDisposable
         await _sendLock.WaitAsync();
         try
         {
-            await ws.SendAsync(Encoding.UTF8.GetBytes(command + ";"), WebSocketMessageType.Text, true, CancellationToken.None);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            await ws.SendAsync(Encoding.UTF8.GetBytes(command + ";"), WebSocketMessageType.Text, true, timeout.Token);
         }
-        catch (Exception e) when (e is WebSocketException or IOException or ObjectDisposedException) { }
+        catch (Exception e) when (e is WebSocketException or IOException or ObjectDisposedException or OperationCanceledException) { }
         finally { _sendLock.Release(); }
     }
 
@@ -158,8 +159,11 @@ public sealed class TciAudio : IDisposable
         try { SendAsync($"audio_stop:{_rx}").Wait(500); }
         catch (AggregateException) { }
         _stop.Cancel();
-        try { _loop.Wait(1000); }
-        catch (AggregateException) { }
+        try { _ws?.Abort(); } catch (Exception) { }
+        bool stopped;
+        try { stopped = _loop.Wait(2000); }
+        catch (AggregateException) { stopped = true; }
+        if (!stopped) return;   // still unwinding: leave the rest to the garbage collector
         _stop.Dispose();
         _sendLock.Dispose();
     }
