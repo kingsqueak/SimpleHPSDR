@@ -157,6 +157,30 @@ public sealed partial class MainViewModel
     [RelayCommand]
     private void ClearCwDecoded() => CwDecodedText = "";
 
+    /// <summary>The main window's spectrum for a slice: strongest signal between two
+    /// frequencies, at least so many dB over the noise, or null.</summary>
+    public Func<int, long, long, double, double?>? FindSignalHz { get; set; }
+
+    /// <summary>CWT: tune so the strongest signal in or near the passband lands on the
+    /// CW pitch. In CW the dial is the received carrier, so that's tuning onto it.</summary>
+    [RelayCommand]
+    private void CwTune()
+    {
+        if (!IsConnected) return;
+        if (!ModeIsCw) { Status = "CWT works in CWU or CWL."; return; }
+        int shift = CwShift(Mode);
+        long lo = Math.Min(FilterLowHz + shift, -250), hi = Math.Max(FilterHighHz + shift, 250);
+        if (FindSignalHz?.Invoke(ActiveRx, VfoHz + lo, VfoHz + hi, 10) is not { } hz)
+        {
+            Status = "CWT: no CW signal in or near the passband.";
+            return;
+        }
+        long delta = (long)Math.Round(hz) - VfoHz;
+        if (Math.Abs(delta) < 3) { Status = "CWT: already on the signal."; return; }
+        TuneTo(VfoHz + delta);
+        Status = $"CWT: moved {delta:+0;-0} Hz onto the signal.";
+    }
+
     partial void OnCwDecoderOnChanged(bool value)
     {
         if (IsConnected) _ = Try(() => _client!.SetCwDecoderAsync(value));

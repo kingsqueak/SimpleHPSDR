@@ -445,6 +445,28 @@ public sealed class SpectrumView : Control
         return bin * width / bins;
     }
 
+    /// <summary>Frequency of the strongest signal between loHz and hiHz on the
+    /// averaged trace, interpolated between bins; null when nothing stands at
+    /// least minAboveFloorDb over the noise floor.</summary>
+    public double? PeakHz(long loHz, long hiHz, double minAboveFloorDb)
+    {
+        if (_pan is not { Length: > 2 } pan || _hzPerPixel <= 0) return null;
+        int n = pan.Length;
+        int a = (int)Math.Ceiling((loHz - _centerHz) / _hzPerPixel + n / 2.0);
+        int b = (int)Math.Floor((hiHz - _centerHz) / _hzPerPixel + n / 2.0);
+        a = Math.Clamp(a, 1, n - 2);
+        b = Math.Clamp(b, 1, n - 2);
+        if (b < a) return null;
+        int best = a;
+        for (int i = a; i <= b; i++) if (pan[i] > pan[best]) best = i;
+        if (pan[best] < _floorDb + 3 + minAboveFloorDb) return null;   // the floor sits 3 dB under the noise
+        // Parabola through the peak and its neighbours, in dB.
+        double l = pan[best - 1], c = pan[best], r = pan[best + 1];
+        double den = l - 2 * c + r;
+        double off = den < 0 ? Math.Clamp(0.5 * (l - r) / den, -0.5, 0.5) : 0;
+        return _centerHz + (best + off - n / 2.0) * _hzPerPixel;
+    }
+
     private long XToHz(double x, double width)
     {
         int bins = _pan?.Length ?? _wfWidth;

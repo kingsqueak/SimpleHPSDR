@@ -325,6 +325,8 @@ public partial class MainWindow : Window
         // An empty MenuFlyout never opens, so fill it now; Opening refreshes the ticks.
         if (StepButton.Flyout is MenuFlyout stepMenu) FillStepMenu(stepMenu);
         if (Vm is not { } vm) return;
+        vm.FindSignalHz = (rx, lo, hi, db) =>
+            (rx == 1 && vm.ShowPanadapterB ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
         vm.ShowRadioPicker = picker => new RadioPickerWindow { DataContext = picker }.PickAsync(this);
         vm.ShowEngineStopped = (radio, reason, log) => new EngineStoppedWindow().AskAsync(this, radio, reason, log);
         vm.ShowFirstStart = (plans, preselected) => new FirstStartWindow().ChooseAsync(this, plans, preselected);

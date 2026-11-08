@@ -20,7 +20,11 @@
                   ToolTip.Tip="While this window has focus: space is a straight key, left arrow sends dits, right arrow sends dahs. These transmit. Off each time the app starts." />
         <TextBlock Text="{Binding CwDecodedInfo}" Classes="label" FontSize="12" VerticalAlignment="Center" />
       </StackPanel>
-      <Button Grid.Column="2" Classes="flat" Content="Clear" Command="{Binding ClearCwDecodedCommand}" />
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+        <Button Classes="flat" Content="CWT" Command="{Binding CwTuneCommand}" IsEnabled="{Binding ModeIsCw}"
+                ToolTip.Tip="Tune onto the strongest CW signal in or near the passband, so it sounds at your CW pitch. Receive only; nothing is transmitted." />
+        <Button Classes="flat" Content="Clear" Command="{Binding ClearCwDecodedCommand}" />
+      </StackPanel>
       <TextBlock Grid.Column="3" Text="{Binding CwWpmText}" VerticalAlignment="Center" FontWeight="SemiBold" />
     </Grid>
 
