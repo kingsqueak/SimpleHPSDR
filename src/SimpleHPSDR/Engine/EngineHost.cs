@@ -112,6 +112,10 @@ public sealed class EngineHost : IDisposable
 
         // Our own settings database, separate from Zeus's.
         psi.Environment["ZEUS_PREFS_PATH"] = Path.Combine(DataDir, "prefs.db");
+        // Zeus plugins belong to Zeus: by default the engine loads them from Zeus's
+        // own folder. Point it at an empty folder of ours, and keep VST loading off.
+        psi.Environment["ZEUS_PLUGINS_PATH"] = Directory.CreateDirectory(Path.Combine(DataDir, "plugins")).FullName;
+        psi.Environment["ZEUS_DISABLE_VST_LOAD"] = "1";
         psi.Environment["Logging__LogLevel__Microsoft.AspNetCore"] = "Warning";
 
         // Each start begins a new log; keep the last one, which may hold a crash.
