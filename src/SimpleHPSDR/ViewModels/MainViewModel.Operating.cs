@@ -108,14 +108,14 @@ public sealed partial class MainViewModel
     /// <summary>Wheel over RIT: 10 Hz a click.</summary>
     public void NudgeRit(int clicks)
     {
-        if (!IsConnected) return;
+        if (!IsConnected || clicks == 0) return;
         RitHz = Math.Clamp(RitHz + clicks * OffsetStepHz, -MaxOffsetHz, MaxOffsetHz);
         (_ritSender ??= new Latest<long>(hz => _client!.SetRitAsync(hz: hz))).Send(RitHz);
     }
 
     public void NudgeXit(int clicks)
     {
-        if (!IsConnected) return;
+        if (!IsConnected || clicks == 0) return;
         XitHz = Math.Clamp(XitHz + clicks * OffsetStepHz, -MaxOffsetHz, MaxOffsetHz);
         (_xitSender ??= new Latest<long>(hz => _client!.SetXitAsync(hz: hz))).Send(XitHz);
     }

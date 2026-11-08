@@ -22,7 +22,8 @@ public sealed class FilterScope : Control
     private double SpanHz => _pitch > 0 ? CwSpanHz : VoiceSpanHz;
     private const double StepHz = 10, MinWidthHz = 50;
     private const double ScaleH = 13;         // tick and label strip at the bottom
-    private const double Grab = 6;            // pointer distance that takes an edge
+    /// <summary>How close the pointer must be to take an edge (wider for fingers).</summary>
+    public double GrabDistance { get; set; } = 6;
     private const float TraceAlpha = 0.5f;
 
     /// <summary>An edge was dragged: the new (low, high) offsets from the dial.</summary>
@@ -99,6 +100,8 @@ public sealed class FilterScope : Control
     {
         var b = new Rect(Bounds.Size);
         ctx.DrawRectangle(Background, null, b, 6, 6);
+        // Too small to draw into (a panel that's closing or still opening).
+        if (b.Width < 60 || b.Height <= ScaleH) return;
         var plot = new Rect(0, 0, b.Width, Math.Max(0, b.Height - ScaleH));
 
         DrawTrace(ctx, plot);
@@ -180,7 +183,7 @@ public sealed class FilterScope : Control
             if (hz % labelEvery != 0) continue;
             var ft = new FormattedText(hz.ToString(), System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, LabelFace, 9, LabelBrush);
-            double lx = Math.Clamp(x - ft.Width / 2, 2, b.Width - ft.Width - 2);
+            double lx = Math.Clamp(x - ft.Width / 2, 2, Math.Max(2, b.Width - ft.Width - 2));
             ctx.DrawText(ft, new Point(lx, top + 3));
         }
     }
@@ -189,8 +192,8 @@ public sealed class FilterScope : Control
     private double HighEdgeX() => _symmetric ? Math.Min(X(_high), Bounds.Width - 3) : X(_high);
 
     private Edge EdgeAt(double x) =>
-        Math.Abs(x - HighEdgeX()) <= Grab ? Edge.High
-        : !_symmetric && Math.Abs(x - X(_low)) <= Grab ? Edge.Low
+        Math.Abs(x - HighEdgeX()) <= GrabDistance ? Edge.High
+        : !_symmetric && Math.Abs(x - X(_low)) <= GrabDistance ? Edge.Low
         : Edge.None;
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)

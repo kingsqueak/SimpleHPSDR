@@ -163,7 +163,7 @@ public sealed class ParametricEqView : Control
     {
         base.OnPointerWheelChanged(e);
         if (RowAt(e.GetPosition(this)) is not { } r) return;
-        double dir = Math.Sign(SliderWheel.Amount(e));
+        double dir = SliderWheel.Clicks(this, e);
         r.Shape = Math.Round(Math.Clamp(r.Shape + dir * r.ShapeStep, r.ShapeMin, r.ShapeMax), 1);
         e.Handled = true;
     }

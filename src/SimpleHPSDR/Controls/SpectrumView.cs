@@ -137,6 +137,8 @@ public sealed class SpectrumView : Control
     /// <summary>The button came up after a drag.</summary>
     public event Action? PanEnded;
     public event Action<int>? WheelTune;
+    /// <summary>A pinch (trackpad or two fingers): +1 zoom in, -1 zoom out.</summary>
+    public event Action<int>? ZoomRequested;
 
     public SpectrumView()
     {
@@ -146,6 +148,27 @@ public sealed class SpectrumView : Control
         // rectangle so rows can't blend across the ring seam.
         RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.HighQuality);
         Cursor = CrossCursor;
+        // Pinch to zoom: the Mac trackpad's pinch, and two fingers on a touch
+        // screen. Each step is a large enough change in scale.
+        AddHandler(PointerTouchPadGestureMagnifyEvent, (_, e) =>
+        {
+            _magnify += e.Delta.X;
+            if (Math.Abs(_magnify) < MagnifyStep) return;
+            ZoomRequested?.Invoke(Math.Sign(_magnify));
+            _magnify = 0;
+            e.Handled = true;
+        });
+        GestureRecognizers.Add(new PinchGestureRecognizer());
+        AddHandler(PinchEvent, (_, e) =>
+        {
+            CancelPress();
+            double ratio = e.Scale / _pinchBase;
+            if (ratio is > 1 / PinchStep and < PinchStep) return;
+            ZoomRequested?.Invoke(ratio > 1 ? 1 : -1);
+            _pinchBase = e.Scale;
+            e.Handled = true;
+        });
+        AddHandler(PinchEndedEvent, (_, _) => _pinchBase = 1);
         // A long press (LongPress turns it into a context request) opens the
         // slice menu where it started, as a right-click does. A right-click
         // opens it on press already, and leaves no press pending here.
@@ -392,7 +415,12 @@ public sealed class SpectrumView : Control
 
     // Left button down on the display: a click tunes on release, unless the
     // pointer moves far enough to be a drag, which pans instead.
-    private const double PanThreshold = 5;
+    // A finger wobbles more than a mouse before it means to drag.
+    private const double PanThreshold = 5, TouchPanThreshold = 12;
+    private const double MagnifyStep = 0.25, PinchStep = 1.4;
+    private double _magnify, _pinchBase = 1;
+    private bool _pressIsTouch;
+    private int _touches;
     private Point? _pressAt;
     private long _pressCenterHz;
     private bool _panning;
@@ -411,7 +439,7 @@ public sealed class SpectrumView : Control
         }
         if (_pressAt is { } at && Bounds.Width > 0)
         {
-            _panning |= Math.Abs(p.X - at.X) >= PanThreshold;
+            _panning |= Math.Abs(p.X - at.X) >= (_pressIsTouch ? TouchPanThreshold : PanThreshold);
             if (_panning)
             {
                 // Follow the pointer: dragging right brings lower frequencies in.
@@ -429,9 +457,19 @@ public sealed class SpectrumView : Control
         InvalidateVisual();
     }
 
+    // A second finger turns the press into a pinch: no tune, no pan.
+    private void CancelPress()
+    {
+        if (_pressAt is null) return;
+        if (_panning) PanEnded?.Invoke();
+        _pressAt = null;
+        _panning = false;
+    }
+
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (e.Pointer.Type == PointerType.Touch) _touches = Math.Max(0, _touches - 1);
         if (_pressAt is { } at)
         {
             if (_panning) PanEnded?.Invoke();
@@ -667,7 +705,14 @@ public sealed class SpectrumView : Control
                 e.Handled = true;
                 return;
             }
+        if (e.Pointer.Type == PointerType.Touch && ++_touches > 1)
+        {
+            CancelPress();
+            e.Handled = true;
+            return;
+        }
         _pressAt = pos;
+        _pressIsTouch = e.Pointer.Type != PointerType.Mouse;
         _pressCenterHz = _centerHz;
         _panning = false;
         e.Pointer.Capture(this);
@@ -677,7 +722,7 @@ public sealed class SpectrumView : Control
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
-        int steps = Math.Sign(SliderWheel.Amount(e));
+        int steps = SliderWheel.Clicks(this, e);
         if (steps != 0) WheelTune?.Invoke(steps);
         e.Handled = true;
     }

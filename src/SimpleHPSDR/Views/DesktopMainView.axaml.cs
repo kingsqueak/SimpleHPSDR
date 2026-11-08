@@ -34,13 +34,13 @@ public partial class DesktopMainView : UserControl
         if (StepButton.Flyout is MenuFlyout stepMenu) stepMenu.Opening += (_, _) => FillStepMenu(stepMenu);
         FrequencyPanel.PointerWheelChanged += (_, e) =>
         {
-            Vm?.TuneBySteps(WheelClicks(e));
+            Vm?.TuneBySteps(SliderWheel.Clicks(FrequencyPanel, e));
             e.Handled = true;
         };
         // The wheel over Step and lock tunes too, as when they sat in the frequency box.
         StepLockButtons.PointerWheelChanged += (_, e) =>
         {
-            Vm?.TuneBySteps(WheelClicks(e));
+            Vm?.TuneBySteps(SliderWheel.Clicks(FrequencyPanel, e));
             e.Handled = true;
         };
         // Click the frequency to type one; Enter tunes, Esc or clicking away cancels.
@@ -57,11 +57,11 @@ public partial class DesktopMainView : UserControl
             else if (e.Key == Key.Escape) { Vm?.CancelFrequencyEntry(); e.Handled = true; }
         };
         FrequencyEntryBox.LostFocus += (_, _) => Vm?.CancelFrequencyEntry();
-        RitButton.PointerWheelChanged += (_, e) => { Vm?.NudgeRit(WheelClicks(e)); e.Handled = true; };
-        XitButton.PointerWheelChanged += (_, e) => { Vm?.NudgeXit(WheelClicks(e)); e.Handled = true; };
+        RitButton.PointerWheelChanged += (_, e) => { Vm?.NudgeRit(SliderWheel.Clicks(RitButton, e)); e.Handled = true; };
+        XitButton.PointerWheelChanged += (_, e) => { Vm?.NudgeXit(SliderWheel.Clicks(XitButton, e)); e.Handled = true; };
         RitButton.ContextRequested += (_, e) => { Vm?.ClearRit(); e.Handled = true; };
         XitButton.ContextRequested += (_, e) => { Vm?.ClearXit(); e.Handled = true; };
-        WpmButton.PointerWheelChanged += (_, e) => { Vm?.NudgeCwWpm(WheelClicks(e)); e.Handled = true; };
+        WpmButton.PointerWheelChanged += (_, e) => { Vm?.NudgeCwWpm(SliderWheel.Clicks(WpmButton, e)); e.Handled = true; };
         BandButton.ContextRequested += async (_, e) => { e.Handled = true; await MainMenus.ShowBandStackAsync(Vm, BandButton); };
         Spectrum.TuneRequested += TuneA;
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
@@ -85,6 +85,9 @@ public partial class DesktopMainView : UserControl
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB);
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
+        // Pinch (trackpad or fingers) zooms both panadapters, as the Zoom button does.
+        Spectrum.ZoomRequested += dir => Vm?.ZoomStep(dir);
+        SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(dir);
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
@@ -132,8 +135,6 @@ public partial class DesktopMainView : UserControl
         snap.Click += (_, _) => vm.ToggleSnapClickToStep();
         menu.Items.Add(snap);
     }
-
-    private static int WheelClicks(PointerWheelEventArgs e) => Math.Sign(SliderWheel.Amount(e));
 
     // With two panadapters the top one is slice A's; with one, a click tunes
     // whichever slice is active (click a tag to switch).

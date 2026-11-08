@@ -858,6 +858,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Wheel tuning: snap to the step grid, then move by whole steps.</summary>
     public void TuneBySteps(int steps)
     {
+        // Zero (a trackpad still adding up to a click) must not move the
+        // dial: off-step, the rounding below would snap it up one step.
+        if (steps == 0) return;
         long step = StepHz;
         long floor = VfoHz - VfoHz % step;
         TuneTo(floor == VfoHz ? VfoHz + steps * step
@@ -939,6 +942,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(ZoomLabel));
         OnPropertyChanged(nameof(ZoomSpanText));
+    }
+
+    /// <summary>One zoom step: in doubles the zoom (from full span, to the
+    /// last zoomed span), out halves it, and out from the smallest zoom goes
+    /// to full span. For the zoom buttons, Ctrl+wheel and pinching.</summary>
+    public void ZoomStep(int dir)
+    {
+        if (dir == 0 || !IsConnected) return;
+        if (dir > 0 && !ZoomOn) { ToggleZoom(); return; }
+        if (dir < 0 && ZoomOn && ZoomSlider <= 1.01) { ToggleZoom(); return; }
+        if (ZoomOn) ZoomSlider += Math.Sign(dir);
     }
 
     /// <summary>Full span, or back to the last zoomed span.</summary>

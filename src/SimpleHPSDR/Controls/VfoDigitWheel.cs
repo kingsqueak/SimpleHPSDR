@@ -29,7 +29,8 @@ public static class VfoDigitWheel
             int place = PlaceAt(readout, m, e.GetPosition(readout));
             if (place < 0) return;   // not on a digit: the panel's step tuning handles it
             m.HoverDigitPlace = place;
-            m.TuneDigit(place, Math.Sign(SliderWheel.Amount(e)));
+            int clicks = SliderWheel.Clicks(readout, e);
+            if (clicks != 0) m.TuneDigit(place, clicks);
             e.Handled = true;
         };
     }

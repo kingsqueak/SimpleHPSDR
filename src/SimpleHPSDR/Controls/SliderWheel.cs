@@ -43,6 +43,41 @@ public static class SliderWheel
         return step;
     }
 
+    private static readonly ConditionalWeakTable<object, StrongBox<double>> PendingClicks = new();
+
+    // A fast trackpad flick can arrive as one big event; tuning moves at
+    // most this many steps per event.
+    private const int MaxClicksPerEvent = 5;
+
+    // Trackpads (and other smooth scrollers) tune a little slower than their
+    // raw movement. A mouse wheel moves in whole notches, multiples of
+    // ClickDelta, and isn't scaled.
+    private const double SmoothScrollScale = 0.75;
+
+    private static bool IsWholeNotches(double amount)
+    {
+        double notches = Math.Abs(amount) / ClickDelta;
+        return Math.Abs(notches - Math.Round(notches)) < 1e-3;
+    }
+
+    /// <summary>
+    /// Whole wheel clicks for a control that steps (tuning, RIT, WPM, zoom):
+    /// a mouse wheel notch is one click, and a trackpad's many small events
+    /// add up per control until they make one, as they do on sliders.
+    /// </summary>
+    public static int Clicks(object control, PointerWheelEventArgs e)
+    {
+        double amount = Amount(e);
+        if (amount == 0) return 0;
+        var acc = PendingClicks.GetOrCreateValue(control);
+        // A change of direction starts afresh rather than unwinding the rest.
+        if (Math.Sign(acc.Value) != 0 && Math.Sign(acc.Value) != Math.Sign(amount)) acc.Value = 0;
+        acc.Value += amount / ClickDelta * (IsWholeNotches(amount) ? 1 : SmoothScrollScale);
+        int clicks = (int)Math.Truncate(acc.Value + Math.CopySign(1e-6, acc.Value));
+        acc.Value -= clicks;
+        return Math.Clamp(clicks, -MaxClicksPerEvent, MaxClicksPerEvent);
+    }
+
     public static void Enable() =>
         InputElement.PointerWheelChangedEvent.AddClassHandler<Slider>(OnWheel, RoutingStrategies.Bubble);
 
