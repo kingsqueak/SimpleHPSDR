@@ -118,10 +118,7 @@ public sealed class EngineHost : IDisposable
 
         // Our own settings database, separate from Zeus's.
         psi.Environment["ZEUS_PREFS_PATH"] = Path.Combine(DataDir, "prefs.db");
-        // Zeus plugins belong to Zeus: by default the engine loads them from Zeus's
-        // own folder. Point it at an empty folder of ours, and keep VST loading off.
-        psi.Environment["ZEUS_PLUGINS_PATH"] = Directory.CreateDirectory(Path.Combine(DataDir, "plugins")).FullName;
-        psi.Environment["ZEUS_DISABLE_VST_LOAD"] = "1";
+        // The fork has no plugin or VST host (removed 2026-11-08), so nothing to point away from Zeus's.
         // Everything else the engine would keep in Zeus's folder (FFT wisdom, LAN
         // certificate, NR3 models, WSPR files) goes to ours, backups leave Zeus Link's
         // files alone, and the Windows firewall rule has our own name, so granting it
