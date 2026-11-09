@@ -58,7 +58,8 @@ public sealed partial class MainViewModel
     /// <summary>Show the routing for the band the VFO is in.</summary>
     private void ShowAntennasForBand()
     {
-        _antennaBand = SimpleHPSDR.Band.Find(VfoHz) is { } band ? band.Name + "m" : null;
+        // Transverter bands share the engine's one Xvtr antenna route.
+        _antennaBand = SimpleHPSDR.Band.Find(VfoHz) is { } band ? band.Transverter ? "Xvtr" : band.Name + "m" : null;
         if (_antennaBand is null || !_antennas.TryGetValue(_antennaBand, out var a))
         {
             (TxAntLabel, RxAntLabel, AntennaBoxesEnabled) = ("—", "—", false);

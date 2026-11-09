@@ -203,6 +203,8 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private string? _serialPttPort;
     [ObservableProperty] private string _serialPttState = "";
     [ObservableProperty] private bool _transverterOn;
+    /// <summary>Transverter settings applied: the main window rebuilds its band list.</summary>
+    public event Action<TransverterSettingsDto>? TransvertersSaved;
     [ObservableProperty] private bool _diversityOn;
     [ObservableProperty] private double _diversityGain, _diversityPhase;
     [ObservableProperty] private int _diversityOutputIndex;
@@ -331,6 +333,12 @@ public sealed partial class SettingsViewModel
         await _client.SetTransverterAsync(new TransverterSettingsSetRequest(TransverterOn, was.IfFrequencyHz, was.RfFrequencyHz,
             Bands: bands, ActiveBandId: was.ActiveBandId));
         _transverter = was with { Enabled = TransverterOn, Bands = bands };
+        if (AppSettings is { } app)
+        {
+            app.TransverterOn = TransverterOn;
+            app.Save();
+        }
+        TransvertersSaved?.Invoke(_transverter);
     }
 
     private async Task ApplyDiversityAsync()

@@ -392,6 +392,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         };
         settings.PaMaxPowerSaved += SetPowerScale;
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
+        settings.TransvertersSaved += ShowTransverterBands;
         _ = settings.LoadAsync();
         _settingsOpen = true;
         try { await ShowSettings(settings); }
@@ -740,6 +741,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
             // The engine's guard only runs when the user chose Block transmit.
             await Try(() => client.SetBandPlanGuardIgnoredAsync(_settings.GeneralCoverage || !_settings.BandPlanBlocks));
+            if (_settings.TransverterOn is { } xvtr) await Try(() => client.SyncTransverterOnAsync(xvtr));
+            await LoadTransvertersAsync();
             var state = await client.GetStateAsync();
             bool firstFilters = await ApplyFilterDefaultsAsync();
             await ApplyStateAsync(state);
@@ -834,12 +837,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Text of the blue Band button: the band the VFO is in, or
     /// "GEN" (general coverage) outside the ham bands.</summary>
-    public string BandLabel => Bands.FirstOrDefault(c => c.IsSelected) is { } b ? $"{b.Label} m" : "GEN";
+    public string BandLabel => Bands.FirstOrDefault(c => c.IsSelected) is { } b
+        ? ((Band)b.Value).Transverter ? b.Label : $"{b.Label} m" : "GEN";
 
     /// <summary>Text of the blue Mode button.</summary>
     public string ModeLabel => Mode.ToString();
-
-    private const long MinTuneHz = 10_000, MaxTuneHz = 60_000_000;
 
     public void TuneTo(long hz)
     {
@@ -849,7 +851,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Status = "VFO is locked.";
             return;
         }
-        hz = Math.Clamp(hz, MinTuneHz, MaxTuneHz);
+        if (!SimpleHPSDR.Band.Tunable(hz)) hz = Math.Clamp(hz, SimpleHPSDR.Band.MinHfHz, SimpleHPSDR.Band.MaxHfHz);
         SetVfoLocal(hz);
         if (SimpleHPSDR.Band.Find(hz) is { } band) _settings.BandMemory[band.Name] = hz;
         _vfoSender.Send(hz);
@@ -872,10 +874,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     /// below it alone.</summary>
     public void TuneDigit(int place, int steps)
     {
-        if (steps == 0 || place is < 0 or > 7) return;
+        if (steps == 0 || place is < 0 or > 10) return;   // to the 10 GHz digit (transverters)
         long unit = (long)Math.Pow(10, place);
         long hz = VfoHz + steps * unit;
-        if (hz < MinTuneHz || hz > MaxTuneHz) return;
+        if (!SimpleHPSDR.Band.Tunable(hz)) return;
         TuneTo(hz);
     }
 
@@ -916,14 +918,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void EnterFrequency()
     {
-        // Accept kHz ("14074", "7074.5") or MHz ("14.074").
+        // Accept kHz ("14074", "7074.5") or MHz ("14.074", and "144.2" on a transverter band).
         var text = FrequencyEntry.Trim().Replace(',', '.');
         if (double.TryParse(text, System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out var v) && v > 0)
+                System.Globalization.CultureInfo.InvariantCulture, out var v)
+            && SimpleHPSDR.Band.FromTyped(v) is { } hz)
         {
-            long hz = (long)Math.Round(v < 100 ? v * 1e6 : v * 1e3);
-            if (hz is >= MinTuneHz and <= MaxTuneHz) TuneTo(hz);
-            else Status = "Enter a frequency from 0.01 to 60 MHz.";
+            if (SimpleHPSDR.Band.Tunable(hz)) TuneTo(hz);
+            else Status = SimpleHPSDR.Band.RangeHint;
         }
         CancelFrequencyEntry();
     }

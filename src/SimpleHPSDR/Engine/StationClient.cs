@@ -498,8 +498,29 @@ public sealed class StationClient : IDisposable
         (await _http.GetFromJsonAsync<SerialPttStatus>("api/radio/serial-ptt", Json))!;
     public async Task SetSerialPttAsync(SerialPttConfig c) =>
         await Checked(_http.PutAsJsonAsync("api/radio/serial-ptt", c, Json));
+    // Our engine fork resolves the default radio and workspace to the connected
+    // radio's active one, creating it if needed (see ResolveTransverterWorkspace).
     public async Task<TransverterSettingsDto> GetTransverterAsync() =>
         (await _http.GetFromJsonAsync<TransverterSettingsDto>("api/radio/transverter", Json))!;
+
+    /// <summary>Turn transverters on or off for the connected radio, keeping its bands.</summary>
+    public async Task SyncTransverterOnAsync(bool on)
+    {
+        var t = await GetTransverterAsync();
+        if (t.Enabled == on) return;
+        await SetTransverterAsync(new TransverterSettingsSetRequest(on, t.IfFrequencyHz, t.RfFrequencyHz,
+            Bands: t.Bands, ActiveBandId: t.ActiveBandId));
+    }
+
+    /// <summary>Make one transverter band the active one, as its band button does.</summary>
+    public async Task SelectTransverterBandAsync(int id)
+    {
+        var t = await GetTransverterAsync();
+        if (!t.Enabled || t.ActiveBandId == id) return;
+        await SetTransverterAsync(new TransverterSettingsSetRequest(true, t.IfFrequencyHz, t.RfFrequencyHz,
+            Bands: t.Bands, ActiveBandId: id));
+    }
+
     public async Task SetTransverterAsync(TransverterSettingsSetRequest r) =>
         await Checked(_http.PutAsJsonAsync("api/radio/transverter", r, Json));
     public Task SetDiversityAsync(DiversitySetRequest r) => PostAsync("api/rx/diversity", r);

@@ -41,6 +41,7 @@ public sealed partial class MainViewModel
             return;
         }
         RememberBandMode();
+        if (band.Transverter) await Try(() => _client!.SelectTransverterBandAsync(band.XvtrId));
         var mode = _settings.BandLastMode.TryGetValue(band.Name, out int last) ? (RxMode)last
             : Mode is RxMode.LSB or RxMode.USB ? (band.DefaultHz < 10_000_000 ? RxMode.LSB : RxMode.USB)
             : Mode;

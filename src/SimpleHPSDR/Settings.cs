@@ -22,6 +22,10 @@ public sealed class Settings
     public string? UpdateDismissedVersion { get; set; }
     /// <summary>A click on the panadapter tunes to the nearest whole step.</summary>
     public bool SnapClickToStep { get; set; } = true;
+    /// <summary>Transverters on or off, the last time Config applied it. The engine
+    /// keeps this per radio model; like Thetis we keep one switch for every radio
+    /// and set it on each connect. Null until first set: leave the engine alone.</summary>
+    public bool? TransverterOn { get; set; }
     /// <summary>Keep PureSignal's HW peak just under the signal's measured
     /// peak: lower it when calibration stalls, raise it when the signal
     /// clearly exceeds it.</summary>

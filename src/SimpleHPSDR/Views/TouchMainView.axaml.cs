@@ -259,8 +259,8 @@ public partial class TouchMainView : UserControl
         if (double.TryParse(_keys, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v > 0)
         {
             long hz = (long)Math.Round(v * unitHz);
-            if (hz is >= 10_000 and <= 60_000_000) vm.TuneTo(hz);
-            else vm.Status = "Enter a frequency from 0.01 to 60 MHz.";
+            if (Band.Tunable(hz)) vm.TuneTo(hz);
+            else vm.Status = Band.RangeHint;
         }
         FlyoutBase.GetAttachedFlyout(VfoBox)?.Hide();
     }
