@@ -144,8 +144,11 @@ dotnet run --project src/SimpleHPSDR
 
 The `external/station-engine` submodule follows
 [kingsqueak/station-engine](https://github.com/kingsqueak/station-engine): a Zeus
-release tag plus SimpleHPSDR's own patches, tagged like `v2.0.68-simplehpsdr.4`.
-The fork is permanent: each Zeus release is rebased under the patches. They add
+release tag plus SimpleHPSDR's own patches, tagged like `v2.0.68-simplehpsdr.6`.
+The fork is permanent and goes its own way; it follows Zeus only for something
+specific, such as a new radio. Everything SimpleHPSDR doesn't use that served
+Zeus's web app, Zeus Link or online services has been taken out (see
+`docs/engine-capabilities.md`). The patches also add
 ADC dither and randomizer for the ANAN-7000DLE and 8000DLE
 ([#15](https://github.com/Zeus-SDR/station-engine/pull/15)), the G2 front-panel
 CAT port ([#16](https://github.com/Zeus-SDR/station-engine/pull/16)), transverters

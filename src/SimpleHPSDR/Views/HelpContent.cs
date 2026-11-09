@@ -402,7 +402,8 @@ Config holds settings you set once. Changes take effect as you make them, and Un
 Ant in the top row picks this band's transmit and receive antennas. Config > Antennas shows every band at once.
 
 ## Radio, PA and calibration
-- Radio: your radio model and the light or dark theme.
+- Radio: your radio model, the light or dark theme, and the layout (desktop, or large buttons for touch screens).
+- Colors: the spectrum and waterfall colours.
 - PA: rated power, each band's PA gain, automatic calibration and correction from an external meter.
 - Calibration: S-meter trim, frequency correction using WWV, and overload protection.
 
@@ -442,25 +443,25 @@ If your radio has a speaker or headphone jack, choose Radio speaker jack as the 
 Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Outputs switches its bands through the radio's outputs.
 
 ## Options for particular radios
-Config > Hardware has the options only some radios have, in a section for each. A section is greyed out unless the radio that's set has that hardware. The same goes for other pages: a jack, bias, antenna relay or receive input your radio doesn't have stays on the page, greyed out.
-- ADC dither and randomizer: for the ANAN-G2 and G2-1K, and any radio except the Hermes-Lite 2 while it's connected on Protocol 1.
+Config > Hardware shows only the options your radio has. On other pages, a jack, bias, antenna relay or receive input your radio doesn't have stays on the page, greyed out.
+- Dither and randomizer: can lower unwanted signals made inside the radio. For the ANAN-G2, G2-1K, 7000DLE and 8000DLE, and most radios on Protocol 1.
 - Hermes-Lite 2: band volts for an amp, the HL2+ codec, and the four user outputs. It also shows whether an IO board was found.
-- Anvelina-PRO3: the DX outputs, pins 7 to 10, for each band.
+- Anvelina-PRO3: the extra outputs 7 to 10 for each band.
 
 ## Also in Config > Station
 - Band plan: the band edges for your region or licence class, or General Coverage for no restrictions. Outside the plan it warns you or blocks transmit, as you choose. PA calibration also uses it; in General Coverage that's the last plan you chose.
 - PTT: the radio's PTT input, or a foot switch on a serial port. Both can be turned off.
 - Diversity: combines two receive antennas.
-- Transverters: for VHF and up.
+- Transverters: for VHF and up. Each one you turn on gets its own band button, and the frequency shows the band you're really on.
 """),
 
         ("Other software", """
 Logging, digital and contest programs can control the radio through Config > CAT & TCI.
 
-- TCI suits WSJT-X, JTDX, loggers and skimmers.
-- CAT is the older method that most logging programs use, over the network or a serial port.
+- TCI suits WSJT-X, JTDX, loggers and skimmers. Programs see the radio as SimpleHPSDR.
+- CAT is the older method that most logging programs use, over the network or a serial port. It acts as a Kenwood TS-2000, so choose TS-2000 as the radio in the other program.
 
-Turn on the server you need and note the port. Changes here need Restart engine to apply; the radio reconnects in a few seconds.
+Turn on the server you need and note the port. Network changes need Apply now; the radio reconnects in a few seconds.
 
 "This computer only" keeps TCI private. Choose Network only if another computer needs it. The running TCI status shows at the bottom right, beside CPU.
 """),
