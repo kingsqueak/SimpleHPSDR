@@ -24,7 +24,16 @@ public sealed partial class MainViewModel
     private float _imdHzPerPixel;
     private DateTime _imdLastSent;
     private bool _imdBusy;
-    private double? _imd3PsOff, _imd3PsOn;
+    // A PureSignal test: 2-TONE started from the button with PS armed resets PS
+    // first. Uncorrected = readings 0.6-3 s in; corrected = once settled (last
+    // 3 s within 1.5 dB, at least 8 s in). On the 7000DLE with an amplifier it
+    // settled after about 13 s: IMD3 -38 to -55 dBc (2026-11-09).
+    private DateTime? _imdRunStart;
+    private readonly List<(double T, double Imd3)> _imdRun = [];
+    private bool _imdSettled;   // once settled, it stays settled for the run
+    private static readonly TimeSpan BaselineFrom = TimeSpan.FromSeconds(0.6), BaselineTo = TimeSpan.FromSeconds(3);
+    private const double SettleMinSeconds = 8, SettleSpanDb = 1.5;
+    private const int SettleReadings = 6;     // 3 s at two a second
     private double _twoToneF1 = 700, _twoToneF2 = 1900;
     private double? _zoomBeforeImd;
 
@@ -111,18 +120,36 @@ public sealed partial class MainViewModel
             return;
         }
         ImdText = r.Imd5 is { } i5 ? $"IMD3 −{i3.Dbc:0} dBc · IMD5 −{i5.Dbc:0} dBc" : $"IMD3 −{i3.Dbc:0} dBc";
-        ImdSourceText = where + (fromSample ? (psCorrecting ? ", corrected" : ", not yet corrected") : "");
-        if (!fromSample) return;             // only the PS sample compares like with like
-        if (psCorrecting) _imd3PsOn = i3.Dbc;
-        else _imd3PsOff = i3.Dbc;
-        ImdCompareText = (_imd3PsOff, _imd3PsOn) switch
+        ImdSourceText = where;
+        if (!fromSample)
         {
-            ({ } off, { } on) => $"At the amplifier, IMD3 uncorrected −{off:0}, corrected −{on:0} dBc: PureSignal " +
-                                 (on >= off ? $"improves it by {on - off:0} dB" : $"makes it {off - on:0} dB worse"),
-            ({ } off, null) => $"Uncorrected IMD3 −{off:0} dBc; keep 2-TONE on until PureSignal corrects.",
-            (null, { } on) => $"Corrected IMD3 −{on:0} dBc. For the uncorrected figure, Reset PureSignal (Config) and run 2-TONE again.",
-            _ => "",
-        };
+            ImdCompareText = PsOn ? "" : "Turn PureSignal on and run 2-TONE to see how much it improves this.";
+            return;
+        }
+        if (_imdRunStart is not { } start) return;   // PS CAL bursts: live reading only
+        double t = (DateTime.UtcNow - start).TotalSeconds;
+        _imdRun.Add((t, i3.Dbc));
+        ImdCompareText = ImdRunSummary(t);
+    }
+
+    private static double Median(IEnumerable<double> v)
+    {
+        var a = v.OrderBy(x => x).ToArray();
+        return a.Length == 0 ? double.NaN : a[a.Length / 2];
+    }
+
+    private string ImdRunSummary(double t)
+    {
+        var baseline = _imdRun.Where(x => x.T >= BaselineFrom.TotalSeconds && x.T <= BaselineTo.TotalSeconds).Select(x => x.Imd3).ToList();
+        if (baseline.Count == 0) return "PureSignal reset: measuring uncorrected…";
+        double off = Median(baseline);
+        var last = _imdRun.TakeLast(SettleReadings).Select(x => x.Imd3).ToList();
+        _imdSettled |= t >= SettleMinSeconds && last.Count == SettleReadings && last.Max() - last.Min() <= SettleSpanDb;
+        if (!_imdSettled)
+            return $"Uncorrected IMD3 −{off:0} dBc. PureSignal is settling: keep 2-TONE on (about 15 s).";
+        double on = Median(last);
+        return $"IMD3 uncorrected −{off:0}, corrected −{on:0} dBc: PureSignal " +
+               (on >= off ? $"improves it by {on - off:0} dB." : $"makes it {off - on:0} dB worse.");
     }
 
     /// <summary>Operator starts 2-TONE: zoom in so the tones are well apart and
@@ -144,6 +171,7 @@ public sealed partial class MainViewModel
     private void RestoreAfterImd()
     {
         _imdAvg = null;
+        _imdRunStart = null;              // the summary stays on screen
         if (_zoomBeforeImd is not { } z) return;
         _zoomBeforeImd = null;
         SetZoomFine(z, persist: false);

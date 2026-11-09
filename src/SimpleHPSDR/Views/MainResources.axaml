@@ -239,7 +239,7 @@
     <StackPanel Spacing="8" Margin="4">
     <StackPanel Orientation="Horizontal" Spacing="6">
         <ToggleButton Classes="seg tx" Content="2-TONE" IsChecked="{Binding TwoToneOn}"
-                      ToolTip.Tip="Transmit the two-tone test signal (for PureSignal calibration and IMD checks)" />
+                      ToolTip.Tip="Transmit the two-tone test signal and measure IMD. With PureSignal on it starts PureSignal from a reset, so the panel can show uncorrected against corrected; hold it about 15 s until it settles." />
         <ToggleButton Classes="seg tx" Content="PS CAL" IsChecked="{Binding PsCalibrating, Mode=OneWay}"
                       Command="{Binding CalibratePsCommand}"
                       ToolTip.Tip="Calibrates PureSignal: transmits 2-TONE in short bursts until it locks, and sets HW peak to suit your signal. Connect a dummy load first. Press again to stop." />

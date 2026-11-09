@@ -379,7 +379,7 @@ Calibrate again after changing band, power or amplifier. The correction stays on
 
 ## Also on the right-click
 - 2-TONE transmits a test signal.
-- IMD: while 2-TONE transmits, the PS panel shows how far the 3rd- and 5th-order intermodulation products sit below the tones (IMD3, IMD5, in dBc; more negative is cleaner). 2-TONE zooms in so they can be measured and puts your zoom back when it stops. Run it once with PS off and once with PS on, and it shows how much PureSignal helps.
+- IMD: while 2-TONE transmits, the PS panel shows how far the 3rd- and 5th-order intermodulation products sit below the tones (IMD3, IMD5, in dBc; more negative is cleaner). With PureSignal on it measures your amplifier's real output (the PS sample) and starts PureSignal from a reset: hold 2-TONE about 15 seconds and the panel shows the uncorrected and corrected IMD3 and the difference. 2-TONE zooms in to measure and puts your zoom back when it stops. PS CAL's short bursts show the reading but not the comparison.
 - Save correction keeps what PureSignal learned, and Restore brings it back without calibrating. A restored correction stays fixed: PureSignal stops adapting until you reset it, so an old one can do worse than none. Left alone, PureSignal settles within seconds of transmitting; "Load the saved correction at start" is off for that reason.
 - The status box shows the feedback level (FB), which is best around 128 to 181.
 - A line in plain words says what PureSignal is doing and what to do if it's stuck.

@@ -214,6 +214,17 @@ public sealed partial class MainViewModel
     {
         await ZoomForImdAsync();
         if (!TwoToneOn) return;          // turned off again meanwhile
+        // With PureSignal armed, each 2-TONE is a PureSignal test: start it
+        // from no correction so the meter can show what PureSignal does.
+        _imdRun.Clear();
+        _imdSettled = false;
+        _imdRunStart = null;
+        ImdCompareText = "";
+        if (PsOn)
+        {
+            await Try(() => _client!.ResetPsAsync());
+            _imdRunStart = DateTime.UtcNow;
+        }
         await KeyAsync(() => _client!.SetTwoToneAsync(true), true);
     }
 
