@@ -39,6 +39,9 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _psHwPeakDefault;
     [ObservableProperty] private bool _psMonitor;
 
+    /// <summary>Opens the guided PureSignal setup (the window closes first).</summary>
+    public Action? OpenPsSetup { get; init; }
+
     /// <summary>The app's own settings file, for options the engine doesn't hold.</summary>
     public Settings? AppSettings { get; init; }
 
@@ -58,8 +61,8 @@ public sealed partial class SettingsViewModel
     public double MeasuredTxPeak { get; init; }
     public bool HasMeasuredTxPeak => MeasuredTxPeak > 0;
     public string MeasuredTxPeakText => HasMeasuredTxPeak
-        ? $"Your last transmission peaked at {MeasuredTxPeak:0.0000}. HW peak must not be above that, or calibration stalls."
-        : "Turn PS on and transmit 2-TONE once; the measured peak will show here.";
+        ? $"Your last transmission peaked at {MeasuredTxPeak:0.0000}. HW peak should be a little above that: {PsPeak.Target(MeasuredTxPeak):0.0000}."
+        : "Run PS CAL once and your signal's peak will show here.";
 
     private void PopulatePureSignal(StateDto s)
     {
@@ -103,9 +106,9 @@ public sealed partial class SettingsViewModel
     [RelayCommand]
     private void UseDefaultHwPeak() => PsHwPeak = PsHwPeakDefault;
 
-    // A hair under the measured peak, so calcc's top bin reliably fills.
+    // A little above the measured peak, so it lands in calcc's top step.
     [RelayCommand]
-    private void UseMeasuredHwPeak() => PsHwPeak = Math.Round(MeasuredTxPeak * 0.98, 4);
+    private void UseMeasuredHwPeak() => PsHwPeak = PsPeak.Target(MeasuredTxPeak);
 
     [RelayCommand]
     private async Task ResetPsAsync()

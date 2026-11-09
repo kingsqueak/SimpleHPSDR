@@ -57,11 +57,8 @@ public static class LayoutMode
     public static string Describe(Settings s)
     {
         string now = Current == UiLayout.Touch ? "touch" : "desktop";
-        string width = double.IsFinite(ScreenWidth) ? $"{ScreenWidth:0}" : "unknown";
-        if (Override is { } o) return $"{o} for this run, set when the app was started ({(o == Touch ? "--touch" : "--desktop")} or SIMPLEHPSDR_LAYOUT).";
-        return Choice(s) == Automatic
-            ? $"Now {now}: this screen is {width} wide (touch below {TouchBelowWidth:0})."
-            : $"Now {now}.";
+        if (Override is { } o) return $"The {o.ToLowerInvariant()} layout was chosen when the app was started.";
+        return Choice(s) == Automatic ? $"Using the {now} layout on this screen." : "";
     }
 
     /// <summary>

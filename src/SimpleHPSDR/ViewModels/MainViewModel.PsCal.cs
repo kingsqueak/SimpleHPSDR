@@ -36,6 +36,7 @@ public sealed partial class MainViewModel
             return;
         }
         if (!IsConnected || _client is null) return;
+        if (!_psSetupOpen && OfferPsSetup()) return;
         if (IsTransmitting)
         {
             Status = "PS CAL: unkey first.";
@@ -91,6 +92,8 @@ public sealed partial class MainViewModel
                 }
                 else if (calibrated)
                 {
+                    _psCalSucceeded = true;
+                    MarkPsSetupDone();
                     var f = _latestPs;
                     Status = $"PS CAL: calibrated in {cycle} cycle{(cycle > 1 ? "s" : "")}. " +
                              $"Feedback {f.FeedbackLevel:0}" +

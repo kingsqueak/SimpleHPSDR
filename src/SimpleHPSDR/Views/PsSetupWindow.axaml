@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        x:Class="SimpleHPSDR.Views.PsSetupWindow"
+        x:DataType="vm:PsSetupViewModel"
+        Title="PureSignal setup" Width="560" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="18" Spacing="12">
+    <TextBlock Text="Set up PureSignal" FontSize="18" FontWeight="SemiBold" />
+
+    <!-- Step 1: where the feedback comes from -->
+    <StackPanel Spacing="10" IsVisible="{Binding OnSource}">
+      <TextBlock TextWrapping="Wrap"
+                 Text="PureSignal makes your transmitted signal cleaner. It listens to a small sample of what you send and corrects the amplifier's distortion. This takes about a minute." />
+      <TextBlock Text="Where does the sample come from?" FontWeight="SemiBold" />
+      <Border Classes="panel">
+        <StackPanel Spacing="8">
+          <RadioButton GroupName="pssrc" IsChecked="{Binding Internal}">
+            <TextBlock TextWrapping="Wrap" Text="The radio's own coupler. Choose this if you have no external amplifier, or aren't sure." />
+          </RadioButton>
+          <RadioButton GroupName="pssrc" IsChecked="{Binding External}">
+            <TextBlock TextWrapping="Wrap" Text="A sample cable from after an external amplifier, into the radio's feedback input." />
+          </RadioButton>
+        </StackPanel>
+      </Border>
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <Button Classes="flat" Content="I know PureSignal, don't show this again" Command="{Binding SkipCommand}" />
+        <Button Grid.Column="1" Classes="flat" Content="Cancel" Command="{Binding CloseCommand}" IsCancel="True" />
+        <Button Grid.Column="2" Classes="flat accent" Content="Next" Command="{Binding NextCommand}" IsDefault="True" />
+      </Grid>
+    </StackPanel>
+
+    <!-- Step 2: checks before transmitting -->
+    <StackPanel Spacing="10" IsVisible="{Binding OnChecks}">
+      <TextBlock TextWrapping="Wrap" Text="Setting up transmits a two-tone test signal in a few short bursts. Before you start:" />
+      <Border Classes="panel">
+        <StackPanel Spacing="8">
+          <CheckBox IsChecked="{Binding DummyLoad}">
+            <TextBlock TextWrapping="Wrap" Text="A dummy load is connected, on the band you'll use" />
+          </CheckBox>
+          <CheckBox IsChecked="{Binding PowerSet}">
+            <TextBlock TextWrapping="Wrap" Text="The power is set where you normally run it" />
+          </CheckBox>
+          <CheckBox IsChecked="{Binding AmpReady}" IsVisible="{Binding External}">
+            <TextBlock TextWrapping="Wrap" Text="The amplifier is on and ready to transmit" />
+          </CheckBox>
+        </StackPanel>
+      </Border>
+      <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                 Text="The correction suits the band, power and amplifier it was made with. If you change one of them later, run PS CAL again (right-click PS)." />
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+        <Button Classes="flat" Content="Back" Command="{Binding BackCommand}" />
+        <Button Grid.Column="1" Classes="flat" Content="Cancel" Command="{Binding CloseCommand}" IsCancel="True" />
+        <Button Grid.Column="2" Classes="flat accent" Content="Start" Command="{Binding StartCommand}"
+                IsEnabled="{Binding CanStart}" IsDefault="True" />
+      </Grid>
+    </StackPanel>
+
+    <!-- Step 3: calibrating, then the result -->
+    <StackPanel Spacing="10" IsVisible="{Binding OnRun}">
+      <StackPanel Spacing="10" IsVisible="{Binding Running}">
+        <TextBlock Foreground="{DynamicResource WarnText}" FontWeight="SemiBold" Text="Transmitting in short bursts. Leave the radio alone for a moment." />
+        <ProgressBar IsIndeterminate="True" Height="6" />
+        <TextBlock Text="{Binding Progress}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+        <Button Classes="flat accent" Content="Stop" Command="{Binding StopCommand}" IsCancel="True"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12,12" FontSize="16" />
+      </StackPanel>
+      <StackPanel Spacing="10" IsVisible="{Binding Finished}">
+        <TextBlock Text="{Binding ResultText}" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding Main.PsPeakText}" Classes="label" FontSize="12" />
+        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+          <Button Grid.Column="1" Classes="flat" Content="Try again" Command="{Binding TryAgainCommand}" IsVisible="{Binding !Succeeded}" />
+          <Button Grid.Column="2" Classes="flat accent" Content="Done" Command="{Binding CloseCommand}" IsDefault="True" />
+        </Grid>
+      </StackPanel>
+    </StackPanel>
+  </StackPanel>
+</Window>

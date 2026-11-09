@@ -136,7 +136,7 @@ public sealed partial class SettingsViewModel
               $"{clients} client{(clients == 1 ? "" : "s")}"
             : "Off";
         if (error is { Length: > 0 }) now += $" · {error}";
-        if (restart) now += " · restart the engine to apply your changes";
+        if (restart) now += " · press Apply now to use your changes";
         return now;
     }
 
@@ -217,9 +217,9 @@ public sealed partial class SettingsViewModel
     private async Task RestartEngineNowAsync()
     {
         if (RestartEngine is null) return;
-        Status = "Restarting the engine and reconnecting…";
+        Status = "Applying. The radio reconnects in a few seconds…";
         await RestartEngine();
         await RefreshCatTciStatusAsync();
-        Status = "Engine restarted.";
+        Status = "Done.";
     }
 }

@@ -124,7 +124,7 @@ public sealed partial class SettingsViewModel
         app.AudioToRadio = RadioJackChosen;
         app.Save();
         string? output = SelectedOutput?.Id;
-        AudioStatus = "Restarting the engine to change the output…";
+        AudioStatus = "Switching the output. The radio reconnects in a few seconds…";
         await RestartEngine();
         if (!app.AudioToRadio && output is not null)
             await _client.SetAudioDevicesAsync(SelectedInput?.Id, output, SelectedChannel?.Value ?? -1);

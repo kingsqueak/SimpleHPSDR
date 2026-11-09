@@ -20,6 +20,15 @@ public partial class SettingsWindow : Window
         Activated += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshLiveAsync();
     }
 
+    // Config shows PureSignal values from when it opened, so it closes before
+    // the guided setup changes them.
+    private void OnPsSetup(object? sender, RoutedEventArgs e)
+    {
+        var open = (DataContext as SettingsViewModel)?.OpenPsSetup;
+        Close();
+        open?.Invoke();
+    }
+
     private async void OnCalibratePa(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not SettingsViewModel vm) return;

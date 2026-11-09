@@ -84,7 +84,7 @@ public sealed partial class SettingsViewModel
     {
         var (hz, db, error) = ParametricEq.Fit([.. ParametricBands.Select(b => b.ToBand())]);
         (FittedHz, FittedDb) = (hz, db);
-        FitText = $"The engine's curve (dashed) is within {error:0.0} dB of this one.";
+        FitText = $"The dashed line, what's actually used, is within {error:0.0} dB of yours.";
     }
 
     private ParametricEqSettings SnapshotParametric() =>

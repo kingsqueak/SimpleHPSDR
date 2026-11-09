@@ -388,6 +388,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             MeasuredTxPeak = MeasuredTxPeak,
             AppSettings = _settings,
             RestartEngine = RestartEngineAsync,
+            OpenPsSetup = () => _ = OpenPsSetupAsync(),
             FollowRxFilterNow = () => FollowRxFilterAsync(),
         };
         settings.PaMaxPowerSaved += SetPowerScale;

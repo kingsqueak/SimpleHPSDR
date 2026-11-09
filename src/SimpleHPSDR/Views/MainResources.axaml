@@ -242,7 +242,7 @@
                       ToolTip.Tip="Transmit the two-tone test signal (for PureSignal calibration and IMD checks)" />
         <ToggleButton Classes="seg tx" Content="PS CAL" IsChecked="{Binding PsCalibrating, Mode=OneWay}"
                       Command="{Binding CalibratePsCommand}"
-                      ToolTip.Tip="Key 2-TONE in up to four 3-second bursts until PureSignal calibrates, adjusting HW peak between bursts. Press again to cancel." />
+                      ToolTip.Tip="Calibrates PureSignal: transmits 2-TONE in short bursts until it locks, and sets HW peak to suit your signal. Connect a dummy load first. Press again to stop." />
         <Border Classes="ps" Classes.ok="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=ok}"
                 Classes.warn="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=warn}"
                 Classes.bad="{Binding PsLevel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=bad}"
@@ -253,7 +253,13 @@
           </TextBlock>
         </Border>
     </StackPanel>
+    <TextBlock Text="{Binding PsAdvice}" TextWrapping="Wrap" MaxWidth="360" HorizontalAlignment="Left" FontSize="12" />
+    <TextBlock Text="{Binding PsPeakText}" Classes="label" FontSize="11"
+               IsVisible="{Binding PsPeakText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+               ToolTip.Tip="Your signal's peak should be just under HW peak, between 94% and 100% of it. PS CAL sets this for you." />
     <StackPanel Orientation="Horizontal" Spacing="6">
+      <Button Classes="flat" Content="Guided setup…" Command="{Binding OpenPsSetupCommand}"
+              ToolTip.Tip="Step-by-step PureSignal setup" />
       <Button Classes="flat" Content="Save correction" Command="{Binding SavePsCorrectionCommand}"
               ToolTip.Tip="Keep what PureSignal has learned, to bring back without recalibrating" />
       <Button Classes="flat" Content="Restore" Command="{Binding RestorePsCorrectionCommand}" />

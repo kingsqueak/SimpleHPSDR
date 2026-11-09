@@ -126,6 +126,7 @@ public partial class MainWindow : Window
         };
         vm.CloseGuide = () => { if (_guide is { IsVisible: true }) _guide.Close(); };
         vm.ShowDspPrep = prep => new DspPrepWindow { DataContext = prep }.ShowDialog(this);
+        vm.ShowPsSetup = setup => new PsSetupWindow { DataContext = setup }.ShowDialog(this);
         vm.ShowSettings = settings =>
         {
             var closed = new TaskCompletionSource();

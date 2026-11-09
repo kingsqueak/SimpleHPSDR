@@ -64,8 +64,10 @@ public sealed partial class SettingsViewModel
         _hardwareOrig ??= new HardwareValues(AdcDither, AdcRandomizer, Hl2BandVolts, Hl2PlusCodec, Hl2GpioBits);
         if (name == RadioModels.BoardName && RadioModelIndex >= 0) name = RadioModelNames[RadioModelIndex];
         HardwareText = name == "Unknown"
-            ? "No radio is set yet, so everything here is greyed out."
-            : $"Radio set: {name}. Sections for other radios are greyed out.";
+            ? "Connect to a radio to see its settings here."
+            : HasAdcOptions || HasHl2Options || HasAnvelinaDx
+                ? $"Settings for your {name}."
+                : $"Your {name} has no extra settings here.";
         Hl2IoBoardText = !HasHl2Options ? "Not available on this radio."
             : !io.Supported ? "Shown once the radio is connected."
             : io.Present ? $"Found: hardware {io.HardwareVersion}, firmware {io.FirmwareMajor}.{io.FirmwareMinor}."

@@ -10,7 +10,7 @@
   <Window.Styles>
     <!-- Smaller tab headers so all pages fit on one line -->
     <Style Selector="TabItem">
-      <Setter Property="FontSize" Value="17" />
+      <Setter Property="FontSize" Value="16" />
       <Setter Property="Padding" Value="10,4" />
       <Setter Property="MinHeight" Value="36" />
     </Style>
@@ -27,10 +27,10 @@
                   <ComboBox ItemsSource="{Binding RadioModelNames}" SelectedIndex="{Binding RadioModelIndex}" Width="180" />
                 </StackPanel>
                 <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
-                           Text="These radios all report the same ID, so choose yours. It sets the S-meter calibration and the PA and PureSignal defaults. Reconnect after changing it." />
+                           Text="Several radios look alike to the software, so pick yours. It sets the meter and power defaults. Reconnect after changing it." />
               </StackPanel>
             </Border>
-            <TextBlock Text="This radio identifies itself, so there's no model to choose." Classes="label" FontSize="12"
+            <TextBlock Text="Your radio was recognised, so there's nothing to choose." Classes="label" FontSize="12"
                        IsVisible="{Binding !ShowRadioModel}" />
             <Border Classes="panel">
               <StackPanel Orientation="Horizontal" Spacing="8">
@@ -45,158 +45,35 @@
                   <TextBlock Text="Layout" Classes="label" FontSize="12" VerticalAlignment="Center" />
                   <ComboBox ItemsSource="{Binding LayoutNames}" SelectedIndex="{Binding LayoutIndex}" Width="180"
                             IsEnabled="{Binding !LayoutOverridden}"
-                            ToolTip.Tip="Automatic uses the touch layout on screens narrower than 1080, such as a radio's front panel, and the desktop layout everywhere else." />
+                            ToolTip.Tip="Automatic uses large buttons on small screens, such as a radio's front panel." />
                 </StackPanel>
-                <TextBlock Text="{Binding LayoutStatus}" Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding LayoutStatus}" Classes="label" FontSize="11" TextWrapping="Wrap"
+                           IsVisible="{Binding LayoutStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>
             </Border>
             <Border Classes="panel" IsVisible="{Binding CanBeG2Computer}">
               <StackPanel Spacing="6">
                 <CheckBox Content="This computer is inside an ANAN-G2" IsChecked="{Binding G2Computer}" />
                 <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
-                           Text="Tunes the display and the microphone choice for the G2's own computer, as Zeus does on it. Changing it restarts the engine, and the radio reconnects." />
+                           Text="Tick this only when SimpleHPSDR runs on the G2 itself. The radio reconnects when you change it." />
               </StackPanel>
             </Border>
           </StackPanel>
         </ScrollViewer>
-      </TabItem>
-
-      <TabItem Header="Hardware">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="0,12,0,0">
-            <TextBlock Text="{Binding HardwareText}" Classes="label" FontSize="12" TextWrapping="Wrap" />
-
-            <TextBlock Text="ADC DITHER AND RANDOMIZER" Classes="label" Margin="2,4,0,0" />
-            <Border Classes="panel" IsEnabled="{Binding HasAdcOptions}">
-              <StackPanel Spacing="6">
-                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
-                           Text="For the ANAN-G2 and G2-1K, and any radio except the Hermes-Lite 2 while it's connected on Protocol 1. On Protocol 2 the engine only sends these to the G2 family." />
-                <CheckBox Content="ADC dither" IsChecked="{Binding AdcDither}" />
-                <CheckBox Content="ADC randomizer" IsChecked="{Binding AdcRandomizer}" />
-              </StackPanel>
-            </Border>
-
-            <TextBlock Text="HERMES-LITE 2" Classes="label" Margin="2,4,0,0" />
-            <Border Classes="panel" IsEnabled="{Binding HasHl2Options}">
-              <StackPanel Spacing="6">
-                <CheckBox Content="Band volts on the FAN connector, for an amp that switches bands by voltage" IsChecked="{Binding Hl2BandVolts}" />
-                <CheckBox Content="HL2+ audio codec fitted" IsChecked="{Binding Hl2PlusCodec}" />
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                  <TextBlock Text="User outputs" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                  <CheckBox Content="1" IsChecked="{Binding Hl2Gpio1}" MinWidth="0" />
-                  <CheckBox Content="2" IsChecked="{Binding Hl2Gpio2}" MinWidth="0" />
-                  <CheckBox Content="3" IsChecked="{Binding Hl2Gpio3}" MinWidth="0" />
-                  <CheckBox Content="4" IsChecked="{Binding Hl2Gpio4}" MinWidth="0" />
-                </StackPanel>
-                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap">
-                  <Run Text="IO board: " /><Run Text="{Binding Hl2IoBoardText}" />
-                </TextBlock>
-              </StackPanel>
-            </Border>
-
-            <TextBlock Text="ANVELINA-PRO3" Classes="label" Margin="2,4,0,0" />
-            <Border Classes="panel" IsEnabled="{Binding HasAnvelinaDx}">
-              <StackPanel Spacing="4">
-                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Text="DX outputs, pins 7 to 10, for each band." />
-                <Grid ColumnDefinitions="60,190,190" Margin="2,0">
-                  <TextBlock Text="BAND" Classes="label" />
-                  <TextBlock Grid.Column="1" Text="RX PINS" Classes="label" FontSize="11" />
-                  <TextBlock Grid.Column="2" Text="TX PINS" Classes="label" FontSize="11" />
-                </Grid>
-                <ItemsControl ItemsSource="{Binding PaBands}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:PaBandRow">
-                      <Grid ColumnDefinitions="60,190,190" Margin="2,1">
-                        <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
-                        <Border Grid.Column="1"><StackPanel Orientation="Horizontal" Spacing="6"><CheckBox IsChecked="{Binding DxRx7}" Content="7" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx8}" Content="8" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx9}" Content="9" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx10}" Content="10" MinWidth="0" /></StackPanel></Border>
-                        <Border Grid.Column="2"><StackPanel Orientation="Horizontal" Spacing="6"><CheckBox IsChecked="{Binding DxTx7}" Content="7" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx8}" Content="8" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx9}" Content="9" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx10}" Content="10" MinWidth="0" /></StackPanel></Border>
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-
-      <TabItem Header="PA">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12" Margin="0,12,0,0">
-          <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                     Text="PA gain is how much the amplifier adds on each band. It sets how hard the radio is driven for a given power: a higher value means less drive for the same setting. The stock values are a sound start. The radio's PWR meter can read low, so check real power with an external meter." />
-
-          <Border Grid.Row="1" Classes="panel">
-            <StackPanel Orientation="Horizontal" Spacing="16">
-              <CheckBox Content="PA enabled" IsChecked="{Binding PaEnabled}" />
-              <Button Classes="flat" Content="Calibrate…" Click="OnCalibratePa"
-                      ToolTip.Tip="Evens out the bands using the radio's own meter, which can be several dB out. Asks you to confirm first, and transmits into a dummy load." />
-              <Button Classes="flat" Content="Reset to stock" Command="{Binding ResetPaToStockCommand}"
-                      ToolTip.Tip="Put every PA gain back to the stock table for this radio, and clear calibration and the PWR display trim" />
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="Rated power" Classes="label" FontSize="12" />
-                <NumericUpDown Value="{Binding PaMaxPowerWatts}" Minimum="0" Maximum="2000" Increment="1"
-                               FormatString="0" Width="120" />
-                <TextBlock Text="W" Classes="label" FontSize="12" />
-              </StackPanel>
-            </StackPanel>
-          </Border>
-
-          <Border Grid.Row="2" Classes="panel">
-            <StackPanel Spacing="8">
-              <TextBlock Text="External meter" FontWeight="SemiBold" />
-              <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                         Text="If you have a power meter you trust: key TUNE into a dummy load, note the readings, unkey, and enter them here. It shifts every HF band and corrects the PWR display." />
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="TUNE set to" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding TrimAskedWatts}" Minimum="0" Maximum="2000" Increment="1" FormatString="0.#" Width="110" />
-                <TextBlock Text="PWR read" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding TrimMeterWatts}" Minimum="0" Maximum="2000" Increment="1" FormatString="0.#" Width="110" />
-                <TextBlock Text="External read" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <NumericUpDown Value="{Binding TrimExternalWatts}" Minimum="0" Maximum="2000" Increment="1" FormatString="0.#" Width="110" />
-                <Button Classes="flat" Content="Apply" Command="{Binding ApplyPaTrimCommand}" />
-              </StackPanel>
-              <TextBlock Text="{Binding PaTrimStatus}" Classes="label" FontSize="12" TextWrapping="Wrap" />
-            </StackPanel>
-          </Border>
-
-          <Grid Grid.Row="3" ColumnDefinitions="80,160,*" Margin="12,0">
-            <TextBlock Text="BAND" Classes="label" />
-            <TextBlock Grid.Column="1" Text="PA GAIN (dB)" Classes="label" />
-            <TextBlock Grid.Column="2" Text="DISABLE PA" Classes="label" />
-          </Grid>
-
-          <Border Grid.Row="4" Classes="panel">
-            <ScrollViewer>
-              <ItemsControl ItemsSource="{Binding PaBands}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:PaBandRow">
-                    <Grid ColumnDefinitions="80,160,*" Margin="2,3">
-                      <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
-                      <NumericUpDown Grid.Column="1" Value="{Binding PaGainDb}" Minimum="0" Maximum="80"
-                                     Increment="0.1" FormatString="0.0" Width="140" HorizontalAlignment="Left" />
-                      <CheckBox Grid.Column="2" IsChecked="{Binding DisablePa}" VerticalAlignment="Center"
-                                ToolTip.Tip="Bypass the PA on this band (low-power exciter only)" />
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </ScrollViewer>
-          </Border>
-        </Grid>
       </TabItem>
 
       <TabItem Header="Audio">
         <ScrollViewer>
           <StackPanel Spacing="12" Margin="0,12,0,0">
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="Receive audio plays and the computer mic is captured directly by the engine, not through this window, which keeps latency low and audio running when the window is hidden." />
+                       Text="Where you hear the radio, and which microphone you use." />
 
             <Border Classes="panel">
               <StackPanel Spacing="10">
               <Grid ColumnDefinitions="130,*" IsVisible="{Binding HasAsio}">
                 <TextBlock Text="Audio system" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <ComboBox Grid.Column="1" ItemsSource="{Binding Backends}" SelectedItem="{Binding SelectedBackend}"
-                          Width="200" ToolTip.Tip="ASIO talks straight to the audio interface's own driver" />
+                          Width="200" ToolTip.Tip="ASIO uses your audio interface's own driver, for the shortest delay" />
               </Grid>
               <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10"
                     IsVisible="{Binding UseAsio}">
@@ -206,7 +83,7 @@
                             HorizontalAlignment="Stretch" />
                   <Button Grid.Column="1" Content="Driver panel" Command="{Binding OpenAsioPanelCommand}"
                           IsEnabled="{Binding AsioActive}"
-                          ToolTip.Tip="The driver's own settings; set the sample rate to 48 kHz" />
+                          ToolTip.Tip="The driver's own settings. Set it to 48 kHz." />
                 </Grid>
                 <TextBlock Grid.Row="1" Text="Speaker output" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AsioOutputs}"
@@ -217,7 +94,7 @@
                 <TextBlock Grid.Row="3" Text="Buffer" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AsioBuffers}"
                           SelectedItem="{Binding SelectedAsioBuffer}" Width="300"
-                          ToolTip.Tip="Smaller is lower latency; go up if the audio crackles" />
+                          ToolTip.Tip="Smaller means less delay. Choose a larger one if the audio crackles." />
               </Grid>
               <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10"
                     IsVisible="{Binding UseSystemAudio}">
@@ -229,7 +106,7 @@
                           HorizontalAlignment="Stretch" />
                 <TextBlock Grid.Row="2" Text="Mic channel" Classes="label" FontSize="12" />
                 <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Channels}" SelectedItem="{Binding SelectedChannel}"
-                          Width="200" ToolTip.Tip="For multi-channel interfaces: use one input, or mix them all" />
+                          Width="200" ToolTip.Tip="For interfaces with several inputs: use one, or mix them all" />
               </Grid>
               </StackPanel>
             </Border>
@@ -265,85 +142,6 @@
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="PureSignal">
-        <ScrollViewer>
-          <StackPanel Spacing="12" Margin="0,12,0,0">
-            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="PureSignal samples the transmitted RF through a coupler, compares it with what was meant to be sent, and predistorts the signal so the amplifier's distortion cancels out. Calibrate with 2-TONE into a dummy load; the feedback level (FB) is best around 128-181." />
-
-            <Border Classes="panel">
-              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
-                <TextBlock Text="Feedback source" Classes="label" FontSize="12" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
-                  <RadioButton Content="Internal coupler" IsChecked="{Binding PsInternalFeedback}" GroupName="psfb" />
-                  <RadioButton Content="External (after an amplifier)" IsChecked="{Binding PsExternalFeedback}" GroupName="psfb" />
-                </StackPanel>
-                <TextBlock Grid.Row="1" Text="Feedback attenuation" Classes="label" FontSize="12" />
-                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
-                  <StackPanel Orientation="Horizontal" Spacing="10">
-                    <CheckBox Content="Automatic" IsChecked="{Binding PsAutoAttenuate}"
-                              IsEnabled="{Binding CanChangeAutoAttenuate}" />
-                    <Slider Minimum="0" Maximum="31" Value="{Binding PsFeedbackAttenDb}" Width="160"
-                            TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding !PsAutoAttenuate}" />
-                    <TextBlock Text="{Binding PsFeedbackAttenDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap" IsVisible="{Binding PsExternalFeedback}"
-                             Text="External feedback always uses automatic attenuation: the amplifier's sample level changes with band, drive and amplifier gain. The radio can attenuate 0-31 dB; if feedback is still too high at 31 dB, add a fixed attenuator in the sample line." />
-                </StackPanel>
-
-                <TextBlock Grid.Row="2" Text="Monitor PA output" Classes="label" FontSize="12" />
-                <CheckBox Grid.Row="2" Grid.Column="1" Content="Show the corrected PA output on the display while transmitting"
-                          IsChecked="{Binding PsMonitor}" />
-                <TextBlock Grid.Row="3" Text="Calibration" Classes="label" FontSize="12" />
-                <Button Grid.Row="3" Grid.Column="1" Classes="flat" Content="Reset calibration"
-                        Command="{Binding ResetPsCommand}" HorizontalAlignment="Left" />
-              </Grid>
-            </Border>
-
-            <TextBlock Text="ADVANCED" Classes="label" Margin="2,4,0,0" />
-            <Border Classes="panel">
-              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
-                <TextBlock Text="HW peak" Classes="label" FontSize="12"
-                           ToolTip.Tip="Expected peak of the feedback sample. Too high and calibration never completes (Stalled)." />
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding PsHwPeak}" Minimum="0.0001" Maximum="2" Increment="0.001"
-                                 FormatString="0.0000" Width="150" />
-                  <Button Classes="flat accent" Content="Use measured" Command="{Binding UseMeasuredHwPeakCommand}"
-                          IsVisible="{Binding HasMeasuredTxPeak}" />
-                  <Button Classes="flat" Command="{Binding UseDefaultHwPeakCommand}">
-                    <TextBlock Text="{Binding PsHwPeakDefault, StringFormat=Default {0:0.0000}}" />
-                  </Button>
-                </StackPanel>
-                <StackPanel Grid.Row="4" Grid.Column="1" Spacing="6">
-                  <CheckBox Content="Adjust HW peak automatically to match your signal"
-                            IsChecked="{Binding AutoHwPeak}"
-                            ToolTip.Tip="While keyed with PS on (2-TONE or voice), if calibration is stuck collecting, set HW peak to just under your signal's measured peak; if your signal clearly exceeds HW peak, raise it. Applies from the next key-down." />
-                  <TextBlock Text="{Binding MeasuredTxPeakText}" Classes="label" FontSize="11" TextWrapping="Wrap" />
-                </StackPanel>
-                <TextBlock Grid.Row="1" Text="MOX delay" Classes="label" FontSize="12" />
-                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding PsMoxDelaySec}" Minimum="0.1" Maximum="1" Increment="0.05"
-                                 FormatString="0.00" Width="150" />
-                  <TextBlock Text="s" Classes="label" />
-                </StackPanel>
-                <TextBlock Grid.Row="2" Text="Loop delay" Classes="label" FontSize="12" />
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding PsLoopDelaySec}" Minimum="0" Maximum="100" Increment="0.1"
-                                 FormatString="0.0" Width="150" />
-                  <TextBlock Text="s" Classes="label" />
-                </StackPanel>
-                <TextBlock Grid.Row="3" Text="Amp delay" Classes="label" FontSize="12" />
-                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding PsAmpDelayNs}" Minimum="0" Maximum="25000" Increment="10"
-                                 FormatString="0" Width="150" />
-                  <TextBlock Text="ns" Classes="label" />
-                </StackPanel>
-              </Grid>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-
       <TabItem Header="TX Audio">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
@@ -353,7 +151,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding TxProfiles}" SelectedItem="{Binding SelectedTxProfile}" Width="200"
                             PlaceholderText="Choose to load…"
-                            ToolTip.Tip="Choosing a profile loads it at once, with its PureSignal settings. Default is the built-in setup and leaves PureSignal alone." />
+                            ToolTip.Tip="Choosing a profile loads it at once. Default is the built-in setup." />
                   <Button Classes="flat" Content="Save" Command="{Binding SaveTxProfileCommand}"
                           IsEnabled="{Binding CanOverwriteProfile}" ToolTip.Tip="Overwrite the chosen profile with the current settings" />
                   <Button Classes="flat" Content="Delete" Command="{Binding DeleteTxProfileCommand}"
@@ -369,17 +167,17 @@
             </Border>
 
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="The transmit audio chain, in WDSP order: equalizer, leveler, speech processor or CFC, phase rotator, ALC. Changes apply as you make them. To hear the result without transmitting, turn on MON in the main window." />
+                       Text="Changes apply at once. To hear yourself without transmitting, turn on Mon in the main window." />
 
             <Expander Header="PTT release delay" IsExpanded="True" HorizontalAlignment="Stretch">
               <StackPanel Spacing="6">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding ReleaseDelayMs}" Minimum="20" Maximum="1000" Increment="10"
                                  FormatString="0" Width="140" />
-                  <TextBlock Text="ms after PTT release (any PTT: button, mic, footswitch)" Classes="label" VerticalAlignment="Center" />
+                  <TextBlock Text="ms after you let go of PTT" Classes="label" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
-                           Text="The engine keeps the radio keyed until the speech in the transmit chain has gone out, so the end of your over isn't cut off. This setting only adds a short extra wait: a third of its value, between 20 and 200 ms." />
+                           Text="The radio stays on the air until your last words have gone out. This adds a little extra time after that." />
                 <TextBlock Text="{Binding TxDelayText}" FontSize="12" TextWrapping="Wrap" />
               </StackPanel>
             </Expander>
@@ -388,7 +186,7 @@
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
                 <CheckBox Grid.ColumnSpan="2" Content="TX filter follows the RX filter"
                           IsChecked="{Binding TxFilterFollowsRx}"
-                          ToolTip.Tip="The TX low and high cuts follow the transmitting slice's RX filter (sideband modes). The fields below are set for you." />
+                          ToolTip.Tip="In SSB, transmit uses the same width as your receive filter." />
                 <TextBlock Grid.Row="1" Text="Low cut" Classes="label" FontSize="12" />
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8"
                             IsEnabled="{Binding !TxFilterFollowsRx}">
@@ -399,7 +197,7 @@
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8"
                             IsEnabled="{Binding !TxFilterFollowsRx}">
                   <NumericUpDown Value="{Binding TxHighCutHz}" Minimum="1000" Maximum="6000" Increment="50" FormatString="0" Width="140" />
-                  <TextBlock Text="Hz  (applied to the current sideband)" Classes="label" />
+                  <TextBlock Text="Hz" Classes="label" />
                 </StackPanel>
               </Grid>
             </Expander>
@@ -412,8 +210,8 @@
                   <TextBlock Text="{Binding CompressorGainDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" />
                 </StackPanel>
                 <CheckBox Grid.Row="1" Content="CESSB" IsChecked="{Binding CessbEnabled}"
-                          ToolTip.Tip="Controlled-envelope SSB: limits the overshoot the compressor causes. Only runs with the compressor on." />
-                <CheckBox Grid.Row="1" Grid.Column="1" Content="4 kHz profile (default 3 kHz)" IsChecked="{Binding CessbWide}"
+                          ToolTip.Tip="Stops the compressor overshooting, for more average power. Works only with the compressor on." />
+                <CheckBox Grid.Row="1" Grid.Column="1" Content="Wide (4 kHz)" IsChecked="{Binding CessbWide}"
                           IsEnabled="{Binding CessbEnabled}" />
               </Grid>
             </Expander>
@@ -453,7 +251,7 @@
                   <Slider Minimum="-24" Maximum="24" Value="{Binding EqPreampDb}" Width="140" />
                   <TextBlock Text="{Binding EqPreampDb, StringFormat={}{0:0.0} dB}" VerticalAlignment="Center" />
                   <CheckBox Content="Parametric" IsChecked="{Binding ParametricEqOn}"
-                            ToolTip.Tip="Six parametric bands in place of the graphic bands. It uses no more processing: the app works out the engine's ten EQ points to follow your curve." />
+                            ToolTip.Tip="Six adjustable points on a curve instead of ten sliders." />
                 </StackPanel>
                 <StackPanel Spacing="6" IsVisible="{Binding ParametricEqOn}">
                   <c:ParametricEqView Height="220" Bands="{Binding ParametricBands}" FittedHz="{Binding FittedHz}" FittedDb="{Binding FittedDb}"
@@ -511,7 +309,7 @@
                   <CheckBox Content="Post-EQ" IsChecked="{Binding CfcPostEqEnabled}" />
                   <TextBlock Text="FFT size" Classes="label" VerticalAlignment="Center" />
                   <ComboBox ItemsSource="{Binding CfcFftSizes}" SelectedItem="{Binding CfcFftSize}" Width="110"
-                            ToolTip.Tip="Larger is finer frequency resolution but more delay; 16384 adds roughly 200 ms to your transmit audio" />
+                            ToolTip.Tip="Larger is finer but delays your audio: 16384 adds about a fifth of a second." />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="Pre-compression" Classes="label" />
@@ -591,16 +389,17 @@
           </StackPanel>
         </ScrollViewer>
       </TabItem>
+
       <TabItem Header="Antennas">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="Which antenna port each band uses for transmit and receive, and an optional extra receive input. A relay change made while transmitting waits until you unkey." />
+                       Text="Which antenna each band uses to transmit and receive. A change made while transmitting waits until you stop." />
             <Grid ColumnDefinitions="110,120,120,*" Margin="12,0">
               <TextBlock Text="BAND" Classes="label" />
               <TextBlock Grid.Column="1" Text="TX ANTENNA" Classes="label" />
               <TextBlock Grid.Column="2" Text="RX ANTENNA" Classes="label" />
-              <TextBlock Grid.Column="3" Text="RX AUX INPUT" Classes="label" />
+              <TextBlock Grid.Column="3" Text="EXTRA RX INPUT" Classes="label" />
             </Grid>
             <Border Classes="panel">
               <ItemsControl ItemsSource="{Binding Antennas}">
@@ -626,168 +425,6 @@
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="Band Outputs">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="0,12,0,0">
-            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="Open-collector outputs (pins 1-7) for each band: switch an amplifier's bands, filters or relays. RX pins are on while receiving, TX pins while transmitting; Tune pins are added on top of the TX pins during TUNE (e.g. to put an amplifier in bypass)." />
-            <Grid ColumnDefinitions="60,Auto,Auto,Auto" ColumnSpacing="14" Margin="12,0">
-              <TextBlock Text="BAND" Classes="label" VerticalAlignment="Bottom" />
-              <Border Grid.Column="1"><StackPanel Spacing="2"><TextBlock Text="RX PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
-              <Border Grid.Column="2"><StackPanel Spacing="2"><TextBlock Text="TX PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
-              <Border Grid.Column="3"><StackPanel Spacing="2"><TextBlock Text="TUNE PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
-            </Grid>
-            <Border Classes="panel">
-              <ItemsControl ItemsSource="{Binding PaBands}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:PaBandRow">
-                    <Grid ColumnDefinitions="60,Auto,Auto,Auto" ColumnSpacing="14" Margin="2,1">
-                      <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
-                      <Border Grid.Column="1"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcRx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
-                      <Border Grid.Column="2"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
-                      <Border Grid.Column="3"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTune1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-      <TabItem Header="Amp">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="0,12,0,0">
-            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="Timing and limits for running an external amplifier. The PTT release delay is on the TX Audio page, with the audio that sets it." />
-            <Border Classes="panel">
-              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
-                <TextBlock Grid.Row="0" Text="Pre-key delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding PreKeyDelayMs}" Minimum="0" Maximum="500" Increment="5" FormatString="0" Width="140" />
-                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="Holds back RF after keying so the amplifier relays can close first. Stays below PureSignal&apos;s MOX delay." Classes="label" FontSize="11" TextWrapping="Wrap" />
-                <TextBlock Grid.Row="2" Text="RX resume delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding RxResumeDelayMs}" Minimum="0" Maximum="5000" Increment="10" FormatString="0" Width="140" />
-                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="Keeps receive muted after unkeying while the relays return." Classes="label" FontSize="11" TextWrapping="Wrap" />
-                <TextBlock Grid.Row="4" Text="TX timeout" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding TxTimeoutSec}" Minimum="30" Maximum="600" Increment="10" FormatString="0" Width="140" />
-                  <TextBlock Text="s" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="5" Grid.Column="1" Text="Drops transmit if keyed this long, with a warning about 30 s before." Classes="label" FontSize="11" TextWrapping="Wrap" />
-                <TextBlock Grid.Row="6" Text="Maximum drive" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding DriveMaxPct}" Minimum="1" Maximum="100" Increment="1" FormatString="0" Width="140" />
-                  <TextBlock Text="%" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="7" Grid.Column="1" Text="Sets the top of the DRIVE and TUNE sliders, and lowers them now if they&apos;re above it." Classes="label" FontSize="11" TextWrapping="Wrap" />
-                <TextBlock Grid.Row="8" Text="Supply voltage" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SupplyText}" FontWeight="SemiBold" />
-                <TextBlock Grid.Row="9" Text="SWR warning" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="9" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding SwrWarnAt}" Minimum="1.1" Maximum="2.5" Increment="0.1" FormatString="0.0" Width="140" />
-                  <TextBlock Text=":1" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="10" Text="Stop transmit above" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="10" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding SwrStopAt}" Minimum="1.1" Maximum="2.5" Increment="0.1" FormatString="0.0" Width="140" />
-                  <TextBlock Text=":1" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="11" Grid.Column="1" Text="For MOX, when SWR stays above the level for half a second. 2.5:1 is the highest because the engine always stops MOX there. TUNE doesn&apos;t use these: the engine stops it at 6:1 above 35 W." Classes="label" FontSize="11" TextWrapping="Wrap" />
-              </Grid>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-      <TabItem Header="Calibration">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="0,12,0,0">
-            <Expander Header="S-meter" IsExpanded="True" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto" RowSpacing="6">
-                <TextBlock Grid.Row="0" Text="Trim" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding SMeterTrimDb}" Minimum="-50" Maximum="50" Increment="0.5" FormatString="0.00" Width="140" />
-                  <TextBlock Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="Moves the reading up or down. 6 dB is one S-unit. Also on right-click of the meter." Classes="label" FontSize="11" TextWrapping="Wrap" />
-              </Grid>
-            </Expander>
-            <Expander Header="Frequency" IsExpanded="True" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
-                <TextBlock Grid.Row="0" Text="Correction" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding FrequencyPpm}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="0.00" Width="140" />
-                  <TextBlock Text="ppm" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="1" Text="Measure on WWV" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                  <Button Classes="flat" Content="10 MHz" Command="{Binding CalibrateWwvCommand}" CommandParameter="10" />
-                  <Button Classes="flat" Content="15 MHz" Command="{Binding CalibrateWwvCommand}" CommandParameter="15" />
-                  <Button Classes="flat" Content="Reset to 0" Command="{Binding ResetFrequencyPpmCommand}" />
-                </StackPanel>
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="Receive only. The radio tunes to WWV for a few seconds, measures it, then tunes back. WWV must be audible."
-                           Classes="label" FontSize="11" TextWrapping="Wrap" />
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CalibrationResult}" FontSize="12" TextWrapping="Wrap" />
-                <TextBlock Grid.Row="4" Text="External 10 MHz" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <CheckBox Grid.Row="4" Grid.Column="1" Content="The radio uses an external 10 MHz reference" IsChecked="{Binding ExternalRefOn}" />
-                <TextBlock Grid.Row="5" Text="Its correction" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding ExternalRefPpm}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="0.00" Width="140" />
-                  <TextBlock Text="ppm" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-              </Grid>
-            </Expander>
-            <Expander Header="ADC protection" IsExpanded="True" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
-                <TextBlock Grid.Row="0" Text="Most auto attenuation" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding AdcMaxOffsetDb}" Minimum="0" Maximum="31" Increment="1" FormatString="0" Width="140" />
-                  <TextBlock Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="How much Auto ATT may add when the ADC overloads." Classes="label" FontSize="11" TextWrapping="Wrap" />
-                <TextBlock Grid.Row="2" Text="Release hold" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                  <NumericUpDown Value="{Binding AdcReleaseHoldMs}" Minimum="0" Maximum="10000" Increment="100" FormatString="0" Width="140" />
-                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                </StackPanel>
-              </Grid>
-            </Expander>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
-      <TabItem Header="Filters">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="0,12,0,0">
-            <Expander Header="Filter shape" IsExpanded="True" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
-                <TextBlock Grid.Row="0" Text="RX shape" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding WindowNames}" SelectedIndex="{Binding RxWindowIndex}" Width="160" />
-                <TextBlock Grid.Row="1" Text="RX phase" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding PhaseNames}" SelectedIndex="{Binding RxPhaseIndex}" Width="160" />
-                <TextBlock Grid.Row="2" Text="TX shape" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding WindowNames}" SelectedIndex="{Binding TxWindowIndex}" Width="160" />
-                <TextBlock Grid.Row="3" Text="TX phase" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding PhaseNames}" SelectedIndex="{Binding TxPhaseIndex}" Width="160" />
-                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Classes="label" FontSize="11" TextWrapping="Wrap"
-                           Text="Each shape is a number of filter taps. More taps make steeper filter edges but add delay and CPU. Minimum phase keeps the delay down at high tap counts. With linear phase, TX stops at 16k taps." />
-                <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Text="{Binding TxDelayText}" FontSize="12" TextWrapping="Wrap" />
-              </Grid>
-            </Expander>
-            <Expander Header="RF filters" IsExpanded="True" HorizontalAlignment="Stretch">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{Binding RfFilterText}" Classes="label" FontSize="12" TextWrapping="Wrap" />
-                <CheckBox Content="Bypass the receive filters" IsChecked="{Binding RxBypassAll}" />
-                <CheckBox Content="Bypass them while transmitting" IsChecked="{Binding RxBypassOnTx}" />
-                <CheckBox Content="Bypass them for PureSignal" IsChecked="{Binding RxBypassOnPs}" />
-              </StackPanel>
-            </Expander>
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
       <TabItem Header="Station">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
@@ -802,9 +439,9 @@
                   </ComboBox>
                 </StackPanel>
                 <CheckBox Content="Band strip on the spectrum" IsChecked="{Binding BandStripOn}"
-                          ToolTip.Tip="A strip along the top of the spectrum: green where this plan lets you transmit, red where it keeps the band for another licence class, grey for broadcast bands, CB and WWV." />
+                          ToolTip.Tip="Green where you may transmit, red where your licence doesn't allow it, grey for broadcast, CB and WWV." />
                 <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                           Text="Warn only shows an amber banner if you transmit outside the plan. Block transmit stops it. General Coverage has no restrictions, so staying legal is up to you. PA calibration uses the plan to pick its test frequencies, and needs one with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland. The IARU regions have no 60 m. In General Coverage it uses the last plan you chose." />
+                           Text="Warn only shows a banner if you transmit outside the plan. Block transmit stops it. General Coverage has no limits, so staying legal is up to you. PA calibration needs a plan with 60 m: US General, Advanced or Extra, UK or Ireland." />
               </StackPanel>
             </Expander>
             <Expander Header="ID timer" IsExpanded="True" HorizontalAlignment="Stretch">
@@ -834,11 +471,11 @@
                   <TextBlock Text="Range below the peak" Classes="label" FontSize="12" VerticalAlignment="Center" />
                   <Slider Minimum="0" Maximum="80" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding TxWaterfallRangeDb}"
                           Width="220" VerticalAlignment="Center"
-                          ToolTip.Tip="Smaller shows finer detail in your audio; larger shows more of the skirts. 0 (Off) keeps the receive range." />
+                          ToolTip.Tip="Smaller shows more detail. Off keeps the usual colours." />
                   <TextBlock Text="{Binding TxWaterfallRangeText}" Width="50" FontSize="12" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
-                           Text="While you transmit, the waterfall's colours follow your own signal: its peak is the brightest colour and this many dB below it the darkest, so you can see how evenly the audio fills the passband." />
+                           Text="While you transmit, the waterfall shows your own signal, so you can see how evenly your audio fills the filter." />
               </StackPanel>
             </Expander>
             <Expander Header="PTT" IsExpanded="True" HorizontalAlignment="Stretch">
@@ -872,6 +509,8 @@
             <Expander Header="Transverters" HorizontalAlignment="Stretch">
               <StackPanel Spacing="6">
                 <CheckBox Content="Use transverters" IsChecked="{Binding TransverterOn}" />
+                <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="LO is the transverter's oscillator. From and To are the band you operate on. RX GAIN corrects the S-meter for the transverter's gain." />
                 <Grid ColumnDefinitions="40,90,110,110,110,80,60,60" Margin="0,4,0,0">
                   <TextBlock Grid.Column="1" Text="NAME" Classes="label" FontSize="11" />
                   <TextBlock Grid.Column="2" Text="LO MHz" Classes="label" FontSize="11" />
@@ -902,17 +541,18 @@
           </StackPanel>
         </ScrollViewer>
       </TabItem>
+
       <TabItem Header="CAT &amp; TCI">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="Let other software control the radio. TCI suits WSJT-X, JTDX, loggers and skimmers; CAT speaks Kenwood TS-2000 with the Thetis ZZ extensions (WSJT-X, fldigi, N1MM+, Hamlib). The network servers start with the engine, so changes there need a quick engine restart; serial ports apply at once." />
+                       Text="Let other programs control the radio. Use TCI where the program offers it, such as WSJT-X and JTDX. Otherwise use CAT and pick Kenwood TS-2000 in the program." />
 
             <Border Classes="panel" IsVisible="{Binding RestartNeeded}" Background="{DynamicResource WarnPanel}">
               <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="TCI or CAT settings changed. Restart the engine to apply them (the radio reconnects in a few seconds)."
+                <TextBlock Text="Press Apply now to use the new TCI or CAT settings. The radio reconnects in a few seconds."
                            TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Classes="flat accent" Content="Restart engine" Margin="10,0,0,0"
+                <Button Grid.Column="1" Classes="flat accent" Content="Apply now" Margin="10,0,0,0"
                         Command="{Binding RestartEngineNowCommand}" />
               </Grid>
             </Border>
@@ -951,7 +591,7 @@
                   <NumericUpDown Value="{Binding CatPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0" Width="130" />
                   <Button Classes="flat" Content="Test port" Command="{Binding TestCatPortCommand}" />
                 </StackPanel>
-                <CheckBox Grid.Row="2" Grid.Column="1" Content="Auto-report changes (send frequency/mode without being asked)"
+                <CheckBox Grid.Row="2" Grid.Column="1" Content="Send frequency and mode changes to the program as they happen"
                           IsChecked="{Binding CatAutoReport}" />
                 <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{Binding CatState}" Classes="label" FontSize="11" TextWrapping="Wrap" />
               </Grid>
@@ -974,13 +614,384 @@
                                 SelectedItem="{Binding BaudRate}" HorizontalAlignment="Stretch" />
                       <ComboBox Grid.Column="4" ItemsSource="{Binding $parent[Window].((vm:SettingsViewModel)DataContext).SerialFormats}"
                                 SelectedItem="{Binding Format}" HorizontalAlignment="Stretch" />
-                      <CheckBox Grid.Column="5" Content="Auto" IsChecked="{Binding AutoReport}" ToolTip.Tip="Auto-report changes" />
+                      <CheckBox Grid.Column="5" Content="Auto" IsChecked="{Binding AutoReport}" ToolTip.Tip="Send frequency and mode changes as they happen" />
                       <TextBlock Grid.Column="6" Text="{Binding State}" Classes="label" FontSize="11" VerticalAlignment="Center"
                                  TextTrimming="CharacterEllipsis" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="PA">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="12" Margin="0,12,0,0">
+          <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                     Text="Leave these at the stock values unless the power is wrong on a band. A higher number gives less power. The radio's own power meter can read low, so check with a separate meter." />
+
+          <Border Grid.Row="1" Classes="panel">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+              <CheckBox Content="PA enabled" IsChecked="{Binding PaEnabled}" />
+              <Button Classes="flat" Content="Calibrate…" Click="OnCalibratePa"
+                      ToolTip.Tip="Evens out the power across the bands using the radio's own meter. It transmits, so connect a dummy load. It asks first." />
+              <Button Classes="flat" Content="Reset to stock" Command="{Binding ResetPaToStockCommand}"
+                      ToolTip.Tip="Put every band back to the stock values" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Rated power" Classes="label" FontSize="12" />
+                <NumericUpDown Value="{Binding PaMaxPowerWatts}" Minimum="0" Maximum="2000" Increment="1"
+                               FormatString="0" Width="120" />
+                <TextBlock Text="W" Classes="label" FontSize="12" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="2" Classes="panel">
+            <StackPanel Spacing="8">
+              <TextBlock Text="External meter" FontWeight="SemiBold" />
+              <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                         Text="If you have a power meter you trust: press TUNE into a dummy load, note both readings, stop, and type them in here. It corrects every HF band and the power display." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="TUNE power" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding TrimAskedWatts}" Minimum="0" Maximum="2000" Increment="1" FormatString="0.#" Width="110" />
+                <TextBlock Text="Radio's meter" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding TrimMeterWatts}" Minimum="0" Maximum="2000" Increment="1" FormatString="0.#" Width="110" />
+                <TextBlock Text="Your meter" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding TrimExternalWatts}" Minimum="0" Maximum="2000" Increment="1" FormatString="0.#" Width="110" />
+                <Button Classes="flat" Content="Apply" Command="{Binding ApplyPaTrimCommand}" />
+              </StackPanel>
+              <TextBlock Text="{Binding PaTrimStatus}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Grid Grid.Row="3" ColumnDefinitions="80,160,*" Margin="12,0">
+            <TextBlock Text="BAND" Classes="label" />
+            <TextBlock Grid.Column="1" Text="PA GAIN (dB)" Classes="label" />
+            <TextBlock Grid.Column="2" Text="DISABLE PA" Classes="label" />
+          </Grid>
+
+          <Border Grid.Row="4" Classes="panel">
+            <ScrollViewer>
+              <ItemsControl ItemsSource="{Binding PaBands}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:PaBandRow">
+                    <Grid ColumnDefinitions="80,160,*" Margin="2,3">
+                      <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                      <NumericUpDown Grid.Column="1" Value="{Binding PaGainDb}" Minimum="0" Maximum="80"
+                                     Increment="0.1" FormatString="0.0" Width="140" HorizontalAlignment="Left" />
+                      <CheckBox Grid.Column="2" IsChecked="{Binding DisablePa}" VerticalAlignment="Center"
+                                ToolTip.Tip="Low power only on this band" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="PureSignal">
+        <ScrollViewer>
+          <StackPanel Spacing="12" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="PureSignal makes your transmitted signal cleaner by correcting the amplifier's distortion. To set it up, press Guided setup below. The feedback level (FB) is best between about 128 and 181." />
+
+            <Border Classes="panel">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+                <TextBlock Text="Feedback source" Classes="label" FontSize="12" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
+                  <RadioButton Content="Internal coupler" IsChecked="{Binding PsInternalFeedback}" GroupName="psfb" />
+                  <RadioButton Content="External (after an amplifier)" IsChecked="{Binding PsExternalFeedback}" GroupName="psfb" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Feedback attenuation" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="10">
+                    <CheckBox Content="Automatic" IsChecked="{Binding PsAutoAttenuate}"
+                              IsEnabled="{Binding CanChangeAutoAttenuate}" />
+                    <Slider Minimum="0" Maximum="31" Value="{Binding PsFeedbackAttenDb}" Width="160"
+                            TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding !PsAutoAttenuate}" />
+                    <TextBlock Text="{Binding PsFeedbackAttenDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap" IsVisible="{Binding PsExternalFeedback}"
+                             Text="With an external amplifier this is always automatic. If the level is still too high at 31 dB, add an attenuator in the sample line." />
+                </StackPanel>
+
+                <TextBlock Grid.Row="2" Text="Monitor PA output" Classes="label" FontSize="12" />
+                <CheckBox Grid.Row="2" Grid.Column="1" Content="Show the corrected PA output on the display while transmitting"
+                          IsChecked="{Binding PsMonitor}" />
+                <TextBlock Grid.Row="3" Text="Calibration" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <Button Classes="flat accent" Content="Guided setup…" Click="OnPsSetup"
+                          ToolTip.Tip="Step-by-step setup: closes Config and calibrates PureSignal" />
+                  <Button Classes="flat" Content="Reset calibration" Command="{Binding ResetPsCommand}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <Expander Header="Advanced: only if calibration won't finish" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                <TextBlock Text="HW peak" Classes="label" FontSize="12"
+                           ToolTip.Tip="The feedback level PureSignal expects. Too high and calibration never finishes." />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding PsHwPeak}" Minimum="0.0001" Maximum="2" Increment="0.001"
+                                 FormatString="0.0000" Width="150" />
+                  <Button Classes="flat accent" Content="Use measured" Command="{Binding UseMeasuredHwPeakCommand}"
+                          IsVisible="{Binding HasMeasuredTxPeak}" />
+                  <Button Classes="flat" Command="{Binding UseDefaultHwPeakCommand}">
+                    <TextBlock Text="{Binding PsHwPeakDefault, StringFormat=Default {0:0.0000}}" />
+                  </Button>
+                </StackPanel>
+                <StackPanel Grid.Row="4" Grid.Column="1" Spacing="6">
+                  <CheckBox Content="Adjust HW peak automatically to match your signal"
+                            IsChecked="{Binding AutoHwPeak}"
+                            ToolTip.Tip="Lets the app correct HW peak when calibration gets stuck. Takes effect the next time you transmit." />
+                  <TextBlock Text="{Binding MeasuredTxPeakText}" Classes="label" FontSize="11" TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="MOX delay" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding PsMoxDelaySec}" Minimum="0.1" Maximum="1" Increment="0.05"
+                                 FormatString="0.00" Width="150" />
+                  <TextBlock Text="s" Classes="label" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Text="Loop delay" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding PsLoopDelaySec}" Minimum="0" Maximum="100" Increment="0.1"
+                                 FormatString="0.0" Width="150" />
+                  <TextBlock Text="s" Classes="label" />
+                </StackPanel>
+                <TextBlock Grid.Row="3" Text="Amp delay" Classes="label" FontSize="12" />
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding PsAmpDelayNs}" Minimum="0" Maximum="25000" Increment="10"
+                                 FormatString="0" Width="150" />
+                  <TextBlock Text="ns" Classes="label" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Amp">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="Timing and safety limits for an external amplifier." />
+            <Border Classes="panel">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Pre-key delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding PreKeyDelayMs}" Minimum="0" Maximum="500" Increment="5" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="Waits this long after keying before sending power, so the amplifier&apos;s relays close first." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="2" Text="RX resume delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding RxResumeDelayMs}" Minimum="0" Maximum="5000" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="Keeps receive quiet this long after you stop transmitting, while the relays switch back." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="4" Text="TX timeout" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding TxTimeoutSec}" Minimum="30" Maximum="600" Increment="10" FormatString="0" Width="140" />
+                  <TextBlock Text="s" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="Stops transmitting after this long, with a warning 30 seconds before." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="6" Text="Maximum drive" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding DriveMaxPct}" Minimum="1" Maximum="100" Increment="1" FormatString="0" Width="140" />
+                  <TextBlock Text="%" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="7" Grid.Column="1" Text="The most the power sliders can go to." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="8" Text="Supply voltage" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SupplyText}" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="9" Text="SWR warning" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="9" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding SwrWarnAt}" Minimum="1.1" Maximum="2.5" Increment="0.1" FormatString="0.0" Width="140" />
+                  <TextBlock Text=":1" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="10" Text="Stop transmit above" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="10" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding SwrStopAt}" Minimum="1.1" Maximum="2.5" Increment="0.1" FormatString="0.0" Width="140" />
+                  <TextBlock Text=":1" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="11" Grid.Column="1" Text="Transmit stops if the SWR stays above this for half a second. TUNE has its own limit: 6:1 above 35 W." Classes="label" FontSize="11" TextWrapping="Wrap" />
+              </Grid>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Outputs">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                       Text="Outputs 1 to 7 on the radio, for switching an amplifier's bands, filters or relays. RX pins are on while receiving and TX pins while transmitting. TUNE pins are added during TUNE, for example to put an amplifier in bypass." />
+            <Grid ColumnDefinitions="60,Auto,Auto,Auto" ColumnSpacing="14" Margin="12,0">
+              <TextBlock Text="BAND" Classes="label" VerticalAlignment="Bottom" />
+              <Border Grid.Column="1"><StackPanel Spacing="2"><TextBlock Text="RX PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
+              <Border Grid.Column="2"><StackPanel Spacing="2"><TextBlock Text="TX PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
+              <Border Grid.Column="3"><StackPanel Spacing="2"><TextBlock Text="TUNE PINS" Classes="label" FontSize="11" HorizontalAlignment="Center" /><StackPanel Orientation="Horizontal"><TextBlock Text="1" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="2" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="3" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="4" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="5" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="6" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /><TextBlock Text="7" Width="22" TextAlignment="Center" Classes="label" FontSize="10" /></StackPanel></StackPanel></Border>
+            </Grid>
+            <Border Classes="panel">
+              <ItemsControl ItemsSource="{Binding PaBands}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:PaBandRow">
+                    <Grid ColumnDefinitions="60,Auto,Auto,Auto" ColumnSpacing="14" Margin="2,1">
+                      <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                      <Border Grid.Column="1"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcRx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcRx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
+                      <Border Grid.Column="2"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTx1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTx7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
+                      <Border Grid.Column="3"><StackPanel Orientation="Horizontal"><CheckBox IsChecked="{Binding OcTune1}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune2}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune3}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune4}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune5}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune6}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /><CheckBox IsChecked="{Binding OcTune7}" MinWidth="0" Width="22" Padding="0" HorizontalAlignment="Center" /></StackPanel></Border>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Calibration">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Expander Header="S-meter" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Trim" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding SMeterTrimDb}" Minimum="-50" Maximum="50" Increment="0.5" FormatString="0.00" Width="140" />
+                  <TextBlock Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="Moves the reading up or down: 6 dB is one S-unit. You can also right-click the meter." Classes="label" FontSize="11" TextWrapping="Wrap" />
+              </Grid>
+            </Expander>
+            <Expander Header="Frequency" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Correction" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding FrequencyPpm}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="0.00" Width="140" />
+                  <TextBlock Text="ppm" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Measure on WWV" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                  <Button Classes="flat" Content="10 MHz" Command="{Binding CalibrateWwvCommand}" CommandParameter="10" />
+                  <Button Classes="flat" Content="15 MHz" Command="{Binding CalibrateWwvCommand}" CommandParameter="15" />
+                  <Button Classes="flat" Content="Reset to 0" Command="{Binding ResetFrequencyPpmCommand}" />
+                </StackPanel>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="Receive only. The radio tunes to WWV for a few seconds, measures it, then tunes back. WWV must be audible."
+                           Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding CalibrationResult}" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="4" Text="External 10 MHz" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <CheckBox Grid.Row="4" Grid.Column="1" Content="The radio uses an external 10 MHz reference" IsChecked="{Binding ExternalRefOn}" />
+                <TextBlock Grid.Row="5" Text="Reference correction" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding ExternalRefPpm}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="0.00" Width="140" />
+                  <TextBlock Text="ppm" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+            <Expander Header="Overload protection" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="Most Auto ATT" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding AdcMaxOffsetDb}" Minimum="0" Maximum="31" Increment="1" FormatString="0" Width="140" />
+                  <TextBlock Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="How much Auto ATT may add when a strong signal overloads the radio." Classes="label" FontSize="11" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="2" Text="Wait before easing off" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <NumericUpDown Value="{Binding AdcReleaseHoldMs}" Minimum="0" Maximum="10000" Increment="100" FormatString="0" Width="140" />
+                  <TextBlock Text="ms" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+              </Grid>
+            </Expander>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Filters">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <Expander Header="Filter shape" IsExpanded="True" HorizontalAlignment="Stretch">
+              <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                <TextBlock Grid.Row="0" Text="RX shape" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding WindowNames}" SelectedIndex="{Binding RxWindowIndex}" Width="160" />
+                <TextBlock Grid.Row="1" Text="RX phase" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding PhaseNames}" SelectedIndex="{Binding RxPhaseIndex}" Width="160" />
+                <TextBlock Grid.Row="2" Text="TX shape" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding WindowNames}" SelectedIndex="{Binding TxWindowIndex}" Width="160" />
+                <TextBlock Grid.Row="3" Text="TX phase" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding PhaseNames}" SelectedIndex="{Binding TxPhaseIndex}" Width="160" />
+                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="Higher numbers give sharper filter edges but more delay. Minimum phase keeps the delay down. Most people never need to change these." />
+                <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Text="{Binding TxDelayText}" FontSize="12" TextWrapping="Wrap" />
+              </Grid>
+            </Expander>
+            <Expander Header="RF filters" IsExpanded="True" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{Binding RfFilterText}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+                <CheckBox Content="Bypass the receive filters" IsChecked="{Binding RxBypassAll}" />
+                <CheckBox Content="Bypass them while transmitting" IsChecked="{Binding RxBypassOnTx}" />
+                <CheckBox Content="Bypass them for PureSignal" IsChecked="{Binding RxBypassOnPs}" />
+              </StackPanel>
+            </Expander>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem Header="Hardware">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock Text="{Binding HardwareText}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+
+            <TextBlock Text="DITHER AND RANDOMIZER" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasAdcOptions}" />
+            <Border Classes="panel" IsVisible="{Binding HasAdcOptions}">
+              <StackPanel Spacing="6">
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="Can lower unwanted signals made inside the radio. Leave them off if you're not sure." />
+                <CheckBox Content="Dither" IsChecked="{Binding AdcDither}" />
+                <CheckBox Content="Randomizer" IsChecked="{Binding AdcRandomizer}" />
+              </StackPanel>
+            </Border>
+
+            <TextBlock Text="HERMES-LITE 2" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasHl2Options}" />
+            <Border Classes="panel" IsVisible="{Binding HasHl2Options}">
+              <StackPanel Spacing="6">
+                <CheckBox Content="Band volts on the FAN connector, for an amp that switches bands by voltage" IsChecked="{Binding Hl2BandVolts}" />
+                <CheckBox Content="HL2+ audio codec fitted" IsChecked="{Binding Hl2PlusCodec}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="User outputs" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <CheckBox Content="1" IsChecked="{Binding Hl2Gpio1}" MinWidth="0" />
+                  <CheckBox Content="2" IsChecked="{Binding Hl2Gpio2}" MinWidth="0" />
+                  <CheckBox Content="3" IsChecked="{Binding Hl2Gpio3}" MinWidth="0" />
+                  <CheckBox Content="4" IsChecked="{Binding Hl2Gpio4}" MinWidth="0" />
+                </StackPanel>
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap">
+                  <Run Text="IO board: " /><Run Text="{Binding Hl2IoBoardText}" />
+                </TextBlock>
+              </StackPanel>
+            </Border>
+
+            <TextBlock Text="ANVELINA-PRO3" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasAnvelinaDx}" />
+            <Border Classes="panel" IsVisible="{Binding HasAnvelinaDx}">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Text="Extra outputs 7 to 10, for each band." />
+                <Grid ColumnDefinitions="60,190,190" Margin="2,0">
+                  <TextBlock Text="BAND" Classes="label" />
+                  <TextBlock Grid.Column="1" Text="RX PINS" Classes="label" FontSize="11" />
+                  <TextBlock Grid.Column="2" Text="TX PINS" Classes="label" FontSize="11" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding PaBands}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PaBandRow">
+                      <Grid ColumnDefinitions="60,190,190" Margin="2,1">
+                        <TextBlock Text="{Binding Band}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                        <Border Grid.Column="1"><StackPanel Orientation="Horizontal" Spacing="6"><CheckBox IsChecked="{Binding DxRx7}" Content="7" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx8}" Content="8" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx9}" Content="9" MinWidth="0" /><CheckBox IsChecked="{Binding DxRx10}" Content="10" MinWidth="0" /></StackPanel></Border>
+                        <Border Grid.Column="2"><StackPanel Orientation="Horizontal" Spacing="6"><CheckBox IsChecked="{Binding DxTx7}" Content="7" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx8}" Content="8" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx9}" Content="9" MinWidth="0" /><CheckBox IsChecked="{Binding DxTx10}" Content="10" MinWidth="0" /></StackPanel></Border>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
             </Border>
           </StackPanel>
         </ScrollViewer>

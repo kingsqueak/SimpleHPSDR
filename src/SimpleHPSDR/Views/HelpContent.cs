@@ -361,12 +361,11 @@ CFC adds delay: the FFT size sets how much, from about 16 ms at 2048 to about 16
 Every amplifier distorts a little, which splatters onto nearby frequencies. PureSignal samples your transmitted signal, compares it with what it should be, and corrects for the distortion, for a much cleaner signal.
 
 ## Setting it up
-1. Set the source in Config > PureSignal.
-2. Set the drive level you'll be using.
-3. Turn on PS.
-4. Switch to a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts. Run it again until PS turns green.
+The first time you turn on PS, a guided setup opens. It asks where the sample comes from, reminds you to connect a dummy load and set your usual power, then calibrates. You can run it again any time from the PS right-click or Config > PureSignal.
 
-That's it until you change the drive level.
+To recalibrate by hand: connect a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts until PS turns green.
+
+Calibrate again after changing band, power or amplifier. The correction stays on while you talk; it isn't relearned from your voice, because speech rarely reaches its full peak for long enough.
 
 ## The PS button
 - Green: on and locked.
@@ -377,6 +376,8 @@ That's it until you change the drive level.
 - 2-TONE transmits a test signal.
 - Save correction keeps what PureSignal learned, and Restore brings it back without calibrating.
 - The status box shows the feedback level (FB), which is best around 128 to 181.
+- A line in plain words says what PureSignal is doing and what to do if it's stuck.
+- "Signal peak" and "HW peak" should be close: your signal's peak just under HW peak, at 94 to 100% of it. PS CAL sets this for you.
 """),
 
         ("Clock and ID timer", """
@@ -437,7 +438,7 @@ Config > Audio chooses your speakers and microphone: a computer mic, or the radi
 If your radio has a speaker or headphone jack, choose Radio speaker jack as the speaker output to hear receive audio there instead of on the computer. Changing to or from it restarts the engine and reconnects, which takes a few seconds. Mon can't play while it's chosen.
 
 ## External amplifier
-Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Band Outputs switches its bands through the radio's open-collector pins.
+Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Outputs switches its bands through the radio's outputs.
 
 ## Options for particular radios
 Config > Hardware has the options only some radios have, in a section for each. A section is greyed out unless the radio that's set has that hardware. The same goes for other pages: a jack, bias, antenna relay or receive input your radio doesn't have stays on the page, greyed out.
@@ -499,7 +500,7 @@ PWR is the radio's own meter and can read low, and everything set from it inheri
 Raise the PTT release delay in Config > TX Audio. The engine already holds transmit for the speech still in the chain, and this adds a short extra wait.
 
 ## PS won't go green
-Check the source in Config > PureSignal, and watch the status on the PS right-click. "Stalled" means the HW peak setting needs adjusting; Adjust HW peak automatically can do it for you.
+Run the guided setup from the PS right-click. It starts from your radio's default HW peak, which clears a setting left over from earlier tries. If it still won't lock, the line on the PS right-click says why: the sample too strong or too weak, or the wrong feedback source.
 
 ## Firmware
 Click the radio's name, then Firmware. A failed flash can leave the radio needing recovery, so use only the file made for your exact radio, on a wired network, and don't turn anything off until it finishes.

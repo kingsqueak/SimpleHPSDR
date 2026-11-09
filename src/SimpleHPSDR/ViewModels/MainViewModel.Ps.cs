@@ -14,8 +14,8 @@ public sealed partial class MainViewModel
     private bool _psStalled;
 
     /// <summary>Highest TX envelope seen in the latest transmission (0 if
-    /// none yet). PureSignal's HW peak must not be above this, or calibration
-    /// never collects its top bin and stalls.</summary>
+    /// none yet). It must land in calcc's top amplitude step, 93.75-100% of
+    /// HW peak, or calibration never finishes (see HwPeakTarget).</summary>
     public double MeasuredTxPeak { get; private set; }
 
     // The engine's MaxTxEnvelope is a peak held for 2 s, and key-on carries a
@@ -45,6 +45,11 @@ public sealed partial class MainViewModel
     /// <summary>off, ok, warn or bad: picks the badge colour.</summary>
     [ObservableProperty] private string _psLevel = "off";
     [ObservableProperty] private string _psFeedbackText = "";
+    /// <summary>What PureSignal is doing and what to do about it, in plain words.</summary>
+    [ObservableProperty] private string _psAdvice = "";
+    /// <summary>"Signal peak 0.590 · HW peak 0.612", with a tick when they suit each other.</summary>
+    [ObservableProperty] private string _psPeakText = "";
+    private double _psHwPeak;
 
     private const int MaxFeedbackAttnDb = 31;      // radio's TX-feedback attenuator range 0..31
     private int _psAttnDb;
@@ -82,6 +87,7 @@ public sealed partial class MainViewModel
         TwoToneOn = s.TwoToneEnabled;
         _applyingTx = false;
         _psStalled = s.PsCalibrationStalled;
+        _psHwPeak = s.PsHwPeak;
         UpdatePsStatus();
     }
 
@@ -109,6 +115,7 @@ public sealed partial class MainViewModel
         PsOn = s.PsEnabled;
         _applyingTx = false;
         _psStalled = s.PsCalibrationStalled;
+        _psHwPeak = s.PsHwPeak;
         _psAttnDb = s.PsTxFeedbackAttenuationDb;
         _psExternal = s.PsFeedbackSource == PsFeedbackSource.External;
         UpdatePsStatus();
@@ -116,13 +123,14 @@ public sealed partial class MainViewModel
         _ = MaybeAdjustHwPeakAsync(s);
     }
 
-    // Auto HW peak: calcc sorts samples into amplitude bins up to HW peak and
-    // only calculates once the top bin has some. HW peak should sit just
-    // under the signal's real peak:
-    //  - above it, calibration never fills the top bin and sits in LCOLLECT,
-    //    so lower it, but only once calibration is actually stuck;
-    //  - well below it, the peaks the amplifier distorts most are left out
-    //    of the fit, so raise it.
+    // Auto HW peak: calcc sorts samples into 16 amplitude steps up to HW peak
+    // and calculates only once every step holds 256 samples, the top one
+    // (93.75-100% of HW peak) included, within 5 s of keying. So the signal's
+    // real peak has to land inside that top step, a little under HW peak:
+    //  - HW peak too high: the top step never fills and calibration sits in
+    //    LCOLLECT (stalled), so lower it, but only once it's actually stuck;
+    //  - HW peak below the signal: the loudest samples are over range and the
+    //    fit doesn't lock reliably, so raise it.
     // At most once per transmission. The engine holds PureSignal changes until
     // unkey (changing calcc mid-transmission can splatter), so the new value
     // applies from the next key-down; the badge says so.
@@ -148,14 +156,16 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>The HW peak to switch to, or null to keep the current one.
-    /// Raises whenever the signal clearly exceeds it; lowers only when
-    /// calibration is stuck. 98% of the measured peak, so the top bin fills.</summary>
+    /// The signal's peak should be 94-100% of HW peak; the target puts it at
+    /// 97%. Raises whenever the signal is over HW peak; lowers only when
+    /// calibration is stuck.</summary>
     private double? HwPeakTarget(double current, bool stuck)
     {
-        if (MeasuredTxPeak <= 0) return null;
-        double target = Math.Round(MeasuredTxPeak * 0.98, 4);
-        if (MeasuredTxPeak > current * 1.05) return target;
-        if (stuck && target < current * 0.95) return target;
+        if (MeasuredTxPeak <= 0 || current <= 0) return null;
+        double target = PsPeak.Target(MeasuredTxPeak);
+        double share = MeasuredTxPeak / current;
+        if (share > PsPeak.HighShare) return target;
+        if (stuck && share < PsPeak.LowShare) return target;
         return null;
     }
 
@@ -177,10 +187,13 @@ public sealed partial class MainViewModel
         _psRangeWarned = true;
     }
 
+    partial void OnPsCalibratingChanged(bool value) => UpdatePsStatus();
+
     partial void OnPsOnChanged(bool value)
     {
         UpdatePsStatus();
         if (_applyingTx || !IsConnected) return;
+        if (value) OfferPsSetup();
         _ = Try(() => _client!.SetPsAsync(value));
     }
 
@@ -218,6 +231,8 @@ public sealed partial class MainViewModel
         {
             (PsStatus, PsLevel, PsFeedbackText) = ("PS off", "off", "");
             PsLocked = false;
+            PsAdvice = "PureSignal cleans up your transmitted signal. Press PS CAL with a dummy load connected to set it up.";
+            PsPeakText = "";
             return;
         }
         var f = _latestPs;
@@ -234,5 +249,28 @@ public sealed partial class MainViewModel
         else
             (PsStatus, PsLevel) = ("Armed", "off");
         PsLocked = PsStatus == "Correcting";
+        UpdatePsAdvice(f, fb);
+    }
+
+    private void UpdatePsAdvice(PsMetersFrame f, int fb)
+    {
+        double peak = MeasuredTxPeak, hw = _psHwPeak;
+        PsPeakText = peak > 0 && hw > 0
+            ? $"Signal peak {peak:0.000} · HW peak {hw:0.000} {(PsPeak.Suits(peak, hw) ? "✓" : "✗")}"
+            : "";
+        string source = _psExternal ? "amplifier sample" : "feedback";
+        PsAdvice =
+            PsCalibrating ? "Calibrating with 2-TONE in short bursts. This takes a few seconds."
+            : _rekeyToApply ? "HW peak was changed to suit your signal. Stop transmitting, then press PS CAL or transmit again."
+            : _psStalled && peak > 0 && hw > 0 && peak / hw > PsPeak.HighShare
+                ? "Your signal goes above HW peak, so calibration can't finish. Press PS CAL to fix it."
+            : _psStalled && peak > 0 && hw > 0 && peak / hw < PsPeak.LowShare
+                ? "Your signal doesn't reach HW peak, so calibration can't finish. Press PS CAL to fix it."
+            : _psStalled ? $"Calibration can't finish. Check the {source} cable and that the right feedback source is chosen in Config > PureSignal, then press PS CAL."
+            : f.Correcting && IsTransmitting && fb > 181 ? $"The {source} is too strong (FB {fb}). It's best between 128 and 181. Add an attenuator in the sample line."
+            : f.Correcting && IsTransmitting && fb is > 0 and < 128 ? $"The {source} is too weak (FB {fb}). It's best between 128 and 181. Check the sample cable and coupler."
+            : f.Correcting ? "Working. The correction stays on while you talk. Run PS CAL again after changing band, power or amplifier."
+            : IsTransmitting ? "Learning your signal. 2-TONE (or PS CAL) locks in a few seconds; voice alone usually can't."
+            : "Ready. Press PS CAL with a dummy load connected to calibrate.";
     }
 }

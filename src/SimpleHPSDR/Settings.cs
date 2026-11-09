@@ -30,6 +30,9 @@ public sealed class Settings
     /// peak: lower it when calibration stalls, raise it when the signal
     /// clearly exceeds it.</summary>
     public bool AutoHwPeak { get; set; } = true;
+    /// <summary>The guided PureSignal setup has been finished (or skipped), so it
+    /// no longer opens by itself.</summary>
+    public bool PsSetupDone { get; set; }
     /// <summary>The TX audio profile last loaded or saved.</summary>
     public string? LastTxProfile { get; set; }
     /// <summary>Set once the engine's PTT release delay has been given the
