@@ -455,6 +455,7 @@ Config > Hardware shows only the options your radio has. On other pages, a jack,
 
 ## Also in Config > Station
 - Band plan: the band edges for your region or licence class, or General Coverage for no restrictions. Outside the plan it warns you or blocks transmit, as you choose. PA calibration also uses it; in General Coverage that's the last plan you chose.
+- Backup and restore: Back up saves all your settings to one file: radio settings, band memories, PA calibration, filters, Mem memories, colours and TX profiles. Restore replaces your settings with a backup's and restarts SimpleHPSDR. PureSignal's calibration isn't included; it learns again within seconds.
 - PTT: the radio's PTT input, or a foot switch on a serial port. Both can be turned off.
 - Diversity: combines two receive antennas.
 - Transverters: for VHF and up. Each one you turn on gets its own band button, and the frequency shows the band you're really on.

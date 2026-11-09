@@ -460,6 +460,27 @@
                            Text="Warn only shows a banner if you transmit outside the plan. Block transmit stops it. General Coverage has no limits, so staying legal is up to you. PA calibration needs a plan with 60 m: US General, Advanced or Extra, UK or Ireland." />
               </StackPanel>
             </Expander>
+            <Expander Header="Backup and restore" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="8">
+                <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
+                           Text="One file with all your settings: the radio settings, band memories, PA calibration, filters, Mem memories, colours and TX profiles. PureSignal's calibration isn't included; it learns again in a few seconds." />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Classes="flat" Content="Back up…" Click="OnBackup" ToolTip.Tip="Save all your settings to a file" />
+                  <Button Classes="flat" Content="Restore…" Click="OnRestore" ToolTip.Tip="Replace your settings with ones from a backup file" />
+                </StackPanel>
+                <Border Classes="panel" Padding="8" IsVisible="{Binding RestorePending}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding RestoreQuestion}" TextWrapping="Wrap" FontSize="12" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Classes="flat" Content="Restore and restart" Command="{Binding ConfirmRestoreCommand}" />
+                      <Button Classes="flat" Content="Cancel" Command="{Binding CancelRestoreCommand}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+                <TextBlock Text="{Binding BackupStatus}" TextWrapping="Wrap" FontSize="12"
+                           IsVisible="{Binding BackupStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </Expander>
             <Expander Header="ID timer" IsExpanded="True" HorizontalAlignment="Stretch">
               <StackPanel Spacing="8">
                 <CheckBox Content="Remind me to ID on the even ten minutes" IsChecked="{Binding IdTimerOn}"

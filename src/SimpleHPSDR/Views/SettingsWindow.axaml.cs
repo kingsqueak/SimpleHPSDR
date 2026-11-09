@@ -47,6 +47,36 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private async void OnBackup(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel vm) return;
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Back up SimpleHPSDR settings",
+            SuggestedFileName = Backup.SuggestedName(),
+            DefaultExtension = Backup.Extension,
+            FileTypeChoices = [BackupFileType],
+        });
+        if (file is null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await vm.SaveBackupAsync(stream, file.Name);
+    }
+
+    private async void OnRestore(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel vm) return;
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Restore SimpleHPSDR settings",
+            AllowMultiple = false,
+            FileTypeFilter = [BackupFileType],
+        });
+        if (files.Count > 0 && files[0].TryGetLocalPath() is { } path) vm.RestorePath = path;
+    }
+
+    private static readonly FilePickerFileType BackupFileType =
+        new("SimpleHPSDR backup (*.shbackup)") { Patterns = ["*." + Backup.Extension] };
+
     private async void OnChooseIdSound(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions

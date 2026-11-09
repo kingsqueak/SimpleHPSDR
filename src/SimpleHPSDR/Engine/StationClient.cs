@@ -135,6 +135,18 @@ public sealed class StationClient : IDisposable
 
     /// <summary>The engine's two-tone IMD calculator (ported from Thetis): finds
     /// the tones and their 3rd/5th-order products in a spectrum we send it.</summary>
+    /// <summary>The engine's own settings backup (a .zeusdb ZIP; PureSignal calibration left out).</summary>
+    public async Task<byte[]> ExportEngineBackupAsync()
+    {
+        using var r = await _http.GetAsync("api/prefs/databases/export");
+        await ThrowIfFailed(r);
+        return await r.Content.ReadAsByteArrayAsync();
+    }
+
+    /// <summary>Stage an engine backup; the engine swaps it in when it next starts.</summary>
+    public Task ImportEngineBackupAsync(string path) =>
+        PostAsync("api/prefs/databases/import", new { sourcePath = path });
+
     public Task<ImdReading> MeasureImdAsync(ImdRequest request) =>
         PostForAsync<ImdReading>("api/dsp/imd-measure", request);
 

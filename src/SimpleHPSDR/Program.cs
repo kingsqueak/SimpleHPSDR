@@ -8,7 +8,9 @@ internal static class Program
     public static void Main(string[] args)
     {
         Platform.LayoutMode.ReadCommandLine(args);
+        Backup.WaitForPrevious(args);                    // restarted after a restore
         if (!Platform.SingleInstance.Claim()) return;   // the running copy came to the front
+        Backup.ApplyPending();
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
