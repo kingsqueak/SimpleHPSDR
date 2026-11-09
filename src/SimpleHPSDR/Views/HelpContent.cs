@@ -463,7 +463,7 @@ Turn on the server you need and note the port. Changes here need Restart engine 
 
         ("Troubleshooting", """
 ## No radio found
-Check the radio is on and on this network, and try its address under "Or by address". The radio picker's Network help button lists what a firewall must allow. On Windows, answer yes when asked about StationEngine, unless Zeus is on the same computer: Network help explains that case. On a Mac, allow the Local Network prompt.
+Check the radio is on and on this network, and try its address under "Or by address". The radio picker's Network help button lists what a firewall must allow. On Windows, answer yes when asked about StationEngine. On a Mac, allow the Local Network prompt.
 
 ## "Getting ready for first use" won't finish
 It's slow, not stuck: around 8 minutes on a fast computer and longer on an older one. If you quit, it starts again next time.

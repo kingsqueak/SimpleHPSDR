@@ -24,9 +24,20 @@ folder (`ZEUS_PLUGINS_PATH`). These still go to Zeus's own folder,
 | A6 | Backup/restore also collects Zeus Link files (`zeus-link-product.db`, `ZeusProduct/logbook`, `Zeus/Product/plugins/*`, voyeur settings) | `DatabaseBackupPolicy.cs:140`, `UnifiedDatabaseBackup.cs:405` | A backup made by our engine could include, and a restore overwrite, Zeus's files. |
 | A7 | Windows firewall rule name `ZeusSDR (HPSDR receive)` | `WindowsFirewallService.cs:63` | Already on the to-do list: our grant can replace Zeus's rule. |
 
-Proposal: one fork patch adding a data-root variable (for example `ZEUS_DATA_DIR`) used by
-A1-A3 and A5, set by SimpleHPSDR to its own data folder. A6 off when it's set. A7 a
-SimpleHPSDR rule name.
+**Done in the fork (2026-11-08, for 2.0.68-simplehpsdr.4):** `STATION_ENGINE_DATA_DIR`
+(`Zeus.Contracts/EngineDataRoot.cs`) moves A1-A4 into the folder SimpleHPSDR gives it,
+and A5 to `ProgramData\StationEngine\wspr`. While it's set, backups and restores cover
+only the engine's own stores (A6). `STATION_ENGINE_FIREWALL_RULE` names the rule (A7);
+SimpleHPSDR uses `SimpleHPSDR (HPSDR receive)`, and the engine then leaves Zeus's
+pre-rebrand rule alone too. SimpleHPSDR copies `wdspWisdom01` (with its stamp) and
+`nr3-models` from the old Zeus folder once. Tested on macOS with a throwaway home: no
+`Zeus` folder is created, and the copied wisdom loads without a rebuild. The firewall
+part is untested on Windows.
+
+Left as they are: Zeus-named files inside our own folder (`zeus-app.log`,
+`zeus-logbook.db`), temp files with a GUID in the name, and thread names. None can
+collide with Zeus. `zeus-plugin-shadow` in the temp folder has a fixed name, but
+plugins don't load in SimpleHPSDR.
 
 ## B. Zeus web app and Zeus Link hooks
 
@@ -39,6 +50,20 @@ SimpleHPSDR rule name.
 | B5 | Zeus Link product settings store, `--product-lan-https-port`, LAN proxy, app-control endpoints for `zeus-link-launcher` | `ProductBundleSettingsStore.cs`, `StationEngine/Program.cs:376`, `EngineAppControlEndpoints.cs` | Unused by us. Leave (harmless) or remove. |
 | B6 | Cache janitor for launcher-managed engine caches and Zeus single-file bundles | `EngineCacheJanitor.cs`, `BundleExtractionJanitor.cs` | Runs at start, but only acts on folders with Zeus's channel marker; did nothing here. Leave, or remove. |
 | B7 | Plugin registry (`Zeus-SDR/zeus-community-features`), plugin host, VST host | `Zeus.Plugins.Host/Registry/HttpRegistryClient.cs:19` and the rest of `Zeus.Plugins.Host` | Already pointed at an empty folder with VST off. Proposal: leave it out of our build. |
+
+**Decided 2026-11-08 (user), in the fork for 2.0.68-simplehpsdr.4:**
+
+- B2 removed: Zeus's hosted web app, its staging site and the Vite dev-server origins
+  are gone from both CORS lists. Tested: preflights from app.zeussdr.com and the staging
+  site get no `Access-Control-Allow-Origin`. Plain-HTTP pages on this computer's
+  loopback address are still allowed (upstream's rule for Zeus Link's desktop web view);
+  only something already running on this computer can serve one.
+- B4: `STATION_ENGINE_NATIVE_G2=1` turns the G2 tuning on without Zeus Link's package.
+  SimpleHPSDR sets it from Config > Radio > "This computer is inside an ANAN-G2", shown
+  on Linux arm64 only; changing it restarts the engine. Untested on a G2.
+- B3, B5-B7 left as they are: idle for us, and removing them makes every rebase harder.
+- New: TCI clients saw the device as "Zeus". `STATION_ENGINE_TCI_DEVICE` names it;
+  SimpleHPSDR sends `SimpleHPSDR`. Tested: the TCI handshake reads `device:SimpleHPSDR;`.
 
 ## C. Outside services (only when a client asks)
 

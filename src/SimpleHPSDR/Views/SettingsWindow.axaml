@@ -50,6 +50,13 @@
                 <TextBlock Text="{Binding LayoutStatus}" Classes="label" FontSize="11" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
+            <Border Classes="panel" IsVisible="{Binding CanBeG2Computer}">
+              <StackPanel Spacing="6">
+                <CheckBox Content="This computer is inside an ANAN-G2" IsChecked="{Binding G2Computer}" />
+                <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="Tunes the display and the microphone choice for the G2's own computer, as Zeus does on it. Changing it restarts the engine, and the radio reconnects." />
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

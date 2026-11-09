@@ -52,8 +52,8 @@ public partial class InfoWindow : Window
         {
             w.Line("Windows", 14, FontWeight.SemiBold, 10);
             w.Line("Run this in a terminal opened as administrator:", 13, FontWeight.Normal, 0);
-            w.Code($"netsh advfirewall firewall add rule name=\"SimpleHPSDR\" dir=in action=allow protocol=UDP remoteport=1024-1044 program=\"{engine}\" enable=yes");
-            w.Line("If Zeus is on this computer, use this command and answer No when Windows asks to let StationEngine make changes. Answering Yes moves Zeus's own firewall rule to SimpleHPSDR, and Zeus may then stop finding the radio.", 13, FontWeight.Normal, 6);
+            w.Code($"netsh advfirewall firewall add rule name=\"{EngineHost.FirewallRuleName}\" dir=in action=allow protocol=UDP remoteport=1024-1044 program=\"{engine}\" enable=yes");
+            w.Line("Or answer Yes when Windows asks to let StationEngine make changes: it adds the same rule. Zeus keeps its own rule either way.", 13, FontWeight.Normal, 6);
         }
         else if (OperatingSystem.IsMacOS())
         {

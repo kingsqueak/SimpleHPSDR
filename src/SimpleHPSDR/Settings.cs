@@ -93,6 +93,8 @@ public sealed class Settings
     /// <summary>Main window layout: Automatic (touch on screens narrower
     /// than 1080), Desktop or Touch.</summary>
     public string Layout { get; set; } = "Automatic";
+    /// <summary>SimpleHPSDR runs on an ANAN-G2's own computer (Linux arm64 only).</summary>
+    public bool G2Computer { get; set; }
     /// <summary>The default SSB filter buttons have been written to the engine.</summary>
     public bool FilterDefaultsApplied { get; set; }
     /// <summary>The same for the AM and SAM buttons.</summary>

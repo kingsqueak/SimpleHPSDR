@@ -80,10 +80,10 @@ and run `SimpleHPSDR.exe`; nothing needs installing, and the .NET and Visual C++
 runtimes are included. The app isn't signed, so SmartScreen warns the first time:
 choose More info, then Run anyway. If Windows Firewall asks about
 `StationEngine.exe`, or asks to let it change your device, say yes, or the radio
-won't be found. If Zeus is on the same computer, answer No and add a rule of your
-own instead, or Zeus loses its firewall rule; the radio picker's Network help button
-gives the command. If the picker finds nothing, it also offers to add the rule again
-when none exists.
+won't be found. The rule is SimpleHPSDR's own, so Zeus on the same computer keeps
+its rule. The radio picker's Network help button gives the command to add it by
+hand, and if the picker finds nothing, it offers to add the rule again when none
+exists.
 To use ASIO, install your audio interface's driver, then pick ASIO under
 Config > Audio. The driver must be able to run at 48 kHz. The Windows build hasn't
 been tried with a radio yet, so please report what you find.
@@ -140,12 +140,14 @@ dotnet run --project src/SimpleHPSDR
 
 The `external/station-engine` submodule follows
 [kingsqueak/station-engine](https://github.com/kingsqueak/station-engine): a Zeus
-release tag plus patches sent upstream that Zeus hasn't released yet, tagged like
-`v2.0.68-simplehpsdr.1`. Now that's v2.0.68 with ADC dither and randomizer for the
-ANAN-7000DLE and 8000DLE
-([#15](https://github.com/Zeus-SDR/station-engine/pull/15)) and the G2 front-panel
-CAT port ([#16](https://github.com/Zeus-SDR/station-engine/pull/16)). Once Zeus
-releases them, the submodule goes back to Zeus-SDR/station-engine.
+release tag plus SimpleHPSDR's own patches, tagged like `v2.0.68-simplehpsdr.4`.
+The fork is permanent: each Zeus release is rebased under the patches. They add
+ADC dither and randomizer for the ANAN-7000DLE and 8000DLE
+([#15](https://github.com/Zeus-SDR/station-engine/pull/15)), the G2 front-panel
+CAT port ([#16](https://github.com/Zeus-SDR/station-engine/pull/16)), transverters
+that work without Zeus's web app, and a data folder and firewall rule of the
+engine's own (`STATION_ENGINE_DATA_DIR`, `STATION_ENGINE_FIREWALL_RULE`), so it
+shares nothing with an installed Zeus.
 
 ## Firewalls
 
@@ -162,10 +164,11 @@ in the app data folder, with the log from the previous start as `engine.previous
 - Linux: `~/.local/share/SimpleHPSDR`
 - Windows: `%LOCALAPPDATA%\SimpleHPSDR`
 
-The engine also keeps a few things in a `Zeus` folder beside that one, whether or
-not Zeus is installed: `wdspWisdom01`, the tuning file from that first start, and
-any noise reduction model you add. If Zeus is on the same computer, the two share
-that file.
+The engine's own files are there too: `wdspWisdom01`, the tuning file from that
+first start, the LAN certificate and any noise reduction model you add. Nothing goes
+to Zeus's folder. Versions before 0.7.2 kept the tuning file and models in a `Zeus`
+folder beside that one; SimpleHPSDR copies them over once and leaves the old folder
+alone.
 
 ## Credits
 

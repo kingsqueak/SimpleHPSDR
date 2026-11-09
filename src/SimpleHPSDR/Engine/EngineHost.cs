@@ -25,6 +25,10 @@ public sealed class EngineHost : IDisposable
     /// radio's speaker jack instead; the engine only reads this at startup.</summary>
     public bool ComputerAudio { get; set; } = true;
 
+    /// <summary>This computer is inside an ANAN-G2: the engine tunes its display and
+    /// microphone choice for it. Read at startup.</summary>
+    public bool NativeG2 { get; set; }
+
     public int Port { get; private set; }
     public Uri BaseUri => new($"http://127.0.0.1:{Port}/");
     public bool HasExited => _process is null || _process.HasExited;
@@ -118,6 +122,16 @@ public sealed class EngineHost : IDisposable
         // own folder. Point it at an empty folder of ours, and keep VST loading off.
         psi.Environment["ZEUS_PLUGINS_PATH"] = Directory.CreateDirectory(Path.Combine(DataDir, "plugins")).FullName;
         psi.Environment["ZEUS_DISABLE_VST_LOAD"] = "1";
+        // Everything else the engine would keep in Zeus's folder (FFT wisdom, LAN
+        // certificate, NR3 models, WSPR files) goes to ours, backups leave Zeus Link's
+        // files alone, and the Windows firewall rule has our own name, so granting it
+        // never replaces Zeus's rule. TCI clients see SimpleHPSDR as the device.
+        // Engine fork, 2.0.68-simplehpsdr.4.
+        psi.Environment["STATION_ENGINE_DATA_DIR"] = DataDir;
+        psi.Environment["STATION_ENGINE_FIREWALL_RULE"] = FirewallRuleName;
+        psi.Environment["STATION_ENGINE_TCI_DEVICE"] = "SimpleHPSDR";
+        if (NativeG2) psi.Environment["STATION_ENGINE_NATIVE_G2"] = "1";
+        CopyFromZeusFolder();
         psi.Environment["Logging__LogLevel__Microsoft.AspNetCore"] = "Warning";
 
         _log = OpenLog();
@@ -161,6 +175,39 @@ public sealed class EngineHost : IDisposable
     }
 
     // An engine left running by a crashed UI still owns the radio and audio.
+    /// <summary>The Windows firewall rule the engine grants and checks for.</summary>
+    public const string FirewallRuleName = "SimpleHPSDR (HPSDR receive)";
+
+    /// <summary>Before 0.7.2 the engine kept its FFT wisdom and NR3 models in Zeus's
+    /// folder. Copy them over once, so the first start in our own folder doesn't spend
+    /// minutes rebuilding the wisdom. Zeus's files are left as they are.</summary>
+    private static void CopyFromZeusFolder()
+    {
+        try
+        {
+            var zeus = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Zeus");
+            if (!Directory.Exists(zeus)) return;
+            var wisdom = Path.Combine(DataDir, "wdspWisdom01");
+            if (!File.Exists(wisdom) && File.Exists(Path.Combine(zeus, "wdspWisdom01")))
+            {
+                // The stamp says which WDSP build made it; the engine rebuilds on a mismatch.
+                var stamp = Path.Combine(zeus, "wdspWisdom01.version");
+                if (File.Exists(stamp)) File.Copy(stamp, wisdom + ".version", overwrite: true);
+                File.Copy(Path.Combine(zeus, "wdspWisdom01"), wisdom);
+            }
+            var models = Path.Combine(zeus, "nr3-models");
+            var ours = Path.Combine(DataDir, "nr3-models");
+            if (Directory.Exists(models) && !Directory.Exists(ours))
+            {
+                Directory.CreateDirectory(ours);
+                foreach (var f in Directory.GetFiles(models))
+                    File.Copy(f, Path.Combine(ours, Path.GetFileName(f)));
+            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
     private static StreamWriter OpenLog()
     {
         // Each start begins a new log; keep the last one, which may hold a crash.

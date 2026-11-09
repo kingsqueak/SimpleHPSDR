@@ -465,6 +465,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         StartClock();
         _engine.ComputerAudio = !_settings.AudioToRadio;
+        _engine.NativeG2 = _settings.G2Computer;
         _engine.Stopped += code => Dispatcher.UIThread.Post(() => _ = OnEngineStoppedAsync(code));
         try
         {
@@ -652,6 +653,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _client = null;
         _engine.Dispose();
         _engine.ComputerAudio = !_settings.AudioToRadio;
+        _engine.NativeG2 = _settings.G2Computer;
         try
         {
             await _engine.StartAsync(CancellationToken.None);

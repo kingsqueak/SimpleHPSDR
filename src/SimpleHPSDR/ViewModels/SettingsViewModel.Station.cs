@@ -189,6 +189,23 @@ public sealed partial class SettingsViewModel
         Platform.LayoutMode.Describe(AppSettings);
     public bool LayoutOverridden => Platform.LayoutMode.Override is not null;
 
+    /// <summary>Only a Linux arm64 computer can be a G2's own.</summary>
+    public bool CanBeG2Computer => OperatingSystem.IsLinux()
+        && System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64;
+    /// <summary>The engine reads this at startup, so a change restarts it.</summary>
+    public bool G2Computer
+    {
+        get => AppSettings?.G2Computer == true;
+        set
+        {
+            if (AppSettings is null || value == AppSettings.G2Computer) return;
+            AppSettings.G2Computer = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+            if (RestartEngine is { } restart) _ = restart();
+        }
+    }
+
     public string[] RadioModelNames => RadioModels.Names;
     /// <summary>Only the OrionMkII family needs telling apart.</summary>
     [ObservableProperty] private bool _showRadioModel;
