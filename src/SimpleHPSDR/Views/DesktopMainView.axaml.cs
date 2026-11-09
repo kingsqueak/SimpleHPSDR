@@ -28,6 +28,7 @@ public partial class DesktopMainView : UserControl
         VfoArea.SizeChanged += (_, _) => FitVfo();
         OffsetButtons.SizeChanged += (_, _) => FitVfo();
         StepLockButtons.SizeChanged += (_, _) => FitVfo();
+        MemButton.SizeChanged += (_, _) => FitVfo();
         SwapButtons.SizeChanged += (_, _) => FitVfo();
         SwapButtons.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) FitVfo(); };
         VfoDigitWheel.Attach(FrequencyReadout, () => Vm);
@@ -92,6 +93,9 @@ public partial class DesktopMainView : UserControl
 
     private MainViewModel? Vm => DataContext as MainViewModel;
 
+    // Mem's popup closed: put the memories in frequency order.
+    private void OnMemoriesClosed(object? sender, EventArgs e) => Vm?.SortMemories();
+
     // A narrow window gives its width to the frequency: the radio name and
     // status shorten and the signal meter narrows, and the buttons stay as they are.
     private const double FullTopBarWidth = 1180;
@@ -100,7 +104,7 @@ public partial class DesktopMainView : UserControl
     {
         // The buttons beside the frequency keep their size (their gaps are
         // margins, so A⇄B takes no room while hidden); the frequency gets the rest.
-        double others = StepLockButtons.DesiredSize.Width + OffsetButtons.DesiredSize.Width
+        double others = MemButton.DesiredSize.Width + StepLockButtons.DesiredSize.Width + OffsetButtons.DesiredSize.Width
                         + (SwapButtons.IsVisible ? SwapButtons.DesiredSize.Width : 0);
         VfoScale.MaxWidth = Math.Max(0, VfoArea.Bounds.Width - others);
     }

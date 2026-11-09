@@ -269,6 +269,33 @@
               ToolTip.Tip="Each time the radio connects, PureSignal starts from the correction you saved last" />
     </StackPanel>
   </DataTemplate>
+  <!-- Mem: 4 x 4 memories. Click tunes and sets the mode; right-click or long press stores. -->
+  <DataTemplate x:Key="MemoryPanel" x:DataType="vm:MainViewModel">
+    <StackPanel Spacing="6" Margin="4">
+      <ItemsControl ItemsSource="{Binding Memories}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><UniformGrid Columns="4" Rows="4" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:MemoryButton">
+            <Button Classes="seg" Classes.empty="{Binding IsEmpty}" Margin="3" MinWidth="86" MinHeight="44"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    Command="{Binding Recall}" c:ContextCommand.Command="{Binding Store}"
+                    c:FlyoutClose.OnClick="True" ToolTip.Tip="{Binding Tip}">
+              <StackPanel Spacing="0">
+                <TextBlock Text="{Binding Top}" HorizontalAlignment="Center" FontFamily="{StaticResource MonoFont}" FontSize="13"
+                           Opacity="{Binding IsEmpty, Converter={x:Static vm:MemoryButton.EmptyOpacity}}" />
+                <TextBlock Text="{Binding Bottom}" HorizontalAlignment="Center" FontSize="10" Opacity="0.8"
+                           IsVisible="{Binding !IsEmpty}" />
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Classes="label" FontSize="11" HorizontalAlignment="Center"
+                 Text="Click to tune · right-click (or long-press) to store what you're on" />
+    </StackPanel>
+  </DataTemplate>
   <DataTemplate x:Key="AutoAgcPanel" x:DataType="vm:MainViewModel">
     <Grid Width="340" Margin="4" ColumnDefinitions="90,*,56" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
       <TextBlock Grid.ColumnSpan="3" Text="Auto AGC" FontWeight="SemiBold" />

@@ -311,7 +311,7 @@
       </Border>
 
       <!-- Top bar: drawer, band, mode, frequency, meter, transmit -->
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,0,0,6">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,0,0,6">
         <Button Classes="seg t" Content="☰" FontSize="20" Click="OpenDrawer" ToolTip.Tip="More controls" />
         <Button Grid.Column="1" Name="BandButton" Classes="seg t lit" MinWidth="76"
                 ToolTip.Tip="Choose a band. Long-press or right-click for frequencies saved on this band.">
@@ -336,8 +336,22 @@
           </Button.Flyout>
         </Button>
 
+        <!-- Mem: 16 memories, the same on every band -->
+        <Button Grid.Column="3" Classes="seg t" MinWidth="40" Padding="8,0" FontSize="11"
+                ToolTip.Tip="Memories: tap one to tune to it, long-press one to store the frequency and mode you're on. They sort by frequency when the popup closes.">
+          <StackPanel Spacing="-1" HorizontalAlignment="Center">
+            <TextBlock Text="M" HorizontalAlignment="Center" />
+            <TextBlock Text="E" HorizontalAlignment="Center" />
+            <TextBlock Text="M" HorizontalAlignment="Center" />
+          </StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" Closed="OnMemoriesClosed">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource MemoryPanel}" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
         <!-- Drag sideways to tune, wheel to tune, click for the keypad -->
-        <Border Grid.Column="3" Name="VfoBox" Classes="panel" Padding="10,0" Background="{DynamicResource PanelBg}"
+        <Border Grid.Column="4" Name="VfoBox" Classes="panel" Padding="10,0" Background="{DynamicResource PanelBg}"
                 Cursor="SizeWestEast" ToolTip.Tip="Drag sideways or use the wheel to tune by the step. Click to type a frequency.">
           <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center">
             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -382,7 +396,7 @@
         </Border>
 
         <!-- Lock beside the frequency, as on the desktop -->
-        <Button Grid.Column="4" Classes="seg t" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
+        <Button Grid.Column="5" Classes="seg t" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
                 MinWidth="56" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                 ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it.">
           <StackPanel>
@@ -399,7 +413,7 @@
           </StackPanel>
         </Button>
         <!-- Signal: one reading; while keyed, power and SWR -->
-        <Border Grid.Column="5" Classes="panel" Width="200" Padding="10,4" VerticalAlignment="Stretch" Cursor="Hand"
+        <Border Grid.Column="6" Classes="panel" Width="200" Padding="10,4" VerticalAlignment="Stretch" Cursor="Hand"
                 PointerReleased="OnMeterClicked" ToolTip.Tip="Click for the S-meter trim">
           <FlyoutBase.AttachedFlyout>
             <Flyout Placement="Bottom" Opening="OnSMeterTrimOpening">
@@ -418,8 +432,8 @@
             </TextBlock>
           </StackPanel>
         </Border>
-        <ToggleButton Grid.Column="6" Classes="seg t tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="72" />
-        <ToggleButton Grid.Column="7" Classes="seg t tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="72" />
+        <ToggleButton Grid.Column="7" Classes="seg t tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="72" />
+        <ToggleButton Grid.Column="8" Classes="seg t tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="72" />
       </Grid>
 
       <!-- Bottom bar: listening and tuning -->

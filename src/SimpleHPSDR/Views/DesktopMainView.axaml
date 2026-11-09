@@ -100,8 +100,23 @@
 
       <!-- Only the frequency shrinks when the window is narrow -->
       <Panel Name="VfoArea" Grid.Column="1" Margin="8,0">
-      <Grid Name="VfoGrid" ColumnDefinitions="Auto,Auto,Auto,Auto" HorizontalAlignment="Center">
-        <Viewbox Name="VfoScale" Stretch="Uniform" StretchDirection="DownOnly">
+      <Grid Name="VfoGrid" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto" HorizontalAlignment="Center">
+        <!-- Mem: 16 memories, the same on every band -->
+        <Button Name="MemButton" Classes="seg ant" FontSize="11" Height="52" Padding="5,0" MinWidth="0"
+                VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,0,10,0"
+                ToolTip.Tip="Memories: click a memory to tune to it, right-click one to store the frequency and mode you're on. They sort by frequency when the popup closes.">
+          <StackPanel Spacing="0" HorizontalAlignment="Center">
+            <TextBlock Text="M" HorizontalAlignment="Center" />
+            <TextBlock Text="E" HorizontalAlignment="Center" />
+            <TextBlock Text="M" HorizontalAlignment="Center" />
+          </StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft" Closed="OnMemoriesClosed">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource MemoryPanel}" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+        <Viewbox Name="VfoScale" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly">
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
                 ToolTip.Tip="Click to type a frequency (kHz or MHz). The wheel over a digit tunes that digit; elsewhere it tunes by the step.">
           <StackPanel Orientation="Horizontal" Spacing="8">
@@ -133,7 +148,7 @@
         </Viewbox>
         <!-- Step and lock beside the frequency, the same height as RIT and XIT.
              Outside the scaled frequency box so they keep their size. -->
-        <StackPanel Name="StepLockButtons" Grid.Column="1" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0">
+        <StackPanel Name="StepLockButtons" Grid.Column="2" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0">
           <Button Name="StepButton" Classes="seg ant" Content="Step" FontSize="12" Height="24" Padding="8,0" MinWidth="44"
                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="{Binding StepLabel, StringFormat=Tuning step for the wheel: {0}}">
@@ -158,7 +173,7 @@
           </Button>
         </StackPanel>
         <!-- Offsets, stacked like the antenna boxes -->
-        <StackPanel Name="OffsetButtons" Grid.Column="2" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0">
+        <StackPanel Name="OffsetButtons" Grid.Column="3" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0">
           <Button Name="RitButton" Classes="seg ant" Classes.lit="{Binding RitOn}" IsEnabled="{Binding RitUsable}" Command="{Binding ToggleRitCommand}" Padding="6,3" MinWidth="0" HorizontalAlignment="Stretch"
                   ToolTip.Tip="RIT: receive offset, slice A only. Click on or off, wheel 10 Hz a click, right-click to clear.">
             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -176,7 +191,7 @@
             </StackPanel>
           </Button>
         </StackPanel>
-        <StackPanel Name="SwapButtons" Grid.Column="3" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0"
+        <StackPanel Name="SwapButtons" Grid.Column="4" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0"
                     IsVisible="{Binding HasSliceB}">
           <Button Classes="seg ant" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsVisible="{Binding HasSliceB}"
                   FontSize="11" MinWidth="0" Padding="4,3" ToolTip.Tip="Swap the frequencies of slices A and B" />

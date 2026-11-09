@@ -80,6 +80,9 @@ public partial class TouchMainView : UserControl
 
     private MainViewModel? Vm => DataContext as MainViewModel;
 
+    // Mem's popup closed: put the memories in frequency order.
+    private void OnMemoriesClosed(object? sender, EventArgs e) => Vm?.SortMemories();
+
     // ---- drawer --------------------------------------------------------
 
     private void OpenDrawer(object? sender, RoutedEventArgs e) => Drawer.IsPaneOpen = true;

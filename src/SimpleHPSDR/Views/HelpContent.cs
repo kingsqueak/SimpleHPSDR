@@ -91,6 +91,9 @@ The highlighted digit is the one your step moves. Use Step beside the frequency 
 ## Lock
 The padlock stops tuning from here, so you can't bump the dial. Software using CAT or TCI can still tune it.
 
+## Memories
+Mem, left of the frequency, opens 16 memories, the same on every band. Click one to tune to its frequency and mode. Right-click one (long-press on a touch screen) to store the frequency and mode you're on; that replaces what was there. An empty one says Open. When the popup closes they sort by frequency, lowest first, left to right.
+
 ## Moving the display
 Drag the panadapter to slide the band under the display. With CTUN on, a drag that reaches the end of the span pauses for a moment, then the tuned frequency moves to the middle of the display so you can keep going.
 

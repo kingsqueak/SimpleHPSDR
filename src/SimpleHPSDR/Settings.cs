@@ -143,6 +143,8 @@ public sealed class Settings
     public Dictionary<string, ModeMemory> ModeMemories { get; set; } = [];
     /// <summary>The mode last used on each band.</summary>
     public Dictionary<string, int> BandLastMode { get; set; } = [];
+    /// <summary>The 16 Mem buttons, the same on every band; null = open.</summary>
+    public MemorySlot?[] Memories { get; set; } = new MemorySlot?[16];
 
     private static string FilePath => Path.Combine(EngineHost.DataDir, "settings.json");
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
@@ -178,6 +180,9 @@ public sealed class Settings
 }
 
 /// <summary>What comes back on returning to a band and mode. Enums as numbers.</summary>
+/// <summary>One Mem button: a frequency and its mode.</summary>
+public sealed record MemorySlot(long Hz, int Mode);
+
 public sealed record ModeMemory(
     long Hz, int FilterLowHz, int FilterHighHz,
     bool AgcAuto, int AgcMode, double AgcTopDb, double AgcFixedDb,
