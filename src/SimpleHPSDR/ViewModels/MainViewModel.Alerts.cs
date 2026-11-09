@@ -121,7 +121,11 @@ public sealed partial class MainViewModel
                 var s = state ?? await client.GetStateAsync();
                 var plan = await client.GetBandPlanAsync();
                 var (mode, low, high) = BandPlanCheck.Emission(s, TunOn);
-                if (!BandPlanCheck.Inside(plan.Segments, low, high, mode))
+                // The band plans stop at 54 MHz: on a transverter band its edges are
+                // the limit, as in Thetis, and the engine holds the signal inside them.
+                bool transverter = low > SimpleHPSDR.Band.MaxHfHz
+                    && SimpleHPSDR.Band.Transverters.Any(b => b.Contains(low) && b.Contains(high));
+                if (!transverter && !BandPlanCheck.Inside(plan.Segments, low, high, mode))
                     outside = $"Outside the {plan.Region.DisplayName} band plan: {low / 1e6:0.000000} MHz {mode}";
             }
             if (!IsTransmitting) return;   // unkeyed while asking
