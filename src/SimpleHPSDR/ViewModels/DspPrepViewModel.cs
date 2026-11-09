@@ -74,7 +74,8 @@ public sealed partial class DspPrepViewModel(StationClient client) : ObservableO
                             + $"longer to start and may drop out at first. {p.Status}".TrimEnd();
                     return;
                 }
-                if (StepOf(p.Status) is { } s) Percent = 100 * Fraction(s);
+                if (ParallelPercent(p.Status) is { } pct) Percent = pct;
+                else if (StepOf(p.Status) is { } s) Percent = 100 * Fraction(s);
                 Progress = Describe(Percent / 100, clock.Elapsed);
             }
             try { await Task.Delay(500, ct); }
@@ -104,9 +105,18 @@ public sealed partial class DspPrepViewModel(StationClient client) : ObservableO
 
     /// <summary>A short line for the status bar while Connect waits.</summary>
     public static string StatusLine(string status) =>
-        StepOf(status) is { } s
-            ? $"Preparing DSP, {100 * Fraction(s):0}% done (first start only)…"
-            : "Preparing DSP (first start only)…";
+        ParallelPercent(status) is { } pct ? $"Preparing DSP, {pct:0}% done (first start only)…"
+        : StepOf(status) is { } s ? $"Preparing DSP, {100 * Fraction(s):0}% done (first start only)…"
+        : "Preparing DSP (first start only)…";
+
+    /// <summary>Our engine plans on several cores and reports a weighted
+    /// percentage: "Planning FFTs in parallel: 42% (31 of 65 plans, 7 at once)".</summary>
+    internal static double? ParallelPercent(string status)
+    {
+        var m = Regex.Match(status, @"Planning FFTs in parallel: (\d+)%");
+        if (m.Success && double.TryParse(m.Groups[1].Value, out double pct)) return pct;
+        return status.Contains("Planning FFTs in parallel: merging", StringComparison.Ordinal) ? 99 : null;
+    }
 
     /// <summary>Which of the steps WDSP's status line is on, 1 upward, or null
     /// if the wording isn't recognised.</summary>
