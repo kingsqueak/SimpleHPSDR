@@ -105,6 +105,7 @@ public sealed partial class MainViewModel
         {
             _psExternal = wanted;
             _ = Try(() => _client!.SetPsFeedbackSourceAsync(wanted ? PsFeedbackSource.External : PsFeedbackSource.Internal));
+            Status = $"PureSignal feedback set to {(wanted ? "external" : "internal")}, as chosen in Config.";
         }
     }
 

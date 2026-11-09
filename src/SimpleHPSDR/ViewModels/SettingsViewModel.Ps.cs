@@ -82,12 +82,18 @@ public sealed partial class SettingsViewModel
     {
         if (_psLoaded is not { } was) return;
         var source = PsExternalFeedback ? PsFeedbackSource.External : PsFeedbackSource.Internal;
+        // Only when the source itself was changed on this page. Saving it on any
+        // PureSignal change wrote back whatever the page loaded, which may be
+        // stale (the guided setup can change it while Config is open), and the
+        // next connect then forced the engine back to it: External became Internal.
         if (source != was.PsFeedbackSource)
-            await _client.SetPsFeedbackSourceAsync(source);
-        if (AppSettings is { } app && app.PsExternalFeedback != PsExternalFeedback)
         {
-            app.PsExternalFeedback = PsExternalFeedback;
-            app.Save();
+            await _client.SetPsFeedbackSourceAsync(source);
+            if (AppSettings is { } app)
+            {
+                app.PsExternalFeedback = PsExternalFeedback;
+                app.Save();
+            }
         }
         bool autoAttenuate = PsAutoAttenuate || PsExternalFeedback;
         if (autoAttenuate != was.PsAutoAttenuate || PsMoxDelaySec != was.PsMoxDelaySec
