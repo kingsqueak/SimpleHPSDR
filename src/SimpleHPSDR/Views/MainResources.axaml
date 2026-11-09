@@ -257,6 +257,14 @@
     <TextBlock Text="{Binding PsPeakText}" Classes="label" FontSize="11"
                IsVisible="{Binding PsPeakText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                ToolTip.Tip="Your signal's peak should be just under HW peak, between 94% and 100% of it. PS CAL sets this for you." />
+    <Border Classes="panel" Padding="8,6" IsVisible="{Binding ImdShown}" HorizontalAlignment="Left" MaxWidth="360"
+            ToolTip.Tip="Intermodulation: how far the 3rd- and 5th-order products sit below the tones, measured on the spectrum while 2-TONE transmits. Lower (more negative) is cleaner. 2-TONE zooms in to measure and puts your zoom back after.">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{Binding ImdText}" FontFamily="{StaticResource MonoFont}" FontSize="13" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding ImdCompareText}" FontSize="11" TextWrapping="Wrap" Classes="label"
+                   IsVisible="{Binding ImdCompareText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </Border>
     <StackPanel Orientation="Horizontal" Spacing="6">
       <Button Classes="flat" Content="Guided setup…" Command="{Binding OpenPsSetupCommand}"
               ToolTip.Tip="Step-by-step PureSignal setup" />

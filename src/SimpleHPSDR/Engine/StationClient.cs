@@ -133,6 +133,11 @@ public sealed class StationClient : IDisposable
     public Task SetMicGainAsync(int db) => PostAsync("api/mic-gain", new MicGainSetRequest(db));
     public Task SetTwoToneAsync(bool on) => PostAsync("api/tx/twotone", new TwoToneSetRequest(on));
 
+    /// <summary>The engine's two-tone IMD calculator (ported from Thetis): finds
+    /// the tones and their 3rd/5th-order products in a spectrum we send it.</summary>
+    public Task<ImdReading> MeasureImdAsync(ImdRequest request) =>
+        PostForAsync<ImdReading>("api/dsp/imd-measure", request);
+
     // ---- TX audio chain ----
     /// <summary>Set the TX passband from positive low/high cuts. The engine
     /// stores the signed pair as given, so lower-sideband modes must be sent

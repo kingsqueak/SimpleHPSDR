@@ -79,6 +79,7 @@ public sealed partial class MainViewModel
 
     private void LoadPureSignal(StateDto s)
     {
+        FollowTwoToneTones(s);
         _psAttnDb = s.PsTxFeedbackAttenuationDb;
         _psExternal = s.PsFeedbackSource == PsFeedbackSource.External;
         KeepPsFeedbackSource();
@@ -110,6 +111,7 @@ public sealed partial class MainViewModel
     /// <summary>From the 1 s state poll: two-tone and the stall flag have no frame.</summary>
     private void PollPureSignal(StateDto s)
     {
+        FollowTwoToneTones(s);
         _applyingTx = true;
         TwoToneOn = s.TwoToneEnabled;
         PsOn = s.PsEnabled;
@@ -199,9 +201,19 @@ public sealed partial class MainViewModel
 
     partial void OnTwoToneOnChanged(bool value)
     {
+        OnPropertyChanged(nameof(ImdShown));
+        if (!value) RestoreAfterImd();
         if (_applyingTx || !IsConnected) return;
         CancelPsCalForOperatorKey();
-        _ = KeyAsync(() => _client!.SetTwoToneAsync(value), value);
+        _ = value ? StartTwoToneAsync() : KeyAsync(() => _client!.SetTwoToneAsync(false), false);
+    }
+
+    // The dial must be centred before keying: the engine holds LO moves while keyed.
+    private async Task StartTwoToneAsync()
+    {
+        await ZoomForImdAsync();
+        if (!TwoToneOn) return;          // turned off again meanwhile
+        await KeyAsync(() => _client!.SetTwoToneAsync(true), true);
     }
 
     // Feedback level is calcc's info[4], 0..256. Thetis colours it: about

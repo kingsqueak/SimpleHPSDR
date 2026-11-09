@@ -191,13 +191,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         set => SetZoomFine(Math.Pow(2, Math.Clamp(value, 0, ZoomSliderMax)));
     }
 
-    private void SetZoomFine(double zoom)
+    private void SetZoomFine(double zoom, bool persist = true)
     {
         if (!IsConnected) return;
         zoom = Math.Clamp(zoom, 1, MaxZoom);
         if (Math.Abs(zoom - _zoomFine) < 1e-6) return;
         _zoomFine = zoom;
-        if (ZoomOn)
+        if (ZoomOn && persist)
         {
             _settings.ZoomOnFine = zoom;
             _settings.Save();
@@ -1345,6 +1345,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             UiStats.FrameApplied();
             Display?.Invoke(f);
+            FeedImd(f);
         }
     }
 
