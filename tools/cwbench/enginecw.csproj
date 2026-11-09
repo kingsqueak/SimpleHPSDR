@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
+    <!-- The engine exposes its CW decoder core to this assembly name only. Local bench, not shipped. -->
+    <AssemblyName>Zeus.Server.Tests</AssemblyName>
+    <RootNamespace>EngineCw</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="/Users/cesser/src/SimpleHPSDR/external/station-engine/Station.Engine.Hosting/Station.Engine.Hosting.csproj" />
+  </ItemGroup>
+</Project>

@@ -6,3 +6,4 @@ artifacts/
 *.user
 .DS_Store
 .drm-out/
+tools/cwbench/rec/
