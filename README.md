@@ -5,7 +5,7 @@ A clean, simple interface for OpenHPSDR radios, built on
 [Avalonia](https://avaloniaui.net/). The everyday controls stay on screen and
 the rest is a click or right-click away.
 
-![SimpleHPSDR on 40 m](docs/main.png)
+![SimpleHPSDR on 40 m with PureSignal on](docs/main.png)
 
 Audio runs natively in the engine, so receive audio and the microphone never
 pass through the interface. That keeps latency low, and audio keeps playing
@@ -40,9 +40,14 @@ Not affiliated with or endorsed by the Zeus SDR project.
 - **SWL:** starts in SAM with a station guide from EiBi, in your local time. Click a
   station to tune it.
 - **Firmware loader** for Protocol 2 radios.
+- **Mini window:** the MINI button at the right of the meters shrinks
+  SimpleHPSDR to the frequency, the meters, Mute and a TX button that transmits
+  while held down. The arrows in its corner bring the full window back.
 - **Light and dark themes**, following the system.
 
 Most controls have more behind a right-click. See **Help** in the menu.
+
+<img src="docs/mini.png" alt="The mini window" width="485">
 
 ## Install
 
@@ -112,6 +117,8 @@ full screen. Config > Radio > Layout picks Automatic, Desktop or Touch;
 `simplehpsdr --touch` or `--desktop` overrides it for one run. Everything in
 it works with a mouse as well as a finger, and a long press does what a
 right-click does.
+
+![The touch layout](docs/touch.png)
 
 To start it when a Raspberry Pi desktop logs in, create
 `~/.config/autostart/simplehpsdr.desktop`:
