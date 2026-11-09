@@ -531,6 +531,7 @@ public sealed class StationClient : IDisposable
     public Task SetAmCarrierAsync(int percent) => PostAsync("api/tx/am-carrier-level", new AmCarrierLevelSetRequest(percent));
     public async Task<FmConfig> GetFmAsync() => (await _http.GetFromJsonAsync<FmConfig>("api/fm", Json))!;
     public Task SetFmAsync(FmConfig c) => PostAsync("api/fm", new FmConfigSetRequest(c));
+    public async Task<FmStatusDto> GetFmStatusAsync() => (await _http.GetFromJsonAsync<FmStatusDto>("api/fm/status", Json))!;
 
     /// <summary>Save or load PureSignal's correction, in a file the engine reads and writes.</summary>
     public Task SavePsCorrectionAsync(string path) => PostAsync("api/tx/ps/save", new PsSaveRequest(path));

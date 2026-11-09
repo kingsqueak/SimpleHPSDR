@@ -94,6 +94,7 @@ public sealed partial class MainViewModel
             TrackKeyForMonitor();
             TrackKeyForAlert();
             UpdateDrmVolume();
+            TrackFmDeviation();
         });
         client.TxMeters += f =>
         {
@@ -318,7 +319,7 @@ public sealed partial class MainViewModel
     {
         FwdWatts = Math.Max(0, f.FwdWatts) * Math.Pow(10, _settings.PowerMeterTrimDb / 10);
         SwrText = f.Swr is > 0.9f and < 100 ? $"{f.Swr:0.0}:1" : "—";
-        AlcText = $"{f.AlcGr:0} dB";
+        if (!FmDeviationShown) AlcText = $"{f.AlcGr:0} dB";
         CheckSwr(f.Swr, Environment.TickCount64);
     }
 

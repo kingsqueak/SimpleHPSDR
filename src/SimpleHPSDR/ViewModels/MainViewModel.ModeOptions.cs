@@ -45,6 +45,7 @@ public sealed partial class MainViewModel
     [ObservableProperty] private int _fmShiftIndex;
     [ObservableProperty] private bool _fmReverse;
     [ObservableProperty] private bool _fmBurstOnKey;
+    [ObservableProperty] private bool _fmPreEmphasisFirst;
 
     private bool _applyingModeOptions;
     private Latest<int>? _amSender, _fmSender;
@@ -68,6 +69,7 @@ public sealed partial class MainViewModel
             FmNarrow = _fm.DeviationHz <= 2500;
             (FmCtcssOn, FmCtcssTone, FmRxToneIndex, FmShiftIndex, FmReverse, FmBurstOnKey) =
                 (_fm.CtcssEnabled, _fm.CtcssToneHz, (int)_fm.RxToneSquelch, (int)_fm.RepeaterShift, _fm.RepeaterReverse, _fm.ToneBurstOnKeyUp);
+            FmPreEmphasisFirst = _fm.PreEmphasisBeforeLimiting;
             _applyingModeOptions = false;
         });
     }
@@ -96,6 +98,7 @@ public sealed partial class MainViewModel
     partial void OnFmShiftIndexChanged(int value) => SendFm();
     partial void OnFmReverseChanged(bool value) => SendFm();
     partial void OnFmBurstOnKeyChanged(bool value) => SendFm();
+    partial void OnFmPreEmphasisFirstChanged(bool value) => SendFm();
 
     private void SendFm()
     {
@@ -107,6 +110,7 @@ public sealed partial class MainViewModel
                 DeviationHz = FmNarrow ? 2500 : 5000, CtcssEnabled = FmCtcssOn, CtcssToneHz = FmCtcssTone,
                 RxToneSquelch = (FmRxToneSquelch)FmRxToneIndex, RepeaterShift = (FmRepeaterShift)FmShiftIndex,
                 RepeaterReverse = FmReverse, ToneBurstOnKeyUp = FmBurstOnKey,
+                PreEmphasisBeforeLimiting = FmPreEmphasisFirst,
             };
             await _client!.SetFmAsync(_fm);
         })).Send(++_modeOptionSeq);

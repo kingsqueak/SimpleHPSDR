@@ -51,7 +51,7 @@
                        VerticalAlignment="Center" FontSize="12" />
             <TextBlock Grid.Column="3" Text="SWR" Classes="label" FontSize="11" Margin="4,0,0,0" VerticalAlignment="Center" />
             <TextBlock Grid.Column="4" Text="{Binding SwrText}" Width="34" VerticalAlignment="Center" FontSize="12" />
-            <TextBlock Grid.Column="5" Text="ALC" Classes="label" FontSize="11" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="5" Text="{Binding TxLevelLabel}" Classes="label" FontSize="11" VerticalAlignment="Center" ToolTip.Tip="{Binding TxLevelTip}" />
             <TextBlock Grid.Column="6" Text="{Binding AlcText}" Width="34" VerticalAlignment="Center" FontSize="12" />
           </Grid>
         </Grid>

@@ -96,6 +96,8 @@
         </Grid>
         <CheckBox Content="Reverse" IsChecked="{Binding FmReverse}" />
         <CheckBox Content="1750 Hz tone burst at the start of each over" IsChecked="{Binding FmBurstOnKey}" />
+        <CheckBox Content="Pre-emphasize before limiting (louder)" IsChecked="{Binding FmPreEmphasisFirst}"
+                  ToolTip.Tip="FM pre-emphasis cuts voice frequencies by 10 to 20 dB. Off (the usual default), it comes after the ALC, so speech never reaches full deviation and sounds quiet. On, the leveler, compressor and ALC bring it back up, so speech uses the full deviation. Turn the leveler on, or raise the mic gain, and watch DEV while you talk." />
       </StackPanel>
       <TextBlock Text="Options are available in AM, SAM and FM." Classes="label" FontSize="12"
                  IsVisible="{Binding ModeHasNoOptions}" />
