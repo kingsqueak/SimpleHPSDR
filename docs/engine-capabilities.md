@@ -5,7 +5,16 @@ made 2026-11-08 to decide what to keep. The engine is about 185,000 lines of C# 
 native WDSP, FFTW and codec libraries. It answers 311 HTTP routes; SimpleHPSDR calls 129
 of them, plus the display, audio and meter streams.
 
-Each entry has a suggestion. Nothing has been removed yet. Sizes are rounded line counts
+**Done 2026-11-08 (engine 2.0.68-simplehpsdr.6):** the user's decisions are in the vault
+(Projects/SimpleHPSDR/Engine capabilities 2026-11-08.md) and were carried out in fork patches
+A-E, about 44,500 lines removed since simplehpsdr.4. Removed: QRM generator, WSPR decoder, plugin
+and VST host, KiwiSDR, TDOA, God's Eye, satellites, APRS, SPE control, contest log, FT8 settings,
+roger beep, wideband markers, Zeus web-app screen settings, Zeus Link hooks, the outside DSP and
+Protocol 3 engines, and unused contract types. Kept for later: FreeDV/RADE (with the modem lease),
+virtual audio cable input, IMD meter, VNA, HF-AUTO, station favourites, spots. Still in the code
+but never started: Public Listening's guest and virtual receivers inside the DSP pipeline.
+
+The suggestions below are the original survey. Sizes are rounded line counts
 of the C# that implements each feature, to show weight, not exact boundaries.
 
 - **Keep:** SimpleHPSDR depends on it.
