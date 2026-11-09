@@ -17,6 +17,8 @@ The very first start takes around 8 minutes or more while the signal processing 
 ## Band plan
 Choose the plan for your region or licence class, or General Coverage for no restrictions. You can change it later in Config > Station, where you also choose whether going outside the plan warns you or blocks transmit.
 
+The strip along the top of the spectrum follows the plan: green where it lets you transmit, red where it keeps the band for another licence class, and grey for broadcast bands, CB and WWV. White lines mark the edges. Turn it off in Config > Station > Band plan.
+
 ## Choosing your radio
 The radio picker opens next. Pick your radio and press Connect. Several radios report the same ID, so choose yours under Radio model if asked: it sets the S-meter calibration and the power amplifier and PureSignal defaults. Tick "Connect to this radio automatically next time" to skip this.
 
@@ -25,7 +27,7 @@ If no radio appears, check that it's on and on the same network, or type its add
 ## Finding your way around
 - Top row: radio, Config, Span, antenna, frequency and meters.
 - Second row: band, mode, filters, ANF, NB, NR, and a close-up of the signal.
-- Middle: the panadapter and waterfall.
+- Middle: the band strip, the panadapter and the waterfall.
 - Bottom: display controls, then transmit and receive controls, and the clock.
 
 ## The most useful tip

@@ -22,6 +22,9 @@ Not affiliated with or endorsed by the Zeus SDR project.
 - **Panadapter and waterfall:** drag to recentre, a zoom slider, an adjustable
   split between spectrum and waterfall, POP waterfall contrast, and a frequency
   readout that follows the pointer.
+- **Band strip:** along the top of the spectrum, from your band plan: green where
+  your licence lets you transmit, red where it doesn't, grey for broadcast bands,
+  CB and WWV.
 - **Filter close-up:** 0 to 6000 Hz of received audio with draggable filter edges.
 - **Two slices:** on one panadapter or each with its own, including cross-band
   and split, with an AF flag for each on one slider.

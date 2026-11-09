@@ -801,6 +801,8 @@
                     <ComboBoxItem Content="Block transmit" />
                   </ComboBox>
                 </StackPanel>
+                <CheckBox Content="Band strip on the spectrum" IsChecked="{Binding BandStripOn}"
+                          ToolTip.Tip="A strip along the top of the spectrum: green where this plan lets you transmit, red where it keeps the band for another licence class, grey for broadcast bands, CB and WWV." />
                 <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
                            Text="Warn only shows an amber banner if you transmit outside the plan. Block transmit stops it. General Coverage has no restrictions, so staying legal is up to you. PA calibration uses the plan to pick its test frequencies, and needs one with every HF band including 60 m: US FCC General, Advanced or Extra, United Kingdom or Ireland. The IARU regions have no 60 m. In General Coverage it uses the last plan you chose." />
               </StackPanel>

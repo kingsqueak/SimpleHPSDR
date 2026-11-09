@@ -86,10 +86,26 @@ public sealed partial class SettingsViewModel
             GeneralCoverage = app.GeneralCoverage = region is null;
             app.BandPlanBlocks = blocks;
             app.Save();
+            BandStripChanged?.Invoke();
             Status = region is null ? "General Coverage: no band plan restrictions."
                 : $"Band plan: {region.DisplayName}, {(blocks ? "blocks transmit outside it" : "warns outside it")}.";
         }
         catch (Exception ex) { Status = $"Band plan not changed: {ex.Message}"; }
+    }
+
+    /// <summary>The band plan or the strip setting changed: redraw the band strip.</summary>
+    public event Action? BandStripChanged;
+    public bool BandStripOn
+    {
+        get => AppSettings?.BandStrip ?? true;
+        set
+        {
+            if (AppSettings is null || value == AppSettings.BandStrip) return;
+            AppSettings.BandStrip = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+            BandStripChanged?.Invoke();
+        }
     }
 
     // ---- ID timer: an app setting, saved as it changes ------------------

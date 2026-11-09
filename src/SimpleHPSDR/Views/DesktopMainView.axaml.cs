@@ -245,6 +245,7 @@ public partial class DesktopMainView : UserControl
         if (_wired is not { } vm) return;
         Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();
         Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
+        Spectrum.Strip = SpectrumB.Strip = vm.BandStrip;
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
         if (f.RxId == vm.ActiveRx)

@@ -119,6 +119,17 @@ public sealed class SpectrumView : Control
     /// <summary>Slices to draw (A, and B when on).</summary>
     public IReadOnlyList<SliceMark> Slices { get; set; } = [];
 
+    /// <summary>The band strip along the top (empty: none).</summary>
+    public IReadOnlyList<StripSpan> Strip { get; set; } = [];
+    // A little taller than the frequency labels, which sit just under it.
+    private const double StripHeight = 18;
+    private double StripH => Strip.Count > 0 ? StripHeight : 0;
+    private static readonly IBrush StripBase = new SolidColorBrush(Color.Parse("#14171E"));
+    private static readonly IBrush StripAllowed = new SolidColorBrush(Color.Parse("#2E7D4F"));
+    private static readonly IBrush StripNotAllowed = new SolidColorBrush(Color.Parse("#A33A3A"));
+    private static readonly IBrush StripOther = new SolidColorBrush(Color.Parse("#555B66"));
+    private static readonly IPen StripEdge = new Pen(Brushes.White, 1);
+
     /// <summary>Manual notches to draw.</summary>
     public IReadOnlyList<NotchMark> Notches { get; set; } = [];
     private static readonly IBrush NotchBrush = new SolidColorBrush(Color.Parse("#40E5484D"));
@@ -350,6 +361,7 @@ public sealed class SpectrumView : Control
         DrawTrace(ctx, panRect);
         DrawAgcLine(ctx, panRect);
         DrawWaterfall(ctx, wfRect);
+        DrawStrip(ctx, panRect);
         DrawNotches(ctx, b);
         DrawTuning(ctx, b);
         DrawGrip(ctx, b, panH);
@@ -600,6 +612,41 @@ public sealed class SpectrumView : Control
         return _centerHz + (long)Math.Round((bin - bins / 2.0) * _hzPerPixel);
     }
 
+    // The band strip: coloured spans with white edges and a white label in each,
+    // the full one if it fits, else the band name, else none.
+    private void DrawStrip(DrawingContext ctx, Rect r)
+    {
+        if (Strip.Count == 0 || _hzPerPixel <= 0) return;
+        double h = StripHeight;
+        ctx.FillRectangle(StripBase, new Rect(0, r.Top, r.Width, h));
+        long viewLo = XToHz(0, r.Width), viewHi = XToHz(r.Width, r.Width);
+        foreach (var s in Strip)
+        {
+            if (s.HighHz <= viewLo || s.LowHz >= viewHi) continue;
+            double x0 = HzToX(s.LowHz, r.Width), x1 = HzToX(s.HighHz, r.Width);
+            double a = Math.Max(0, x0), b = Math.Min(r.Width, x1);
+            if (b - a < 0.5) continue;
+            var brush = s.Kind switch
+            {
+                StripKind.Allowed => StripAllowed,
+                StripKind.NotAllowed => StripNotAllowed,
+                _ => StripOther,
+            };
+            ctx.FillRectangle(brush, new Rect(a, r.Top, b - a, h));
+            if (x0 >= 0) ctx.DrawLine(StripEdge, new Point(Math.Floor(x0) + 0.5, r.Top), new Point(Math.Floor(x0) + 0.5, r.Top + h));
+            if (x1 <= r.Width) ctx.DrawLine(StripEdge, new Point(Math.Floor(x1) + 0.5, r.Top), new Point(Math.Floor(x1) + 0.5, r.Top + h));
+            foreach (var text in new[] { s.Label, s.Short })
+            {
+                var ft = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture,
+                    FlowDirection.LeftToRight, TagFace, 11, Brushes.White);
+                if (ft.Width + 8 > b - a) continue;
+                double tx = Math.Clamp((a + b - ft.Width) / 2, a + 4, b - 4 - ft.Width);
+                ctx.DrawText(ft, new Point(tx, r.Top + (h - ft.Height) / 2));
+                break;
+            }
+        }
+    }
+
     private void DrawGrid(DrawingContext ctx, Rect r)
     {
         // Level lines every 10 dB (20 dB on a wide range), labelled at the left.
@@ -609,7 +656,7 @@ public sealed class SpectrumView : Control
         for (double db = Math.Ceiling(lo / dbStep) * dbStep; db < hi; db += dbStep)
         {
             double y = r.Top + (hi - db) / range * r.Height;
-            if (y <= r.Top + 14 || y >= r.Bottom - 1) continue;
+            if (y <= r.Top + StripH + 14 || y >= r.Bottom - 1) continue;
             ctx.DrawLine(GridPen, new Point(0, y), new Point(r.Width, y));
             var label = new FormattedText($"{db:0}", System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, LabelFace, 10, LabelBrush);
@@ -628,7 +675,7 @@ public sealed class SpectrumView : Control
             ctx.DrawLine(GridPen, new Point(x, r.Top), new Point(x, r.Bottom));
             var text = new FormattedText((hz / 1e6).ToString("0.000"),
                 System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, LabelFace, 11, LabelBrush);
-            ctx.DrawText(text, new Point(x + 3, r.Top + 2));
+            ctx.DrawText(text, new Point(x + 3, r.Top + StripH + 2));
         }
     }
 
@@ -742,7 +789,7 @@ public sealed class SpectrumView : Control
         double w = ft.Width + 10, h = 16;
         double x = vx >= 0 ? vx - w / 2 : left ? 2 : b.Width - w - 2;
         x = Math.Clamp(x, 0, Math.Max(0, b.Width - w));
-        const double y = 16;   // just below the frequency labels
+        double y = 16 + StripH;   // just below the frequency labels
         var box = new Rect(x, y, w, h);
         if (s.Active) ctx.FillRectangle(new SolidColorBrush(color), box, 4);
         else ctx.DrawRectangle(new SolidColorBrush(Color.Parse("#CC0B0D11")), new Pen(new SolidColorBrush(color), 1), box, 4, 4);

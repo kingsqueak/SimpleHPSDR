@@ -393,6 +393,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         settings.PaMaxPowerSaved += SetPowerScale;
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
         settings.TransvertersSaved += ShowTransverterBands;
+        settings.BandStripChanged += () => _ = LoadBandStripAsync();
         _ = settings.LoadAsync();
         _settingsOpen = true;
         try { await ShowSettings(settings); }
@@ -745,6 +746,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await Try(() => client.SetBandPlanGuardIgnoredAsync(_settings.GeneralCoverage || !_settings.BandPlanBlocks));
             if (_settings.TransverterOn is { } xvtr) await Try(() => client.SyncTransverterOnAsync(xvtr));
             await LoadTransvertersAsync();
+            await LoadBandStripAsync();
             var state = await client.GetStateAsync();
             bool firstFilters = await ApplyFilterDefaultsAsync();
             await ApplyStateAsync(state);
