@@ -33,6 +33,25 @@ public sealed partial class MainViewModel
     private Latest<double>? _agcTopSender;
     public string AgcTopText => $"{AgcTopDb:0} dB";
 
+    // Auto AGC's one setting (right-click AGC): the threshold sits this far above
+    // the band noise floor. Saved here; the engine is told after connecting.
+    public const double DefaultAutoAgcOffsetDb = 20;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AutoAgcOffsetText))]
+    private double _autoAgcOffsetDb = DefaultAutoAgcOffsetDb;
+    public string AutoAgcOffsetText => $"+{AutoAgcOffsetDb:0} dB";
+    private Latest<double>? _autoAgcOffsetSender;
+
+    partial void OnAutoAgcOffsetDbChanged(double value)
+    {
+        _settings.AutoAgcOffsetDb = value;
+        _settings.Save();
+        if (IsConnected)
+            (_autoAgcOffsetSender ??= new Latest<double>(db => Try(() => _client!.SetAutoAgcOffsetAsync(db)))).Send(value);
+    }
+
+    [RelayCommand]
+    private void ResetAutoAgcOffset() => AutoAgcOffsetDb = DefaultAutoAgcOffsetDb;
+
     public bool AgcManual => !AgcAuto;
     /// <summary>The fixed-gain slider: manual AGC with the speed Off.</summary>
     public bool AgcFixedShown => !AgcAuto && _agcMode == AgcMode.Fixed;

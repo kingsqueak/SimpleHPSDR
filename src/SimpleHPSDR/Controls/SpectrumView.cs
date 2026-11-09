@@ -124,7 +124,23 @@ public sealed class SpectrumView : Control
     /// <summary>The band strip along the top (empty: none).</summary>
     public IReadOnlyList<StripSpan> Strip { get; set; } = [];
     // A little taller than the frequency labels, which sit just under it.
+    /// <summary>How solid the strip's colours are (0.2 to 1); edges and labels stay solid.</summary>
+    public double StripOpacity { get; set; } = 1.0;
     private const double StripHeight = 18;
+
+    /// <summary>Smooth zoom between the engine's whole zoom levels: the span to
+    /// show, in Hz (0 = all the engine sends). Narrower than what arrives, the
+    /// middle part is spread across the width.</summary>
+    public double TargetSpanHz { get; set; }
+
+    // The visible part of the bins: first bin (fractional) and how many.
+    private (double First, double Count) ViewBins(int bins)
+    {
+        double stretch = TargetSpanHz > 0 && _hzPerPixel > 0 && bins > 0
+            ? Math.Clamp(bins * _hzPerPixel / TargetSpanHz, 1.0, 4.0) : 1.0;
+        double count = bins / stretch;
+        return ((bins - count) / 2.0, count);
+    }
     private double StripH => Strip.Count > 0 ? StripHeight : 0;
     private static readonly IBrush StripBase = new SolidColorBrush(Color.Parse("#14171E"));
     private static readonly IBrush StripAllowed = new SolidColorBrush(Color.Parse("#2E7D4F"));
@@ -479,8 +495,8 @@ public sealed class SpectrumView : Control
             if (_panning)
             {
                 // Follow the pointer: dragging right brings lower frequencies in.
-                int bins = _pan?.Length ?? _wfWidth;
-                double hz = (at.X - p.X) * bins / Bounds.Width * _hzPerPixel;
+                double shown = ViewBins(_pan?.Length ?? _wfWidth).Count;
+                double hz = (at.X - p.X) * shown / Bounds.Width * _hzPerPixel;
                 PanRequested?.Invoke(_pressCenterHz + (long)Math.Round(hz));
                 long now = Stopwatch.GetTimestamp();
                 _moves.Add((now, p.X));
@@ -529,10 +545,10 @@ public sealed class SpectrumView : Control
         _flingLast = now;
         _flingX += _flingV * dt;
         _flingV *= Math.Exp(-FlingFriction * dt);
-        int bins = _pan?.Length ?? _wfWidth;
+        double shown = ViewBins(_pan?.Length ?? _wfWidth).Count;
         if (Bounds.Width > 0)
         {
-            double hz = (_flingOriginX - _flingX) * bins / Bounds.Width * _hzPerPixel;
+            double hz = (_flingOriginX - _flingX) * shown / Bounds.Width * _hzPerPixel;
             PanRequested?.Invoke(_flingCenterHz + (long)Math.Round(hz));
         }
         if (Math.Abs(_flingV) < FlingStopSpeed) StopFling();
@@ -587,7 +603,8 @@ public sealed class SpectrumView : Control
         if (_hzPerPixel <= 0 || _wfWidth == 0 && _pan is null) return -1;
         int bins = _pan?.Length ?? _wfWidth;
         double bin = (hz - _centerHz) / _hzPerPixel + bins / 2.0;
-        return bin * width / bins;
+        var (first, shown) = ViewBins(bins);
+        return (bin - first) * width / shown;
     }
 
     /// <summary>Frequency of the strongest signal between loHz and hiHz on the
@@ -616,7 +633,8 @@ public sealed class SpectrumView : Control
     {
         int bins = _pan?.Length ?? _wfWidth;
         if (bins == 0) return _centerHz;
-        double bin = x * bins / width;
+        var (first, shown) = ViewBins(bins);
+        double bin = first + x * shown / width;
         return _centerHz + (long)Math.Round((bin - bins / 2.0) * _hzPerPixel);
     }
 
@@ -626,7 +644,9 @@ public sealed class SpectrumView : Control
     {
         if (Strip.Count == 0 || _hzPerPixel <= 0) return;
         double h = StripHeight;
-        ctx.FillRectangle(StripBase, new Rect(0, r.Top, r.Width, h));
+        double opacity = Math.Clamp(StripOpacity, 0.2, 1.0);
+        using (ctx.PushOpacity(opacity))
+            ctx.FillRectangle(StripBase, new Rect(0, r.Top, r.Width, h));
         long viewLo = XToHz(0, r.Width), viewHi = XToHz(r.Width, r.Width);
         foreach (var s in Strip)
         {
@@ -640,7 +660,8 @@ public sealed class SpectrumView : Control
                 StripKind.NotAllowed => StripNotAllowed,
                 _ => StripOther,
             };
-            ctx.FillRectangle(brush, new Rect(a, r.Top, b - a, h));
+            using (ctx.PushOpacity(opacity))
+                ctx.FillRectangle(brush, new Rect(a, r.Top, b - a, h));
             if (x0 >= 0) ctx.DrawLine(StripEdge, new Point(Math.Floor(x0) + 0.5, r.Top), new Point(Math.Floor(x0) + 0.5, r.Top + h));
             if (x1 <= r.Width) ctx.DrawLine(StripEdge, new Point(Math.Floor(x1) + 0.5, r.Top), new Point(Math.Floor(x1) + 0.5, r.Top + h));
             foreach (var text in new[] { s.Label, s.Short })
@@ -673,8 +694,10 @@ public sealed class SpectrumView : Control
 
         int bins = _pan?.Length ?? _wfWidth;
         if (bins == 0 || _hzPerPixel <= 0) return;
-        double spanHz = bins * _hzPerPixel;
-        long step = NiceStep(spanHz / 8);
+        double spanHz = ViewBins(bins).Count * _hzPerPixel;
+        // The finest 1-2-5 step whose labels still have room (about 52 px apart):
+        // 10 kHz across a normal window at the usual spans.
+        long step = NiceStep(spanHz * MinMarkerGapPx / Math.Max(1.0, r.Width));
         long start = (_centerHz - (long)(spanHz / 2)) / step * step;
         for (long hz = start; hz <= _centerHz + spanHz / 2; hz += step)
         {
@@ -687,9 +710,11 @@ public sealed class SpectrumView : Control
         }
     }
 
+    private const double MinMarkerGapPx = 52;
+
     private static long NiceStep(double raw)
     {
-        foreach (var s in new long[] { 1_000, 2_000, 2_500, 5_000, 10_000, 20_000, 25_000, 50_000, 100_000, 200_000, 500_000 })
+        foreach (var s in new long[] { 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000, 200_000, 500_000 })
             if (s >= raw) return s;
         return 1_000_000;
     }
@@ -699,17 +724,24 @@ public sealed class SpectrumView : Control
         if (_pan is not { Length: > 1 } pan) return;
         var (bottom, top) = TraceRange();
         double span = Math.Max(1, top - bottom);
+        // Only the bins in view (smooth zoom shows the middle part), spread
+        // across the width; one bin either side so the line reaches the edges.
+        var (first, shown) = ViewBins(pan.Length);
+        double scale = r.Width / Math.Max(1, shown - 1);
+        int i0 = Math.Max(0, (int)Math.Floor(first) - 1);
+        int i1 = Math.Min(pan.Length - 1, (int)Math.Ceiling(first + shown) + 1);
+        double X(int i) => (i - first) * scale;
+        using var clip = ctx.PushClip(r);
         var geo = new StreamGeometry();
         using (var g = geo.Open())
         {
-            g.BeginFigure(new Point(0, r.Bottom), true);
-            for (int i = 0; i < pan.Length; i++)
+            g.BeginFigure(new Point(X(i0), r.Bottom), true);
+            for (int i = i0; i <= i1; i++)
             {
-                double x = i * r.Width / (pan.Length - 1);
                 double y = r.Top + (top - pan[i]) / span * r.Height;
-                g.LineTo(new Point(x, Math.Clamp(y, r.Top, r.Bottom)));
+                g.LineTo(new Point(X(i), Math.Clamp(y, r.Top, r.Bottom)));
             }
-            g.LineTo(new Point(r.Width, r.Bottom));
+            g.LineTo(new Point(X(i1), r.Bottom));
             g.EndFigure(true);
         }
         ctx.DrawGeometry(TraceFill, null, geo);
@@ -717,11 +749,10 @@ public sealed class SpectrumView : Control
         var line = new StreamGeometry();
         using (var g = line.Open())
         {
-            for (int i = 0; i < pan.Length; i++)
+            for (int i = i0; i <= i1; i++)
             {
-                double x = i * r.Width / (pan.Length - 1);
                 double y = Math.Clamp(r.Top + (top - pan[i]) / span * r.Height, r.Top, r.Bottom);
-                if (i == 0) g.BeginFigure(new Point(x, y), false); else g.LineTo(new Point(x, y));
+                if (i == i0) g.BeginFigure(new Point(X(i), y), false); else g.LineTo(new Point(X(i), y));
             }
             g.EndFigure(false);
         }
@@ -746,7 +777,8 @@ public sealed class SpectrumView : Control
         if (count <= 0) return;
         // Bitmap rows are stored oldest-first in each slice; flip vertically so
         // the newest row lands at the top of the waterfall.
-        var src = new Rect(0, firstRow, _wfWidth, count);
+        var (first, shown) = ViewBins(_wfWidth);
+        var src = new Rect(first, firstRow, shown, count);
         var dst = new Rect(0, r.Top + offsetRows * rowH, r.Width, count * rowH);
         using (ctx.PushClip(dst))
         using (ctx.PushTransform(Matrix.CreateTranslation(0, -dst.Center.Y)

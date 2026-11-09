@@ -8,6 +8,9 @@ public partial class MainViewModel
     /// chosen in Config > Station. Empty while it's turned off or not yet loaded.</summary>
     public IReadOnlyList<StripSpan> BandStrip { get; private set; } = [];
 
+    /// <summary>Config > Station: how solid the strip's colours are.</summary>
+    public double BandStripOpacity => _settings.BandStripOpacity;
+
     /// <summary>On connect, and when the band plan or the strip setting changes.</summary>
     private async Task LoadBandStripAsync()
     {

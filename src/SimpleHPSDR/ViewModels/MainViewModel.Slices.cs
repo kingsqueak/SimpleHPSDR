@@ -333,7 +333,8 @@ public sealed partial class MainViewModel
     /// of view. Each panadapter centres on its own slice.</summary>
     private async Task CenterOnDialAsync()
     {
-        await _client!.SetReceiverLoAsync(0, ActiveRx == 0 ? VfoHz : _sliceA?.VfoHz ?? VfoHz);
+        // Slice A's display keeps the dial where the centring slider puts it.
+        await _client!.SetDialPositionAsync(DialPosition / 100.0);
         if (ShowPanadapterB) await _client.SetReceiverLoAsync(1, ActiveRx == 1 ? VfoHz : _sliceB?.VfoHz ?? VfoHz);
     }
 

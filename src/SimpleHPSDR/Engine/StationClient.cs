@@ -373,8 +373,12 @@ public sealed class StationClient : IDisposable
     public Task SetAgcAsync(AgcConfig agc) => PostAsync("api/rx/agc", new AgcSetRequest(agc));
     /// <summary>Auto AGC: the engine adjusts the AGC gain to conditions.</summary>
     public Task SetAutoAgcAsync(bool on) => PostAsync("api/auto-agc", new AutoAgcSetRequest(on));
+    /// <summary>Our engine fork: auto AGC threshold above the noise floor, 0..40 dB.</summary>
+    public Task SetAutoAgcOffsetAsync(double db) => PostAsync("api/auto-agc/offset", new AutoAgcOffsetSetRequest(db));
     /// <summary>Move a receiver's display centre without moving its dial.</summary>
     public Task SetReceiverLoAsync(int rx, long hz) => PostAsync($"api/receivers/{rx}/lo", new RadioLoSetRequest(hz));
+    /// <summary>Our engine fork: where the dial sits across the display, -0.9..0.9.</summary>
+    public Task SetDialPositionAsync(double position) => PostAsync("api/radio/dial-position", new DialPositionSetRequest(position));
     public sealed record SMeterTrim(double OffsetDb);
     /// <summary>The operator's S-meter trim, on top of the board's calibration.
     /// The engine keeps it per radio model.</summary>

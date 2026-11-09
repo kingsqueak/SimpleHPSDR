@@ -108,6 +108,20 @@ public sealed partial class SettingsViewModel
         }
     }
 
+    /// <summary>How solid the band strip's colours are, in percent (20 to 100).</summary>
+    public double BandStripOpacityPercent
+    {
+        get => Math.Round((AppSettings?.BandStripOpacity ?? 1.0) * 100);
+        set
+        {
+            double v = Math.Clamp(Math.Round(value), 20, 100) / 100.0;
+            if (AppSettings is null || Math.Abs(v - AppSettings.BandStripOpacity) < 0.001) return;
+            AppSettings.BandStripOpacity = v;
+            AppSettings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     // ---- ID timer: an app setting, saved as it changes ------------------
 
     public bool IdTimerOn

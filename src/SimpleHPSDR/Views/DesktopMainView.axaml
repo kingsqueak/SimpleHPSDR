@@ -396,11 +396,19 @@
         </StackPanel>
         <Button.ContextFlyout>
           <Flyout Placement="TopEdgeAlignedLeft">
-            <Grid Width="300" Margin="4" ColumnDefinitions="60,*,70">
+            <Grid Width="320" Margin="4" ColumnDefinitions="60,*,80" RowDefinitions="Auto,Auto,Auto" RowSpacing="4">
               <TextBlock Text="Span" Classes="label" FontSize="12" VerticalAlignment="Center" />
-              <Slider Grid.Column="1" Minimum="1" Maximum="5" SmallChange="0.1" TickFrequency="0.1" IsSnapToTickEnabled="True"
-                      Value="{Binding ZoomSlider}" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="2" Text="{Binding ZoomSpanText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+              <Slider Grid.Column="1" Minimum="0" Maximum="{Binding ZoomSliderMax}" SmallChange="0.05" LargeChange="0.5"
+                      Value="{Binding ZoomSlider}" VerticalAlignment="Center"
+                      ToolTip.Tip="Left end is the full span" />
+              <TextBlock Grid.Column="2" Text="{Binding ZoomLabel}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+              <TextBlock Grid.Row="1" Text="Centre" Classes="label" FontSize="12" VerticalAlignment="Center" />
+              <Slider Grid.Row="1" Grid.Column="1" Minimum="-90" Maximum="90" SmallChange="1" LargeChange="10"
+                      Value="{Binding DialPosition}" VerticalAlignment="Center"
+                      ToolTip.Tip="Where the dial sits across the panadapter, with CTUN on or off" />
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding DialPositionText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+              <Button Grid.Row="2" Grid.Column="1" Classes="flat" Content="Back to centre" HorizontalAlignment="Left"
+                      Command="{Binding CentreDialCommand}" />
             </Grid>
           </Flyout>
         </Button.ContextFlyout>
@@ -580,12 +588,17 @@
           </Border>
           <Button Classes="seg" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}"
                   Padding="8,2" MinWidth="44" Margin="12,0,4,0" VerticalAlignment="Center"
-                  ToolTip.Tip="AGC: blue = auto (the engine sets the AGC gain), grey = manual (choose the speed)">
+                  ToolTip.Tip="AGC: blue = auto (the engine sets the AGC gain), grey = manual (choose the speed). Right-click for the auto setting.">
             <StackPanel Spacing="-3">
               <TextBlock Text="AGC" FontSize="12" HorizontalAlignment="Center" />
               <TextBlock Text="{Binding AgcSubLabel}" FontSize="8"
                          HorizontalAlignment="Center" Opacity="0.85" />
             </StackPanel>
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AutoAgcPanel}" />
+              </Flyout>
+            </Button.ContextFlyout>
           </Button>
           <Button Classes="seg" Padding="8,2" VerticalAlignment="Center" IsVisible="{Binding AgcManual}"
                   ToolTip.Tip="AGC speed (manual)">

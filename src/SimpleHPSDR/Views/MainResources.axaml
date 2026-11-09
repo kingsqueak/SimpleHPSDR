@@ -262,9 +262,25 @@
               ToolTip.Tip="Step-by-step PureSignal setup" />
       <Button Classes="flat" Content="Save correction" Command="{Binding SavePsCorrectionCommand}"
               ToolTip.Tip="Keep what PureSignal has learned, to bring back without recalibrating" />
-      <Button Classes="flat" Content="Restore" Command="{Binding RestorePsCorrectionCommand}" />
+      <Button Classes="flat" Content="Restore" Command="{Binding RestorePsCorrectionCommand}"
+              ToolTip.Tip="Load the saved correction now" />
     </StackPanel>
+    <CheckBox Content="Load the saved correction at start" IsChecked="{Binding PsRestoreAtStart}"
+              ToolTip.Tip="Each time the radio connects, PureSignal starts from the correction you saved last" />
     </StackPanel>
+  </DataTemplate>
+  <DataTemplate x:Key="AutoAgcPanel" x:DataType="vm:MainViewModel">
+    <Grid Width="340" Margin="4" ColumnDefinitions="90,*,56" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+      <TextBlock Grid.ColumnSpan="3" Text="Auto AGC" FontWeight="SemiBold" />
+      <TextBlock Grid.Row="1" Text="Above noise" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="40" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"
+              Value="{Binding AutoAgcOffsetDb}" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AutoAgcOffsetText}" FontSize="12" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="2" Grid.ColumnSpan="3" TextWrapping="Wrap" FontSize="12" Classes="label"
+                 Text="Where auto AGC sets the threshold, above the band's noise floor. Lower brings weak signals up but also the noise; higher is quieter. 20 dB is the usual setting. Applies while AGC is on auto." />
+      <Button Grid.Row="3" Grid.Column="1" Classes="flat" Content="Back to 20 dB" HorizontalAlignment="Left"
+              Command="{Binding ResetAutoAgcOffsetCommand}" />
+    </Grid>
   </DataTemplate>
   <DataTemplate x:Key="RxLevelerPanel" x:DataType="vm:MainViewModel">
     <Grid Name="RxLevPanel" Width="380" Margin="4" ColumnDefinitions="100,*,64" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
@@ -279,7 +295,7 @@
               TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
       <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding RxLevTargetDb, StringFormat={}{0:0} dB}" FontSize="12" VerticalAlignment="Center" />
       <TextBlock Grid.Row="3" Text="Max boost" Classes="label" FontSize="12" VerticalAlignment="Center" />
-      <Slider Grid.Row="3" Grid.Column="1" Value="{Binding RxLevMaxBoostDb}" Minimum="0" Maximum="24" SmallChange="1"
+      <Slider Grid.Row="3" Grid.Column="1" Value="{Binding RxLevMaxBoostDb}" Minimum="0" Maximum="35" SmallChange="1"
               TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding RxLevCustom}" VerticalAlignment="Center" />
       <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding RxLevMaxBoostDb, StringFormat={}{0:0} dB}" FontSize="12" VerticalAlignment="Center" />
       <TextBlock Grid.Row="4" Text="Attack" Classes="label" FontSize="12" VerticalAlignment="Center" />

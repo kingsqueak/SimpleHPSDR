@@ -246,6 +246,8 @@ public partial class DesktopMainView : UserControl
         Spectrum.AgcLineDb = SpectrumB.AgcLineDb = vm.AgcLineDb();
         Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
         Spectrum.Strip = SpectrumB.Strip = vm.BandStrip;
+        Spectrum.StripOpacity = SpectrumB.StripOpacity = vm.BandStripOpacity;
+        Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
         if (f.RxId == vm.ActiveRx)

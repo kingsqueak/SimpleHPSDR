@@ -117,7 +117,13 @@ public sealed class SpectrumLook
     }
 
     private static NamedColor Find(NamedColor[] list, string? name, string fallback) =>
-        Array.Find(list, c => c.Name == name) ?? Array.Find(list, c => c.Name == fallback)!;
+        Custom(name) ?? Array.Find(list, c => c.Name == name) ?? Array.Find(list, c => c.Name == fallback)!;
+
+    /// <summary>A colour chosen with the picker is saved as #RRGGBB.</summary>
+    public static NamedColor? Custom(string? value) =>
+        value is { Length: 7 } v && v[0] == '#' && Color.TryParse(v, out var c) ? new NamedColor("Custom", c) : null;
+
+    public static string Hex(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 
     /// <summary>Take the colours from the settings.</summary>
     public static void Apply(Settings s) => Current = new SpectrumLook(s);

@@ -100,8 +100,14 @@
 
                 <TextBlock Text="AGC" Classes="head" />
                 <Grid ColumnDefinitions="Auto,*,60" ColumnSpacing="10">
-                  <Button Classes="seg t" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}">
+                  <Button Classes="seg t" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}"
+                          ToolTip.Tip="AGC auto or manual. Long-press for the auto setting.">
                     <StackPanel><TextBlock Text="AGC" HorizontalAlignment="Center" /><TextBlock Text="{Binding AgcSubLabel}" Classes="sub" /></StackPanel>
+                    <Button.ContextFlyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AutoAgcPanel}" />
+                      </Flyout>
+                    </Button.ContextFlyout>
                   </Button>
                   <Slider Grid.Column="1" Minimum="30" Maximum="120" Value="{Binding AgcTopDb}" VerticalAlignment="Center"
                           ToolTip.Tip="AGC threshold (AGC-T)" />
@@ -161,6 +167,14 @@
                     </Button.Flyout>
                   </Button>
                 </WrapPanel>
+                <TextBlock Text="DIAL POSITION" Classes="head" />
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                  <Slider Minimum="-90" Maximum="90" SmallChange="1" LargeChange="10"
+                          Value="{Binding DialPosition}" VerticalAlignment="Center"
+                          ToolTip.Tip="Where the dial sits across the spectrum, with CTUN on or off" />
+                  <TextBlock Grid.Column="1" Text="{Binding DialPositionText}" VerticalAlignment="Center" MinWidth="70" />
+                  <Button Grid.Column="2" Classes="seg t" Content="Centre" Command="{Binding CentreDialCommand}" />
+                </Grid>
               </StackPanel>
             </ScrollViewer>
           </TabItem>
@@ -297,7 +311,7 @@
       </Border>
 
       <!-- Top bar: drawer, band, mode, frequency, meter, transmit -->
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,0,0,6">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,0,0,6">
         <Button Classes="seg t" Content="☰" FontSize="20" Click="OpenDrawer" ToolTip.Tip="More controls" />
         <Button Grid.Column="1" Name="BandButton" Classes="seg t lit" MinWidth="76"
                 ToolTip.Tip="Choose a band. Long-press or right-click for frequencies saved on this band.">
@@ -367,8 +381,25 @@
           </FlyoutBase.AttachedFlyout>
         </Border>
 
+        <!-- Lock beside the frequency, as on the desktop -->
+        <Button Grid.Column="4" Classes="seg t" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
+                MinWidth="56" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it.">
+          <StackPanel>
+            <Viewbox Width="20" Height="20" HorizontalAlignment="Center">
+              <Canvas Width="24" Height="24">
+                <Path Data="M4 11h16v11H4z" Fill="{Binding $parent[Button].Foreground}" />
+                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 9 0v4" IsVisible="{Binding VfoLocked}" StrokeThickness="2.5"
+                      Stroke="{Binding $parent[Button].Foreground}" />
+                <Path Data="M7.5 11V7a4.5 4.5 0 0 1 8.6-1.9" IsVisible="{Binding !VfoLocked}" StrokeThickness="2.5"
+                      Stroke="{Binding $parent[Button].Foreground}" />
+              </Canvas>
+            </Viewbox>
+            <TextBlock Text="Lock" Classes="sub" />
+          </StackPanel>
+        </Button>
         <!-- Signal: one reading; while keyed, power and SWR -->
-        <Border Grid.Column="4" Classes="panel" Width="200" Padding="10,4" VerticalAlignment="Stretch" Cursor="Hand"
+        <Border Grid.Column="5" Classes="panel" Width="200" Padding="10,4" VerticalAlignment="Stretch" Cursor="Hand"
                 PointerReleased="OnMeterClicked" ToolTip.Tip="Click for the S-meter trim">
           <FlyoutBase.AttachedFlyout>
             <Flyout Placement="Bottom" Opening="OnSMeterTrimOpening">
@@ -387,8 +418,8 @@
             </TextBlock>
           </StackPanel>
         </Border>
-        <ToggleButton Grid.Column="5" Classes="seg t tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="72" />
-        <ToggleButton Grid.Column="6" Classes="seg t tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="72" />
+        <ToggleButton Grid.Column="6" Classes="seg t tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="72" />
+        <ToggleButton Grid.Column="7" Classes="seg t tx" Content="TUNE" IsChecked="{Binding TunOn}" MinWidth="72" />
       </Grid>
 
       <!-- Bottom bar: listening and tuning -->
@@ -479,7 +510,7 @@
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
                           PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" />
           <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
-            <TextBlock Text="{Binding ZoomSpanText}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
+            <TextBlock Text="{Binding ZoomLabel}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
             <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel, or pinch)" />
             <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel, or pinch)" />
           </StackPanel>

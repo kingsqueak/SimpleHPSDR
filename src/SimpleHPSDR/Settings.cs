@@ -33,6 +33,8 @@ public sealed class Settings
     /// <summary>The guided PureSignal setup has been finished (or skipped), so it
     /// no longer opens by itself.</summary>
     public bool PsSetupDone { get; set; }
+    /// <summary>Load the saved PureSignal correction each time a radio connects.</summary>
+    public bool PsRestoreAtStart { get; set; } = true;
     /// <summary>The TX audio profile last loaded or saved.</summary>
     public string? LastTxProfile { get; set; }
     /// <summary>Set once the engine's PTT release delay has been given the
@@ -50,6 +52,10 @@ public sealed class Settings
     public bool AutoSpectrum { get; set; } = true;
     /// <summary>Spectrum share of the panadapter height (rest is waterfall).</summary>
     public double PanFraction { get; set; } = 0.38;
+    /// <summary>Auto AGC: how far above the noise floor the AGC threshold sits (Thetis default 20).</summary>
+    public double AutoAgcOffsetDb { get; set; } = 20;
+    /// <summary>Where the dial sits across the panadapter, -90 to +90 (% of half the span).</summary>
+    public double DialPosition { get; set; }
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
     /// <summary>The band plan has been chosen at first start; the engine keeps it after that.</summary>
@@ -106,12 +112,16 @@ public sealed class Settings
     public string WaterfallPalette { get; set; } = "Classic";
     /// <summary>The band strip along the top of the spectrum.</summary>
     public bool BandStrip { get; set; } = true;
+    /// <summary>How solid the band strip's colours are, 0.2 to 1.</summary>
+    public double BandStripOpacity { get; set; } = 1.0;
     /// <summary>The default SSB filter buttons have been written to the engine.</summary>
     public bool FilterDefaultsApplied { get; set; }
     /// <summary>The same for the AM and SAM buttons.</summary>
     public int AmFilterDefaultsVersion { get; set; }
     /// <summary>Zoom level the Zoom button goes to (2-32).</summary>
     public int ZoomOnLevel { get; set; } = 4;
+    /// <summary>The last zoom used (smooth, 1.25 to 32), for the Zoom button.</summary>
+    public double ZoomOnFine { get; set; } = 4;
     /// <summary>Waterfall POP contrast.</summary>
     public bool WaterfallPop { get; set; }
     /// <summary>The TX filter's cuts follow the transmitting slice's RX filter.</summary>

@@ -17,7 +17,7 @@ The very first start takes around 8 minutes or more while the signal processing 
 ## Band plan
 Choose the plan for your region or licence class, or General Coverage for no restrictions. You can change it later in Config > Station, where you also choose whether going outside the plan warns you or blocks transmit.
 
-The strip along the top of the spectrum follows the plan: green where it lets you transmit, red where it keeps the band for another licence class, and grey for broadcast bands, CB and WWV. White lines mark the edges. Turn it off in Config > Station > Band plan.
+The strip along the top of the spectrum follows the plan: green where it lets you transmit, red where it keeps the band for another licence class, and grey for broadcast bands, CB and WWV. White lines mark the edges. Turn it off, or make its colours fainter, in Config > Station > Band plan.
 
 ## Choosing your radio
 The radio picker opens next. Pick your radio and press Connect. Several radios report the same ID, so choose yours under Radio model if asked: it sets the S-meter calibration and the power amplifier and PureSignal defaults. Tick "Connect to this radio automatically next time" to skip this.
@@ -98,7 +98,7 @@ CTUN changes what a click does. With it on, the display stays still and only the
 
 ## Seeing more or less of the band
 - Span sets the full width the radio takes in, from its sample rate. A wider span shows more of the band and uses more computer power.
-- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the zoomed span.
+- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the span, from full at the left end of the slider, and Centre, which sets where the dial sits across the display (left, centre or right). Centre works with CTUN on or off.
 """),
 
         ("Mini window", """
@@ -125,6 +125,7 @@ On a small screen, such as a radio's 1024 by 600 front panel, SimpleHPSDR shows 
 - Tap the frequency for a keypad: type the number, then press MHz or kHz.
 - Tap the spectrum to tune; drag it to slide the band. Let go while still moving and it glides on and slows down.
 - Pinch the spectrum to zoom (two fingers, or a Mac trackpad), or use − and + in its corner.
+- Lock beside the frequency stops tuning from the screen. Dial position in the drawer's Receive tab sets where the dial sits across the spectrum.
 
 ## Long press
 Holding a finger still for half a second does what a right-click does: on Band it opens the band stack, on the spectrum the slice menu, on most buttons their settings. With a mouse, holding the button down on a button does the same.
@@ -153,7 +154,7 @@ The small box at the top right shows 6 kHz from the dial as audio frequency, wit
 - Auto keeps the display range on the noise floor. It's on by default and needs no attention.
 - Display sets the range by hand, the resolution, the waterfall speed and POP.
 - POP makes the waterfall follow the noise floor, which lifts weak signals out of it.
-- Config > Colors changes the spectrum line, the shading under it, the background (plain or fading) and the waterfall colours. "Back to the original colours" undoes it all.
+- Config > Colors changes the spectrum line, the shading under it, the background (plain or fading) and the waterfall colours. Custom… beside each colour picks any colour you like. "Back to the original colours" undoes it all.
 - The dotted bar between the panadapter and waterfall drags to change their sizes.
 """),
 
@@ -249,7 +250,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
 Click RFG to open the front end. Each click steps through preamp, 0 dB and 10 to 30 dB of attenuation. Auto ATT adds attenuation by itself if the receiver overloads, and is best left on. On a noisy band, attenuation can improve what you hear: if the noise drops and the signal doesn't, keep it.
 
 ## AGC
-AGC keeps the audio level steady as signals change. On the AGC button, blue is automatic. Grey is manual, where you choose the speed: slow for steady voice, fast for quick changes such as CW.
+AGC keeps the audio level steady as signals change. On the AGC button, blue is automatic. Grey is manual, where you choose the speed: slow for steady voice, fast for quick changes such as CW. Right-click AGC for automatic AGC's setting: how far above the band's noise it sets the threshold. 20 dB is usual; lower brings weak signals up, along with the noise.
 
 AGC-T is the threshold, much like RF gain on an analogue radio. Raise it until the yellow line sits just above the noise. Moving it turns automatic AGC off.
 
@@ -339,7 +340,7 @@ Config > TX Audio holds everything that shapes your voice, in the order it's pro
 Save your settings under a name and load them later: one for DX, one for ragchewing. Default is built in and can't be overwritten. A profile holds only what's on this TX Audio page, and it applies in every mode, so make a separate profile if you want different settings for AM, say. CW and FreeDV don't use the TX filter. PureSignal settings aren't part of a profile, so the internal or external coupler stays as set in Config on every band and mode.
 
 ## TX filter
-Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. Otherwise set it by hand. 2.8 kHz is a usual SSB width.
+Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. In AM, SAM and DSB the receive filter covers both sidebands, so your audio goes up to half its width: a 10 kHz AM filter sends audio up to 5 kHz. Otherwise set it by hand. 2.8 kHz is a usual SSB width.
 
 ## Equalizer
 Shapes the tone of your voice. The graphic view has ten sliders. Tick Parametric for six bands instead: drag a numbered point for frequency and gain, and use the wheel over it for Q. Bands 1 and 6 can be a pass filter or a shelf. The dashed line is what the radio actually does; very narrow bands can come out a little shallower.
@@ -375,7 +376,7 @@ Calibrate again after changing band, power or amplifier. The correction stays on
 
 ## Also on the right-click
 - 2-TONE transmits a test signal.
-- Save correction keeps what PureSignal learned, and Restore brings it back without calibrating.
+- Save correction keeps what PureSignal learned, and Restore brings it back without calibrating. With "Load the saved correction at start" ticked, it comes back by itself each time the radio connects.
 - The status box shows the feedback level (FB), which is best around 128 to 181.
 - A line in plain words says what PureSignal is doing and what to do if it's stuck.
 - "Signal peak" and "HW peak" should be close: your signal's peak just under HW peak, at 94 to 100% of it. PS CAL sets this for you.

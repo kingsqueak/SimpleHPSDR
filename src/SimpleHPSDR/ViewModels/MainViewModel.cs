@@ -162,27 +162,91 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         SpeedLabel = SpeedText(period);
     });
 
-    // Panadapter zoom: off is the full span. At 384 kHz, level 8 is a 48 kHz span.
+    // Panadapter zoom. The engine zooms by whole levels (span = sample rate /
+    // level); the slider is smooth: the engine gets the whole level at or below
+    // the chosen zoom and the display stretches the rest (TargetSpanHz).
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ZoomLabel))] [NotifyPropertyChangedFor(nameof(ZoomOn))]
     [NotifyPropertyChangedFor(nameof(ZoomSpanText))] [NotifyPropertyChangedFor(nameof(ZoomSlider))]
     private int _zoomLevel = 1;
+    private double _zoomFine = 1;            // the chosen zoom, 1 = full span
     public string ZoomLabel => ZoomOn ? ZoomSpanText : "full";
-    public bool ZoomOn => ZoomLevel > 1;
-    public string ZoomSpanText => SpanText(Math.Max(ZoomLevel > 1 ? ZoomLevel : _settings.ZoomOnLevel, 1));
-    private string SpanText(int level) => _sampleRateHz <= 0 ? $"{level}×"
-        : _sampleRateHz / level >= 1000 ? $"{_sampleRateHz / level / 1000} kHz" : $"{_sampleRateHz / level} Hz";
+    public bool ZoomOn => _zoomFine > 1.001;
+    public string ZoomSpanText => SpanText(ZoomOn ? _zoomFine : Math.Max(_settings.ZoomOnFine, 1));
+    private string SpanText(double zoom)
+    {
+        if (_sampleRateHz <= 0) return $"{zoom:0.#}×";
+        double hz = _sampleRateHz / zoom;
+        return hz >= 1000 ? $"{hz / 1000:0} kHz" : $"{hz:0} Hz";
+    }
+    /// <summary>For the spectrum views: the span to show, 0 when it is what the engine sends.</summary>
+    public double ZoomTargetSpanHz => _sampleRateHz > 0 && ZoomOn ? _sampleRateHz / _zoomFine : 0;
 
-    // The slider is logarithmic: each step of travel is the same ratio of span.
-    private const int MinZoomOnLevel = 2, MaxZoomLevel = 32;
+    private const double MaxZoom = 32;
+    /// <summary>The span slider, logarithmic: 0 = full span, 5 = 1/32 of it.</summary>
+    public double ZoomSliderMax => Math.Log2(MaxZoom);
     public double ZoomSlider
     {
-        get => Math.Log2(ZoomOn ? ZoomLevel : _settings.ZoomOnLevel);
-        set
+        get => Math.Log2(_zoomFine);
+        set => SetZoomFine(Math.Pow(2, Math.Clamp(value, 0, ZoomSliderMax)));
+    }
+
+    private void SetZoomFine(double zoom)
+    {
+        if (!IsConnected) return;
+        zoom = Math.Clamp(zoom, 1, MaxZoom);
+        if (Math.Abs(zoom - _zoomFine) < 1e-6) return;
+        _zoomFine = zoom;
+        if (ZoomOn)
         {
-            int level = Math.Clamp((int)Math.Round(Math.Pow(2, value)), MinZoomOnLevel, MaxZoomLevel);
-            if (level != ZoomLevel) SetZoom(level);
+            _settings.ZoomOnFine = zoom;
+            _settings.Save();
         }
+        OnPropertyChanged(nameof(ZoomSlider));
+        OnPropertyChanged(nameof(ZoomOn));
+        OnPropertyChanged(nameof(ZoomLabel));
+        OnPropertyChanged(nameof(ZoomSpanText));
+        int level = Math.Clamp((int)Math.Floor(zoom + 1e-9), 1, (int)MaxZoom);
+        if (level != ZoomLevel) SetZoom(level);
+    }
+
+    // A zoom change from the engine (band recall, the 1 s poll) that the chosen
+    // zoom doesn't account for: follow it.
+    partial void OnZoomLevelChanged(int value)
+    {
+        if (_zoomSender is { Busy: true }) return;
+        if ((int)Math.Floor(_zoomFine + 1e-9) == value) return;
+        _zoomFine = value;
+        OnPropertyChanged(nameof(ZoomSlider));
+        OnPropertyChanged(nameof(ZoomOn));
+        OnPropertyChanged(nameof(ZoomLabel));
+        OnPropertyChanged(nameof(ZoomSpanText));
+    }
+
+    /// <summary>Where the dial sits across the panadapter: -90 (left) to +90 (right)
+    /// percent of half the span, 0 = centre. Works with CTUN on or off.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DialPositionText))]
+    private double _dialPosition;
+    public string DialPositionText => Math.Abs(DialPosition) < 0.5 ? "centre"
+        : DialPosition < 0 ? $"left {-DialPosition:0}%" : $"right {DialPosition:0}%";
+    private Latest<double>? _dialSender;
+
+    partial void OnDialPositionChanged(double value)
+    {
+        if (_applyingState) return;
+        _settings.DialPosition = value;
+        _settings.Save();
+        SendDialPosition();
+    }
+
+    [RelayCommand]
+    private void CentreDial() => DialPosition = 0;
+
+    private void SendDialPosition()
+    {
+        if (!IsConnected) return;
+        (_dialSender ??= new Latest<double>(p => Try(() => _client!.SetDialPositionAsync(p / 100.0)))).Send(DialPosition);
     }
     private Latest<int>? _zoomSender;
 
@@ -460,6 +524,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _specMaxDb = _settings.SpecMaxDb;
         _autoSpectrum = _settings.AutoSpectrum;
         _panFraction = _settings.PanFraction;
+        _autoAgcOffsetDb = Math.Clamp(_settings.AutoAgcOffsetDb, 0, 40);
+        _dialPosition = Math.Clamp(_settings.DialPosition, -90, 90);
     }
 
     // ---- startup and connection ---------------------------------------
@@ -756,9 +822,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             UpdateSlices(state);
             LoadSpanRates(radio.Protocol2, state.SampleRate);
             await LoadDisplayTuningAsync();
+            await Try(() => client.SetDialPositionAsync(DialPosition / 100.0));
+            await Try(() => client.SetAutoAgcOffsetAsync(AutoAgcOffsetDb));
             await LoadAntennasAsync();
             await LoadTransmitAsync(state);
             LoadPureSignal(state);
+            await RestorePsCorrectionAtStartAsync();
             await LoadMonitorAsync();
             await LoadNotchesAsync();
             if (firstFilters && Filters.FirstOrDefault(f => f.SlotName == DefaultFilterSlot) is { } start)
@@ -952,29 +1021,21 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ZoomSpanText));
     }
 
-    /// <summary>One zoom step: in doubles the zoom (from full span, to the
-    /// last zoomed span), out halves it, and out from the smallest zoom goes
-    /// to full span. For the zoom buttons, Ctrl+wheel and pinching.</summary>
+    /// <summary>One zoom step, about a fifth narrower or wider. For the zoom
+    /// buttons, Ctrl+wheel and pinching.</summary>
     public void ZoomStep(int dir)
     {
         if (dir == 0 || !IsConnected) return;
-        if (dir > 0 && !ZoomOn) { ToggleZoom(); return; }
-        if (dir < 0 && ZoomOn && ZoomSlider <= 1.01) { ToggleZoom(); return; }
-        if (ZoomOn) ZoomSlider += Math.Sign(dir);
+        ZoomSlider = Math.Clamp(ZoomSlider + 0.25 * Math.Sign(dir), 0, ZoomSliderMax);
     }
 
     /// <summary>Full span, or back to the last zoomed span.</summary>
     [RelayCommand]
-    private void ToggleZoom() => SetZoom(ZoomOn ? 1 : Math.Clamp(_settings.ZoomOnLevel, MinZoomOnLevel, MaxZoomLevel));
+    private void ToggleZoom() => SetZoomFine(ZoomOn ? 1 : Math.Clamp(_settings.ZoomOnFine, 1.25, MaxZoom));
 
     private void SetZoom(int level)
     {
         if (!IsConnected) return;
-        if (level > 1 && level != _settings.ZoomOnLevel)
-        {
-            _settings.ZoomOnLevel = level;
-            _settings.Save();
-        }
         ZoomLevel = level;
         (_zoomSender ??= new Latest<int>(async z =>
         {
