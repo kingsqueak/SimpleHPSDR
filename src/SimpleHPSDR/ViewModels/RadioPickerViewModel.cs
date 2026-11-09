@@ -28,7 +28,10 @@ public sealed class RadioEntry(RadioInfo info)
 {
     public RadioInfo Info { get; } = info;
     public bool Protocol2 => Detail("protocol") == "P2";
-    public string Title => $"{Info.BoardId}  ·  {(Protocol2 ? "Protocol 2" : "Protocol 1")}";
+    /// <summary>The board, or the model when the engine knows better (a Brick
+    /// reports itself as a plain Hermes or Angelia).</summary>
+    public string Name => Detail("model") ?? Info.BoardId;
+    public string Title => $"{Name}  ·  {(Protocol2 ? "Protocol 2" : "Protocol 1")}";
     public string Subtitle
     {
         get
@@ -44,7 +47,7 @@ public sealed class RadioEntry(RadioInfo info)
 
     private string? Detail(string key) => Info.Details?.GetValueOrDefault(key);
 
-    public RadioChoice ToChoice() => new(Info.IpAddress, Protocol2, RawBoardId, Mac, $"{Info.BoardId} {Info.IpAddress}");
+    public RadioChoice ToChoice() => new(Info.IpAddress, Protocol2, RawBoardId, Mac, $"{Name} {Info.IpAddress}");
 }
 
 public sealed partial class RadioPickerViewModel : ObservableObject
