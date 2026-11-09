@@ -15,6 +15,8 @@ public sealed partial class MainViewModel
 {
     [ObservableProperty] private string _imdText = "";
     [ObservableProperty] private string _imdCompareText = "";
+    /// <summary>What the reading was taken on: the PS sample or the receiver view.</summary>
+    [ObservableProperty] private string _imdSourceText = "";
     public bool ImdShown => TwoToneOn || ImdText.Length > 0;
 
     private double[]? _imdAvg;
@@ -53,38 +55,72 @@ public sealed partial class MainViewModel
         if (_imdBusy || DateTime.UtcNow - _imdLastSent < TimeSpan.FromMilliseconds(500) || _client is null) return;
         _imdLastSent = DateTime.UtcNow;
         _imdBusy = true;
-        var req = new ImdRequest([.. _imdAvg.Select(d => (double?)d)], _imdAvg.Length, _imdCenterHz, _imdHzPerPixel,
-            Math.Abs(_twoToneF2 - _twoToneF1));
-        bool psCorrecting = PsLocked, psOff = !PsOn;
+        var rxView = _imdAvg.Select(d => (double?)d).ToArray();
+        double hzPerPixel = _imdHzPerPixel, spacing = Math.Abs(_twoToneF2 - _twoToneF1);
+        long rxCenter = _imdCenterHz, dial = VfoHz;
+        bool psArmed = PsOn, psCorrecting = PsLocked;
+        var client = _client;
         _ = Task.Run(async () =>
         {
             ImdReading? r = null;
-            try { r = await _client.MeasureImdAsync(req); }
+            bool fromSample = false;
+            try
+            {
+                // With PureSignal armed, measure the coupler sample: the amplifier's
+                // real output, in the panadapter's span, centred on the transmit
+                // frequency. Otherwise the panadapter's own (receiver) view.
+                if (psArmed && await client.GetPsFeedbackSpectrumAsync() is { Length: > 16 } fb)
+                {
+                    _imdSampleAvg = Smooth(_imdSampleAvg, fb);
+                    r = await client.MeasureImdAsync(new ImdRequest(
+                        [.. _imdSampleAvg.Select(d => (double?)d)], _imdSampleAvg.Length, dial, hzPerPixel, spacing));
+                    fromSample = true;
+                }
+                else
+                {
+                    _imdSampleAvg = null;
+                    r = await client.MeasureImdAsync(new ImdRequest(rxView, rxView.Length, rxCenter, hzPerPixel, spacing));
+                }
+            }
             catch (Exception) { }
             Dispatcher.UIThread.Post(() =>
             {
                 _imdBusy = false;
-                if (r is not null && TwoToneOn) ShowImd(r, psCorrecting, psOff);
+                if (r is not null && TwoToneOn) ShowImd(r, fromSample, psCorrecting);
             });
         });
     }
 
-    private void ShowImd(ImdReading r, bool psCorrecting, bool psOff)
+    private double[]? _imdSampleAvg;
+
+    // The feedback FFT is fresh twice a second here, so a light average steadies it.
+    private static double[] Smooth(double[]? avg, float[] next)
     {
+        if (avg is null || avg.Length != next.Length) return [.. next.Select(v => (double)v)];
+        for (int i = 0; i < next.Length; i++) avg[i] += (next[i] - avg[i]) * 0.5;
+        return avg;
+    }
+
+    private void ShowImd(ImdReading r, bool fromSample, bool psCorrecting)
+    {
+        string where = fromSample ? "amplifier output (PS sample)" : "receiver view";
         if (!r.Ok || r.Imd3 is not { } i3)
         {
             ImdText = "IMD: " + (r.Reason ?? "no reading");
+            ImdSourceText = where;
             return;
         }
         ImdText = r.Imd5 is { } i5 ? $"IMD3 −{i3.Dbc:0} dBc · IMD5 −{i5.Dbc:0} dBc" : $"IMD3 −{i3.Dbc:0} dBc";
+        ImdSourceText = where + (fromSample ? (psCorrecting ? ", corrected" : ", not yet corrected") : "");
+        if (!fromSample) return;             // only the PS sample compares like with like
         if (psCorrecting) _imd3PsOn = i3.Dbc;
-        else if (psOff) _imd3PsOff = i3.Dbc;
+        else _imd3PsOff = i3.Dbc;
         ImdCompareText = (_imd3PsOff, _imd3PsOn) switch
         {
-            ({ } off, { } on) => $"IMD3 with PS off −{off:0}, on −{on:0} dBc: PureSignal " +
+            ({ } off, { } on) => $"At the amplifier, IMD3 uncorrected −{off:0}, corrected −{on:0} dBc: PureSignal " +
                                  (on >= off ? $"improves it by {on - off:0} dB" : $"makes it {off - on:0} dB worse"),
-            ({ } off, null) => $"PS off: IMD3 −{off:0} dBc. Run it again with PS on to compare.",
-            (null, { } on) => $"PS on: IMD3 −{on:0} dBc. Run it again with PS off to compare.",
+            ({ } off, null) => $"Uncorrected IMD3 −{off:0} dBc; keep 2-TONE on until PureSignal corrects.",
+            (null, { } on) => $"Corrected IMD3 −{on:0} dBc. For the uncorrected figure, Reset PureSignal (Config) and run 2-TONE again.",
             _ => "",
         };
     }

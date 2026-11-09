@@ -138,6 +138,17 @@ public sealed class StationClient : IDisposable
     public Task<ImdReading> MeasureImdAsync(ImdRequest request) =>
         PostForAsync<ImdReading>("api/dsp/imd-measure", request);
 
+    /// <summary>Our engine fork: the PureSignal feedback (coupler) spectrum in
+    /// the panadapter's width and span, or null when PS isn't armed.</summary>
+    public async Task<float[]?> GetPsFeedbackSpectrumAsync()
+    {
+        using var r = await _http.GetAsync("api/tx/ps/feedback-spectrum");
+        if (r.StatusCode == System.Net.HttpStatusCode.NoContent || !r.IsSuccessStatusCode) return null;
+        return (await r.Content.ReadFromJsonAsync<PsSpectrum>(Json))?.Db;
+    }
+
+    private sealed record PsSpectrum(float[] Db);
+
     // ---- TX audio chain ----
     /// <summary>Set the TX passband from positive low/high cuts. The engine
     /// stores the signed pair as given, so lower-sideband modes must be sent

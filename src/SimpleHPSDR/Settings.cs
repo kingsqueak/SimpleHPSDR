@@ -33,8 +33,12 @@ public sealed class Settings
     /// <summary>The guided PureSignal setup has been finished (or skipped), so it
     /// no longer opens by itself.</summary>
     public bool PsSetupDone { get; set; }
-    /// <summary>Load the saved PureSignal correction each time a radio connects.</summary>
-    public bool PsRestoreAtStart { get; set; } = true;
+    /// <summary>Load the saved PureSignal correction each time a radio connects.
+    /// Off by default: a loaded correction stays fixed (calcc "stay on") and
+    /// PureSignal stops adapting until it's reset; on the air an old one gave
+    /// worse IMD than none (2026-11-09). Replaces PsRestoreAtStart, which
+    /// defaulted to on.</summary>
+    public bool PsLoadCorrectionAtStart { get; set; }
     /// <summary>The TX audio profile last loaded or saved.</summary>
     public string? LastTxProfile { get; set; }
     /// <summary>Set once the engine's PTT release delay has been given the

@@ -261,6 +261,8 @@
             ToolTip.Tip="Intermodulation: how far the 3rd- and 5th-order products sit below the tones, measured on the spectrum while 2-TONE transmits. Lower (more negative) is cleaner. 2-TONE zooms in to measure and puts your zoom back after.">
       <StackPanel Spacing="2">
         <TextBlock Text="{Binding ImdText}" FontFamily="{StaticResource MonoFont}" FontSize="13" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding ImdSourceText, StringFormat=Measured on the {0}}" FontSize="11" Classes="label"
+                   IsVisible="{Binding ImdSourceText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         <TextBlock Text="{Binding ImdCompareText}" FontSize="11" TextWrapping="Wrap" Classes="label"
                    IsVisible="{Binding ImdCompareText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
@@ -271,10 +273,10 @@
       <Button Classes="flat" Content="Save correction" Command="{Binding SavePsCorrectionCommand}"
               ToolTip.Tip="Keep what PureSignal has learned, to bring back without recalibrating" />
       <Button Classes="flat" Content="Restore" Command="{Binding RestorePsCorrectionCommand}"
-              ToolTip.Tip="Load the saved correction now" />
+              ToolTip.Tip="Load the saved correction now. PureSignal then keeps it fixed and stops adapting until it's reset (Config > PureSignal > Reset)." />
     </StackPanel>
     <CheckBox Content="Load the saved correction at start" IsChecked="{Binding PsRestoreAtStart}"
-              ToolTip.Tip="Each time the radio connects, PureSignal starts from the correction you saved last" />
+              ToolTip.Tip="Off is usually better: a loaded correction stays fixed and PureSignal stops adapting to the amplifier, band and drive you're on. Left to itself it settles within seconds of transmitting." />
     </StackPanel>
   </DataTemplate>
   <!-- Mem: 4 x 4 memories. Click tunes and sets the mode; right-click or long press stores. -->

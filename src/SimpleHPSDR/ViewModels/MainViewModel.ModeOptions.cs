@@ -128,15 +128,15 @@ public sealed partial class MainViewModel
         Status = "PureSignal correction saved.";
     });
 
-    /// <summary>Load the saved correction whenever a radio connects, so PureSignal
-    /// starts from what it learned last time instead of from nothing.</summary>
+    /// <summary>Load the saved correction whenever a radio connects. A loaded
+    /// correction stays fixed: PureSignal no longer adapts until it's reset.</summary>
     public bool PsRestoreAtStart
     {
-        get => _settings.PsRestoreAtStart;
+        get => _settings.PsLoadCorrectionAtStart;
         set
         {
-            if (_settings.PsRestoreAtStart == value) return;
-            _settings.PsRestoreAtStart = value;
+            if (_settings.PsLoadCorrectionAtStart == value) return;
+            _settings.PsLoadCorrectionAtStart = value;
             _settings.Save();
             OnPropertyChanged();
         }
@@ -145,7 +145,7 @@ public sealed partial class MainViewModel
     /// <summary>At connect: bring back the saved correction if there is one.</summary>
     private async Task RestorePsCorrectionAtStartAsync()
     {
-        if (!_settings.PsRestoreAtStart || !File.Exists(PsCorrectionPath)) return;
+        if (!_settings.PsLoadCorrectionAtStart || !File.Exists(PsCorrectionPath)) return;
         await Try(() => _client!.RestorePsCorrectionAsync(PsCorrectionPath));
     }
 
