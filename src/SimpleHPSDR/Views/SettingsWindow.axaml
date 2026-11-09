@@ -2,16 +2,25 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SimpleHPSDR.ViewModels"
         xmlns:c="using:SimpleHPSDR.Controls"
+        xmlns:local="using:SimpleHPSDR"
         Icon="avares://SimpleHPSDR/Assets/icon.png"
         x:Class="SimpleHPSDR.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="Configuration" Width="1040" Height="720" MinHeight="480"
         WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <DataTemplate x:Key="ColorItem" x:DataType="local:NamedColor">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <Border Width="28" Height="14" CornerRadius="3" Background="{Binding Swatch}" BorderBrush="#555" BorderThickness="1" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+      </StackPanel>
+    </DataTemplate>
+  </Window.Resources>
   <Window.Styles>
     <!-- Smaller tab headers so all pages fit on one line -->
     <Style Selector="TabItem">
-      <Setter Property="FontSize" Value="16" />
-      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="Padding" Value="8,4" />
       <Setter Property="MinHeight" Value="36" />
     </Style>
   </Window.Styles>
@@ -542,6 +551,43 @@
         </ScrollViewer>
       </TabItem>
 
+      <TabItem Header="Colors">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,12,0,0">
+            <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                       Text="Colours for the spectrum and the waterfall. Changes show at once." />
+            <Border Classes="panel">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                <TextBlock Text="Spectrum line" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Column="1" ItemsSource="{Binding LineColors}" SelectedItem="{Binding SpecLine}" Width="220"
+                          ItemTemplate="{StaticResource ColorItem}" />
+                <TextBlock Grid.Row="1" Text="Shading under it" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding FillColors}" SelectedItem="{Binding SpecFill}" Width="220"
+                          ItemTemplate="{StaticResource ColorItem}" />
+                <TextBlock Grid.Row="2" Text="Background" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding BackgroundColors}" SelectedItem="{Binding SpecBackground}" Width="220"
+                          ItemTemplate="{StaticResource ColorItem}" />
+                <TextBlock Grid.Row="3" Text="Fading to" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding FadeColors}" SelectedItem="{Binding SpecFade}" Width="220"
+                          ItemTemplate="{StaticResource ColorItem}"
+                          ToolTip.Tip="The background shades into this colour towards the bottom. None keeps it plain." />
+                <TextBlock Grid.Row="4" Text="Waterfall" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding WaterfallPalettes}" SelectedItem="{Binding SelectedPalette}" Width="320">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="local:WaterfallPalette">
+                      <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="120" Height="14" CornerRadius="3" Background="{Binding Preview}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </Grid>
+            </Border>
+            <Button Classes="flat" Content="Back to the original colours" Command="{Binding ResetColorsCommand}" HorizontalAlignment="Left" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
       <TabItem Header="CAT &amp; TCI">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">

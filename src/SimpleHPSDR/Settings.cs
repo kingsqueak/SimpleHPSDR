@@ -98,6 +98,12 @@ public sealed class Settings
     public string Layout { get; set; } = "Automatic";
     /// <summary>SimpleHPSDR runs on an ANAN-G2's own computer (Linux arm64 only).</summary>
     public bool G2Computer { get; set; }
+    /// <summary>Config > Colors: names from SpectrumLook's lists.</summary>
+    public string SpecLineColor { get; set; } = "Blue";
+    public string SpecFillColor { get; set; } = "Blue";
+    public string SpecBackground { get; set; } = "Black";
+    public string SpecBackgroundFade { get; set; } = "None";
+    public string WaterfallPalette { get; set; } = "Classic";
     /// <summary>The band strip along the top of the spectrum.</summary>
     public bool BandStrip { get; set; } = true;
     /// <summary>The default SSB filter buttons have been written to the engine.</summary>

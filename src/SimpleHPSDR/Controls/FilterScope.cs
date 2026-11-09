@@ -29,9 +29,10 @@ public sealed class FilterScope : Control
     /// <summary>An edge was dragged: the new (low, high) offsets from the dial.</summary>
     public event Action<int, int>? FilterDragged;
 
-    private static readonly IBrush Background = new SolidColorBrush(Color.Parse("#0B0D11"));
-    private static readonly IBrush TraceFill = new SolidColorBrush(Color.Parse("#333B82F6"));
-    private static readonly IPen TracePen = new Pen(new SolidColorBrush(Color.Parse("#7FB2FF")), 1.2);
+    // Colours from Config > Colors, as on the spectrum.
+    private static IBrush Background => SpectrumLook.Current.Background;
+    private static IBrush TraceFill => SpectrumLook.Current.Fill;
+    private static IPen TracePen => SpectrumLook.Current.LinePen;
     private static readonly IBrush PassBrush = new SolidColorBrush(Color.Parse("#2E3B82F6"));
     private static readonly IPen EdgePen = new Pen(new SolidColorBrush(Color.Parse("#3B82F6")), 1.5);
     private static readonly IBrush HandleBrush = new SolidColorBrush(Color.Parse("#E6E8EB"));

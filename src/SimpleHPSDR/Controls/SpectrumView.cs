@@ -62,12 +62,14 @@ public sealed class SpectrumView : Control
     // Trace averaging per frame (30 frames/s): 0.35 settles in about 0.2 s.
     private const float TraceAlpha = 0.35f;
 
-    private static readonly uint[] Palette = BuildPalette();
-    private static readonly IBrush Background = new SolidColorBrush(Color.Parse("#0B0D11"));
+    // Colours from Config > Colors. A new waterfall palette starts the waterfall afresh.
+    private uint[] Palette = SpectrumLook.Current.Palette;
+    private static IBrush Background => SpectrumLook.Current.Background;
+    private static readonly IBrush WaterfallBase = new SolidColorBrush(Color.Parse("#0B0D11"));
     private static readonly IPen GridPen = new Pen(new SolidColorBrush(Color.Parse("#1F2430")), 1);
     private static readonly IBrush LabelBrush = new SolidColorBrush(Color.Parse("#7D8696"));
-    private static readonly IBrush TraceFill = new SolidColorBrush(Color.Parse("#333B82F6"));
-    private static readonly IPen TracePen = new Pen(new SolidColorBrush(Color.Parse("#7FB2FF")), 1.2);
+    private static IBrush TraceFill => SpectrumLook.Current.Fill;
+    private static IPen TracePen => SpectrumLook.Current.LinePen;
     private static readonly IBrush PassbandBrush = new SolidColorBrush(Color.Parse("#26FFFFFF"));
     private static readonly IBrush PassbandInactive = new SolidColorBrush(Color.Parse("#14FFFFFF"));
     // Slice colours: A red, B amber.
@@ -301,6 +303,11 @@ public sealed class SpectrumView : Control
 
     private unsafe void AddWaterfallRow(ReadOnlySpan<float> row)
     {
+        if (!ReferenceEquals(Palette, SpectrumLook.Current.Palette))
+        {
+            Palette = SpectrumLook.Current.Palette;
+            ClearWaterfall();
+        }
         if (_waterfall is null || _wfWidth != row.Length)
         {
             _waterfall?.Dispose();
@@ -352,10 +359,11 @@ public sealed class SpectrumView : Control
     {
         SimpleHPSDR.UiStats.Rendered();
         var b = Bounds;
-        ctx.FillRectangle(Background, new Rect(b.Size));
         double panH = Math.Round(b.Height * PanFraction);
         var panRect = new Rect(0, 0, b.Width, panH);
         var wfRect = new Rect(0, panH, b.Width, b.Height - panH);
+        ctx.FillRectangle(Background, panRect);
+        ctx.FillRectangle(WaterfallBase, wfRect);
 
         DrawGrid(ctx, panRect);
         DrawTrace(ctx, panRect);
@@ -849,28 +857,5 @@ public sealed class SpectrumView : Control
         int steps = SliderWheel.Clicks(this, e);
         if (steps != 0) WheelTune?.Invoke(steps);
         e.Handled = true;
-    }
-
-    // Dark blue → blue → cyan → yellow → red → white.
-    private static uint[] BuildPalette()
-    {
-        (double t, byte r, byte g, byte b)[] stops =
-        [
-            (0.00, 0x0B, 0x0D, 0x11), (0.20, 0x0A, 0x1E, 0x5A), (0.40, 0x10, 0x6B, 0xD8),
-            (0.60, 0x2E, 0xD3, 0xC8), (0.75, 0xF5, 0xD0, 0x3B), (0.90, 0xF2, 0x5F, 0x2C), (1.00, 0xFF, 0xFF, 0xFF),
-        ];
-        var lut = new uint[256];
-        for (int i = 0; i < 256; i++)
-        {
-            double t = i / 255.0;
-            int k = 0;
-            while (k < stops.Length - 2 && t > stops[k + 1].t) k++;
-            var (t0, r0, g0, b0) = stops[k];
-            var (t1, r1, g1, b1) = stops[k + 1];
-            double f = (t - t0) / (t1 - t0);
-            byte R = (byte)(r0 + (r1 - r0) * f), G = (byte)(g0 + (g1 - g0) * f), B = (byte)(b0 + (b1 - b0) * f);
-            lut[i] = 0xFF000000u | (uint)(R << 16) | (uint)(G << 8) | B;
-        }
-        return lut;
     }
 }

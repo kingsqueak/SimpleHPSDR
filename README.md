@@ -21,7 +21,8 @@ Not affiliated with or endorsed by the Zeus SDR project.
 
 - **Panadapter and waterfall:** drag to recentre, a zoom slider, an adjustable
   split between spectrum and waterfall, POP waterfall contrast, and a frequency
-  readout that follows the pointer.
+  readout that follows the pointer. Config > Colors picks the spectrum and
+  waterfall colours.
 - **Band strip:** along the top of the spectrum, from your band plan: green where
   your licence lets you transmit, red where it doesn't, grey for broadcast bands,
   CB and WWV.

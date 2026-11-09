@@ -153,6 +153,7 @@ The small box at the top right shows 6 kHz from the dial as audio frequency, wit
 - Auto keeps the display range on the noise floor. It's on by default and needs no attention.
 - Display sets the range by hand, the resolution, the waterfall speed and POP.
 - POP makes the waterfall follow the noise floor, which lifts weak signals out of it.
+- Config > Colors changes the spectrum line, the shading under it, the background (plain or fading) and the waterfall colours. "Back to the original colours" undoes it all.
 - The dotted bar between the panadapter and waterfall drags to change their sizes.
 """),
 

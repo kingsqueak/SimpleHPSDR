@@ -424,6 +424,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public MainViewModel()
     {
+        SpectrumLook.Apply(_settings);
         _vfoSender = new Latest<long>(hz => _client!.SetVfoAsync(hz, ActiveRx));
         // Main AF is the station-wide master; each slice has its own trim on top.
         _afSender = new Latest<double>(db => _client!.SetAfGainAsync(db));
