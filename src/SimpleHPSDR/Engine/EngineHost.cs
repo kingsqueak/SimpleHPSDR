@@ -57,7 +57,9 @@ public sealed class EngineHost : IDisposable
         }
     }
 
-    public static string LogPath => Path.Combine(DataDir, "engine.log");
+    /// <summary>This run's engine log: engine.log, or engine.2.log and so on while
+    /// another (hung) copy still holds it.</summary>
+    public static string LogPath { get; private set; } = Path.Combine(DataDir, "engine.log");
     private static string PreviousLogPath => Path.Combine(DataDir, "engine.previous.log");
     private static string PidPath => Path.Combine(DataDir, "engine.pid");
 
@@ -118,10 +120,7 @@ public sealed class EngineHost : IDisposable
         psi.Environment["ZEUS_DISABLE_VST_LOAD"] = "1";
         psi.Environment["Logging__LogLevel__Microsoft.AspNetCore"] = "Warning";
 
-        // Each start begins a new log; keep the last one, which may hold a crash.
-        try { if (File.Exists(LogPath)) File.Move(LogPath, PreviousLogPath, overwrite: true); }
-        catch (IOException) { }
-        _log = new StreamWriter(LogPath, append: false) { AutoFlush = true };
+        _log = OpenLog();
         _process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         _process.Exited += (_, _) => OnExited();
         _process.OutputDataReceived += (_, e) => WriteLog(e.Data);
@@ -162,6 +161,26 @@ public sealed class EngineHost : IDisposable
     }
 
     // An engine left running by a crashed UI still owns the radio and audio.
+    private static StreamWriter OpenLog()
+    {
+        // Each start begins a new log; keep the last one, which may hold a crash.
+        var main = Path.Combine(DataDir, "engine.log");
+        try { if (File.Exists(main)) File.Move(main, PreviousLogPath, overwrite: true); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        for (int n = 1; ; n++)
+        {
+            var path = n == 1 ? main : Path.Combine(DataDir, $"engine.{n}.log");
+            try
+            {
+                var w = new StreamWriter(path, append: false) { AutoFlush = true };
+                LogPath = path;
+                return w;
+            }
+            // Another copy of SimpleHPSDR, hung, still has it open: use the next.
+            catch (Exception e) when (n < 9 && e is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
     private static void KillOrphan()
     {
         try

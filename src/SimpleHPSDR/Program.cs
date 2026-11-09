@@ -8,6 +8,7 @@ internal static class Program
     public static void Main(string[] args)
     {
         Platform.LayoutMode.ReadCommandLine(args);
+        if (!Platform.SingleInstance.Claim()) return;   // the running copy came to the front
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

@@ -66,6 +66,7 @@ public partial class App : Application
             var main = new MainWindow { DataContext = vm };
             LayoutMode.Watch(main, vm.AppSettings);
             desktop.MainWindow = main;
+            SingleInstance.Listen(main);
             desktop.Exit += (_, _) => vm.Dispose();
             // Release the radio and stop the engine on kill/Ctrl-C too.
             _signals =
