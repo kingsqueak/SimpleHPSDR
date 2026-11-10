@@ -362,7 +362,7 @@
 
     <!-- Spectrum and waterfall: slice A's receiver on top, slice B's below
          while B is on (the window code sizes the second row). -->
-    <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0">
+    <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0" ColumnDefinitions="*,0">
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"

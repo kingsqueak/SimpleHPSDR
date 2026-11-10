@@ -62,6 +62,9 @@ public sealed class Settings
     public double DialPosition { get; set; }
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
+
+    /// <summary>Slice B's own panadapter beside A's rather than below it.</summary>
+    public bool PanadaptersSideBySide { get; set; }
     /// <summary>The band plan has been chosen at first start; the engine keeps it after that.</summary>
     public bool BandPlanDefaulted { get; set; }
     /// <summary>No band plan restrictions at all. The engine still holds a

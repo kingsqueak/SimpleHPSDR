@@ -77,6 +77,10 @@ public static class MainMenus
             items.Add(vm.SliceBOwnPanadapter
                 ? Item("Show slice B on this panadapter", () => { vm.SliceBOwnPanadapter = false; return Task.CompletedTask; })
                 : Item("Show slice B in its own panadapter", () => { vm.SliceBOwnPanadapter = true; return Task.CompletedTask; }));
+            if (vm.SliceBOwnPanadapter)
+                items.Add(vm.PanadaptersSideBySide
+                    ? Item("Panadapters one above the other", () => { vm.PanadaptersSideBySide = false; return Task.CompletedTask; })
+                    : Item("Panadapters side by side", () => { vm.PanadaptersSideBySide = true; return Task.CompletedTask; }));
             items.Add(Item("Remove slice B", () => vm.RemoveSliceBAsync()));
         }
         new ContextMenu { ItemsSource = items }.Open(at);

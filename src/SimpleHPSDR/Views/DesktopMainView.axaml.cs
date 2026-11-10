@@ -160,8 +160,14 @@ public partial class DesktopMainView : UserControl
     {
         if (Vm is not { } vm) return;
         bool two = vm.ShowPanadapterB;
-        PanGrid.RowDefinitions[1].Height = two ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        PanGrid.RowSpacing = two ? 6 : 0;
+        bool beside = two && vm.PanadaptersSideBySide;
+        var star = new GridLength(1, GridUnitType.Star);
+        PanGrid.RowDefinitions[1].Height = two && !beside ? star : new GridLength(0);
+        PanGrid.ColumnDefinitions[1].Width = beside ? star : new GridLength(0);
+        PanGrid.RowSpacing = two && !beside ? 6 : 0;
+        PanGrid.ColumnSpacing = beside ? 6 : 0;
+        Grid.SetRow(PanBorderB, beside ? 0 : 1);
+        Grid.SetColumn(PanBorderB, beside ? 1 : 0);
         PanBorderA.BorderBrush = two && vm.ActiveRx == 0 ? ActiveOutline[0] : Brushes.Transparent;
         PanBorderB.BorderBrush = two && vm.ActiveRx == 1 ? ActiveOutline[1] : Brushes.Transparent;
         if (!two) SpectrumB.Clear();
@@ -286,7 +292,8 @@ public partial class DesktopMainView : UserControl
 
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx))
+        if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx)
+            or nameof(MainViewModel.PanadaptersSideBySide))
             LayoutPanadapters();
         // Zooming: redraw now with the new span instead of waiting for the next
         // frame. At each whole zoom level the engine sends no frames for about

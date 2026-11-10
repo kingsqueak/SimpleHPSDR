@@ -48,6 +48,19 @@ public sealed partial class MainViewModel
     }
     public bool ShowPanadapterB => SliceBEnabled && SliceBOwnPanadapter;
 
+    /// <summary>The two panadapters side by side, A on the left, instead of one above the other.</summary>
+    public bool PanadaptersSideBySide
+    {
+        get => _settings.PanadaptersSideBySide;
+        set
+        {
+            if (_settings.PanadaptersSideBySide == value) return;
+            _settings.PanadaptersSideBySide = value;
+            _settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     // Each slice's own AF, on top of the main (master) AF. Shown under the
     // main AF while slice B is on.
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfText))] [NotifyPropertyChangedFor(nameof(AfTip))]
