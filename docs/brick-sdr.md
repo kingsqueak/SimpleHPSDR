@@ -14,6 +14,9 @@ sets, the same way deskHPSDR does:
 | 02:B2:other | Brick2 |
 | 02:B3:xx:xx:xx:xx | Brick3 |
 
+Tested by a Brick owner with the Windows build on 2026-11-09: working.
+The two Protocol 2 items marked unconfirmed below still want a specific report.
+
 ## What the engine does for a Brick
 
 Brick2 (Protocol 1 or 2):
