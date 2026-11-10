@@ -21,9 +21,19 @@ public sealed partial class MainViewModel
 {
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ActiveSliceLabel))] [NotifyPropertyChangedFor(nameof(SplitText))]
     [NotifyPropertyChangedFor(nameof(RitUsable))]
+    [NotifyPropertyChangedFor(nameof(SliceAActive))] [NotifyPropertyChangedFor(nameof(SliceBActive))]
     private int _activeRx;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SplitText))]
+    [NotifyPropertyChangedFor(nameof(SliceATx))] [NotifyPropertyChangedFor(nameof(SliceBTx))]
+    [NotifyPropertyChangedFor(nameof(SliceAActive))] [NotifyPropertyChangedFor(nameof(SliceBActive))]
     private int _txRx;
+
+    // The A and B badges beside the frequency: the active slice blue, the
+    // transmitting one red (red wins when they're the same slice).
+    public bool SliceAActive => ActiveRx == 0 && TxRx != 0;
+    public bool SliceBActive => ActiveRx == 1 && TxRx != 1;
+    public bool SliceATx => TxRx == 0;
+    public bool SliceBTx => TxRx == 1;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))] [NotifyPropertyChangedFor(nameof(AfTip))]
     [NotifyPropertyChangedFor(nameof(ShowPanadapterB))]
     private bool _sliceBEnabled;

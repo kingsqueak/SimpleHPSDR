@@ -29,8 +29,8 @@ public partial class DesktopMainView : UserControl
         OffsetButtons.SizeChanged += (_, _) => FitVfo();
         StepLockButtons.SizeChanged += (_, _) => FitVfo();
         MemButton.SizeChanged += (_, _) => FitVfo();
-        SwapButtons.SizeChanged += (_, _) => FitVfo();
-        SwapButtons.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) FitVfo(); };
+        SliceBadges.SizeChanged += (_, _) => FitVfo();
+        SliceBadges.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) FitVfo(); };
         MainGrid.LayoutUpdated += (_, _) => PlaceDeck();
         VfoDigitWheel.Attach(FrequencyReadout, () => Vm);
         if (StepButton.Flyout is MenuFlyout stepMenu) stepMenu.Opening += (_, _) => FillStepMenu(stepMenu);
@@ -46,6 +46,10 @@ public partial class DesktopMainView : UserControl
             e.Handled = true;
         };
         // Click the frequency to type one; Enter tunes, Esc or clicking away cancels.
+        // A press on a slice badge moves transmit there and stops before it
+        // reaches the frequency box (which would open typing).
+        SliceBadgeA.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(0); };
+        SliceBadgeB.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(1); };
         FrequencyPanel.PointerPressed += (_, e) =>
         {
             if (Vm is not { EditingFrequency: false } vm || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
@@ -104,9 +108,9 @@ public partial class DesktopMainView : UserControl
     private void FitVfo()
     {
         // The buttons beside the frequency keep their size (their gaps are
-        // margins, so A⇄B takes no room while hidden); the frequency gets the rest.
+        // margins, so the A/B badges take no room while hidden); the frequency gets the rest.
         double others = MemButton.DesiredSize.Width + StepLockButtons.DesiredSize.Width + OffsetButtons.DesiredSize.Width
-                        + (SwapButtons.IsVisible ? SwapButtons.DesiredSize.Width : 0);
+                        + (SliceBadges.IsVisible ? SliceBadges.DesiredSize.Width : 0);
         VfoScale.MaxWidth = Math.Max(0, VfoArea.Bounds.Width - others);
     }
 

@@ -283,7 +283,9 @@ SimpleHPSDR has two independent receivers, called slices. It's like a second VFO
 Right-click the panadapter and add slice B there, on the same panadapter or in a new one. The same menu makes a slice active, moves slice B, mutes either slice, and removes slice B. With slice B in its own panadapter, the menu also puts the two panadapters side by side or one above the other.
 
 ## Which one you're controlling
-The active slice is the one the frequency, mode and filter controls act on. Click a slice's tag on the panadapter to make it active. A⇄B swaps the two frequencies.
+The active slice is the one the frequency, mode and filter controls act on. Click a slice's tag on the panadapter to make it active.
+
+Left of the frequency, A and B show which is which: blue is the active slice, red is the one that transmits, and grey is the other. Click A or B there to transmit on that slice. "Swap A and B" in the panadapter's right-click menu swaps their frequencies.
 
 ## Working split
 1. Tune slice A to the DX station.

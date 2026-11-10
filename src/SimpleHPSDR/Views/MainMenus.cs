@@ -81,6 +81,7 @@ public static class MainMenus
                 items.Add(vm.PanadaptersSideBySide
                     ? Item("Panadapters one above the other", () => { vm.PanadaptersSideBySide = false; return Task.CompletedTask; })
                     : Item("Panadapters side by side", () => { vm.PanadaptersSideBySide = true; return Task.CompletedTask; }));
+            items.Add(Item("Swap A and B", () => { vm.SwapSlicesCommand.Execute(null); return Task.CompletedTask; }));
             items.Add(Item("Remove slice B", () => vm.RemoveSliceBAsync()));
         }
         new ContextMenu { ItemsSource = items }.Open(at);

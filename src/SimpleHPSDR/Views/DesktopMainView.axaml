@@ -100,7 +100,7 @@
 
       <!-- Only the frequency shrinks when the window is narrow -->
       <Panel Name="VfoArea" Grid.Column="1" Margin="8,0">
-      <Grid Name="VfoGrid" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto" HorizontalAlignment="Center">
+      <Grid Name="VfoGrid" ColumnDefinitions="Auto,Auto,Auto,Auto" HorizontalAlignment="Center">
         <!-- Mem: 16 memories, the same on every band -->
         <Button Name="MemButton" Classes="seg ant" FontSize="11" Height="52" Padding="5,0" MinWidth="0"
                 VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,0,10,0"
@@ -116,21 +116,23 @@
             </Flyout>
           </Button.Flyout>
         </Button>
-        <Viewbox Name="VfoScale" Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+        <!-- A over B: the active slice blue, the one that transmits red.
+             Click one to transmit on it. -->
+        <StackPanel Name="SliceBadges" VerticalAlignment="Center" IsVisible="{Binding HasSliceB}" Spacing="3" Margin="0,0,6,0">
+          <Border Name="SliceBadgeA" Classes="slicebadge" Classes.active="{Binding SliceAActive}" Classes.txslice="{Binding SliceATx}"
+                  ToolTip.Tip="Slice A. Blue: the VFO, band, mode and filter act on it. Red: it transmits. Click to transmit on A.">
+            <TextBlock Text="A" />
+          </Border>
+          <Border Name="SliceBadgeB" Classes="slicebadge" Classes.active="{Binding SliceBActive}" Classes.txslice="{Binding SliceBTx}"
+                  ToolTip.Tip="Slice B. Blue: the VFO, band, mode and filter act on it. Red: it transmits. Click to transmit on B.">
+            <TextBlock Text="B" />
+          </Border>
+        </StackPanel>
+        <Viewbox Name="VfoScale" Stretch="Uniform" StretchDirection="DownOnly">
         <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
                 ToolTip.Tip="Click to type a frequency (kHz or MHz). The wheel over a digit tunes that digit; elsewhere it tunes by the step.">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <!-- Active slice letter, and where transmit is when it's the other slice -->
-            <StackPanel VerticalAlignment="Center" IsVisible="{Binding HasSliceB}" Spacing="0">
-              <Border CornerRadius="4" Padding="6,0" HorizontalAlignment="Center"
-                      Classes.sliceA="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=A}"
-                      Classes.sliceB="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=B}"
-                      ToolTip.Tip="Active slice: the VFO, band, mode, filter and AF act on it">
-                <TextBlock Text="{Binding ActiveSliceLabel}" FontSize="16" FontWeight="Bold" Foreground="White" />
-              </Border>
-              <TextBlock Text="{Binding SplitText}" FontSize="9" Foreground="{DynamicResource TxText}" HorizontalAlignment="Center"
-                         ToolTip.Tip="Transmit is on the other slice (split)" />
-            </StackPanel>
             <!-- Click the frequency to type one in its place -->
             <Panel MinWidth="230">
               <TextBlock Name="FrequencyReadout" FontFamily="{StaticResource MonoFont}"
@@ -146,6 +148,7 @@
           </StackPanel>
         </Border>
         </Viewbox>
+        </StackPanel>
         <!-- Step and lock beside the frequency, the same height as RIT and XIT.
              Outside the scaled frequency box so they keep their size. -->
         <StackPanel Name="StepLockButtons" Grid.Column="2" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0">
@@ -190,11 +193,6 @@
                          MinWidth="21" TextAlignment="Right" />
             </StackPanel>
           </Button>
-        </StackPanel>
-        <StackPanel Name="SwapButtons" Grid.Column="4" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0"
-                    IsVisible="{Binding HasSliceB}">
-          <Button Classes="seg ant" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsVisible="{Binding HasSliceB}"
-                  FontSize="11" MinWidth="0" Padding="4,3" ToolTip.Tip="Swap the frequencies of slices A and B" />
         </StackPanel>
       </Grid>
       </Panel>

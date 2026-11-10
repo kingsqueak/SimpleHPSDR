@@ -211,6 +211,34 @@
 
   <!-- Active slice letter beside the VFO: A red, B amber (matches the panadapter) -->
   <Style Selector="Border.sliceA"><Setter Property="Background" Value="#F25F5C" /></Style>
+  <!-- Slice badges beside the frequency: grey outline, blue on the active slice, red on the one that transmits -->
+  <Style Selector="Border.slicebadge">
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="22" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Border.slicebadge > TextBlock">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+  <Style Selector="Border.slicebadge.active">
+    <Setter Property="Background" Value="{StaticResource Accent}" />
+    <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
+  </Style>
+  <Style Selector="Border.slicebadge.txslice">
+    <Setter Property="Background" Value="#A8232A" />
+    <Setter Property="BorderBrush" Value="#A8232A" />
+  </Style>
+  <Style Selector="Border.slicebadge.active > TextBlock, Border.slicebadge.txslice > TextBlock">
+    <Setter Property="Foreground" Value="White" />
+  </Style>
   <Style Selector="Border.sliceB"><Setter Property="Background" Value="#F5A524" /></Style>
 
   <!-- CPU readout: green below 25%, yellow 25-50%, red above 50% -->
