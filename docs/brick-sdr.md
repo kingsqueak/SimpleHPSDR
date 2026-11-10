@@ -10,7 +10,7 @@ sets, the same way deskHPSDR does:
 |---|---|
 | 02:B2:01:xx:xx:xx | Brick2 14-bit LP |
 | 02:B2:02:xx:xx:xx | Brick2 16-bit LP |
-| 02:B2:03:xx:xx:xx | Brick2 14-bit HP |
+| 02:B2:03:xx:xx:xx | Brick2 14-bit HP (50 W) |
 | 02:B2:other | Brick2 |
 | 02:B3:xx:xx:xx:xx | Brick3 |
 
@@ -23,7 +23,7 @@ Brick2 (Protocol 1 or 2):
 - Classified as Hermes whatever board byte the firmware reports (board 0x06
   with a newer code version would otherwise read as a Hermes-Lite 2).
 - One antenna: no Ant 2/3 or RX aux selections offered.
-- Power meter scale and drive readout 15 W. Drive keeps the Hermes 100 W gain
+- Power meter scale and drive readout 15 W (50 W on the HP version). Drive keeps the Hermes 100 W gain
   table, so 100 % drive is full output (the radio limits itself).
 - PA always enabled (transmit safety and per-band PA-off still apply).
 - Protocol 2: the 48 kHz IQ level correction (+29 dB hot firmware) and the
