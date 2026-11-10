@@ -1093,6 +1093,44 @@
               </StackPanel>
             </Border>
 
+            <!-- The HL2 IO board, when one is found -->
+            <TextBlock Text="HL2 IO BOARD" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasIoBoard}" />
+            <Border Classes="panel" IsVisible="{Binding HasIoBoard}">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding IoInputsText}" FontSize="12" />
+
+                <TextBlock Text="Antennas" FontWeight="SemiBold" FontSize="13" />
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="The board picks each band's antenna itself. Antenna 1 is its usual one for the band; choose 2 or more only where your board has extra antennas wired for that band." />
+                <ItemsControl ItemsSource="{Binding IoBands}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SettingsViewModel+IoBandRow">
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,16,2">
+                        <TextBlock Text="{Binding Band}" Width="42" VerticalAlignment="Center" FontSize="12" />
+                        <TextBlock Text="RX" Classes="label" FontSize="11" VerticalAlignment="Center" />
+                        <NumericUpDown Value="{Binding Rx}" Minimum="1" Maximum="16" Increment="1" FormatString="0"
+                                       Width="96" FontSize="12" />
+                        <TextBlock Text="TX" Classes="label" FontSize="11" VerticalAlignment="Center" />
+                        <NumericUpDown Value="{Binding Tx}" Minimum="1" Maximum="16" Increment="1" FormatString="0"
+                                       Width="96" FontSize="12" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Antenna tuner" FontWeight="SemiBold" FontSize="13" />
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="For a tuner on the IO board, such as an Icom AH-4. Tune transmits a carrier at the tune drive level while the tuner asks for it, for 15 seconds at most; have the antenna connected. Bypass takes the tuner out of line." />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Classes="seg" Content="Tune" Command="{Binding IoTuneCommand}" IsEnabled="{Binding !IoTunerBusy}" />
+                  <Button Classes="seg" Content="Bypass" Command="{Binding IoBypassCommand}" IsEnabled="{Binding !IoTunerBusy}" />
+                  <Button Classes="seg" Content="Stop" Command="{Binding IoStopCommand}" IsEnabled="{Binding IoTunerBusy}" />
+                  <TextBlock Text="{Binding IoTunerText}" FontSize="12" VerticalAlignment="Center" Margin="6,0,0,0" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <TextBlock Text="ANVELINA-PRO3" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasAnvelinaDx}" />
             <Border Classes="panel" IsVisible="{Binding HasAnvelinaDx}">
               <StackPanel Spacing="4">

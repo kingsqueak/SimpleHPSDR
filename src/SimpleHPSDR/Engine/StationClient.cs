@@ -511,9 +511,17 @@ public sealed class StationClient : IDisposable
     public Task SetHl2GpioAsync(int bits) =>
         PutAsync("api/radio/hl2-gpio", new Hl2GpioSetRequest(bits));
 
-    public sealed record Hl2IoBoard(bool Supported, bool Present, byte HardwareVersion, byte FirmwareMajor, byte FirmwareMinor);
-    public async Task<Hl2IoBoard> GetHl2IoBoardAsync() =>
-        (await _http.GetFromJsonAsync<Hl2IoBoard>("api/radio/hl2-io-board", Json))!;
+    // The HL2 IO board (N2ADR): status, per-band antennas, antenna tuner.
+    public sealed record Hl2IoBoardStatus(bool Supported, bool Present, byte HardwareVersion, byte FirmwareMajor,
+        byte FirmwareMinor, byte Inputs, byte Fault, byte Tuner, string? Error);
+    public sealed record Hl2IoBoardBand(string Band, byte RxAntenna, byte TxAntenna);
+    public sealed record Hl2IoBoardView(Hl2IoBoardStatus Status, List<Hl2IoBoardBand> Bands, string Tuning, string? TunerError);
+    public async Task<Hl2IoBoardView> GetHl2IoBoardAsync() =>
+        (await _http.GetFromJsonAsync<Hl2IoBoardView>("api/radio/hl2-io-board", Json))!;
+    public Task SetHl2IoBandAsync(Hl2IoBoardBand band) => PutAsync("api/radio/hl2-io-board/antenna", band);
+    /// <summary>"tune" (keys a carrier while the tuner asks for RF, up to 15 s), "bypass" or "cancel".</summary>
+    public Task<Hl2IoBoardView> Hl2IoCommandAsync(string action) =>
+        PostForAsync<Hl2IoBoardView>("api/radio/hl2-io-board/command", new { action });
 
     public sealed record RadioVariant(string Variant, bool RequiresConfirmation);
     /// <summary>Which radio behind the OrionMkII board ID: they all report the same one.</summary>
