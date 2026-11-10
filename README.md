@@ -68,8 +68,8 @@ sudo dnf install ./simplehpsdr-*.rpm        # Fedora
 sudo pacman -U ./simplehpsdr-*.pkg.tar.zst  # Arch
 ```
 
-**Raspberry Pi OS Trixie (and Debian 13):** use the 64-bit Raspberry Pi OS on a
-Pi 4 or Pi 5; the 32-bit edition can't run it. Download the `arm64` .deb from the
+**Raspberry Pi OS Trixie or Bookworm (and Debian 13 or 12):** use the 64-bit
+Raspberry Pi OS on a Pi 4 or Pi 5 (or a CM4 / CM5); the 32-bit edition can't run it. Download the `arm64` .deb from the
 latest release (on a PC with x86-64 Debian 13, the `amd64` one), then in a terminal:
 
 ```sh
@@ -134,6 +134,9 @@ Exec=simplehpsdr
 there does the same.) The touch layout has been tried with a mouse so far, and
 the autostart steps aren't tested on a Pi yet; reports from touch-screen users
 are welcome.
+
+**On an ANAN G2's own Pi** (CM4 or CM5, with its built-in screen and front
+panel), SimpleHPSDR runs beside the G2's p2app: see [docs/g2-pi.md](docs/g2-pi.md).
 
 ## Build
 

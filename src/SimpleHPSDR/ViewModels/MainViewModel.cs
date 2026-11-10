@@ -454,6 +454,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             RestartEngine = RestartEngineAsync,
             OpenPsSetup = () => _ = OpenPsSetupAsync(),
             FollowRxFilterNow = () => FollowRxFilterAsync(),
+            RestartG2Panel = RestartG2PanelAsync,
+            G2PanelStatusText = G2PanelStatus,
+            G2PanelFound = G2PanelProduct,
         };
         settings.PaMaxPowerSaved += SetPowerScale;
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
@@ -842,6 +845,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _statePoll.Start();
             RadioLabel = radio.Label;
             Status = $"Connected to {radio.Label}";
+            await StartG2PanelAsync();   // a G2's front panel through p2app; nothing on other radios
             return true;
         }
         catch (Exception ex)
@@ -864,6 +868,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         EndPlacingNotch();
         if (_client is null || _radio is null) return;
         await UnkeyAsync();
+        await StopG2PanelAsync();
         try { await _client.DisconnectAsync(_radio.Protocol2); } catch (Exception) { }
         IsConnected = false;
         _statePoll.Stop();
@@ -1422,6 +1427,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         try { _statePoll.Stop(); } catch (InvalidOperationException) { }  // signal thread
         try { _clockTimer.Stop(); _cpuTimer.Stop(); } catch (InvalidOperationException) { }
         UnkeyForShutdown();
+        StopG2PanelForShutdown();
         if (_client is not null && _radio is not null)
         {
             var (client, p2) = (_client, _radio.Protocol2);

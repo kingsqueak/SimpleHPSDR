@@ -89,7 +89,7 @@ Section: hamradio
 Priority: optional
 Architecture: ${ARCH}
 Installed-Size: ${SIZE}
-Depends: libc6, libstdc++6, libgcc-s1, zlib1g, libssl3t64, libasound2t64, libx11-6, libice6, libsm6, libfontconfig1, libgomp1
+Depends: libc6, libstdc++6, libgcc-s1, zlib1g, libssl3t64 | libssl3, libasound2t64 | libasound2, libx11-6, libice6, libsm6, libfontconfig1, libgomp1
 Recommends: pulseaudio-utils | pipewire-bin | alsa-utils
 Maintainer: KC2RGW Chris <2788495+kingsqueak@users.noreply.github.com>
 Homepage: https://github.com/kingsqueak/SimpleHPSDR

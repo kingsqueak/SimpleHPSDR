@@ -1131,6 +1131,56 @@
               </StackPanel>
             </Border>
 
+            <!-- The ANAN G2 front panel, through Saturn's p2app -->
+            <TextBlock Text="G2 FRONT PANEL" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasG2Panel}" />
+            <Border Classes="panel" IsVisible="{Binding HasG2Panel}">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="The G2's knobs and buttons reach SimpleHPSDR through p2app on the G2's own Pi, started with the panel option (p2app -p). Works with SimpleHPSDR on that Pi or on another computer." />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <CheckBox Content="Use the front panel" IsChecked="{Binding G2PanelOn}" />
+                  <TextBlock Text="Port" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding G2PanelPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0"
+                                 Width="130" FontSize="12" ToolTip.Tip="The port p2app connects to; change it only if another program uses it" />
+                </StackPanel>
+                <TextBlock Text="{Binding G2PanelStatusText}" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding G2PanelStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="What each control does on the" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox ItemsSource="{Binding PanelTypes}" SelectedIndex="{Binding PanelTypeIndex}" Width="260" />
+                  <Button Classes="flat" Content="Back to defaults" Command="{Binding ResetPanelMapCommand}" />
+                </StackPanel>
+                <TextBlock Text="Buttons" FontWeight="SemiBold" FontSize="13" />
+                <ItemsControl ItemsSource="{Binding PanelButtons}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PanelMapRow">
+                      <Grid ColumnDefinitions="150,*" Margin="0,2,16,2">
+                        <TextBlock Text="{Binding Label}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Words}" SelectedIndex="{Binding SelectedIndex}"
+                                  HorizontalAlignment="Stretch" FontSize="12" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="Knobs" FontWeight="SemiBold" FontSize="13" />
+                <ItemsControl ItemsSource="{Binding PanelKnobs}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PanelMapRow">
+                      <Grid ColumnDefinitions="150,*" Margin="0,2,16,2">
+                        <TextBlock Text="{Binding Label}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Words}" SelectedIndex="{Binding SelectedIndex}"
+                                  HorizontalAlignment="Stretch" FontSize="12" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="The VFO knob always tunes. Defaults follow piHPSDR's, so the panel works as G2 owners know it. The ATU button is handled by p2app itself." />
+              </StackPanel>
+            </Border>
+
             <TextBlock Text="ANVELINA-PRO3" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasAnvelinaDx}" />
             <Border Classes="panel" IsVisible="{Binding HasAnvelinaDx}">
               <StackPanel Spacing="4">

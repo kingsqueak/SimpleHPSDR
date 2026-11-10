@@ -105,6 +105,12 @@ public sealed class Settings
     public List<VoiceKeyerSetting> VoiceKeyer { get; set; } = [];
     /// <summary>Show the voice keyer buttons over the waterfall on the touch layout.</summary>
     public bool VoiceKeyerOnTouch { get; set; }
+    /// <summary>The ANAN G2's front panel through p2app (only on a G2 / G2-1K).</summary>
+    public bool G2PanelOn { get; set; } = true;
+    public int G2PanelPort { get; set; } = 19090;
+    /// <summary>Changes from the default panel map: "B4:47" (button 47 on the
+    /// original G2 panel) or "E5:9" (encoder 9 on the G2 Ultra) to an action name.</summary>
+    public Dictionary<string, string> G2PanelMap { get; set; } = [];
     /// <summary>While transmitting, the waterfall's colours span this many dB
     /// below the signal's own peak, so the shape of the transmit audio shows
     /// instead of one saturated block. 0 keeps the receive range.</summary>

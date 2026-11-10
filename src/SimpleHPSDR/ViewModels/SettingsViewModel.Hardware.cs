@@ -51,6 +51,7 @@ public sealed partial class SettingsViewModel
         var codec = await _client.GetHl2CodecAsync();
         var gpio = await _client.GetHl2GpioAsync();
         var io = await _client.GetHl2IoBoardAsync();
+        var g2Cat = await _client.GetG2CatPortAsync();
         var name = await _client.GetConnectedBoardAsync();
 
         _hardwareLoading = true;
@@ -72,6 +73,7 @@ public sealed partial class SettingsViewModel
                 ? $"Settings for your {name}."
                 : $"Your {name} has no extra settings here.";
         ApplyIoBoard(io);
+        LoadG2Panel(g2Cat.Supported);
     }
 
     // ---- HL2 IO board -------------------------------------------------

@@ -54,8 +54,9 @@ jobs:
             dist/*.pkg.tar.zst
           if-no-files-found: error
 
-  # The same debs are what Raspberry Pi OS Trixie (64-bit) and Debian 13 users
-  # install: check they install with apt there, every bundled library loads,
+  # The same debs are what Raspberry Pi OS (64-bit) and Debian users install:
+  # Trixie / Debian 13, and Bookworm / Debian 12 (the original ANAN G2's CM4
+  # images). Check they install with apt there, every bundled library loads,
   # and the app starts and stays up.
   trixie:
     if: ${{ !inputs.windows_only }}
@@ -65,10 +66,15 @@ jobs:
         include:
           - runner: ubuntu-26.04-arm
             arch: ARM64
+            os: trixie
           - runner: ubuntu-26.04
             arch: X64
+            os: trixie
+          - runner: ubuntu-26.04-arm
+            arch: ARM64
+            os: bookworm
     runs-on: ${{ matrix.runner }}
-    container: debian:trixie
+    container: debian:${{ matrix.os }}
     steps:
       - uses: actions/download-artifact@v4
         with:

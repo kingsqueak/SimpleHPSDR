@@ -495,6 +495,12 @@ public sealed class StationClient : IDisposable
     public Task SetG2OptionsAsync(bool? dither = null, bool? random = null) =>
         PutAsync("api/radio/g2-options", new G2OptionsSetRequest(dither, random));
 
+    /// <summary>The port the G2's p2app connects to for its front panel (0 = off);
+    /// Supported only while connected to a G2 / G2-1K.</summary>
+    public async Task<G2CatPortDto> GetG2CatPortAsync() =>
+        (await _http.GetFromJsonAsync<G2CatPortDto>("api/radio/g2-cat-port", Json))!;
+    public Task SetG2CatPortAsync(int port) => PutAsync("api/radio/g2-cat-port", new G2CatPortSetRequest(port));
+
     public async Task<Hl2OptionsDto> GetHl2OptionsAsync() =>
         (await _http.GetFromJsonAsync<Hl2OptionsDto>("api/radio/hl2-options", Json))!;
     public Task SetHl2OptionsAsync(bool bandVolts) =>
