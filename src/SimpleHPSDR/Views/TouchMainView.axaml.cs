@@ -183,6 +183,12 @@ public partial class TouchMainView : UserControl
         (TopLevel.GetTopLevel(this) as MainWindow)?.OpenAnalyzer();
     }
 
+    private void OnOpenWideband(object? sender, RoutedEventArgs e)
+    {
+        Drawer.IsPaneOpen = false;
+        (TopLevel.GetTopLevel(this) as MainWindow)?.OpenWideband();
+    }
+
     private void OnFullScreen(object? sender, RoutedEventArgs e)
     {
         Drawer.IsPaneOpen = false;

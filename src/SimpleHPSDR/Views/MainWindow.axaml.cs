@@ -88,9 +88,11 @@ public partial class MainWindow : Window
         }
         var analyzer = new NativeMenuItem("Antenna Analyser…");
         analyzer.Click += (_, _) => OpenAnalyzer();
+        var wideband = new NativeMenuItem("Wideband View…");
+        wideband.Click += (_, _) => OpenWideband();
         NativeMenu.SetMenu(this, new NativeMenu
         {
-            new NativeMenuItem("Tools") { Menu = new NativeMenu { analyzer } },
+            new NativeMenuItem("Tools") { Menu = new NativeMenu { analyzer, wideband } },
             new NativeMenuItem("Help") { Menu = items },
         });
     }
@@ -131,6 +133,18 @@ public partial class MainWindow : Window
         _analyzer = new AnalyzerWindow { DataContext = vm.NewAnalyzer() };
         _analyzer.Closed += (_, _) => _analyzer = null;
         _analyzer.Show(this);
+    }
+
+    // One wideband view, in its own window; it never changes the radio.
+    private WidebandWindow? _wideband;
+
+    public void OpenWideband()
+    {
+        if (_wideband is not null) { _wideband.Activate(); return; }
+        if (Vm is not { } vm) return;
+        _wideband = new WidebandWindow { DataContext = vm.NewWideband() };
+        _wideband.Closed += (_, _) => _wideband = null;
+        _wideband.Show(this);
     }
 
     // One CW window, which stays open beside this one.

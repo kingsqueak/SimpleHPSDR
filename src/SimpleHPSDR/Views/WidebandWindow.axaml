@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        xmlns:c="using:SimpleHPSDR.Controls"
+        x:Class="SimpleHPSDR.Views.WidebandWindow"
+        x:DataType="vm:WidebandViewModel"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        Title="Wideband View" Width="1100" Height="560" MinWidth="560" MinHeight="320"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="10">
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="2,0,0,8">
+      <TextBlock Text="0 to 60 MHz straight from the radio's receiver. Your radio carries on as it is." FontSize="12" VerticalAlignment="Center" Classes="label" />
+      <TextBlock Text="{Binding Status}" FontSize="12" VerticalAlignment="Center" Foreground="#F5D76E" />
+    </StackPanel>
+    <c:WidebandView Row="{Binding Row}" VfoHz="{Binding VfoHz}" ClipToBounds="True" />
+  </DockPanel>
+</Window>

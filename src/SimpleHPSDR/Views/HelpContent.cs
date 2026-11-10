@@ -31,7 +31,7 @@ If no radio appears, check that it's on and on the same network, or type its add
 - Second row: band, mode, filters, ANF, NB, NR, and a close-up of the signal.
 - Middle: the band strip, the panadapter and the waterfall.
 - Bottom: display controls, then transmit and receive controls, and the clock.
-- The Tools menu has the antenna analyser; the Help menu has this window and update checks.
+- The Tools menu has the antenna analyser and the wideband view; the Help menu has this window and update checks.
 
 ## The most useful tip
 Most controls have more behind a right-click. Hover over anything for a short explanation. Blue means a control is on.
@@ -461,6 +461,24 @@ Plug the NanoVNA in by USB, choose NanoVNA, pick its serial port and press Conne
 
 ## Saved sweeps and calibration
 Every sweep is saved in the list on the right: click one to show it again, or delete it. Calibration (open, short, load, thru) appears only for sources that need it.
+"""),
+
+        ("Wideband view", """
+Tools > Wideband View (touch: ☰ > Station > Wideband) opens a window showing 0 to 60 MHz at once, straight from the radio's receiver. It only looks: your frequency, mode and display carry on as they are, and the radio stops sending the wideband data a few seconds after you close the window. It needs a Protocol 2 radio.
+
+## What it shows
+- A trace on top and a waterfall below, with the amateur bands shaded and named. The red line is where your receiver is tuned.
+- The level scale follows the signals by itself.
+- Move the pointer over it to read the frequency and level.
+- While you transmit the picture holds still.
+
+## What it's good for
+- Hunting noise: arcing or a failing insulator raises the floor everywhere, a solar inverter or switching supply makes a comb of evenly spaced lines, and a single carrier is one line. Switch something off and watch.
+- Overload: it shows what reaches the receiver after its filters, such as AM broadcast stations or a strong local, when the overload light comes on.
+- Your antenna and tuner: the noise floor rises where they're tuned and falls away either side.
+- Band activity at a glance: busy FT8 spots, a contest, 10 m opening, or which shortwave broadcast bands are alive.
+
+Each point covers several kHz, so it shows where signals are, not the signals themselves; weak signals near the noise don't show.
 """),
 
         ("ANAN G2 on its own Pi", """

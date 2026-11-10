@@ -285,6 +285,7 @@
                   <Button Classes="seg t" Content="Mini" Click="OnOpenMini" />
                   <Button Classes="seg t" Content="Full screen" Click="OnFullScreen" ToolTip.Tip="Full screen on or off" />
                   <Button Classes="seg t" Content="Analyser" Click="OnOpenAnalyzer" ToolTip.Tip="Antenna analyser: SWR across a band" />
+                  <Button Classes="seg t" Content="Wideband" Click="OnOpenWideband" ToolTip.Tip="0 to 60 MHz from the radio's receiver, in its own window" />
                 </WrapPanel>
                 <TextBlock Text="ID TIMER" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">

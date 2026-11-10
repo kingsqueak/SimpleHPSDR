@@ -268,6 +268,31 @@ public sealed class StationClient : IDisposable
         List<string> Devices);
     public sealed record VnaStatus(bool Running, string? Phase, int PointsReceived, int PointsExpected,
         string? ActiveAntenna, string? ActiveBand, string? Error);
+    /// <summary>One row of the wideband view: 0-60 MHz from the radio's ADC.</summary>
+    public sealed record WidebandRow(long Seq, long CenterHz, float HzPerPixel, float[] Trace, float[] Waterfall)
+    {
+        public double LowHz => CenterHz - HzPerPixel * Trace.Length / 2.0;
+        public double SpanHz => HzPerPixel * (double)Trace.Length;
+    }
+
+    /// <summary>The latest wideband row (Protocol 2 radios). Each call keeps the
+    /// radio's wideband data coming for a few seconds; null until the first row.</summary>
+    public async Task<WidebandRow?> GetWidebandAsync(CancellationToken ct = default)
+    {
+        using var r = await _http.GetAsync("api/wideband/tool", ct);
+        if (r.StatusCode == HttpStatusCode.NoContent) return null;
+        await ThrowIfFailed(r, ct);
+        var b = await r.Content.ReadAsByteArrayAsync(ct);
+        if (b.Length < 24) return null;
+        int w = BitConverter.ToInt32(b, 0);
+        if (w <= 0 || b.Length < 24 + 8 * w) return null;
+        var trace = new float[w];
+        var wf = new float[w];
+        Buffer.BlockCopy(b, 24, trace, 0, 4 * w);
+        Buffer.BlockCopy(b, 24 + 4 * w, wf, 0, 4 * w);
+        return new(BitConverter.ToInt64(b, 4), BitConverter.ToInt64(b, 12), BitConverter.ToSingle(b, 20), trace, wf);
+    }
+
     public sealed record VnaPoint(long FrequencyHz, double RawReal, double RawImaginary, double MagnitudeDb, double PhaseDeg,
         double? Swr, double? ReturnLossDb, double? ResistanceOhms, double? ReactanceOhms);
     public sealed record VnaMetrics(long ResonantFrequencyHz, double? MinimumSwr, double? MaximumReturnLossDb,

@@ -88,6 +88,9 @@ public sealed partial class MainViewModel
 public sealed partial class MainViewModel
 {
     /// <summary>A fresh antenna analyser, on the band and antenna in use.</summary>
+    /// <summary>A wideband view of the connected radio.</summary>
+    public WidebandViewModel NewWideband() => new(() => IsConnected ? _client : null, () => VfoHz);
+
     public AnalyzerViewModel NewAnalyzer() =>
         new(() => IsConnected ? _client : null, VfoHz, TxAntLabel is "—" or "" ? "ANT1" : TxAntLabel);
 }
