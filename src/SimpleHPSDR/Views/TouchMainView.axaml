@@ -555,6 +555,25 @@
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <c:SpectrumView Name="SpectrumB" Fling="True" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
       </Border>
+      <!-- Voice keyer: over the bottom of the waterfall, when turned on in REC's settings.
+           Tap to transmit, tap again to stop; long press to set the label and recording. -->
+      <ItemsControl Grid.RowSpan="2" ItemsSource="{Binding VoiceKeyerSlots}" IsVisible="{Binding VoiceKeyerOnTouch}"
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8" ZIndex="10">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:VoiceKeyerSlot">
+            <Button Classes="seg t vk" Classes.playing="{Binding IsPlaying}" Classes.empty="{Binding !HasClip}"
+                    MinWidth="64" MaxWidth="120" Command="{Binding FireCommand}" ToolTip.Tip="{Binding Tip}">
+              <StackPanel><TextBlock Text="{Binding Label}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" /><TextBlock Text="VK" Classes="sub" /></StackPanel>
+              <Button.ContextFlyout>
+                <Flyout Placement="TopEdgeAlignedLeft">
+                  <c:VoiceKeyerSetup />
+                </Flyout>
+              </Button.ContextFlyout>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
       </Grid>
     </DockPanel>
   </SplitView>

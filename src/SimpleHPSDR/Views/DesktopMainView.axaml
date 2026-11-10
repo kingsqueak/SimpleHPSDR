@@ -452,7 +452,7 @@
       <!-- What's used every minute stays out; the rest is in the TX and RFG popups.
            The AF row always starts its own line. -->
       <StackPanel Spacing="6">
-      <WrapPanel ItemSpacing="24" LineSpacing="6">
+      <WrapPanel ItemSpacing="18" LineSpacing="6" Margin="0,0,130,0">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <ToggleButton Classes="seg tx" Content="MOX" IsChecked="{Binding MoxOn}" MinWidth="64"
                         ToolTip.Tip="Transmit" />
@@ -530,6 +530,27 @@
             </Button.ContextFlyout>
           </Button>
         </StackPanel>
+        <!-- Voice keyer: four buttons, F5 to F8. They wrap to their own line in a narrow window. -->
+        <ItemsControl ItemsSource="{Binding VoiceKeyerSlots}" VerticalAlignment="Center">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:VoiceKeyerSlot">
+              <Button Classes="seg vk" Classes.playing="{Binding IsPlaying}" Classes.empty="{Binding !HasClip}"
+                      MinWidth="64" MaxWidth="110" Padding="8,2" VerticalAlignment="Center"
+                      Command="{Binding FireCommand}" ToolTip.Tip="{Binding Tip}">
+                <StackPanel Spacing="-3">
+                  <TextBlock Text="{Binding Label}" FontSize="12" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding KeyLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.8" />
+                </StackPanel>
+                <Button.ContextFlyout>
+                  <Flyout Placement="TopEdgeAlignedLeft">
+                    <c:VoiceKeyerSetup />
+                  </Flyout>
+                </Button.ContextFlyout>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
       </WrapPanel>
       <WrapPanel ItemSpacing="18" LineSpacing="6" Margin="0,0,130,0">
         <StackPanel Orientation="Horizontal" Spacing="6">

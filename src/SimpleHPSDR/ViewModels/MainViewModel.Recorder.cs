@@ -239,10 +239,12 @@ public sealed partial class MainViewModel
         StartRecorderTimer();
     });
 
-    internal void PlayRecording(RecordingRow row, bool local) => _ = Try(async () =>
+    internal void PlayRecording(RecordingRow row, bool local) => PlayFile(row.FileName, row.IsMic, local);
+
+    internal void PlayFile(string fileName, bool isMic, bool local) => _ = Try(async () =>
     {
         if (IsPlayingRecording) await _client!.StopPlaybackAsync();
-        ApplyRecorder(await _client!.PlayRecordingAsync(row.FileName, (double)RecorderTxGainDb, row.IsMic, local));
+        ApplyRecorder(await _client!.PlayRecordingAsync(fileName, (double)RecorderTxGainDb, isMic, local));
         StartRecorderTimer();
     });
 
@@ -262,6 +264,7 @@ public sealed partial class MainViewModel
         {
             if (File.Exists(to)) { Status = $"There's already a recording called {label}."; row.Label = current; return; }
             File.Move(from, to);
+            VoiceKeyerFileRenamed(row.FileName, target);
             row.Renamed(target);
             row.Label = label;
             OnPropertyChanged(nameof(DeckSelected));
@@ -337,6 +340,8 @@ public sealed partial class MainViewModel
         else
             RecorderStatus = s.LastError ?? "";
         if (wasRecording && !s.Recording) ReloadRecordingList(selectNewest: true);
+        foreach (var slot in VoiceKeyerSlots)
+            slot.IsPlaying = s.Playing && !s.PlayingLocal && s.PlayingFile == slot.FileName;
         if (!s.Recording && !s.Playing) _recorderTimer?.Stop();
     }
 }

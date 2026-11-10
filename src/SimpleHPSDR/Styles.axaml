@@ -168,6 +168,20 @@
     <Setter Property="MaxWidth" Value="900" />
   </Style>
 
+  <!-- Voice keyer buttons: grey for contrast with the controls, red while on the air. -->
+  <Style Selector="Button.seg.vk /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#5B6068" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.seg.vk:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#6E747D" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.seg.vk.playing /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#E5484D" />
+  </Style>
+  <Style Selector="Button.seg.vk.empty"><Setter Property="Opacity" Value="0.55" /></Style>
+
   <!-- The deck's record dot: red, white on the red button while recording. -->
   <Style Selector="TextBlock.dot"><Setter Property="Foreground" Value="#E5484D" /></Style>
   <Style Selector="TextBlock.dot.recglyph"><Setter Property="Foreground" Value="White" /></Style>

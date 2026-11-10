@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimpleHPSDR.ViewModels"
+             x:Class="SimpleHPSDR.Controls.VoiceKeyerSetup"
+             x:DataType="vm:VoiceKeyerSlot">
+  <!-- A voice keyer button's right-click (long press) settings, on both layouts. -->
+    <StackPanel Width="300" Spacing="8" Margin="4">
+      <TextBlock FontWeight="SemiBold">
+        <Run Text="Voice keyer " /><Run Text="{Binding ShortKey}" /><Run Text=" / " /><Run Text="{Binding KeyName}" />
+      </TextBlock>
+      <Grid ColumnDefinitions="70,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+        <TextBlock Text="Label" Classes="label" FontSize="12" VerticalAlignment="Center" />
+        <TextBox Grid.Column="1" Text="{Binding Label}" MaxLength="12" FontSize="12" />
+        <TextBlock Grid.Row="1" Text="Recording" Classes="label" FontSize="12" VerticalAlignment="Center" />
+        <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Recordings}" SelectedItem="{Binding Choice}"
+                  HorizontalAlignment="Stretch" PlaceholderText="Choose a recording">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:RecordingRow">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{Binding Kind}" Classes="label" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="160" />
+                <TextBlock Text="{Binding Length}" Classes="label" FontSize="10" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"
+                   Text="Click or press the key to transmit it at the recorder's TX level; click again or MOX to stop." />
+        <Button Grid.Column="1" Classes="flat" Content="Clear" Command="{Binding ClearCommand}" Margin="6,0,0,0" />
+      </Grid>
+    </StackPanel>
+</UserControl>

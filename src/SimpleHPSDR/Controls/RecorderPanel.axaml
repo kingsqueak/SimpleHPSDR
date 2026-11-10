@@ -41,6 +41,8 @@
     </ScrollViewer>
     <TextBlock Classes="label" FontSize="12" Text="No recordings yet. Click REC to make one."
                IsVisible="{Binding !Recordings.Count}" />
+    <CheckBox Content="Voice keyer buttons on the touch layout (over the waterfall)" IsChecked="{Binding VoiceKeyerOnTouch}"
+              FontSize="12" ToolTip.Tip="Four large buttons above the bottom row; long press one to set it up" />
     <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
       <TextBlock Text="TX level" Classes="label" FontSize="12" VerticalAlignment="Center" />
       <NumericUpDown Grid.Column="1" Value="{Binding RecorderTxGainDb}" Minimum="-20" Maximum="20" Increment="1"

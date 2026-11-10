@@ -101,6 +101,10 @@ public sealed class Settings
     public double RecorderTxGainDb { get; set; }
     /// <summary>The recorder records the microphone (voice keyer messages) instead of the receiver.</summary>
     public bool RecorderFromMic { get; set; }
+    /// <summary>The four voice keyer buttons right of REC: a label and a recording each.</summary>
+    public List<VoiceKeyerSetting> VoiceKeyer { get; set; } = [];
+    /// <summary>Show the voice keyer buttons over the waterfall on the touch layout.</summary>
+    public bool VoiceKeyerOnTouch { get; set; }
     /// <summary>While transmitting, the waterfall's colours span this many dB
     /// below the signal's own peak, so the shape of the transmit audio shows
     /// instead of one saturated block. 0 keeps the receive range.</summary>
@@ -195,3 +199,11 @@ public sealed record ModeMemory(
     long Hz, int FilterLowHz, int FilterHighHz,
     bool AgcAuto, int AgcMode, double AgcTopDb, double AgcFixedDb,
     double DrivePct, double TunePct, double MicGainDb, int NrMode, int NbMode);
+
+/// <summary>One voice keyer button: its label and the recording's file name
+/// in the recordings folder (null when nothing is assigned).</summary>
+public sealed class VoiceKeyerSetting
+{
+    public string? Label { get; set; }
+    public string? File { get; set; }
+}

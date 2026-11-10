@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using SimpleHPSDR.Engine;
 using SimpleHPSDR.Platform;
@@ -24,6 +26,26 @@ public partial class MainWindow : Window
         ShowLayout(LayoutMode.Current);
         LayoutMode.Changed += ShowLayout;
         Closed += (_, _) => LayoutMode.Changed -= ShowLayout;
+        // F5 to F8: the voice keyer buttons, wherever the focus is in the window.
+        AddHandler(KeyDownEvent, OnVoiceKeyerKey, RoutingStrategies.Tunnel);
+    }
+
+    // macOS takes the bare top-row keys for itself (F5 is dictation) unless fn
+    // is held, so ⌘1 to ⌘4 there, Ctrl+1 to 4 elsewhere, fire them as well.
+    private static readonly KeyModifiers VoiceKeyerModifier =
+        OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
+
+    private void OnVoiceKeyerKey(object? sender, KeyEventArgs e)
+    {
+        if (Vm is not { } vm) return;
+        int slot = e.KeyModifiers == KeyModifiers.None
+            ? e.Key switch { Key.F5 => 1, Key.F6 => 2, Key.F7 => 3, Key.F8 => 4, _ => 0 }
+            : e.KeyModifiers == VoiceKeyerModifier
+                ? e.Key switch { Key.D1 or Key.NumPad1 => 1, Key.D2 or Key.NumPad2 => 2, Key.D3 or Key.NumPad3 => 3, Key.D4 or Key.NumPad4 => 4, _ => 0 }
+                : 0;
+        if (slot == 0) return;
+        vm.FireVoiceKeyer(slot);
+        e.Handled = true;
     }
 
     /// <summary>The desktop layout, or the large-target one; both use the same view model.</summary>
