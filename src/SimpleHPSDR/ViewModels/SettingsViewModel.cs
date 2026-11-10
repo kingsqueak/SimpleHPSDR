@@ -203,6 +203,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 await LoadCfcPresetsAsync();
                 await LoadBandPlansAsync();
                 await LoadHardwareAsync();
+                await LoadHfAutoAsync();
                 await LoadTxDelayAsync();
             }
             finally { _populating = false; }

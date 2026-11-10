@@ -235,6 +235,20 @@ public sealed class StationClient : IDisposable
     }
 
     // ---- TCI and CAT servers (TCP ones apply on engine restart) ----
+    // Palstar HF-AUTO tuner: the HF-Auto program's UDP status, received by the engine.
+    public sealed record HfAutoConfig(bool Enabled, string BindAddress, int Port, string ExpectedSenderAddress);
+    public sealed record HfAutoTelemetry(bool? Valid, string? FirmwareVersion, string? Mode, int? ModeCode,
+        long? DetectedFrequencyHz, int? Capacitor, int? Inductor, int? Antenna, string? SelectedMotor,
+        double? DisplayedPowerWatts, bool? PeakPower, int? PowerRange, double? Swr, bool? HasRf, bool? Stored,
+        bool? UnsolicitedMessages, bool? TuneComplete, bool? GoodAutoModePower, bool? InvalidFrequency,
+        bool? InvalidInductor, bool? InvalidCapacitor, string? RawBytes);
+    public sealed record HfAutoStatus(HfAutoConfig Config, bool ListenerActive, bool Connected, DateTime? LastReceivedUtc,
+        string? LastRemoteEndpoint, long PacketsReceived, string? Error, HfAutoTelemetry? Telemetry);
+    public async Task<HfAutoStatus> GetHfAutoAsync() =>
+        (await _http.GetFromJsonAsync<HfAutoStatus>("api/hf-auto/status", Json))!;
+    public Task<HfAutoStatus> SetHfAutoAsync(HfAutoConfig config) =>
+        PostForAsync<HfAutoStatus>("api/hf-auto/config", config);
+
     public async Task<TciStatus> GetTciStatusAsync() =>
         (await _http.GetFromJsonAsync<TciStatus>("api/tci/status", Json))!;
     public async Task<TciStatus> SetTciConfigAsync(TciRuntimeConfig cfg) =>

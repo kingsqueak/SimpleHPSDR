@@ -430,6 +430,28 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
             </Border>
+
+            <!-- Palstar HF-AUTO tuner, through W1TR's HF-Auto program -->
+            <TextBlock Text="PALSTAR HF-AUTO TUNER" Classes="label" Margin="2,8,0,0" />
+            <Border Classes="panel">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="W1TR's HF-Auto program drives the tuner. In it, choose TCI for the radio and point it at SimpleHPSDR's TCI (CAT &amp; TCI tab), then turn on its UDP status output to the port below. SimpleHPSDR then shows the tuner's state here; it doesn't drive the tuner itself." />
+                <CheckBox Content="Show the HF-AUTO tuner's status" IsChecked="{Binding HfAutoOn}" />
+                <StackPanel Orientation="Horizontal" Spacing="10" IsEnabled="{Binding HfAutoOn}">
+                  <TextBlock Text="Port" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding HfAutoPort}" Minimum="1024" Maximum="65535" Increment="1" FormatString="0"
+                                 Width="130" FontSize="12" />
+                  <CheckBox Content="HF-Auto runs on another computer:" IsChecked="{Binding HfAutoRemote}" Margin="12,0,0,0" />
+                  <TextBox Text="{Binding HfAutoAddress}" Width="150" FontSize="12" PlaceholderText="its IP address"
+                           IsEnabled="{Binding HfAutoRemote}" />
+                  <Button Classes="seg" Content="Apply" Command="{Binding ApplyHfAutoCommand}" />
+                </StackPanel>
+                <TextBlock Text="{Binding HfAutoStatusText}" FontSize="12" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding HfAutoTunerText}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"
+                           IsVisible="{Binding HfAutoHasTuner}" />
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

@@ -90,6 +90,7 @@ public sealed partial class SettingsViewModel
             SupplyText = v is { Supported: true, Volts: { } volts } ? $"{volts:0.0} V" : "Not reported";
         }
         catch (Exception) { SupplyText = "—"; }
+        await RefreshHfAutoAsync();
     }
 
     private async Task ApplyAmpAsync()
