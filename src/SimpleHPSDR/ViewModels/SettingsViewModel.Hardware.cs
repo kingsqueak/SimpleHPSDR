@@ -165,8 +165,12 @@ public sealed partial class SettingsViewModel
         _ioTimer.Start();
     }
 
+    private bool _ioPolling;
+
     private async void OnIoTick(object? sender, EventArgs e)
     {
+        if (_ioPolling) return;   // one poll in flight at a time
+        _ioPolling = true;
         try
         {
             ApplyIoBoard(await _client.GetHl2IoBoardAsync());
@@ -176,6 +180,7 @@ public sealed partial class SettingsViewModel
         {
             _ioTimer?.Stop();
         }
+        finally { _ioPolling = false; }
     }
 
     partial void OnAdcDitherChanged(bool value) => SendHardware(() => _client.SetG2OptionsAsync(dither: value));

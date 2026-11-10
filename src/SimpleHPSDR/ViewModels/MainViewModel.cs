@@ -5,7 +5,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Engine;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
 
@@ -1454,7 +1454,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
         RememberBandMode();
-        _settings.Save();
+        _settings.SaveNow();
         try { _statePoll.Stop(); } catch (InvalidOperationException) { }  // signal thread
         try { _clockTimer.Stop(); _cpuTimer.Stop(); } catch (InvalidOperationException) { }
         UnkeyForShutdown();

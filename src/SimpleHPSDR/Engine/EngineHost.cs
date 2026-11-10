@@ -117,7 +117,7 @@ public sealed class EngineHost : IDisposable
             psi.ArgumentList.Add(a);
 
         // Our own settings database, separate from Zeus's.
-        psi.Environment["ZEUS_PREFS_PATH"] = Path.Combine(DataDir, "prefs.db");
+        psi.Environment["SIMPLEHPSDR_PREFS_PATH"] = Path.Combine(DataDir, "prefs.db");
         // The fork has no plugin or VST host (removed 2026-11-08), so nothing to point away from Zeus's.
         // Everything else the engine would keep in Zeus's folder (FFT wisdom, LAN
         // certificate, NR3 models, WSPR files) goes to ours, backups leave Zeus Link's
@@ -129,6 +129,7 @@ public sealed class EngineHost : IDisposable
         psi.Environment["STATION_ENGINE_TCI_DEVICE"] = "SimpleHPSDR";
         if (NativeG2) psi.Environment["STATION_ENGINE_NATIVE_G2"] = "1";
         CopyFromZeusFolder();
+        RenameOldEngineFiles();
         psi.Environment["Logging__LogLevel__Microsoft.AspNetCore"] = "Warning";
 
         _log = OpenLog();
@@ -139,7 +140,9 @@ public sealed class EngineHost : IDisposable
         _process.Start();
         _process.BeginOutputReadLine();
         _process.BeginErrorReadLine();
-        File.WriteAllText(PidPath, _process.Id.ToString());
+        // The path too: an orphan is only ours if it runs this executable
+        // (other programs run an engine with the same process name).
+        File.WriteAllText(PidPath, $"{_process.Id}\n{Path.GetFullPath(exe)}");
 
         using var http = new HttpClient { BaseAddress = BaseUri, Timeout = TimeSpan.FromSeconds(2) };
         var deadline = DateTime.UtcNow.AddSeconds(30);
@@ -205,6 +208,29 @@ public sealed class EngineHost : IDisposable
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
     }
 
+    /// <summary>Engines before 2.0.68-simplehpsdr.18 named some of their files in
+    /// our folder after Zeus. Keep the logbook and LAN certificate under the new
+    /// names, and drop the old logs.</summary>
+    private static void RenameOldEngineFiles()
+    {
+        foreach (var (from, to) in new[] { ("zeus-logbook.db", "simplehpsdr-logbook.db"), ("zeus-lan.pfx", "simplehpsdr-lan.pfx") })
+        {
+            try
+            {
+                string a = Path.Combine(DataDir, from), b = Path.Combine(DataDir, to);
+                if (File.Exists(a) && !File.Exists(b)) File.Move(a, b);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        }
+        try
+        {
+            var logs = Path.Combine(DataDir, "logs");
+            if (Directory.Exists(logs))
+                foreach (var f in Directory.GetFiles(logs, "zeus-app*.log")) File.Delete(f);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
     private static StreamWriter OpenLog()
     {
         // Each start begins a new log; keep the last one, which may hold a crash.
@@ -225,21 +251,32 @@ public sealed class EngineHost : IDisposable
         }
     }
 
+    /// <summary>
+    /// An engine left running by a crash of ours. Only a process with the saved
+    /// number that is running the saved StationEngine executable is ours: the
+    /// number may have been reused, and other programs run an engine with the same name.
+    /// Best effort: anything unexpected leaves the process alone.
+    /// </summary>
     private static void KillOrphan()
     {
         try
         {
-            if (!File.Exists(PidPath) || !int.TryParse(File.ReadAllText(PidPath), out var pid)) return;
+            if (!File.Exists(PidPath)) return;
+            var lines = File.ReadAllLines(PidPath);
+            if (lines.Length < 2 || !int.TryParse(lines[0], out var pid) || lines[1].Length == 0) return;
+            string ours = Path.GetFullPath(lines[1]);
             using var p = Process.GetProcessById(pid);
-            if (p.ProcessName.StartsWith("StationEngine", StringComparison.OrdinalIgnoreCase))
-            {
-                p.Kill(entireProcessTree: true);
-                p.WaitForExit(3000);
-            }
+            string? running = p.MainModule?.FileName;
+            var compare = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            if (running is null || !string.Equals(Path.GetFullPath(running), ours, compare)) return;
+            p.Kill(entireProcessTree: true);
+            p.WaitForExit(3000);
         }
-        catch (ArgumentException) { }          // not running
-        catch (InvalidOperationException) { }
-        finally { File.Delete(PidPath); }
+        catch (Exception) { }   // not running, not ours to read, or already gone
+        finally
+        {
+            try { File.Delete(PidPath); } catch (Exception) { }
+        }
     }
 
     private static int FreePort()

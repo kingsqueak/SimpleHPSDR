@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SimpleHPSDR.Engine;
 using SimpleHPSDR.Platform;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
 

@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using SimpleHPSDR.Dsp;
 using SimpleHPSDR.Engine;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR;
 

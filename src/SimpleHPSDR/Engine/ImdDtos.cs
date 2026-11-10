@@ -1,7 +1,7 @@
 namespace SimpleHPSDR.Engine;
 
 // The engine's /api/dsp/imd-measure shapes (Station.Engine.Hosting.ImdMeasureService),
-// which aren't in Zeus.Contracts. Dbc is how far the products sit below the
+// which aren't in SimpleHPSDR.Contracts. Dbc is how far the products sit below the
 // weaker tone, positive.
 public sealed record ImdRequest(double?[] Db, double Width, double CenterHz, double HzPerPixel, double? ExpectedToneSpacingHz);
 public sealed record ImdProductReading(double LowerDbm, double UpperDbm, double Dbc, double LowerHz, double UpperHz);

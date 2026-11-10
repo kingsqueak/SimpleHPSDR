@@ -78,5 +78,14 @@ SimpleHPSDR uses none of them. Leave, or remove with the Zeus web-app features i
 
 ## D. Names only
 
-`ZEUS_*` environment variables, `.zeusdb` export names, `Zeus.*` namespaces. Leave:
-renaming them only makes rebasing on each Zeus release harder.
+**Renamed in 2.0.68-simplehpsdr.18 (2026-11-10).** The fork now uses SimpleHPSDR
+names throughout:
+- projects and namespaces: `SimpleHPSDR.Contracts`, `.Dsp`, `.Protocol1`, `.Protocol2`, `.Server`;
+- environment variables: `SIMPLEHPSDR_*`;
+- files: `logs/simplehpsdr-app.log`, `simplehpsdr-logbook.db`, `simplehpsdr-lan.pfx`;
+- native libraries: miniaudio's `simplehpsdr_ma_*` exports, `simplehpsdr_rade`, `simplehpsdr_asio`.
+
+The app renames an existing logbook and LAN certificate on first start and deletes the
+old `zeus-app*.log` files. Licence and attribution texts, copyright lines, and citations
+of upstream issues, URLs and Zeus Link are unchanged. The rename means any later
+upstream change has to be ported by hand rather than rebased.

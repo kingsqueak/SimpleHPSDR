@@ -14,7 +14,7 @@ namespace SimpleHPSDR.Platform;
 /// </summary>
 public static class AsioDriverCheck
 {
-    /// <summary>Start of the engine's message for this failure (native/asio/zeus_asio.cpp).</summary>
+    /// <summary>Start of the engine's message for this failure (native/asio/simplehpsdr_asio.cpp).</summary>
     private const string Marker = "Could not instantiate the selected ASIO driver";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
 

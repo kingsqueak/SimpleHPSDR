@@ -12,7 +12,7 @@ Setup, from this folder (Python 3.14; onnxruntime has no 3.15 wheel yet):
     venv/bin/python -I gen_cw.py clips
     venv/bin/python -I bench.py
 
-`enginecw` builds under the assembly name `Zeus.Server.Tests`, the only way to
+`enginecw` builds under the assembly name `SimpleHPSDR.Server.Tests`, the only way to
 reach the engine's internal `CwDecoderCore` without changing the engine. It
 references the engine project by absolute path (`~/src/SimpleHPSDR/external/station-engine`).
 

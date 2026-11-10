@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.Controls;
 

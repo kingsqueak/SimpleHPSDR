@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.Engine;
 
@@ -52,7 +52,7 @@ public sealed record FirewallStatus(bool Supported, bool CanApply, bool? RulePre
     public bool Missing => Supported && CanApply && RulePresent != true;
 
     /// <summary>The rule names another program. The engine has one rule name and
-    /// replaces it, which would take it from Zeus, so this one is left to the user.</summary>
+    /// replaces it, which would take it from that program, so this one is left to the user.</summary>
     public bool OwnedElsewhere => Supported && RulePresent == true && RuleMatchesProgram == false;
 }
 
@@ -131,11 +131,10 @@ public sealed class StationClient : IDisposable
     public Task SetDriveAsync(int percent) => PostAsync("api/tx/drive", new DriveSetRequest(percent));
     public Task SetTuneDriveAsync(int percent) => PostAsync("api/tx/tune-drive", new TuneDriveSetRequest(percent));
     public Task SetMicGainAsync(int db) => PostAsync("api/mic-gain", new MicGainSetRequest(db));
+    /// <summary>The two-tone test signal on or off (it transmits when keyed).</summary>
     public Task SetTwoToneAsync(bool on) => PostAsync("api/tx/twotone", new TwoToneSetRequest(on));
 
-    /// <summary>The engine's two-tone IMD calculator (ported from Thetis): finds
-    /// the tones and their 3rd/5th-order products in a spectrum we send it.</summary>
-    /// <summary>The engine's own settings backup (a .zeusdb ZIP; PureSignal calibration left out).</summary>
+    /// <summary>The engine's own settings backup (a ZIP; PureSignal calibration left out).</summary>
     public async Task<byte[]> ExportEngineBackupAsync()
     {
         using var r = await _http.GetAsync("api/prefs/databases/export");
@@ -147,6 +146,8 @@ public sealed class StationClient : IDisposable
     public Task ImportEngineBackupAsync(string path) =>
         PostAsync("api/prefs/databases/import", new { sourcePath = path });
 
+    /// <summary>The engine's two-tone IMD calculator (ported from Thetis): finds
+    /// the tones and their 3rd/5th-order products in a spectrum we send it.</summary>
     public Task<ImdReading> MeasureImdAsync(ImdRequest request) =>
         PostForAsync<ImdReading>("api/dsp/imd-measure", request);
 
@@ -723,7 +724,7 @@ public sealed class StationClient : IDisposable
     /// <summary>Tunes to WWV, measures its carrier, sets the factor and tunes back. Receive only.</summary>
     public async Task<CalibrationReport> CalibrateOnWwvAsync(double referenceHz)
     {
-        var r = await _http.PostAsync(FormattableString.Invariant($"api/radio/frequency-calibration/calibrate?referenceHz={referenceHz}"), null);
+        using var r = await _http.PostAsync(FormattableString.Invariant($"api/radio/frequency-calibration/calibrate?referenceHz={referenceHz}"), null);
         r.EnsureSuccessStatusCode();
         return (await r.Content.ReadFromJsonAsync<CalibrationReport>(Json))!;
     }
@@ -810,6 +811,7 @@ public sealed class StationClient : IDisposable
     public async Task OpenStreamAsync()
     {
         CloseStream();
+        int generation = ++_wsGeneration;
         _wsCts = new CancellationTokenSource();
         _ws = new ClientWebSocket();
         await _ws.ConnectAsync(_wsUri, _wsCts.Token);
@@ -820,12 +822,15 @@ public sealed class StationClient : IDisposable
         // 0x21 off: audio plays natively in the engine, so don't stream PCM here.
         await _ws.SendAsync(new byte[] { (byte)MsgType.AudioStreamRequest, 0 },
             WebSocketMessageType.Binary, true, _wsCts.Token);
-        _ = Task.Run(() => ReceiveLoop(_ws, _wsCts.Token));
+        _ = Task.Run(() => ReceiveLoop(_ws, _wsCts.Token, generation));
     }
 
     private const int MaxFrameBytes = 64 * 1024 * 1024;
 
-    private async Task ReceiveLoop(ClientWebSocket ws, CancellationToken ct)
+    // Counts streams opened, so a closing old stream can't report the new one closed.
+    private int _wsGeneration;
+
+    private async Task ReceiveLoop(ClientWebSocket ws, CancellationToken ct, int generation)
     {
         var buf = new byte[256 * 1024];
         string reason = "closed";
@@ -854,7 +859,7 @@ public sealed class StationClient : IDisposable
         }
         catch (OperationCanceledException) { return; }
         catch (Exception ex) { reason = ex.Message; }
-        StreamClosed?.Invoke(reason);
+        if (generation == Volatile.Read(ref _wsGeneration)) StreamClosed?.Invoke(reason);
     }
 
     private void Dispatch(ReadOnlySpan<byte> msg)
@@ -911,6 +916,7 @@ public sealed class StationClient : IDisposable
         _wsCts?.Cancel();
         _ws?.Abort();
         _ws?.Dispose();
+        _wsCts?.Dispose();
         _ws = null;
         _wsCts = null;
     }

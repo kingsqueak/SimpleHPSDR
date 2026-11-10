@@ -119,7 +119,7 @@ SetProp(vm, "Status", "Connected · RX");
 SetProp(vm, "AntennaBoxesEnabled", true);
 SetProp(vm, "VfoHz", 14_225_000L);
 foreach (var (slot, lbl, lo, hi) in new[] { ("F1", "5.0k", 63, 5000), ("F2", "4.0k", 100, 4000), ("F3", "3.5k", 100, 3500), ("F4", "3.0k", 100, 3000), ("F5", "2.8k", 100, 2800) })
-    vm.Filters.Add(new FilterSlot(Zeus.Contracts.RxMode.USB, new SimpleHPSDR.Engine.FilterPreset(slot, lbl, lo, hi), _ => Task.CompletedTask, _ => Task.CompletedTask, _ => Task.CompletedTask) { IsSelected = slot == "F2" });
+    vm.Filters.Add(new FilterSlot(SimpleHPSDR.Contracts.RxMode.USB, new SimpleHPSDR.Engine.FilterPreset(slot, lbl, lo, hi), _ => Task.CompletedTask, _ => Task.CompletedTask, _ => Task.CompletedTask) { IsSelected = slot == "F2" });
 void Notify(object o, string n) => o.GetType().GetMethod("OnPropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance, [typeof(string)])!.Invoke(o, [n]);
 var main = new MainWindow { DataContext = vm };
 SimpleHPSDR.Platform.LayoutMode.Watch(main, vm.AppSettings);
@@ -158,9 +158,9 @@ Make(main, W, H);
 SetProp(vm, "SliceBEnabled", true); Notify(vm, "HasSliceB");
 Shot(main, mainPrefix + "main-1024x535-sliceB");
 SetProp(vm, "SliceBEnabled", false); Notify(vm, "HasSliceB");
-SetProp(vm, "Mode", Zeus.Contracts.RxMode.CWU); Notify(vm, "ModeIsCw"); Notify(vm, "ModeLabel");
+SetProp(vm, "Mode", SimpleHPSDR.Contracts.RxMode.CWU); Notify(vm, "ModeIsCw"); Notify(vm, "ModeLabel");
 Shot(main, mainPrefix + "main-1024x535-cw");
-SetProp(vm, "Mode", Zeus.Contracts.RxMode.USB); Notify(vm, "ModeIsCw"); Notify(vm, "ModeLabel");
+SetProp(vm, "Mode", SimpleHPSDR.Contracts.RxMode.USB); Notify(vm, "ModeIsCw"); Notify(vm, "ModeLabel");
 
 // ---- Flyouts: render each flyout's content in its own window ----
 int fi = 0;

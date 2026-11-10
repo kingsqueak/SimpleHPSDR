@@ -193,10 +193,40 @@ public sealed class Settings
         return new();
     }
 
+    /// <summary>
+    /// Saves soon: half a second after the last change, so dragging a slider or
+    /// the panadapter split writes the file once, not on every step. On the UI
+    /// thread, where the settings are changed, so the write never races an edit.
+    /// Quitting (and anything that reads the file) calls SaveNow / Flush.
+    /// </summary>
     public void Save()
     {
-        // Written beside the real file and moved over it, so a crash can't
-        // leave half a settings file. Saves can come from more than one thread.
+        if (!Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            SaveNow();
+            return;
+        }
+        _pending = this;
+        _saveTimer ??= new Avalonia.Threading.DispatcherTimer(TimeSpan.FromMilliseconds(500),
+            Avalonia.Threading.DispatcherPriority.Background, (_, _) => Flush());
+        _saveTimer.Stop();
+        _saveTimer.Start();
+    }
+
+    /// <summary>Writes any delayed save now.</summary>
+    public static void Flush()
+    {
+        _saveTimer?.Stop();
+        var s = _pending;
+        _pending = null;
+        s?.SaveNow();
+    }
+
+    /// <summary>Writes the file now. Beside the real file and moved over it,
+    /// so a crash can't leave half a settings file.</summary>
+    public void SaveNow()
+    {
+        if (ReferenceEquals(_pending, this)) _pending = null;
         lock (SaveGate)
         {
             try
@@ -205,11 +235,13 @@ public sealed class Settings
                 File.WriteAllText(temp, JsonSerializer.Serialize(this, Options));
                 File.Move(temp, FilePath, overwrite: true);
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException) { }
         }
     }
 
     private static readonly object SaveGate = new();
+    private static Settings? _pending;
+    private static Avalonia.Threading.DispatcherTimer? _saveTimer;
 }
 
 /// <summary>What comes back on returning to a band and mode. Enums as numbers.</summary>

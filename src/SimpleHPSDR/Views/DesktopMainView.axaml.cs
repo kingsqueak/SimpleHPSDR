@@ -9,7 +9,7 @@ using Avalonia.Threading;
 using SimpleHPSDR.Controls;
 using SimpleHPSDR.Engine;
 using SimpleHPSDR.ViewModels;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.Views;
 

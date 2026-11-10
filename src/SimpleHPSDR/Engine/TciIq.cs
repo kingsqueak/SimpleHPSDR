@@ -77,13 +77,21 @@ public sealed class TciIq : IDisposable
         }
     }
 
+    private const int MaxMessageBytes = 16 * 1024 * 1024;
+
     private async Task ReceiveAsync(ClientWebSocket ws)
     {
         var buffer = new byte[1 << 17];
         var used = 0;
         while (ws.State == WebSocketState.Open)
         {
-            if (used == buffer.Length) Array.Resize(ref buffer, buffer.Length * 2);
+            if (used == buffer.Length)
+            {
+                // A message that never ends is not TCI: drop the peer rather
+                // than grow without limit (IQ frames are well under this).
+                if (buffer.Length >= MaxMessageBytes) throw new InvalidDataException("TCI message too large.");
+                Array.Resize(ref buffer, buffer.Length * 2);
+            }
             var r = await ws.ReceiveAsync(buffer.AsMemory(used), _stop.Token);
             if (r.MessageType == WebSocketMessageType.Close) return;
             used += r.Count;

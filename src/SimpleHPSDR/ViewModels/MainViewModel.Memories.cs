@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
 

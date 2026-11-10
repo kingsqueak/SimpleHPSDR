@@ -19,7 +19,8 @@ public static class Backup
 {
     public const string Extension = "shbackup";
     private const string Format = "simplehpsdr-backup";
-    private const string EngineEntry = "engine.zeusdb";
+    private const string EngineEntry = "engine.db";
+    private const string OldEngineEntry = "engine.zeusdb";   // backups made before 0.10.2
     private const string SettingsEntry = "settings.json";
     private const string ProfilesPrefix = "tx-profiles/";
     private const string ManifestEntry = "manifest.json";
@@ -36,7 +37,7 @@ public static class Backup
     public static async Task CreateAsync(StationClient client, Settings settings, Stream stream)
     {
         var engine = await client.ExportEngineBackupAsync();
-        settings.Save();
+        settings.SaveNow();   // read back from the file just below
         using var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true);
         await WriteAsync(zip, ManifestEntry, JsonSerializer.SerializeToUtf8Bytes(
             new Manifest(Format, 1, App.Version, DateTime.UtcNow.ToString("O"))));
@@ -66,13 +67,13 @@ public static class Backup
         catch (JsonException) { manifest = null; }
         if (manifest?.Format != Format)
             throw new InvalidDataException("That isn't a SimpleHPSDR backup.");
-        if (zip.GetEntry(EngineEntry) is not { } engineEntry)
+        if ((zip.GetEntry(EngineEntry) ?? zip.GetEntry(OldEngineEntry)) is not { } engineEntry)
             throw new InvalidDataException("The backup has no radio settings in it.");
         if (zip.GetEntry(SettingsEntry) is { } se)
             using (var s = se.Open()) JsonSerializer.Deserialize<Settings>(s);   // throws if it's damaged
 
         // The engine stages its part (and checks it) from a file it can read.
-        string engineFile = Path.Combine(Path.GetTempPath(), $"simplehpsdr-restore-{Guid.NewGuid():N}.zeusdb");
+        string engineFile = Path.Combine(Path.GetTempPath(), $"simplehpsdr-restore-{Guid.NewGuid():N}.db");
         try
         {
             engineEntry.ExtractToFile(engineFile);

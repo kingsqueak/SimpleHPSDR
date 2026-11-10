@@ -1,7 +1,7 @@
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SimpleHPSDR.Engine;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
 
@@ -12,7 +12,7 @@ namespace SimpleHPSDR.ViewModels;
 /// decodes received speech in place of the demodulated audio and encodes the
 /// mic on transmit. Leaving the mode deselects RADE. A box on the waterfall
 /// shows sync, SNR, the station heard and the mic level while transmitting.
-/// The classic modes (700D, 700E, 1600) came from Zeus's plugin and aren't here.
+/// The classic modes (700D, 700E, 1600) came from an upstream plugin and aren't here.
 /// </summary>
 public sealed partial class MainViewModel
 {
@@ -170,12 +170,17 @@ public sealed partial class MainViewModel
         }
     }
 
+    private bool _radePolling;
+
     private async Task PollRadeAsync()
     {
         if (!IsConnected || _client is not { } client) { _radeTimer?.Stop(); return; }
+        if (_radePolling) return;   // one poll in flight at a time
+        _radePolling = true;
         StationClient.RadeStatus r;
         try { r = await client.GetRadeAsync(); }
         catch (Exception) { return; }
+        finally { _radePolling = false; }
         if (IsTransmitting)
         {
             FreeDvHeadline = "FreeDV (RADE): transmitting";

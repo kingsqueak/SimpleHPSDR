@@ -190,9 +190,12 @@ public sealed partial class AnalyzerViewModel : ObservableObject
         }
     }
 
+    private bool _polling;
+
     private async Task PollAsync()
     {
-        if (_client() is not { } c) return;
+        if (_client() is not { } c || _polling) return;   // one poll in flight at a time
+        _polling = true;
         try
         {
             var s = await c.GetVnaStatusAsync();
@@ -200,6 +203,7 @@ public sealed partial class AnalyzerViewModel : ObservableObject
                 Status = $"Sweeping… {s.PointsReceived} of {s.PointsExpected}";
         }
         catch (Exception) { }
+        finally { _polling = false; }
     }
 
     [RelayCommand]

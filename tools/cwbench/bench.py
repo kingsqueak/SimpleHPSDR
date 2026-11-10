@@ -9,7 +9,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 EXAMPLE = HERE / "dl/deepcw-engine/examples/python/decode_morse.py"
-ENGINE = HERE / "enginecw/bin/Release/net10.0/Zeus.Server.Tests.dll"
+ENGINE = HERE / "enginecw/bin/Release/net10.0/SimpleHPSDR.Server.Tests.dll"
 
 
 def norm(s):

@@ -5,7 +5,7 @@ param([string]$Dir, [string]$Shot)
 $ErrorActionPreference = 'Stop'
 
 $port = 58123
-$env:ZEUS_PREFS_PATH = "$env:RUNNER_TEMP\smoke.db"
+$env:SIMPLEHPSDR_PREFS_PATH = "$env:RUNNER_TEMP\smoke.db"
 $engine = Start-Process -FilePath "$Dir\engine\StationEngine.exe" -WorkingDirectory "$Dir\engine" `
     -ArgumentList '--port', $port, '--native-audio-output', 'true' -PassThru -NoNewWindow `
     -RedirectStandardOutput engine.out -RedirectStandardError engine.err
@@ -15,7 +15,7 @@ for ($i = 0; $i -lt 60 -and -not $engine.HasExited; $i++) {
     catch { Start-Sleep -Seconds 1 }
 }
 if (-not $ok) { Get-Content engine.out, engine.err -ErrorAction SilentlyContinue; throw 'engine did not answer' }
-# Reading the devices loads miniaudio and zeus_asio.
+# Reading the devices loads miniaudio and simplehpsdr_asio.
 $audio = Invoke-RestMethod "http://127.0.0.1:$port/api/audio/devices"
 $audio | Select-Object supported, backend, availableBackends, error, asioError | ConvertTo-Json
 Write-Host "asio drivers: $(@($audio.asioDrivers).Count)"

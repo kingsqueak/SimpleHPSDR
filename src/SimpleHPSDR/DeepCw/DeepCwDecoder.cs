@@ -98,13 +98,6 @@ public sealed class DeepCwDecoder : IDisposable
         return null;
     }
 
-    /// <summary>Is DeepCW usable here? Loads the model once to find out.</summary>
-    public static bool IsAvailable(out string error)
-    {
-        using var d = TryCreate(out error);
-        return d is not null;
-    }
-
     /// <summary>48 kHz mono receive audio.</summary>
     public void Push(ReadOnlySpan<float> audio48k)
     {

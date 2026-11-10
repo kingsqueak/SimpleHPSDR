@@ -3,7 +3,7 @@
 // <name>\t<seconds of CPU>\t<text>
 using System.Diagnostics;
 using System.Text;
-using Zeus.Server;
+using SimpleHPSDR.Server;
 
 foreach (var path in args)
 {

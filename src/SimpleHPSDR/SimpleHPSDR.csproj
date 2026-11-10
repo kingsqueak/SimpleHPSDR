@@ -33,7 +33,7 @@
 
   <ItemGroup>
     <!-- Wire formats and DTOs come straight from the engine source. -->
-    <ProjectReference Include="../../external/station-engine/Zeus.Contracts/Zeus.Contracts.csproj" />
+    <ProjectReference Include="../../external/station-engine/SimpleHPSDR.Contracts/SimpleHPSDR.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

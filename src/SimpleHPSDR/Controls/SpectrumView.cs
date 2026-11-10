@@ -6,7 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.Controls;
 
@@ -545,8 +545,13 @@ public sealed class SpectrumView : Control
                 return;
             }
         }
-        Cursor = OverGrip(p) ? ResizeCursor : CrossCursor;
-        _hover = OverGrip(p) ? null : p;
+        bool grip = OverGrip(p);
+        Cursor = grip ? ResizeCursor : CrossCursor;
+        // Redraw only when what's drawn changes: the hover readout moves by
+        // whole pixels (a mouse reports many moves per pixel and per frame).
+        Point? hover = grip ? null : new Point(Math.Round(p.X), Math.Round(p.Y));
+        if (hover == _hover) return;
+        _hover = hover;
         InvalidateVisual();
     }
 

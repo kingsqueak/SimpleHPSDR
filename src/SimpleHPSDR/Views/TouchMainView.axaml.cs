@@ -7,7 +7,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using SimpleHPSDR.Controls;
 using SimpleHPSDR.ViewModels;
-using Zeus.Contracts;
+using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.Views;
 
