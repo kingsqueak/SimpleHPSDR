@@ -1,0 +1,107 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        xmlns:c="using:SimpleHPSDR.Controls"
+        xmlns:e="using:SimpleHPSDR.Engine"
+        x:Class="SimpleHPSDR.Views.AnalyzerWindow"
+        x:DataType="vm:AnalyzerViewModel"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        Title="Antenna Analyser" Width="900" Height="640" MinWidth="640" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="12">
+    <!-- Source, range, sweep -->
+    <StackPanel DockPanel.Dock="Top" Spacing="8">
+      <WrapPanel ItemSpacing="10" LineSpacing="8">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="Measure with" Classes="label" VerticalAlignment="Center" />
+          <ComboBox ItemsSource="{Binding Sources}" SelectedIndex="{Binding SourceIndex}" Width="170" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding UsesNanoVna}">
+          <ComboBox ItemsSource="{Binding Ports}" SelectedItem="{Binding SelectedPort}" Width="220" PlaceholderText="Serial port"
+                    ToolTip.Tip="The NanoVNA's port (it appears when you plug it in). Not your radio's CAT or an amplifier's port: opening those could key or upset them." />
+          <Button Classes="seg" Content="↻" Command="{Binding RefreshPortsCommand}" ToolTip.Tip="Look for ports again" />
+          <Button Classes="seg" Content="Connect" Command="{Binding ConnectNanoVnaCommand}" />
+        </StackPanel>
+        <TextBlock Text="{Binding SourceText}" FontSize="12" VerticalAlignment="Center" />
+      </WrapPanel>
+      <WrapPanel ItemSpacing="10" LineSpacing="8">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="Band" Classes="label" VerticalAlignment="Center" />
+          <ComboBox ItemsSource="{Binding BandNames}" SelectedIndex="{Binding BandIndex}" Width="110" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="From" Classes="label" VerticalAlignment="Center" />
+          <NumericUpDown Value="{Binding StartMHz}" Minimum="0.1" Maximum="60" Increment="0.01" FormatString="0.000" Width="120" />
+          <TextBlock Text="to" Classes="label" VerticalAlignment="Center" />
+          <NumericUpDown Value="{Binding EndMHz}" Minimum="0.1" Maximum="60" Increment="0.01" FormatString="0.000" Width="120" />
+          <TextBlock Text="MHz" Classes="label" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="Points" Classes="label" VerticalAlignment="Center" />
+          <NumericUpDown Value="{Binding Points}" Minimum="3" Maximum="{Binding MaxPoints}" Increment="10" FormatString="0" Width="100" />
+        </StackPanel>
+        <Button Classes="seg lit" Content="Sweep" Command="{Binding SweepCommand}" IsEnabled="{Binding !Running}" MinWidth="80" />
+        <Button Classes="seg" Content="Stop" Command="{Binding CancelCommand}" IsEnabled="{Binding Running}" />
+      </WrapPanel>
+
+      <!-- The radio transmits: ask first -->
+      <Border Classes="alert warning" IsVisible="{Binding Confirming}" Padding="12,8" CornerRadius="6">
+        <StackPanel Spacing="8">
+          <TextBlock Text="{Binding WarningText}" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Transmit and sweep" Command="{Binding SweepCommand}" />
+            <Button Content="Cancel" Command="{Binding CancelConfirmCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Calibration, only for sources that need it (e.g. an HL2's VNA) -->
+      <Expander Header="Calibration" IsVisible="{Binding NeedsCalibration}" HorizontalAlignment="Stretch">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                     Text="Over the range above: connect each standard at the end of the cable and measure it. Open, short and load make a reflection calibration." />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBox Text="{Binding CalibrationName}" Width="140" PlaceholderText="Name" />
+            <Button Classes="seg" Content="Open" Command="{Binding CalOpenCommand}" />
+            <Button Classes="seg" Content="Short" Command="{Binding CalShortCommand}" />
+            <Button Classes="seg" Content="Load" Command="{Binding CalLoadCommand}" />
+            <Button Classes="seg" Content="Thru" Command="{Binding CalThruCommand}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Use" Classes="label" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding Calibrations}" SelectedItem="{Binding SelectedCalibration}" Width="300"
+                      PlaceholderText="No calibration">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="e:StationClient+VnaCalibration">
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+        </StackPanel>
+      </Expander>
+      <TextBlock Text="{Binding Status}" FontSize="12" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <!-- Saved sweeps and the result, right -->
+    <Grid DockPanel.Dock="Right" Width="250" Margin="12,8,0,0" RowDefinitions="Auto,*,Auto,Auto">
+      <TextBlock Text="Saved sweeps" FontWeight="SemiBold" Margin="0,0,0,6" />
+      <ListBox Grid.Row="1" ItemsSource="{Binding Saved}" SelectedItem="{Binding SelectedSaved}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="e:StationClient+VnaSweep">
+            <StackPanel>
+              <TextBlock FontSize="12">
+                <Run Text="{Binding Band}" /><Run Text="  " /><Run Text="{Binding Antenna}" />
+              </TextBlock>
+              <TextBlock Text="{Binding CapturedUtc, StringFormat={}{0:g}}" Classes="label" FontSize="11" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <Button Grid.Row="2" Classes="flat" Content="Delete this sweep" Command="{Binding DeleteSavedCommand}" Margin="0,6,0,6" />
+      <TextBlock Grid.Row="3" Text="{Binding ResultText}" FontSize="12" TextWrapping="Wrap" />
+    </Grid>
+
+    <c:AnalyzerPlot Margin="0,8,0,0" Points="{Binding PlotPoints}" BandLowHz="{Binding PlotBandLow}" BandHighHz="{Binding PlotBandHigh}" />
+  </DockPanel>
+</Window>

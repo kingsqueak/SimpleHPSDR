@@ -259,6 +259,68 @@ public sealed class StationClient : IDisposable
     public Task<RadeTuning> SetRadeTuningAsync(RadeTuning tuning) =>
         PostForAsync<RadeTuning>("api/station/rade/tuning", tuning);
 
+    // ---- antenna analyser (engine VnaService): the radio's own bridge
+    // (SWR under ~5 W TUNE), an HL2's FPGA VNA, or a NanoVNA on a serial port.
+    public sealed record VnaCapability(bool Available, bool NativeVector, string Board, string Source, string Reason,
+        bool RequiresExternalBridge, bool RequiresCalibration, int MaximumPoints);
+    public sealed record VnaSource(string Source, string? DeviceId, string? DeviceName, bool Connected, string? Error,
+        List<string> Devices);
+    public sealed record VnaStatus(bool Running, string? Phase, int PointsReceived, int PointsExpected,
+        string? ActiveAntenna, string? ActiveBand, string? Error);
+    public sealed record VnaPoint(long FrequencyHz, double RawReal, double RawImaginary, double MagnitudeDb, double PhaseDeg,
+        double? Swr, double? ReturnLossDb, double? ResistanceOhms, double? ReactanceOhms);
+    public sealed record VnaMetrics(long ResonantFrequencyHz, double? MinimumSwr, double? MaximumReturnLossDb,
+        double? ResistanceAtResonanceOhms, double? ReactanceAtResonanceOhms, long? Bandwidth15Hz, long? Bandwidth20Hz,
+        long? Bandwidth30Hz, double? EstimatedQ);
+    public sealed record VnaSweep(string Id, DateTimeOffset CapturedUtc, string RadioKey, string Board, string Antenna,
+        string Band, string Label, long StartHz, long EndHz, int PointCount, string Kind, string? CalibrationId,
+        bool Calibrated, VnaMetrics Metrics, List<VnaPoint> Points);
+    public sealed record VnaCalibration(string Id, string Name, DateTimeOffset UpdatedUtc, string RadioKey, string Antenna,
+        string Band, long StartHz, long EndHz, int PointCount, bool HasThru, bool HasOpen, bool HasShort, bool HasLoad,
+        bool ReflectionReady, bool TransmissionReady);
+    private sealed record VnaSweepRequest(string Antenna, string Band, long StartHz, long EndHz, int Points, int Kind,
+        string? CalibrationId, string? Label, int DriveLevel = 8, bool FixedRxGainHigh = false);
+    private sealed record VnaCalibrationRequest(string Name, string Antenna, string Band, long StartHz, long EndHz,
+        int Points, int Standard, string? CalibrationId, int DriveLevel = 8, bool FixedRxGainHigh = false);
+
+    public async Task<VnaCapability> GetVnaCapabilityAsync() =>
+        (await _http.GetFromJsonAsync<VnaCapability>("api/vna/capability", Json))!;
+    public async Task<VnaSource> GetVnaSourceAsync() =>
+        (await _http.GetFromJsonAsync<VnaSource>("api/vna/source", Json))!;
+    public Task<VnaSource> SetVnaSourceAsync(string source, string? device) =>
+        PostForAsync<VnaSource>("api/vna/source", new { source, deviceId = device });
+    public async Task<VnaStatus> GetVnaStatusAsync() =>
+        (await _http.GetFromJsonAsync<VnaStatus>("api/vna/status", Json))!;
+    public async Task<List<VnaSweep>> GetVnaSweepsAsync() =>
+        await _http.GetFromJsonAsync<List<VnaSweep>>("api/vna/sweeps", Json) ?? [];
+    public async Task<List<VnaCalibration>> GetVnaCalibrationsAsync() =>
+        await _http.GetFromJsonAsync<List<VnaCalibration>>("api/vna/calibrations", Json) ?? [];
+    public Task CancelVnaAsync() => PostAsync("api/vna/cancel", new { });
+    public Task DeleteVnaSweepAsync(string id) => Checked(_http.DeleteAsync($"api/vna/sweeps/{Uri.EscapeDataString(id)}"));
+    public Task DeleteVnaCalibrationAsync(string id) => Checked(_http.DeleteAsync($"api/vna/calibrations/{Uri.EscapeDataString(id)}"));
+
+    /// <summary>Runs the whole sweep; returns when it's done (minutes allowed).</summary>
+    public async Task<VnaSweep> SweepVnaAsync(string antenna, string band, long startHz, long endHz, int points,
+        string? calibrationId, string? label, CancellationToken ct = default)
+    {
+        using var http = new HttpClient { BaseAddress = _http.BaseAddress, Timeout = TimeSpan.FromMinutes(10) };
+        using var r = await http.PostAsJsonAsync("api/vna/sweeps",
+            new VnaSweepRequest(antenna, band, startHz, endHz, points, 2, calibrationId, label), Json, ct);
+        await ThrowIfFailed(r, ct);
+        return (await r.Content.ReadFromJsonAsync<VnaSweep>(Json, ct))!;
+    }
+
+    /// <summary>Standard 0 thru, 1 open, 2 short, 3 load.</summary>
+    public async Task<VnaCalibration> CaptureVnaCalibrationAsync(string name, string antenna, string band, long startHz,
+        long endHz, int points, int standard, string? calibrationId, CancellationToken ct = default)
+    {
+        using var http = new HttpClient { BaseAddress = _http.BaseAddress, Timeout = TimeSpan.FromMinutes(10) };
+        using var r = await http.PostAsJsonAsync("api/vna/calibrations/capture",
+            new VnaCalibrationRequest(name, antenna, band, startHz, endHz, points, standard, calibrationId), Json, ct);
+        await ThrowIfFailed(r, ct);
+        return (await r.Content.ReadFromJsonAsync<VnaCalibration>(Json, ct))!;
+    }
+
     // Palstar HF-AUTO tuner: the HF-Auto program's UDP status, received by the engine.
     public sealed record HfAutoConfig(bool Enabled, string BindAddress, int Port, string ExpectedSenderAddress);
     public sealed record HfAutoTelemetry(bool? Valid, string? FirmwareVersion, string? Mode, int? ModeCode,

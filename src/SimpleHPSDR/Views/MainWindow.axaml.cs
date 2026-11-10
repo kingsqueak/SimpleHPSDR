@@ -86,7 +86,13 @@ public partial class MainWindow : Window
             about.Click += (_, _) => ShowAbout();
             items.Add(about);
         }
-        NativeMenu.SetMenu(this, new NativeMenu { new NativeMenuItem("Help") { Menu = items } });
+        var analyzer = new NativeMenuItem("Antenna Analyser…");
+        analyzer.Click += (_, _) => OpenAnalyzer();
+        NativeMenu.SetMenu(this, new NativeMenu
+        {
+            new NativeMenuItem("Tools") { Menu = new NativeMenu { analyzer } },
+            new NativeMenuItem("Help") { Menu = items },
+        });
     }
 
     public async void ShowAbout()
@@ -114,6 +120,18 @@ public partial class MainWindow : Window
     }
 
     private CwWindow? _cw;
+
+    // One antenna analyser window, beside this one.
+    private AnalyzerWindow? _analyzer;
+
+    public void OpenAnalyzer()
+    {
+        if (_analyzer is not null) { _analyzer.Activate(); return; }
+        if (Vm is not { } vm) return;
+        _analyzer = new AnalyzerWindow { DataContext = vm.NewAnalyzer() };
+        _analyzer.Closed += (_, _) => _analyzer = null;
+        _analyzer.Show(this);
+    }
 
     // One CW window, which stays open beside this one.
     public void OpenCw()

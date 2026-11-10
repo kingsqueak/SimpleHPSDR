@@ -84,3 +84,10 @@ public sealed partial class MainViewModel
         });
     }
 }
+
+public sealed partial class MainViewModel
+{
+    /// <summary>A fresh antenna analyser, on the band and antenna in use.</summary>
+    public AnalyzerViewModel NewAnalyzer() =>
+        new(() => IsConnected ? _client : null, VfoHz, TxAntLabel is "—" or "" ? "ANT1" : TxAntLabel);
+}
