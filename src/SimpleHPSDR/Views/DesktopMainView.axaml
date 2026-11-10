@@ -28,7 +28,7 @@
               Command="{Binding DismissAlertCommand}" />
     </Grid>
   </Border>
-  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
+  <Grid Name="MainGrid" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="12">
 
     <!-- Top: radio, frequency, meter -->
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
@@ -516,6 +516,19 @@
               </Flyout>
             </Button.Flyout>
           </Button>
+          <!-- The recorder: REC pops the tape deck up above it, over the waterfall. -->
+          <Button Name="RecButton" Classes="seg" Classes.lit="{Binding DeckOpen}" Classes.rec="{Binding IsRecording}" Padding="8,2" MinWidth="44"
+                  VerticalAlignment="Center" Command="{Binding ToggleDeckCommand}" ToolTip.Tip="{Binding DeckTip}">
+            <StackPanel Spacing="-3">
+              <TextBlock Text="REC" FontSize="12" HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding RecordSub}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
+            </StackPanel>
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft" FlyoutPresenterClasses="wide">
+                <c:RecorderPanel />
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
         </StackPanel>
       </WrapPanel>
       <WrapPanel ItemSpacing="18" LineSpacing="6" Margin="0,0,130,0">
@@ -528,7 +541,7 @@
                 <TextBlock Text="EQ" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />
               </StackPanel>
               <Button.ContextFlyout>
-                <Flyout Placement="TopEdgeAlignedLeft">
+                <Flyout Placement="TopEdgeAlignedLeft" FlyoutPresenterClasses="wide">
                   <c:RxEqPanel />
                 </Flyout>
               </Button.ContextFlyout>
@@ -661,6 +674,10 @@
       <TextBlock Grid.Row="2" Text="UTC" Classes="label" FontSize="11" VerticalAlignment="Center" />
       <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ZuluTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
     </Grid>
+    <!-- The recorder deck: part of the window (it never closes by itself),
+         over the bottom of the waterfall, lined up with REC (code-behind). -->
+    <c:RecorderDeck Name="DeckHost" Grid.Row="2" ZIndex="20" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                    IsVisible="{Binding DeckOpen}" />
   </Grid>
   </DockPanel>
 </UserControl>

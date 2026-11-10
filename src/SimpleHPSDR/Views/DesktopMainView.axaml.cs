@@ -31,6 +31,7 @@ public partial class DesktopMainView : UserControl
         MemButton.SizeChanged += (_, _) => FitVfo();
         SwapButtons.SizeChanged += (_, _) => FitVfo();
         SwapButtons.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) FitVfo(); };
+        MainGrid.LayoutUpdated += (_, _) => PlaceDeck();
         VfoDigitWheel.Attach(FrequencyReadout, () => Vm);
         if (StepButton.Flyout is MenuFlyout stepMenu) stepMenu.Opening += (_, _) => FillStepMenu(stepMenu);
         FrequencyPanel.PointerWheelChanged += (_, e) =>
@@ -267,6 +268,18 @@ public partial class DesktopMainView : UserControl
         Spectrum.Slices = vm.SliceMarks();
         Spectrum.PushFrame(f);
         vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
+    }
+
+    // The recorder deck sits at the bottom of the waterfall, its left edge at
+    // REC's (kept inside the window when REC is near the right side).
+    private void PlaceDeck()
+    {
+        if (!DeckHost.IsVisible) return;
+        var at = RecButton.TranslatePoint(new Point(0, 0), MainGrid);
+        if (at is null) return;
+        double x = Math.Max(0, Math.Min(at.Value.X, MainGrid.Bounds.Width - 24 - DeckHost.Bounds.Width));
+        var margin = new Thickness(x, 0, 0, 8);
+        if (DeckHost.Margin != margin) DeckHost.Margin = margin;
     }
 
     private void OnDisplayReset() { Spectrum.Clear(); SpectrumB.Clear(); FilterScope.Clear(); }

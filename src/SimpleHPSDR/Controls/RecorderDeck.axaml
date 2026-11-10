@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimpleHPSDR.ViewModels"
+             x:Class="SimpleHPSDR.Controls.RecorderDeck"
+             x:DataType="vm:MainViewModel">
+  <!-- The recorder deck: pops up above REC, over the waterfall. -->
+  <Border Classes="panel" BorderBrush="{DynamicResource ControlBg}" BorderThickness="1" Padding="10"
+          BoxShadow="0 6 18 0 #66000000">
+    <Grid RowDefinitions="Auto,Auto" RowSpacing="10">
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Classes="seg" Content="{Binding RecordSourceLabel}" MinWidth="44"
+                Command="{Binding ToggleRecordSourceCommand}"
+                ToolTip.Tip="What ● records: RX is what you hear (the active slice after the receive filter), MIC is the microphone (voice keyer messages)" />
+        <Button Classes="seg" Classes.rec="{Binding DeckTxArmed}" Content="TX" MinWidth="40"
+                Command="{Binding ToggleDeckTxCommand}"
+                ToolTip.Tip="TX off: ▶ plays through your speakers. TX on (red): ▶ transmits the recording at the level below." />
+        <Button Classes="seg" Classes.rec="{Binding IsRecording}" MinWidth="36" Margin="6,0,0,0"
+                Command="{Binding ToggleRecordCommand}" ToolTip.Tip="Record (red while recording). Click again to stop.">
+          <TextBlock Text="●" Classes="dot" Classes.recglyph="{Binding IsRecording}" />
+        </Button>
+        <Button Classes="seg" Content="■" MinWidth="36"
+                Command="{Binding DeckStopCommand}" ToolTip.Tip="Stop recording or playing" />
+        <Button Classes="seg" Classes.rec="{Binding DeckTxArmed}" Content="▶" MinWidth="36"
+                Command="{Binding DeckPlayCommand}" ToolTip.Tip="{Binding DeckPlayTip}" />
+        <Border Background="#0B0D10" CornerRadius="4" Padding="8,3" VerticalAlignment="Center" MinWidth="62" Margin="6,0,0,0">
+          <TextBlock Text="{Binding DeckCounter}" FontFamily="{StaticResource MonoFont}" FontSize="15"
+                     Foreground="#F5D76E" HorizontalAlignment="Center" />
+        </Border>
+      </StackPanel>
+      <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+        <!-- The chosen recording's name: type to rename it. ▾ lists them all. -->
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Name="NameBox" Text="{Binding DeckSelected.Label, FallbackValue=''}" FontSize="12"
+                   IsEnabled="{Binding DeckSelected, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   PlaceholderText="No recordings yet" LostFocus="OnNameLostFocus" KeyDown="OnNameKeyDown"
+                   ToolTip.Tip="The recording ▶ plays (the newest after each recording). Type here to rename it." />
+          <Button Grid.Column="1" Name="ListButton" Classes="seg" Content="▾" Padding="8,2" Margin="4,0,0,0"
+                  ToolTip.Tip="All recordings: click one to choose it, ✕ to delete">
+            <Button.Flyout>
+              <Flyout Placement="TopEdgeAlignedRight" FlyoutPresenterClasses="wide">
+                <ListBox ItemsSource="{Binding Recordings}" SelectedItem="{Binding DeckSelected}" MaxHeight="320"
+                         Width="360" SelectionChanged="OnPicked">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RecordingRow">
+                      <Grid ColumnDefinitions="34,*,44,Auto" ColumnSpacing="6">
+                        <TextBlock Text="{Binding Kind}" Classes="label" FontSize="10" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="12" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2" Text="{Binding Length}" FontSize="11" Classes="label"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right" />
+                        <Button Grid.Column="3" Classes="flat" Padding="6,0" MinHeight="0" VerticalAlignment="Center"
+                                Command="{Binding DeleteCommand}"
+                                Content="{Binding ConfirmDelete, Converter={x:Static vm:RecorderPanelText.DeleteGlyph}}"
+                                ToolTip.Tip="Delete this recording (click twice)" />
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </Grid>
+        <NumericUpDown Grid.Column="1" Value="{Binding RecorderTxGainDb}" Minimum="-20" Maximum="20" Increment="1"
+                       FormatString="+0;-0;0" Width="112" FontSize="12"
+                       ToolTip.Tip="TX level for recordings, in dB. Watch ALC and power on the first one." />
+        <TextBlock Grid.Column="2" Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      </Grid>
+    </Grid>
+  </Border>
+</UserControl>

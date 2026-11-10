@@ -179,6 +179,16 @@ public sealed class StationClient : IDisposable
     public Task SetLevelerMaxGainAsync(double db) => PostAsync("api/tx/leveler-max-gain", new LevelerMaxGainSetRequest(db));
     public Task SetTxEqAsync(LegacyTxEqConfig cfg) => PostAsync("api/tx/legacy-eq", cfg);
     public Task SetRxEqAsync(RxEqConfig cfg) => PostAsync("api/rx/eq", cfg);
+
+    // ---- recorder (engine AudioRecorderService) ----
+    public async Task<RecorderStatus> GetRecorderAsync() =>
+        (await _http.GetFromJsonAsync<RecorderStatus>("api/recorder", Json))!;
+    public Task<RecorderStatus> StartRecordingAsync(string file, bool mic, int receiver) =>
+        PostForAsync<RecorderStatus>("api/recorder/record", new RecorderRecordRequest(file, mic ? "mic" : "rx", receiver));
+    public Task<RecorderStatus> StopRecordingAsync() => PostForAsync<RecorderStatus>("api/recorder/record/stop", new { });
+    public Task<RecorderStatus> PlayRecordingAsync(string file, double gainDb, bool processed, bool local) =>
+        PostForAsync<RecorderStatus>("api/recorder/play", new RecorderPlayRequest(file, gainDb, processed, local));
+    public Task<RecorderStatus> StopPlaybackAsync() => PostForAsync<RecorderStatus>("api/recorder/play/stop", new { });
     public Task SetCfcAsync(CfcConfig cfg) => PostAsync("api/tx/cfc", new CfcSetRequest(cfg));
     public Task SetDexpAsync(DexpConfig cfg) => PostAsync("api/tx/dexp", new DexpSetRequest(cfg));
     public Task SetPhaseRotatorAsync(TxPhaseRotatorConfig cfg) =>
@@ -797,3 +807,10 @@ public sealed class StationClient : IDisposable
         _http.Dispose();
     }
 }
+
+/// <summary>The engine recorder's state (GET /api/recorder).</summary>
+public sealed record RecorderStatus(
+    string Folder, bool Recording, string? RecordingSource, string? RecordingFile, double RecordingSeconds,
+    bool Playing, bool PlayingLocal, string? PlayingFile, double PlayPositionSeconds, double PlayLengthSeconds, string? LastError);
+public sealed record RecorderRecordRequest(string File, string Source, int Receiver);
+public sealed record RecorderPlayRequest(string File, double GainDb, bool Processed, bool Local);

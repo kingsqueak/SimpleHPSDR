@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimpleHPSDR.ViewModels"
+             x:Class="SimpleHPSDR.Controls.RecorderPanel"
+             x:DataType="vm:MainViewModel">
+  <!-- The recorder, in the REC right-click (long press) flyout. -->
+  <StackPanel Width="470" Spacing="8" Margin="4">
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="Recordings" FontWeight="SemiBold" VerticalAlignment="Center" />
+      <Button Grid.Column="1" Classes="flat" Content="Open folder" Command="{Binding OpenRecordingsFolderCommand}"
+              ToolTip.Tip="Music/SimpleHPSDR" />
+    </Grid>
+    <StackPanel Orientation="Horizontal" Spacing="14">
+      <TextBlock Text="REC records" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <RadioButton GroupName="RecSource" Content="What I hear" IsChecked="{Binding RecorderFromReceiver}"
+                   ToolTip.Tip="The active slice's audio after the receive filter" />
+      <RadioButton GroupName="RecSource" Content="Microphone" IsChecked="{Binding RecorderFromMic}"
+                   ToolTip.Tip="A voice keyer message: CQ, your call, an exchange" />
+    </StackPanel>
+    <ScrollViewer MaxHeight="280" HorizontalScrollBarVisibility="Disabled">
+      <ItemsControl ItemsSource="{Binding Recordings}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:RecordingRow">
+            <Grid ColumnDefinitions="38,*,44,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,2">
+              <TextBlock Text="{Binding Kind}" Classes="label" FontSize="11" VerticalAlignment="Center"
+                         ToolTip.Tip="{Binding KindTip}" />
+              <TextBox Grid.Column="1" Text="{Binding Label}" FontSize="12" Padding="4,2" MinHeight="0"
+                       LostFocus="OnLabelLostFocus" KeyDown="OnLabelKeyDown" ToolTip.Tip="Click to rename" />
+              <TextBlock Grid.Column="2" Text="{Binding Length}" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Right" />
+              <Button Grid.Column="3" Classes="seg" Content="Listen" Padding="8,2" Command="{Binding ListenCommand}"
+                      ToolTip.Tip="Play it through your speakers" />
+              <Button Grid.Column="4" Classes="seg" Content="TX" Padding="8,2" Command="{Binding TransmitCommand}"
+                      ToolTip.Tip="Transmit it, at the TX level below. MOX or Stop ends it." />
+              <Button Grid.Column="5" Classes="flat" Padding="6,2" Command="{Binding DeleteCommand}"
+                      Content="{Binding ConfirmDelete, Converter={x:Static vm:RecorderPanelText.DeleteLabel}}"
+                      ToolTip.Tip="Delete the file (click twice)" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+    <TextBlock Classes="label" FontSize="12" Text="No recordings yet. Click REC to make one."
+               IsVisible="{Binding !Recordings.Count}" />
+    <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+      <TextBlock Text="TX level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <NumericUpDown Grid.Column="1" Value="{Binding RecorderTxGainDb}" Minimum="-20" Maximum="20" Increment="1"
+                     FormatString="+0;-0;0" Width="120" FontSize="12"
+                     ToolTip.Tip="dB up or down for transmitted recordings. Watch ALC and power on the first one." />
+      <TextBlock Grid.Column="2" Text="dB" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <Button Grid.Column="3" Classes="seg" Content="Stop" Command="{Binding StopRecordingPlaybackCommand}"
+              IsEnabled="{Binding IsPlayingRecording}" />
+    </Grid>
+    <TextBlock Text="{Binding RecorderStatus}" FontSize="12" TextWrapping="Wrap"
+               IsVisible="{Binding RecorderStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+  </StackPanel>
+</UserControl>

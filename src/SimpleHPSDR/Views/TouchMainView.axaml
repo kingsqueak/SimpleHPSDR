@@ -445,7 +445,7 @@
             <TextBlock Text="EQ" FontSize="10" HorizontalAlignment="Center" Opacity="0.85" />
           </StackPanel>
           <Button.ContextFlyout>
-            <Flyout Placement="TopEdgeAlignedLeft">
+            <Flyout Placement="TopEdgeAlignedLeft" FlyoutPresenterClasses="wide">
               <c:RxEqPanel />
             </Flyout>
           </Button.ContextFlyout>
@@ -460,7 +460,18 @@
                   ToolTip.Tip="Transmit drive" />
           <TextBlock Grid.Column="1" Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
         </Grid>
-        <ToggleButton Grid.Column="4" Classes="seg t" Content="Mute" IsChecked="{Binding Muted}" />
+        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6">
+          <ToggleButton Classes="seg t" Content="Mute" IsChecked="{Binding Muted}" />
+          <Button Classes="seg t" Classes.rec="{Binding IsRecording}" MinWidth="64" Command="{Binding ToggleRecordCommand}"
+                  ToolTip.Tip="{Binding RecordTip}">
+            <StackPanel><TextBlock Text="REC" HorizontalAlignment="Center" /><TextBlock Text="{Binding RecordSub}" Classes="sub" /></StackPanel>
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft" FlyoutPresenterClasses="wide">
+                <c:RecorderPanel />
+              </Flyout>
+            </Button.ContextFlyout>
+          </Button>
+        </StackPanel>
         <Button Grid.Column="5" Name="FilterButton" Classes="seg t" ToolTip.Tip="Receive filter">
           <StackPanel><TextBlock Text="Filter" HorizontalAlignment="Center" /><TextBlock Text="{Binding FilterText}" Classes="sub" /></StackPanel>
           <Button.Flyout>

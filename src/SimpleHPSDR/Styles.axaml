@@ -163,6 +163,21 @@
     <Setter Property="Foreground" Value="White" />
   </Style>
 
+  <!-- Flyouts wider than the default frame (456 px), so the frame holds them. -->
+  <Style Selector="FlyoutPresenter.wide">
+    <Setter Property="MaxWidth" Value="900" />
+  </Style>
+
+  <!-- The deck's record dot: red, white on the red button while recording. -->
+  <Style Selector="TextBlock.dot"><Setter Property="Foreground" Value="#E5484D" /></Style>
+  <Style Selector="TextBlock.dot.recglyph"><Setter Property="Foreground" Value="White" /></Style>
+
+  <!-- REC goes red while recording. -->
+  <Style Selector="Button.seg.rec /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="#E5484D" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+
   <!-- Transmit buttons go red when keyed; the frequency does too. -->
   <Style Selector="ToggleButton.tx:checked /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="#E5484D" />

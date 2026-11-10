@@ -97,6 +97,10 @@ public sealed class Settings
     public string? IdTimerWav { get; set; }
     /// <summary>ID timer sound level, 0 to 100.</summary>
     public int IdTimerVolume { get; set; } = 30;
+    /// <summary>Extra level for recordings transmitted from the recorder, dB.</summary>
+    public double RecorderTxGainDb { get; set; }
+    /// <summary>The recorder records the microphone (voice keyer messages) instead of the receiver.</summary>
+    public bool RecorderFromMic { get; set; }
     /// <summary>While transmitting, the waterfall's colours span this many dB
     /// below the signal's own peak, so the shape of the transmit audio shows
     /// instead of one saturated block. 0 keeps the receive range.</summary>
