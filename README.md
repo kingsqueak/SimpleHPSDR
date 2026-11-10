@@ -1,7 +1,7 @@
 # SimpleHPSDR
 
-A clean, simple interface for OpenHPSDR radios, built on
-[Station Engine](https://github.com/Zeus-SDR/station-engine) with
+A clean, simple interface for OpenHPSDR radios, built on its own fork of
+[Station Engine](https://github.com/kingsqueak/station-engine) with
 [Avalonia](https://avaloniaui.net/). The everyday controls stay on screen and
 the rest is a click or right-click away.
 
@@ -11,9 +11,9 @@ Audio runs natively in the engine, so receive audio and the microphone never
 pass through the interface. That keeps latency low, and audio keeps playing
 while the window is hidden or on another Space.
 
-Developed on an ANAN 7000DLE MkII over Protocol 2. macOS and Linux packages
-are available. A Windows x64 zip is built too, with ASIO under Config > Audio,
-but it hasn't been tried with a radio yet.
+Developed on an ANAN 7000DLE MkII over Protocol 2. It also supports ANAN G2s
+(including on the G2's own Pi), Hermes-Lite 2s and Brick SDRs. macOS and Linux
+packages are available, and a Windows x64 zip, with ASIO under Config > Audio.
 
 Not affiliated with or endorsed by the Zeus SDR project.
 
@@ -31,12 +31,29 @@ Not affiliated with or endorsed by the Zeus SDR project.
   and split, with an AF flag for each on one slider.
 - **Band and mode memory:** each pair, such as 40 m DIGU, keeps its own
   frequency, filter, AGC, drive, mic gain and noise settings.
+- **Memories:** 16 under Mem, the same on every band, plus each band's own
+  saved frequencies on a right-click of the band button.
 - **Noise control:** NB1 and NB2, NR1 to NR4 and neural NNR, with their settings
   on right-click.
-- **Transmit:** PureSignal with one-button calibration, CFC, leveler, EQ, phase
-  rotator, monitor and TX audio profiles.
-- **Station:** CAT, TCI, antennas, band outputs, PA calibration, transverters and
-  amplifier timing.
+- **Receive:** a ten-band receive EQ on the AF button, adaptive squelch, the RX
+  leveler, and preamp and attenuator steps with automatic attenuation.
+- **Transmit:** PureSignal with one-button calibration and an IMD readout on
+  two-tone, CFC, leveler, EQ, phase rotator, monitor and TX audio profiles.
+- **Recorder and voice keyer:** REC, beside TX, records what you hear or your
+  microphone, plays it back on the speakers or on the air, and four voice keyer
+  buttons (also on the touch layout) each send a recording.
+- **CW:** keyer settings, a CW window for sending from the keyboard with macros,
+  and a decoder that shows the signal as text.
+- **FreeDV RADE** digital voice, with your callsign sent at the end of each
+  transmission and its squelch, mic and level settings on a right-click.
+- **DRM** shortwave broadcasts, through the SimpleDream decoder.
+- **Antenna analyser:** sweeps SWR across a band with the radio's own bridge
+  at low power, a Hermes-Lite 2's built-in analyser or a NanoVNA.
+- **Station:** CAT, TCI, antennas, band outputs, PA calibration, transverters,
+  amplifier timing, the Hermes-Lite 2 and its N2ADR IO board, a Palstar HF-AUTO
+  tuner's status, and backup and restore of all settings.
+- **Clock and ID timer:** local time and UTC, and a reminder to give your call
+  every ten minutes.
 - **SWL:** starts in SAM with a station guide from EiBi, in your local time. Click a
   station to tune it.
 - **Firmware loader** for Protocol 2 radios.
@@ -94,8 +111,8 @@ its rule. The radio picker's Network help button gives the command to add it by
 hand, and if the picker finds nothing, it offers to add the rule again when none
 exists.
 To use ASIO, install your audio interface's driver, then pick ASIO under
-Config > Audio. The driver must be able to run at 48 kHz. The Windows build hasn't
-been tried with a radio yet, so please report what you find.
+Config > Audio. The driver must be able to run at 48 kHz. Fewer people use the
+Windows build than the others, so please report what you find.
 
 On macOS, allow SimpleHPSDR when it asks to find devices on your local network.
 
@@ -153,12 +170,15 @@ dotnet run --project src/SimpleHPSDR
 `SIMPLEHPSDR_ENGINE` to use an engine binary elsewhere.
 
 The `external/station-engine` submodule follows
-[kingsqueak/station-engine](https://github.com/kingsqueak/station-engine): a Zeus
-release tag plus SimpleHPSDR's own patches, tagged like `v2.0.68-simplehpsdr.6`.
-The fork is permanent and goes its own way; it follows Zeus only for something
-specific, such as a new radio. Everything SimpleHPSDR doesn't use that served
-Zeus's web app, Zeus Link or online services has been taken out (see
-`docs/engine-capabilities.md`). The patches also add
+[kingsqueak/station-engine](https://github.com/kingsqueak/station-engine), a
+permanent fork of the Zeus SDR project's Station Engine 2.0.68, tagged like
+`v2.0.68-simplehpsdr.18`. It goes its own way: since `.18` it uses SimpleHPSDR's
+names throughout (its projects, settings variables, files and native libraries),
+so anything wanted from later Zeus releases, such as a new radio, is ported by
+hand. Everything SimpleHPSDR doesn't use that served Zeus's web app, Zeus Link or
+online services has been taken out (see `docs/engine-capabilities.md`). The
+fork's own `Native libraries` workflow builds its miniaudio, RADE and ASIO
+libraries for Linux and Windows. Its changes also add
 ADC dither and randomizer for the ANAN-7000DLE and 8000DLE
 ([#15](https://github.com/Zeus-SDR/station-engine/pull/15)), the G2 front-panel
 CAT port ([#16](https://github.com/Zeus-SDR/station-engine/pull/16)), transverters
@@ -175,7 +195,8 @@ computer's port is 1025 with Protocol 2 and random with Protocol 1, so allow the
 ## Where things live
 
 Settings, the engine's own database (separate from Zeus's) and `engine.log` are
-in the app data folder, with the log from the previous start as `engine.previous.log`:
+in the app data folder, with the log from the previous start as `engine.previous.log`
+and the engine's detailed log in `logs/simplehpsdr-app.log`:
 
 - macOS: `~/Library/Application Support/SimpleHPSDR`
 - Linux: `~/.local/share/SimpleHPSDR`
