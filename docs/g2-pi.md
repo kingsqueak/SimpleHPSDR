@@ -65,6 +65,11 @@ panel it found. The VFO knob tunes; the other knobs and buttons start with
 piHPSDR's layout and can each be given another job there. The ATU button is
 handled by p2app itself.
 
+To quit SimpleHPSDR on the G2's screen: ☰, then Quit at the top of the drawer,
+then tap Quit again within 4 seconds. On the original G2 panel, holding FCN quits too; on any panel,
+"Quit SimpleHPSDR (hold)" can be given to a button in Config (it needs a long
+press, so a stray tap can't close the radio).
+
 SimpleHPSDR listens on port 19090 for p2app (changeable there) and tells the
 radio that port only after it's listening, and sets it back to 0 before it
 stops, as p2app needs.

@@ -121,7 +121,7 @@ On a small screen, such as a radio's 1024 by 600 front panel, SimpleHPSDR shows 
 ## On screen
 - Top: the drawer (☰), band, mode, the frequency, the meter, MOX and TUNE.
 - Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT.
-- ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window and Full screen.
+- ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window and Full screen. Quit is at the top of the drawer, beside ✕: tap it, then tap again within 4 seconds.
 
 ## Tuning
 - Drag the frequency sideways: each 20 pixels is one step. The wheel works too.

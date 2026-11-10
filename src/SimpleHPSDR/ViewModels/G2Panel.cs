@@ -7,6 +7,7 @@ public enum PanelButtonAction
     BandUp, BandDown, ModeUp, ModeDown, FilterWider, FilterNarrower, FilterDefault,
     AToB, BToA, SwapAB, Split, Rit, Xit, RitXitClear, Nb, Nr, Anf,
     Band160, Band80, Band60, Band40, Band30, Band20, Band17, Band15, Band12, Band10, Band6,
+    Quit,
 }
 
 /// <summary>What a G2 front panel knob does.</summary>
@@ -52,7 +53,7 @@ public static class G2Panels
             new(36, "A>B", nameof(PanelButtonAction.AToB)),
             new(37, "B>A", nameof(PanelButtonAction.BToA)),
             new(38, "Split", nameof(PanelButtonAction.Split)),
-            new(21, "FCN", nameof(PanelButtonAction.None)),
+            new(21, "FCN (hold)", nameof(PanelButtonAction.Quit)),
             new(42, "RIT", nameof(PanelButtonAction.Rit)),
             new(43, "XIT", nameof(PanelButtonAction.Xit)),
             new(1, "RX AF/AGC knob push", nameof(PanelButtonAction.Mute)),
@@ -163,6 +164,7 @@ public static class G2Panels
         PanelButtonAction.Nb => "Noise blanker",
         PanelButtonAction.Nr => "Noise reduction",
         PanelButtonAction.Anf => "Auto notch (ANF)",
+        PanelButtonAction.Quit => "Quit SimpleHPSDR (hold)",
         _ => a.ToString().Replace("Band", "") + " m",
     };
 

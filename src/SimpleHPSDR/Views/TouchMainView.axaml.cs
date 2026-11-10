@@ -163,6 +163,26 @@ public partial class TouchMainView : UserControl
         Avalonia.Threading.Dispatcher.UIThread.Post(() => editor.ShowAt(FilterButton));
     }
 
+    // Quit takes a second tap, so a stray touch can't close the radio.
+    private DateTime _quitArmed;
+
+    private void OnQuit(object? sender, RoutedEventArgs e)
+    {
+        if (DateTime.UtcNow - _quitArmed < TimeSpan.FromSeconds(4))
+        {
+            (TopLevel.GetTopLevel(this) as Window)?.Close();
+            return;
+        }
+        _quitArmed = DateTime.UtcNow;
+        QuitButton.Content = "Tap again to quit";
+        QuitButton.Classes.Add("rec");
+        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
+        {
+            QuitButton.Content = "Quit";
+            QuitButton.Classes.Remove("rec");
+        }, TimeSpan.FromSeconds(4));
+    }
+
     private void OnFullScreen(object? sender, RoutedEventArgs e)
     {
         Drawer.IsPaneOpen = false;

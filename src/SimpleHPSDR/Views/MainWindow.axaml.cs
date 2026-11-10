@@ -147,6 +147,7 @@ public partial class MainWindow : Window
             _guide.Show(this);
         };
         vm.CloseGuide = () => { if (_guide is { IsVisible: true }) _guide.Close(); };
+        vm.QuitRequested += () => Dispatcher.UIThread.Post(Close);   // a G2 panel button held
         vm.ShowDspPrep = prep => new DspPrepWindow { DataContext = prep }.ShowDialog(this);
         vm.ShowPsSetup = setup => new PsSetupWindow { DataContext = setup }.ShowDialog(this);
         vm.ShowSettings = settings =>

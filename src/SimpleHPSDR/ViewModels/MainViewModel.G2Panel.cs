@@ -162,10 +162,19 @@ public sealed partial class MainViewModel
         }
     }
 
+    /// <summary>A panel button asked to close SimpleHPSDR (the main window does it).</summary>
+    public event Action? QuitRequested;
+
     private void PanelButton(int code, int ev)
     {
-        if (!IsConnected || ev != 1) return;   // act on the press
         var action = ButtonAction(G2PanelProduct, code);
+        // Quit only on a long press, so a stray tap can't close the radio.
+        if (action == PanelButtonAction.Quit)
+        {
+            if (ev == 2) QuitRequested?.Invoke();
+            return;
+        }
+        if (!IsConnected || ev != 1) return;   // act on the press
         switch (action)
         {
             case PanelButtonAction.Mox: MoxOn = !MoxOn; break;
