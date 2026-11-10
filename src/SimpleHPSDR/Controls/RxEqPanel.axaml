@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:SimpleHPSDR.ViewModels"
+             x:Class="SimpleHPSDR.Controls.RxEqPanel"
+             x:DataType="vm:MainViewModel">
+  <!-- The receive EQ, in the AF right-click (long press) flyout. -->
+  <StackPanel Spacing="8" Margin="4">
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="Receive EQ" FontWeight="SemiBold" VerticalAlignment="Center" />
+      <ToggleSwitch Grid.Column="1" IsChecked="{Binding RxEqOn}" OnContent="On" OffContent="Off" />
+    </Grid>
+    <ItemsControl ItemsSource="{Binding RxEqBands}">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:RxEqBand">
+          <StackPanel Width="40" Spacing="4">
+            <TextBlock Text="{Binding GainText}" HorizontalAlignment="Center" FontSize="11" />
+            <Slider Orientation="Vertical" Minimum="-20" Maximum="20" Value="{Binding GainDb}" Height="150"
+                    SmallChange="1" LargeChange="3" TickFrequency="1" IsSnapToTickEnabled="True"
+                    HorizontalAlignment="Center" ToolTip.Tip="dB at this frequency" />
+            <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" Classes="label" FontSize="11" />
+          </StackPanel>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" MaxWidth="330" VerticalAlignment="Center"
+                 Text="Shapes what you hear on both slices. Off in DIGU and DIGL, so decoders get plain audio." />
+      <Button Grid.Column="1" Classes="flat" Content="Flat" Command="{Binding FlattenRxEqCommand}"
+              ToolTip.Tip="All sliders back to 0 dB" />
+    </Grid>
+  </StackPanel>
+</UserControl>

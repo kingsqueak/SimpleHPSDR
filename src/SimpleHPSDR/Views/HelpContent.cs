@@ -245,6 +245,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
         ("Receiving", """
 ## Volume
 - AF sets the overall level. Its A and B flags set each slice's own level on top of that.
+- The AF button beside the slider is the receive EQ. Click it for on or off (blue = on), and right-click (or long press) for ten sliders (±20 dB) that shape what you hear on both slices. Flat puts them back to 0 dB. It stays out of DIGU and DIGL so decoders get plain audio.
 - Mute silences the receiver.
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.
 - RX Lev brings weak stations up to a steady listening level. Right-click it for its settings. Auto uses the engine's own values. Custom lets you set the target level, the most boost it may add, how fast it comes up (attack), how fast it backs down (release), and how long it holds before backing down (hang).

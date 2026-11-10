@@ -178,6 +178,7 @@ public sealed class StationClient : IDisposable
     public Task SetTxLevelingAsync(TxLevelingConfig cfg) => PostAsync("api/tx/leveling", new TxLevelingSetRequest(cfg));
     public Task SetLevelerMaxGainAsync(double db) => PostAsync("api/tx/leveler-max-gain", new LevelerMaxGainSetRequest(db));
     public Task SetTxEqAsync(LegacyTxEqConfig cfg) => PostAsync("api/tx/legacy-eq", cfg);
+    public Task SetRxEqAsync(RxEqConfig cfg) => PostAsync("api/rx/eq", cfg);
     public Task SetCfcAsync(CfcConfig cfg) => PostAsync("api/tx/cfc", new CfcSetRequest(cfg));
     public Task SetDexpAsync(DexpConfig cfg) => PostAsync("api/tx/dexp", new DexpSetRequest(cfg));
     public Task SetPhaseRotatorAsync(TxPhaseRotatorConfig cfg) =>

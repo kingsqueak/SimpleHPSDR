@@ -89,6 +89,7 @@ public sealed partial class MainViewModel
         SquelchAdaptive = _squelch.Adaptive;
         if (_squelchSender is not { Busy: true }) SquelchLevel = _squelch.Level;
         _applyingOperating = false;
+        UpdateRxEq(s);
     }
 
     [RelayCommand]
