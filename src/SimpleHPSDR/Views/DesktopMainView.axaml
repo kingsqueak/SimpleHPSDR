@@ -417,7 +417,7 @@
       <Button Classes="seg" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}"
               ToolTip.Tip="CTUN: clicking the panadapter moves only the receive frequency; the display stays put (blue = on)" />
       <Button Classes="seg" Classes.lit="{Binding ZoomOn}" Padding="10,3" Command="{Binding ToggleZoomCommand}"
-              ToolTip.Tip="Zoom: click for full span (grey) or zoomed (blue). Right-click to set the zoomed span.">
+              ToolTip.Tip="Zoom: click for full span (grey) or zoomed (blue). Right-click to set the zoomed span. Ctrl+wheel (⌘+wheel on a Mac) over the spectrum zooms too.">
         <StackPanel Spacing="-1">
           <TextBlock Text="Zoom" FontSize="12" HorizontalAlignment="Center" />
           <TextBlock Text="{Binding ZoomLabel}" FontSize="8" HorizontalAlignment="Center" Opacity="0.85" />

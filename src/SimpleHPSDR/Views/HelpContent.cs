@@ -105,7 +105,7 @@ CTUN changes what a click does. With it on, the display stays still and only the
 
 ## Seeing more or less of the band
 - Span sets the full width the radio takes in, from its sample rate. A wider span shows more of the band and uses more computer power.
-- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the span, from full at the left end of the slider, and Centre, which sets where the dial sits across the display (left, centre or right). Centre works with CTUN on or off.
+- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the span, from full at the left end of the slider, and Centre, which sets where the dial sits across the display (left, centre or right). Centre works with CTUN on or off. Ctrl+wheel over the spectrum (⌘+wheel on a Mac) or a trackpad pinch zooms too; the dial stays where it is while you zoom.
 """),
 
         ("Mini window", """
@@ -131,7 +131,7 @@ On a small screen, such as a radio's 1024 by 600 front panel, SimpleHPSDR shows 
 - Drag the frequency sideways: each 20 pixels is one step. The wheel works too.
 - Tap the frequency for a keypad: type the number, then press MHz or kHz.
 - Tap the spectrum to tune; drag it to slide the band. Let go while still moving and it glides on and slows down.
-- Pinch the spectrum to zoom (two fingers, or a Mac trackpad), or use − and + in its corner.
+- Pinch the spectrum to zoom (two fingers, or a Mac trackpad), use − and + in its corner, or Ctrl+wheel (⌘+wheel on a Mac).
 - Lock beside the frequency stops tuning from the screen. Dial position in the drawer's Receive tab sets where the dial sits across the spectrum.
 
 ## Long press

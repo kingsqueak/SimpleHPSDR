@@ -288,5 +288,14 @@ public partial class DesktopMainView : UserControl
     {
         if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx))
             LayoutPanadapters();
+        // Zooming: redraw now with the new span instead of waiting for the next
+        // frame. At each whole zoom level the engine sends no frames for about
+        // 130 ms while it rebuilds its analyser, and the picture froze then leapt.
+        else if (e.PropertyName == nameof(MainViewModel.ZoomSlider) && _wired is { } vm)
+        {
+            Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
+            Spectrum.InvalidateVisual();
+            SpectrumB.InvalidateVisual();
+        }
     }
 }

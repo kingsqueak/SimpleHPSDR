@@ -551,8 +551,8 @@
                           PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" />
           <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
             <TextBlock Text="{Binding ZoomLabel}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
-            <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel, or pinch)" />
-            <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel, or pinch)" />
+            <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel or ⌘+wheel, or pinch)" />
+            <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel or ⌘+wheel, or pinch)" />
           </StackPanel>
           <!-- FreeDV (RADE): top left, clear of the zoom buttons and the voice keyer row -->
           <Border IsVisible="{Binding FreeDvOn}" IsHitTestVisible="False" HorizontalAlignment="Left"

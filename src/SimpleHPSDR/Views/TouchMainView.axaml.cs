@@ -69,13 +69,7 @@ public partial class TouchMainView : UserControl
             else vm.TuneBySteps(steps);
         };
         Spectrum.ZoomRequested += Zoom;
-        // Ctrl+wheel zooms; the spectrum itself only tunes with the wheel.
-        Spectrum.AddHandler(PointerWheelChangedEvent, (_, e) =>
-        {
-            if ((e.KeyModifiers & KeyModifiers.Control) == 0) return;
-            Zoom(Math.Sign(SliderWheel.Clicks(Spectrum, e)));
-            e.Handled = true;
-        }, RoutingStrategies.Tunnel);
+        // Ctrl+wheel (⌘+wheel on a Mac) zooms: SpectrumView raises ZoomRequested.
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
@@ -390,5 +384,14 @@ public partial class TouchMainView : UserControl
     {
         if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx))
             LayoutPanadapters();
+        // Zooming: redraw now with the new span instead of waiting for the next
+        // frame. At each whole zoom level the engine sends no frames for about
+        // 130 ms while it rebuilds its analyser, and the picture froze then leapt.
+        else if (e.PropertyName == nameof(MainViewModel.ZoomSlider) && _wired is { } vm)
+        {
+            Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
+            Spectrum.InvalidateVisual();
+            SpectrumB.InvalidateVisual();
+        }
     }
 }

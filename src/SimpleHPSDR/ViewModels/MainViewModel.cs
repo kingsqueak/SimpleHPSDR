@@ -206,16 +206,42 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ZoomOn));
         OnPropertyChanged(nameof(ZoomLabel));
         OnPropertyChanged(nameof(ZoomSpanText));
-        int level = Math.Clamp((int)Math.Floor(zoom + 1e-9), 1, (int)MaxZoom);
-        if (level != ZoomLevel) SetZoom(level);
+        // Each new engine zoom level costs a pause in the display frames (about
+        // 130 ms: WDSP's analyzer restarts its input when the zoom changes), so
+        // while the zoom is moving ask for as few as possible. The display
+        // stretches the current level up to 4x; zooming out past it needs wider
+        // frames, so drop well below the target at once (room to keep going);
+        // the best level for where it ends is set once it settles.
+        int best = Math.Clamp((int)Math.Floor(zoom + 1e-9), 1, (int)MaxZoom);
+        int current = Math.Max(1, ZoomLevel);
+        if (zoom < current - 1e-9)
+            SetZoom(Math.Max(1, (int)Math.Floor(zoom / 2)));
+        else if (zoom / current > MaxStretch)
+            SetZoom(best);
+        _zoomSettle ??= new Avalonia.Threading.DispatcherTimer(TimeSpan.FromMilliseconds(300), Avalonia.Threading.DispatcherPriority.Background,
+            (_, _) => { _zoomSettle!.Stop(); SettleZoom(); });
+        _zoomSettle.Stop();
+        _zoomSettle.Start();
+    }
+
+    private const double MaxStretch = 3.5;   // under SpectrumView's 4x limit
+    private Avalonia.Threading.DispatcherTimer? _zoomSettle;
+
+    private void SettleZoom()
+    {
+        if (!IsConnected) return;
+        int best = Math.Clamp((int)Math.Floor(_zoomFine + 1e-9), 1, (int)MaxZoom);
+        if (best != ZoomLevel) SetZoom(best);
     }
 
     // A zoom change from the engine (band recall, the 1 s poll) that the chosen
     // zoom doesn't account for: follow it.
     partial void OnZoomLevelChanged(int value)
     {
-        if (_zoomSender is { Busy: true }) return;
-        if ((int)Math.Floor(_zoomFine + 1e-9) == value) return;
+        if (_settingZoom || _zoomSender is { Busy: true }) return;
+        // A level the display can stretch to the chosen zoom is fine as it is
+        // (the app keeps the engine below it while zooming).
+        if (value <= _zoomFine + 1e-9 && _zoomFine / value <= 4) return;
         _zoomFine = value;
         OnPropertyChanged(nameof(ZoomSlider));
         OnPropertyChanged(nameof(ZoomOn));
@@ -1039,10 +1065,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ToggleZoom() => SetZoomFine(ZoomOn ? 1 : Math.Clamp(_settings.ZoomOnFine, 1.25, MaxZoom));
 
+    private bool _settingZoom;
+
     private void SetZoom(int level)
     {
         if (!IsConnected) return;
-        ZoomLevel = level;
+        _settingZoom = true;
+        try { ZoomLevel = level; }
+        finally { _settingZoom = false; }
         (_zoomSender ??= new Latest<int>(async z =>
         {
             await _client!.SetZoomAsync(z);

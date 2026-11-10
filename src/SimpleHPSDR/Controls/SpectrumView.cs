@@ -134,12 +134,23 @@ public sealed class SpectrumView : Control
     public double TargetSpanHz { get; set; }
 
     // The visible part of the bins: first bin (fractional) and how many.
+    // Stretched between the engine's whole zoom levels, the window is placed so
+    // the dial stays where it is on screen: the engine keeps the dial at the
+    // Centre slider's position (or wherever CTUN left it), and zooming around
+    // the middle instead slid the picture sideways, then jumped back at each
+    // whole level when the engine re-centred.
     private (double First, double Count) ViewBins(int bins)
     {
         double stretch = TargetSpanHz > 0 && _hzPerPixel > 0 && bins > 0
             ? Math.Clamp(bins * _hzPerPixel / TargetSpanHz, 1.0, 4.0) : 1.0;
         double count = bins / stretch;
-        return ((bins - count) / 2.0, count);
+        double spare = bins - count;
+        if (spare <= 0) return (0, count);
+        var dial = Slices.FirstOrDefault(m => m.Active) ?? Slices.FirstOrDefault();
+        if (dial is null) return (spare / 2.0, count);
+        // Where the dial is across what arrives (0 left .. 1 right); kept there.
+        double at = Math.Clamp(((dial.Hz - _centerHz) / _hzPerPixel + bins / 2.0) / bins, 0, 1);
+        return (at * spare, count);
     }
     private double StripH => Strip.Count > 0 ? StripHeight : 0;
     private static readonly IBrush StripBase = new SolidColorBrush(Color.Parse("#14171E"));
@@ -221,11 +232,14 @@ public sealed class SpectrumView : Control
     public void PushFrame(DisplayFrame f)
     {
         if (f.Width == 0) return;
-        // A new span (zoom) makes the old waterfall rows a different scale,
-        // so start the waterfall afresh. Retuning keeps them.
-        if (_hzPerPixel > 0 && Math.Abs(f.HzPerPixel / _hzPerPixel - 1) > 0.01)
+        // A new span (zoom) puts the old rows at a different scale: stretch
+        // them to it, so the history carries on through each zoom step instead
+        // of the waterfall going blank and refilling. Retuning slides them.
+        bool newSpan = _hzPerPixel > 0 && Math.Abs(f.HzPerPixel / _hzPerPixel - 1) > 0.01;
+        if (newSpan)
         {
-            ClearWaterfall();
+            if (_wfCenterHz != 0) RescaleWaterfall(_wfCenterHz, _hzPerPixel, f.CenterHz, f.HzPerPixel);
+            else ClearWaterfall();
             _wfCenterHz = f.CenterHz;
         }
         else if (_wfCenterHz != 0 && f.HzPerPixel > 0)
@@ -247,7 +261,7 @@ public sealed class SpectrumView : Control
             var raw = f.PanDb.Span;
             // Restart the average after a retune or width change, otherwise
             // the old and new spectra smear together.
-            if (_pan is null || _pan.Length != raw.Length || f.CenterHz != _avgCenterHz)
+            if (_pan is null || _pan.Length != raw.Length || f.CenterHz != _avgCenterHz || newSpan)
                 _pan = raw.ToArray();
             else
                 for (int i = 0; i < _pan.Length; i++)
@@ -270,6 +284,30 @@ public sealed class SpectrumView : Control
             AddWaterfallRow(f.WfDb.Span);
 
         InvalidateVisual();
+    }
+
+    // Redraw every stored row at a new span and centre: each pixel takes the
+    // old row's colour at the same frequency, the edges that come into view
+    // start empty.
+    private unsafe void RescaleWaterfall(long oldCenterHz, double oldHzPerPx, long newCenterHz, double newHzPerPx)
+    {
+        if (_waterfall is null || _wfWidth == 0 || oldHzPerPx <= 0 || newHzPerPx <= 0) return;
+        int w = _wfWidth;
+        var map = new int[w];
+        for (int x = 0; x < w; x++)
+        {
+            double hz = newCenterHz + (x - w / 2.0) * newHzPerPx;
+            double src = (hz - oldCenterHz) / oldHzPerPx + w / 2.0;
+            map[x] = src >= 0 && src < w ? (int)src : -1;
+        }
+        var scratch = new uint[w];
+        using var fb = _waterfall.Lock();
+        for (int r = 0; r < WaterfallRows; r++)
+        {
+            var row = new Span<uint>((byte*)fb.Address + r * fb.RowBytes, w);
+            row.CopyTo(scratch);
+            for (int x = 0; x < w; x++) row[x] = map[x] >= 0 ? scratch[map[x]] : Palette[0];
+        }
     }
 
     // Move every stored row sideways by bins (positive: towards the left).
@@ -887,7 +925,15 @@ public sealed class SpectrumView : Control
     {
         base.OnPointerWheelChanged(e);
         int steps = SliderWheel.Clicks(this, e);
-        if (steps != 0) WheelTune?.Invoke(steps);
+        // Ctrl+wheel zooms; on a Mac ⌘+wheel too, as macOS may keep Control+scroll
+        // for its own screen zoom. The plain wheel tunes.
+        bool zoom = (e.KeyModifiers & KeyModifiers.Control) != 0
+            || (OperatingSystem.IsMacOS() && (e.KeyModifiers & KeyModifiers.Meta) != 0);
+        if (steps != 0)
+        {
+            if (zoom) ZoomRequested?.Invoke(Math.Sign(steps));
+            else WheelTune?.Invoke(steps);
+        }
         e.Handled = true;
     }
 }
