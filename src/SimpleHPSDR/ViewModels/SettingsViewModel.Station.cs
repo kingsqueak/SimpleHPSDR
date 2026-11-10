@@ -238,7 +238,15 @@ public sealed partial class SettingsViewModel
 
     public string[] RadioModelNames => RadioModels.Names;
     /// <summary>Only the OrionMkII family needs telling apart.</summary>
-    [ObservableProperty] private bool _showRadioModel;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RecognisedText))]
+    private bool _showRadioModel;
+    /// <summary>The connected radio's name as the picker showed it (a Brick
+    /// by its model), or null.</summary>
+    public string? RadioName { get; init; }
+    public string RecognisedText => string.IsNullOrWhiteSpace(RadioName)
+        ? "Your radio was recognised, so there's nothing to choose."
+        : $"Your radio was recognised as {RadioName}, so there's nothing to choose.";
     [ObservableProperty] private int _radioModelIndex;
     private int _modelWas, _modelOrig;
 

@@ -23,8 +23,8 @@ Brick2 (Protocol 1 or 2):
 - Classified as Hermes whatever board byte the firmware reports (board 0x06
   with a newer code version would otherwise read as a Hermes-Lite 2).
 - One antenna: no Ant 2/3 or RX aux selections offered.
-- Power meter scale 15 W. Drive keeps the Hermes 100 W gain table, so 100 %
-  drive is full output (the radio limits itself).
+- Power meter scale and drive readout 15 W. Drive keeps the Hermes 100 W gain
+  table, so 100 % drive is full output (the radio limits itself).
 - PA always enabled (transmit safety and per-band PA-off still apply).
 - Protocol 2: the 48 kHz IQ level correction (+29 dB hot firmware) and the
   single-ADC DDC0 receiver layout, from the Zeus team's earlier work.
@@ -33,7 +33,11 @@ Brick2 (Protocol 1 or 2):
   follows the transmit frequency while keyed. deskHPSDR reports no RF
   otherwise. **Unconfirmed on hardware.**
 
-Brick3 (Protocol 2, Angelia class):
+Brick3 (Protocol 2, Angelia class, 15 W; its manual has Thetis set to ANAN-100D):
+- Runs as an ANAN-100D (Angelia): antennas, filters and the power/SWR bridge
+  readings as on a 100D.
+- Power meter scale and drive readout 15 W; drive keeps the Angelia 100 W gain
+  table, so 100 % drive is full output.
 - In receive, the RX1/RX2 frequencies are mirrored into the DDC0/DDC1 words,
   which its STM32 reads to pick the band and filters. **Unconfirmed on
   hardware.**
@@ -46,7 +50,8 @@ Receive first, then transmit into a dummy load only.
 2. Receive on several bands: S-meter and panadapter sensible at 48, 96, 192
    and 384 kHz spans (48 kHz used to read 29 dB hot).
 3. No antenna choices are offered in Ant / Config > Antennas.
-4. TUNE into a dummy load at low drive: power reading sensible, scale 15 W.
+4. TUNE into a dummy load at low drive: power reading sensible, scale 15 W,
+   and the watts next to DRIVE about what the wattmeter shows.
 5. Brick2 on Protocol 2: split TX onto slice B on another band (RX 40 m, TX
    20 m) and TUNE briefly into the dummy load: is there RF on the TX band?
 6. Brick3: change bands in receive and listen for the filter relays; does the

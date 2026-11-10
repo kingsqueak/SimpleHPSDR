@@ -61,9 +61,14 @@ public sealed partial class MainViewModel
     public string DriveLine => $"{OfCeiling(DrivePct)}  {Watts(DrivePct)}";
     public string TuneLine => $"{OfCeiling(TunePct)}  {Watts(TunePct)}";
 
-    private void SetPowerScale(int ratedWatts)
+    // The radio's own rating when the engine gives one (a Brick: 15 W driven
+    // through the 100 W gain table, so 100 % drive is 15 W, not 100 W).
+    private int? _ratedWatts;
+
+    private void SetPowerScale(int maxPowerWatts)
     {
-        PowerScaleWatts = ratedWatts > 0 ? ratedWatts : 100;
+        int watts = _ratedWatts is int r && r > 0 ? r : maxPowerWatts;
+        PowerScaleWatts = watts > 0 ? watts : 100;
         OnPropertyChanged(nameof(PowerScaleWatts));
         OnPropertyChanged(nameof(DriveWattsText));
         OnPropertyChanged(nameof(TuneWattsText));
@@ -163,6 +168,8 @@ public sealed partial class MainViewModel
             _applyingTx = false;
         }
         await LoadMicSourcesAsync();
+        try { _ratedWatts = (await _client!.GetBoardFlagsAsync()).RatedPowerWatts; }
+        catch (Exception) { _ratedWatts = null; }
         try { SetPowerScale((await _client!.GetPaSettingsAsync()).Global.PaMaxPowerWatts); }
         catch (Exception) { }
     }

@@ -29,7 +29,7 @@
       <TabItem Header="Radio">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
-            <Border Classes="panel" IsEnabled="{Binding ShowRadioModel}">
+            <Border Classes="panel" IsVisible="{Binding ShowRadioModel}">
               <StackPanel Spacing="6">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="Radio model" Classes="label" FontSize="12" VerticalAlignment="Center" />
@@ -39,7 +39,7 @@
                            Text="Several radios look alike to the software, so pick yours. It sets the meter and power defaults. Reconnect after changing it." />
               </StackPanel>
             </Border>
-            <TextBlock Text="Your radio was recognised, so there's nothing to choose." Classes="label" FontSize="12"
+            <TextBlock Text="{Binding RecognisedText}" Classes="label" FontSize="12"
                        IsVisible="{Binding !ShowRadioModel}" />
             <Border Classes="panel">
               <StackPanel Orientation="Horizontal" Spacing="8">

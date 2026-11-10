@@ -612,7 +612,9 @@ public sealed class StationClient : IDisposable
 
     // ---- options only some radios have ---------------------------------
 
-    public sealed record BoardFlags(bool HasHl2OptionalToggles, bool SupportsAnvelinaDxOc);
+    /// <summary><see cref="RatedPowerWatts"/>: the radio's rating when it isn't
+    /// the drive bracket (the Brick SDRs: 15 W through a 100 W gain table).</summary>
+    public sealed record BoardFlags(bool HasHl2OptionalToggles, bool SupportsAnvelinaDxOc, int? RatedPowerWatts = null);
     public async Task<BoardFlags> GetBoardFlagsAsync() =>
         (await _http.GetFromJsonAsync<BoardFlags>("api/radio/capabilities", Json))!;
 

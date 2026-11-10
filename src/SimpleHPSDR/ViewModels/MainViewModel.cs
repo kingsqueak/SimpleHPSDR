@@ -483,6 +483,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             RestartG2Panel = RestartG2PanelAsync,
             G2PanelStatusText = G2PanelStatus,
             G2PanelFound = G2PanelProduct,
+            RadioName = _radio is { } r && r.Label.EndsWith(" " + r.Ip) ? r.Label[..^(r.Ip.Length + 1)] : null,
         };
         settings.PaMaxPowerSaved += SetPowerScale;
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
