@@ -40,6 +40,10 @@ Where the DRM decoder is installed, the Mode menu has DRM. It needs the TCI serv
 
 While DRM is on, a DRM button appears beside Mode, and a box at the bottom of the waterfall shows the station, how the signal is doing and any text message it sends. Mute and AF work as usual. Click the button to open the list again. Right-click it to pick another service on stations that carry more than one, or to turn DRM off. DRM is receive only.
 
+## FreeDV
+FreeDV is digital voice on SSB-width channels. Choose FreeDV in the Mode menu: SimpleHPSDR uses RADE, FreeDV's newest mode, which decodes received speech in place of the usual audio and turns your voice into a RADE signal when you transmit. Set your callsign in Config > Station first: RADE sends it at the end of each transmission, and the other station sees it.
+A box on the waterfall shows whether a RADE signal is in sync, its SNR and the callsign heard. While you transmit it shows your mic level; turn the mic gain down if it says too loud. Right-click the Mode button (long press on touch) while it shows FreeDV for its settings: the receive squelch (with a hold time and an optional minimum SNR), the transmit level, the mic gate that silences the room between words, and mic AGC and tone. Back to defaults restores the engine's own values. The older FreeDV modes (700D, 700E, 1600) aren't here yet. A common calling frequency is 14.236 MHz.
+
 Choose SWL from the Mode menu. The radio defaults to SAM, with a 10 kHz broadcast filter if SAM has no saved settings on that band, and the station guide opens. SAM is only the starting point: change the mode or filter as you like and SWL stays on.
 
 While SWL is on, an SWL button appears beside Mode. Click it to open the guide; you can close the guide at any time and SWL carries on. Right-click the button to turn SWL off.

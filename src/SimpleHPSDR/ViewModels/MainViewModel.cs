@@ -840,6 +840,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await LoadCwAsync();
             if (CwDecoderOn) await client.SetCwDecoderAsync(true);
             await ApplyRadioSpeakerAsync(client);
+            await LoadFreeDvAsync();
             IsConnected = true;
             _lostRadio = false;
             _statePoll.Start();
@@ -883,8 +884,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             SetVfoLocal(s.VfoHz);
-            FilterLowHz = s.FilterLowHz;
-            FilterHighHz = s.FilterHighHz;
+            (FilterLowHz, FilterHighHz) = FreeDvEdges(s.Mode, s.VfoHz, s.FilterLowHz, s.FilterHighHz);
             AfGainDb = s.RxAfGainDb;
             AttenDb = s.AttenDb;
             PreampOn = s.PreampOn;
@@ -922,7 +922,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ? ((Band)b.Value).Transverter ? b.Label : $"{b.Label} m" : "GEN";
 
     /// <summary>Text of the blue Mode button.</summary>
-    public string ModeLabel => Mode.ToString();
+    public string ModeLabel => Mode == RxMode.FreeDv ? FreeDvLabel : Mode.ToString();
 
     public void TuneTo(long hz)
     {
@@ -1086,6 +1086,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ModeHasNoOptions));
         Mark(Modes, mode);
         OnPropertyChanged(nameof(ModeLabel));
+        FollowFreeDvMode(mode);
 
         await LoadFilterSlotsAsync(mode, presetName);
     }
@@ -1099,6 +1100,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             Filters.Add(new FilterSlot(mode, p, SelectFilterAsync, SaveFilterAsync, ResetFilterAsync)
             {
                 IsSelected = p.SlotName == selectedSlot,
+                FreeDvLower = FreeDvLowerAt(VfoHz),
             });
     }
 
@@ -1106,8 +1108,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         foreach (var f in Filters) f.IsSelected = ReferenceEquals(f, slot);
         var p = slot.Preset;
-        FilterLowHz = p.LowHz;
-        FilterHighHz = p.HighHz;
+        (FilterLowHz, FilterHighHz) = FreeDvEdges(slot.Mode, VfoHz, p.LowHz, p.HighHz);
         await Try(async () =>
         {
             await _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName, ActiveRx);

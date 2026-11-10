@@ -553,6 +553,19 @@
             <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel, or pinch)" />
             <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel, or pinch)" />
           </StackPanel>
+          <!-- FreeDV (RADE): top left, clear of the zoom buttons and the voice keyer row -->
+          <Border IsVisible="{Binding FreeDvOn}" IsHitTestVisible="False" HorizontalAlignment="Left"
+                  VerticalAlignment="Top" Margin="8,8,0,0" Padding="16,8" CornerRadius="8"
+                  Background="#E6171A21" MinWidth="240">
+            <StackPanel Spacing="3">
+              <TextBlock Text="{Binding FreeDvHeadline}" Foreground="#E6E8EB" FontSize="16" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding FreeDvDetail}" Foreground="#AEB6C2" FontSize="12" HorizontalAlignment="Center" />
+              <ProgressBar Minimum="-60" Maximum="0" Value="{Binding FreeDvMicDb}" Height="6" MinWidth="0"
+                           IsVisible="{Binding IsTransmitting}" Background="#33FFFFFF"
+                           Foreground="{Binding FreeDvMicClip, Converter={x:Static vm:FreeDvText.MicBrush}}" />
+            </StackPanel>
+          </Border>
         </Panel>
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">

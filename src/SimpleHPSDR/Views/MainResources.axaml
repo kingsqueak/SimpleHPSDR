@@ -99,7 +99,65 @@
         <CheckBox Content="Pre-emphasize before limiting (louder)" IsChecked="{Binding FmPreEmphasisFirst}"
                   ToolTip.Tip="FM pre-emphasis cuts voice frequencies by 10 to 20 dB. Off (the usual default), it comes after the ALC, so speech never reaches full deviation and sounds quiet. On, the leveler, compressor and ALC bring it back up, so speech uses the full deviation. Turn the leveler on, or raise the mic gain, and watch DEV while you talk." />
       </StackPanel>
-      <TextBlock Text="Options are available in AM, SAM and FM." Classes="label" FontSize="12"
+      <ScrollViewer MaxHeight="560" IsVisible="{Binding FreeDvOn}">
+      <StackPanel Spacing="8">
+        <TextBlock Text="FreeDV (RADE) receive" FontWeight="SemiBold" />
+        <CheckBox Content="Squelch: quiet when no RADE signal is in sync" IsChecked="{Binding RadeRxSquelch}"
+                  ToolTip.Tip="Without it you hear warbling noise after a station stops." />
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeRxSquelch}" ToolTip.Tip="How long it stays open through a brief loss of sync, so weak copy isn't chopped. Default 250 ms.">
+          <TextBlock Text="Hold" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="0" Maximum="1000" Value="{Binding RadeRxHoldMs}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeRxHoldMs, StringFormat={}{0:0} ms}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeRxSquelch}" ToolTip.Tip="Also stay quiet unless the SNR is at least this. Off at the left end (the default).">
+          <TextBlock Text="Min SNR" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="-10" Maximum="20" Value="{Binding RadeRxMinSnrDb}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeMinSnrText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <TextBlock Text="FreeDV (RADE) transmit" FontWeight="SemiBold" Margin="0,6,0,0" />
+        <Grid ColumnDefinitions="110,*,60" ToolTip.Tip="How hard the RADE signal drives the transmitter. Default -6 dB; lower it if ALC shows, as RADE needs a clean, unclipped signal.">
+          <TextBlock Text="TX level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="-12" Maximum="0" Value="{Binding RadeTxLevelDb}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeTxLevelDb, StringFormat={}{0:0} dB}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <CheckBox Content="Mic gate: silence between words" IsChecked="{Binding RadeMicGate}"
+                  ToolTip.Tip="Keeps room noise from turning into garble at the far end when you pause." />
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeMicGate}" ToolTip.Tip="How far above the room's noise your voice must be to open it. Lower if word starts are clipped; higher in a noisy room. Default +14 dB.">
+          <TextBlock Text="Opens at" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="6" Maximum="30" Value="{Binding RadeMicGateOpenDb}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeMicGateOpenDb, StringFormat={}+{0:0} dB}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeMicGate}" ToolTip.Tip="How long it stays open after you stop, so words aren't chopped. Default 250 ms.">
+          <TextBlock Text="Hold" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="50" Maximum="1000" Value="{Binding RadeMicGateHangMs}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeMicGateHangMs, StringFormat={}{0:0} ms}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <CheckBox Content="Level my voice (mic AGC)" IsChecked="{Binding RadeMicAgc}" />
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeMicAgc}" ToolTip.Tip="The level the AGC aims for. Default -18 dB.">
+          <TextBlock Text="AGC target" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="-30" Maximum="-6" Value="{Binding RadeMicAgcTargetDb}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeMicAgcTargetDb, StringFormat={}{0:0} dB}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <CheckBox Content="Mic tone (EQ)" IsChecked="{Binding RadeMicEq}" />
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeMicEq}">
+          <TextBlock Text="Bass" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="-12" Maximum="12" Value="{Binding RadeMicBassDb}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeMicBassDb, StringFormat={}{0:+0;-0;0} dB}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeMicEq}">
+          <TextBlock Text="Mid" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="-12" Maximum="12" Value="{Binding RadeMicMidDb}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeMicMidDb, StringFormat={}{0:+0;-0;0} dB}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <Grid ColumnDefinitions="110,*,60" IsEnabled="{Binding RadeMicEq}">
+          <TextBlock Text="Treble" Classes="label" FontSize="12" VerticalAlignment="Center" />
+          <Slider Grid.Column="1" Minimum="-12" Maximum="12" Value="{Binding RadeMicTrebleDb}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="2" Text="{Binding RadeMicTrebleDb, StringFormat={}{0:+0;-0;0} dB}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
+        </Grid>
+        <Button Classes="flat" Content="Back to defaults" Command="{Binding ResetFreeDvSettingsCommand}" HorizontalAlignment="Left" />
+      </StackPanel>
+      </ScrollViewer>
+      <TextBlock Text="Options are available in AM, SAM, FM and FreeDV." Classes="label" FontSize="12"
                  IsVisible="{Binding ModeHasNoOptions}" />
     </Panel>
   </DataTemplate>

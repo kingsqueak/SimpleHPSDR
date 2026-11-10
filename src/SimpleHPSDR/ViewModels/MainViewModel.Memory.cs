@@ -62,6 +62,7 @@ public sealed partial class MainViewModel
             return;
         }
         RememberBandMode();
+        if (mode == RxMode.FreeDv && !await PrepareFreeDvAsync()) return;
         await ChangeModeAsync(mode);
         var memory = _settings.ModeMemories.GetValueOrDefault(MemoryKey(BandOf(VfoHz), mode));
         await RecallAsync(memory);

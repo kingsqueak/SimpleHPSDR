@@ -107,6 +107,21 @@ public sealed class Settings
     public bool VoiceKeyerOnTouch { get; set; }
     /// <summary>The ANAN G2's front panel through p2app (only on a G2 / G2-1K).</summary>
     public bool G2PanelOn { get; set; } = true;
+    /// <summary>FreeDV RADE: shaping of the mic before the encoder (engine defaults).</summary>
+    public bool RadeMicAgc { get; set; }
+    public double RadeMicAgcTargetDb { get; set; } = -18;
+    public bool RadeMicEq { get; set; }
+    public double RadeMicBassDb { get; set; }
+    public double RadeMicMidDb { get; set; }
+    public double RadeMicTrebleDb { get; set; }
+    /// <summary>FreeDV RADE squelch, mic gate and TX level (engine defaults).</summary>
+    public bool RadeRxSquelch { get; set; } = true;
+    public double RadeRxHoldMs { get; set; } = 250;
+    public double RadeRxMinSnrDb { get; set; } = -10;
+    public bool RadeMicGate { get; set; } = true;
+    public double RadeMicGateOpenDb { get; set; } = 14;
+    public double RadeMicGateHangMs { get; set; } = 250;
+    public double RadeTxLevelDb { get; set; } = -6;
     public int G2PanelPort { get; set; } = 19090;
     /// <summary>Changes from the default panel map: "B4:47" (button 47 on the
     /// original G2 panel) or "E5:9" (encoder 9 on the G2 Ultra) to an action name.</summary>

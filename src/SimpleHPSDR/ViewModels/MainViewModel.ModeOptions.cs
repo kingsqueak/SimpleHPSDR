@@ -22,7 +22,7 @@ public sealed partial class MainViewModel
     public bool ModeIsFm => Mode == RxMode.FM;
     /// <summary>Both sidebands are heard, so a filter stays centred on the dial.</summary>
     public bool FilterIsSymmetric => Mode is RxMode.AM or RxMode.SAM or RxMode.DSB or RxMode.FM;
-    public bool ModeHasNoOptions => !ModeIsAm && !ModeIsFm;
+    public bool ModeHasNoOptions => !ModeIsAm && !ModeIsFm && Mode != Zeus.Contracts.RxMode.FreeDv;
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(AmSymmetric))] private bool _amBroadcastOn;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(AmPositiveText))] private double _amPositivePeak;

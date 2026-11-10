@@ -34,7 +34,10 @@ public sealed partial class FilterSlot : ObservableObject
     public FilterPreset Preset { get; }
     public string Label => Preset.Label;
     public string SlotName => Preset.SlotName;
-    public bool LowerSideband => Mode is RxMode.LSB or RxMode.CWL or RxMode.DIGL;
+    /// <summary>FreeDV below 10 MHz (60 m excepted) runs on the lower sideband.</summary>
+    public bool FreeDvLower { get; init; }
+    public bool LowerSideband => Mode is RxMode.LSB or RxMode.CWL or RxMode.DIGL
+        || (Mode is RxMode.FreeDv && FreeDvLower);
     public string EdgeHint => LowerSideband
         ? "Hz below the carrier (lower sideband)"
         : Mode is RxMode.AM or RxMode.SAM or RxMode.DSB or RxMode.FM

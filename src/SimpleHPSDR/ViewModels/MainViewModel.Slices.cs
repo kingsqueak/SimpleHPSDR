@@ -146,8 +146,12 @@ public sealed partial class MainViewModel
     private (long Hz, RxMode Mode, int Low, int High, string? Preset) ActiveOf(StateDto s)
     {
         if (ActiveRx == 1 && s.Receivers?.FirstOrDefault(r => r.Index == 1) is { } b)
-            return (b.VfoHz, b.Mode, b.FilterLowHz, b.FilterHighHz, b.FilterPresetName);
-        return (s.VfoHz, s.Mode, s.FilterLowHz, s.FilterHighHz, s.FilterPresetName);
+        {
+            var (bl, bh) = FreeDvEdges(b.Mode, b.VfoHz, b.FilterLowHz, b.FilterHighHz);
+            return (b.VfoHz, b.Mode, bl, bh, b.FilterPresetName);
+        }
+        var (lo, hi) = FreeDvEdges(s.Mode, s.VfoHz, s.FilterLowHz, s.FilterHighHz);
+        return (s.VfoHz, s.Mode, lo, hi, s.FilterPresetName);
     }
 
     /// <summary>Point the VFO, band, mode, filter and AF at slice A (0) or B (1).</summary>

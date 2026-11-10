@@ -235,6 +235,30 @@ public sealed class StationClient : IDisposable
     }
 
     // ---- TCI and CAT servers (TCP ones apply on engine restart) ----
+    // Your callsign (and grid), kept by the engine: sent by RADE at the end of an over.
+    public sealed record OperatorIdentity(string Callsign, string Grid);
+    public async Task<OperatorIdentity> GetOperatorAsync() =>
+        (await _http.GetFromJsonAsync<OperatorIdentity>("api/operator", Json))!;
+    public Task SetOperatorAsync(string callsign, string grid) =>
+        PostAsync("api/operator", new OperatorIdentity(callsign, grid));
+
+    // FreeDV RADE V1, hosted in the engine. Mode FreeDV + RADE selected = on air.
+    public sealed record RadeStatus(bool Available, bool Active, bool Synced, double SnrDb, string? RxText,
+        string? LibraryVersion, string Rid, double TxMicLevelDb, bool TxMicClip);
+    public sealed record RadeSelect(bool Active, string? TxText);
+    public sealed record RadeMic(bool? AgcEnabled, double? AgcTargetDb, bool? EqEnabled, double? EqBassDb,
+        double? EqMidDb, double? EqTrebleDb);
+    public async Task<RadeStatus> GetRadeAsync() =>
+        (await _http.GetFromJsonAsync<RadeStatus>("api/station/rade/status", Json))!;
+    public Task<RadeStatus> SelectRadeAsync(bool active, string? callsign) =>
+        PostForAsync<RadeStatus>("api/station/rade/select", new RadeSelect(active, callsign));
+    public Task<RadeStatus> SetRadeMicAsync(RadeMic mic) =>
+        PostForAsync<RadeStatus>("api/station/rade/mic", mic);
+    public sealed record RadeTuning(bool RxSquelch, double RxHoldMs, double RxMinSnrDb, bool MicGate,
+        double MicGateOpenDb, double MicGateHangMs, double TxLevelDb);
+    public Task<RadeTuning> SetRadeTuningAsync(RadeTuning tuning) =>
+        PostForAsync<RadeTuning>("api/station/rade/tuning", tuning);
+
     // Palstar HF-AUTO tuner: the HF-Auto program's UDP status, received by the engine.
     public sealed record HfAutoConfig(bool Enabled, string BindAddress, int Port, string ExpectedSenderAddress);
     public sealed record HfAutoTelemetry(bool? Valid, string? FirmwareVersion, string? Mode, int? ModeCode,

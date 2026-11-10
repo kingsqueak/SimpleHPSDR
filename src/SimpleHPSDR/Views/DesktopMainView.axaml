@@ -382,6 +382,19 @@
                          HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
             </StackPanel>
           </Border>
+          <!-- FreeDV (RADE): sync, SNR, who's heard; mic level while transmitting -->
+          <Border IsVisible="{Binding FreeDvOn}" IsHitTestVisible="False" HorizontalAlignment="Center"
+                  VerticalAlignment="Bottom" Margin="12,0,12,14" Padding="16,8" CornerRadius="8"
+                  Background="#E6171A21" MinWidth="240">
+            <StackPanel Spacing="3">
+              <TextBlock Text="{Binding FreeDvHeadline}" Foreground="#E6E8EB" FontSize="16" FontWeight="SemiBold"
+                         HorizontalAlignment="Center" />
+              <TextBlock Text="{Binding FreeDvDetail}" Foreground="#AEB6C2" FontSize="12" HorizontalAlignment="Center" />
+              <ProgressBar Minimum="-60" Maximum="0" Value="{Binding FreeDvMicDb}" Height="6" MinWidth="0"
+                           IsVisible="{Binding IsTransmitting}" Background="#33FFFFFF"
+                           Foreground="{Binding FreeDvMicClip, Converter={x:Static vm:FreeDvText.MicBrush}}" />
+            </StackPanel>
+          </Border>
         </Panel>
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
