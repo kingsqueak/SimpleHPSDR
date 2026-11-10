@@ -1,3 +1,4 @@
+using SimpleHPSDR.Engine;
 using Zeus.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
@@ -27,8 +28,7 @@ public sealed partial class MainViewModel
                 ? (b.Mode, b.FilterLowHz, b.FilterHighHz)
                 : (s.Mode, s.FilterLowHz, s.FilterHighHz);
             bool sideband = mode is RxMode.LSB or RxMode.USB or RxMode.DIGL or RxMode.DIGU;
-            int txLo = Math.Min(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
-            int txHi = Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
+            var (txLo, txHi) = TxCuts.Of(s);
             if (_settings.TxFilterFollowsRx && sideband)
             {
                 int lo = Math.Min(Math.Abs(low), Math.Abs(high)), hi = Math.Max(Math.Abs(low), Math.Abs(high));

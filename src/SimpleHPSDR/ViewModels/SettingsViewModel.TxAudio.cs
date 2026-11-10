@@ -1,3 +1,4 @@
+using SimpleHPSDR.Engine;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SimpleHPSDR.Dsp;
@@ -140,8 +141,7 @@ public sealed partial class SettingsViewModel
         _txLoaded = s;
         ReleaseDelayMs = s.TxMoxTailDelayMs;
 
-        TxLowCutHz = Math.Min(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
-        TxHighCutHz = Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));
+        (TxLowCutHz, TxHighCutHz) = TxCuts.Of(s);
 
         var lv = s.TxLeveling ?? new TxLevelingConfig();
         CompressorEnabled = lv.CompressorEnabled;
@@ -291,9 +291,7 @@ public sealed partial class SettingsViewModel
         catch (Exception) { }
     }
 
-    private static (int Low, int High) CutsOf(StateDto s) =>
-        (Math.Min(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz)),
-         Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz)));
+    private static (int Low, int High) CutsOf(StateDto s) => TxCuts.Of(s);
 
     /// <summary>Send only the parts that changed, each as the engine's whole record.</summary>
     private async Task ApplyTxAudioAsync()

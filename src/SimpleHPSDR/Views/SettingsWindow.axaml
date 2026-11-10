@@ -192,10 +192,14 @@
             </Expander>
 
             <Expander Header="TX filter" IsExpanded="True" HorizontalAlignment="Stretch">
-              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
-                <CheckBox Grid.ColumnSpan="2" Content="TX filter follows the RX filter"
-                          IsChecked="{Binding TxFilterFollowsRx}"
-                          ToolTip.Tip="In SSB, transmit uses the same width as your receive filter." />
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+                <StackPanel Grid.ColumnSpan="2" Spacing="2">
+                  <CheckBox Content="TX filter follows the RX filter"
+                            IsChecked="{Binding TxFilterFollowsRx}"
+                            ToolTip.Tip="In SSB, transmit uses the same width as your receive filter." />
+                  <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap" Margin="28,0,0,0"
+                             Text="In AM and SAM the low cut below still applies whatever the filter: the receive filter only sets the high cut. To change it, untick this, set the low cut, and save your profile." />
+                </StackPanel>
                 <TextBlock Grid.Row="1" Text="Low cut" Classes="label" FontSize="12" />
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8"
                             IsEnabled="{Binding !TxFilterFollowsRx}">

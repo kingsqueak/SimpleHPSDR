@@ -22,6 +22,8 @@ The strip along the top of the spectrum follows the plan: green where it lets yo
 ## Choosing your radio
 The radio picker opens next. Pick your radio and press Connect. Several radios report the same ID, so choose yours under Radio model if asked: it sets the S-meter calibration and the power amplifier and PureSignal defaults. Tick "Connect to this radio automatically next time" to skip this.
 
+Brick SDRs (Brick2 and Brick3) are recognised and named in the list.
+
 If no radio appears, check that it's on and on the same network, or type its address under "Or by address". Network help lists what a firewall has to allow.
 
 ## Finding your way around
@@ -29,6 +31,7 @@ If no radio appears, check that it's on and on the same network, or type its add
 - Second row: band, mode, filters, ANF, NB, NR, and a close-up of the signal.
 - Middle: the band strip, the panadapter and the waterfall.
 - Bottom: display controls, then transmit and receive controls, and the clock.
+- The Tools menu has the antenna analyser; the Help menu has this window and update checks.
 
 ## The most useful tip
 Most controls have more behind a right-click. Hover over anything for a short explanation. Blue means a control is on.
@@ -40,13 +43,7 @@ Where the DRM decoder is installed, the Mode menu has DRM. It needs the TCI serv
 
 While DRM is on, a DRM button appears beside Mode, and a box at the bottom of the waterfall shows the station, how the signal is doing and any text message it sends. Mute and AF work as usual. Click the button to open the list again. Right-click it to pick another service on stations that carry more than one, or to turn DRM off. DRM is receive only.
 
-## Antenna analyser
-Tools > Antenna Analyser (on the touch layout, ☰ > Station > Analyser) sweeps SWR across a band. With "This radio" it uses the radio's own SWR bridge: it transmits a carrier of about 5 W through the antenna, stepping across the range, so it asks first. Put an amplifier on standby or bypass. Every frequency is checked against your band plan before it keys, and the radio goes back to your frequency when it's done. A Hermes-Lite 2 uses its built-in analyser instead. With a NanoVNA plugged in by USB, pick its port and Connect: it measures without transmitting, and shows the impedance (R + jX) too. The graph marks the lowest SWR; move the pointer over it to read any point. Sweeps are kept in the list on the right.
-
-## FreeDV
-FreeDV is digital voice on SSB-width channels. Choose FreeDV in the Mode menu: SimpleHPSDR uses RADE, FreeDV's newest mode, which decodes received speech in place of the usual audio and turns your voice into a RADE signal when you transmit. Set your callsign in Config > Station first: RADE sends it at the end of each transmission, and the other station sees it.
-A box on the waterfall shows whether a RADE signal is in sync, its SNR and the callsign heard. While you transmit it shows your mic level; turn the mic gain down if it says too loud. Right-click the Mode button (long press on touch) while it shows FreeDV for its settings: the receive squelch (with a hold time and an optional minimum SNR), the transmit level, the mic gate that silences the room between words, and mic AGC and tone. Back to defaults restores the engine's own values. The older FreeDV modes (700D, 700E, 1600) aren't here yet. A common calling frequency is 14.236 MHz.
-
+## The station guide (SWL)
 Choose SWL from the Mode menu. The radio defaults to SAM, with a 10 kHz broadcast filter if SAM has no saved settings on that band, and the station guide opens. SAM is only the starting point: change the mode or filter as you like and SWL stays on.
 
 While SWL is on, an SWL button appears beside Mode. Click it to open the guide; you can close the guide at any time and SWL carries on. Right-click the button to turn SWL off.
@@ -128,7 +125,7 @@ On a small screen, such as a radio's 1024 by 600 front panel, SimpleHPSDR shows 
 ## On screen
 - Top: the drawer (☰), band, mode, the frequency, the meter, MOX and TUNE.
 - Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT.
-- ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window and Full screen. Quit is at the top of the drawer, beside ✕: tap it, then tap again within 4 seconds.
+- ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window, the antenna analyser and Full screen. Quit is at the top of the drawer, beside ✕: tap it, then tap again within 4 seconds.
 
 ## Tuning
 - Drag the frequency sideways: each 20 pixels is one step. The wheel works too.
@@ -252,12 +249,13 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
         ("Receiving", """
 ## Volume
 - AF sets the overall level. Its A and B flags set each slice's own level on top of that.
-- The AF button beside the slider is the receive EQ. Click it for on or off (blue = on), and right-click (or long press) for ten sliders (±20 dB) that shape what you hear on both slices. Flat puts them back to 0 dB. It stays out of DIGU and DIGL so decoders get plain audio.
 - Mute silences the receiver.
-- REC (right of TX) rolls out the recorder: RX/MIC picks what ● records (what you hear on the active slice after the receive filter, or the microphone for voice keyer messages), ● records, ■ stops, and ▶ plays the newest recording, or the one picked in the list, through your speakers. Turn TX on (red) and ▶ transmits it instead, at the TX level in dB; watch ALC and power on the first one. MOX or ■ ends it. A receiver recording goes out as heard, through the TX filter; a microphone recording goes through your mic gain and TX processing like live speech. Right-click REC for all recordings: rename, delete, open the folder (Music/SimpleHPSDR). On the touch layout REC is beside Mute: tap to record, long press for the recordings.
-- The four grey buttons right of REC are the voice keyer. Right-click one (or long press) to give it a label and choose a recording, such as your CQ. Click it, or press ⌘1 to ⌘4 on a Mac (Ctrl+1 to 4 on Windows and Linux) or F5 to F8 (fn+F5 to F8 on a Mac, where F5 is dictation), to transmit that recording at the recorder's TX level; click again or press MOX to stop. A button with nothing assigned is dimmed. On the touch layout, tick "Voice keyer buttons on the touch layout" in REC's long-press panel and four large ones appear over the bottom of the waterfall.
+- REC and the voice keyer: see Recording and the voice keyer.
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.
 - RX Lev brings weak stations up to a steady listening level. Right-click it for its settings. Auto uses the engine's own values. Custom lets you set the target level, the most boost it may add, how fast it comes up (attack), how fast it backs down (release), and how long it holds before backing down (hang).
+
+## Receive EQ
+The AF button beside the volume slider is the receive EQ. Click it for on or off (blue = on). Right-click it (long press on touch) for ten sliders from 60 Hz to 5 kHz, ±20 dB, that shape what you hear on both slices: cut the low end to make a weak SSB signal clearer, or lift the treble on a muffled station. Flat puts them all back to 0 dB. The EQ stays out of DIGU and DIGL so decoding programs get plain audio, and it's remembered between sessions.
 
 ## RFG: preamp and attenuator
 Click RFG to open the front end. Each click steps through preamp, 0 dB and 10 to 30 dB of attenuation. Auto ATT adds attenuation by itself if the receiver overloads, and is best left on. On a noisy band, attenuation can improve what you hear: if the noise drops and the signal doesn't, keep it.
@@ -353,7 +351,7 @@ Config > TX Audio holds everything that shapes your voice, in the order it's pro
 Save your settings under a name and load them later: one for DX, one for ragchewing. Default is built in and can't be overwritten. A profile holds only what's on this TX Audio page, and it applies in every mode, so make a separate profile if you want different settings for AM, say. CW and FreeDV don't use the TX filter. PureSignal settings aren't part of a profile, so the internal or external coupler stays as set in Config on every band and mode.
 
 ## TX filter
-Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. In AM, SAM and DSB the receive filter covers both sidebands, so your audio goes up to half its width: a 10 kHz AM filter sends audio up to 5 kHz. Otherwise set it by hand. 2.8 kHz is a usual SSB width.
+Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. In AM, SAM and DSB the receive filter covers both sidebands, so your audio goes up to half its width: a 10 kHz AM filter sends audio up to 5 kHz. In AM and SAM the low cut still applies either way, as the modulator's high-pass: to change it, untick follows, set the low cut and save your profile. Otherwise set both by hand. 2.8 kHz is a usual SSB width.
 
 ## Equalizer
 Shapes the tone of your voice. The graphic view has ten sliders. Tick Parametric for six bands instead: drag a numbered point for frequency and gain, and use the wheel over it for Q. Bands 1 and 6 can be a pass filter or a shelf. The dashed line is what the radio actually does; very narrow bands can come out a little shallower.
@@ -394,6 +392,90 @@ Calibrate again after changing band, power or amplifier. The correction stays on
 - The status box shows the feedback level (FB), which is best around 128 to 181.
 - A line in plain words says what PureSignal is doing and what to do if it's stuck.
 - "Signal peak" and "HW peak" should be close: your signal's peak just under HW peak, at 94 to 100% of it. PS CAL sets this for you.
+"""),
+
+        ("Recording and the voice keyer", """
+## Recording
+REC, right of TX, opens a small tape deck over the bottom of the waterfall. Click REC again to put it away; it stays open while you use the rest of the radio.
+- RX / MIC picks what ● records: RX is what you hear on the active slice after the receive filter; MIC is your microphone, for voice keyer messages such as your CQ or call.
+- ● starts and stops recording (red while recording). The counter shows the time.
+- The name box shows the recording ▶ plays: the newest unless you choose another from ▾. Type in the box to rename it. ▾ lists them all; ✕ deletes one (click twice).
+
+## Playing back
+▶ plays the chosen recording through your speakers; receive is muted while it plays. ■ stops it.
+
+Turn on TX (it goes red) and ▶ transmits the recording instead, at the TX level set by the spinner (dB). It keys like MOX, with all the usual checks, and MOX or ■ ends it. A recording of the receiver goes out as heard, through the TX filter only; a microphone recording goes through your mic gain and transmit processing like live speech. At 0 dB a recording matches your own voice level on the ALC.
+
+Right-click REC for the full list: rename, delete, listen, transmit and Open folder. Recordings are WAV files in Music/SimpleHPSDR.
+
+## The voice keyer
+The four grey buttons right of REC each transmit one recording. Right-click one (long press on touch) to give it a label and choose its recording. Click it to transmit, at the recorder's TX level; it's red while on the air, and a second click or MOX stops it. A button with nothing assigned is dimmed.
+
+Keys: ⌘1 to ⌘4 on a Mac, Ctrl+1 to Ctrl+4 on Windows and Linux, or F5 to F8 (on a Mac hold fn, as F5 is dictation).
+
+On the touch layout REC is beside Mute: tap it to record, long press for the recordings. To have the voice keyer there too, tick "Voice keyer buttons on the touch layout" in REC's long-press panel: four buttons appear at the right of the waterfall, above the bottom row.
+"""),
+
+        ("FreeDV digital voice", """
+FreeDV is digital voice in an SSB-width channel. SimpleHPSDR uses RADE, FreeDV's newest mode: it decodes received speech in place of the usual audio, and turns your voice into a RADE signal when you transmit. The older modes (700D, 700E, 1600) aren't included.
+
+## Getting started
+1. Set your callsign in Config > Station. RADE sends it at the end of each transmission, so other stations see who you are.
+2. Tune to a FreeDV frequency (14.236 MHz is a common one) and choose FreeDV in the Mode menu.
+3. Talk normally at your usual mic gain, and watch the box on the waterfall.
+
+FreeDV uses LSB below 10 MHz and USB above, and USB on 60 m, as other FreeDV stations do. SimpleHPSDR follows this by itself.
+
+## The FreeDV box
+On the waterfall it shows whether a RADE signal is in sync, its SNR, and the callsign the other station sends at the end of their over. While you transmit it shows your mic level as a bar: green is good, red means too loud, so turn the mic gain down.
+
+## Settings
+Right-click the Mode button while it shows FreeDV (long press on touch):
+- Squelch: keeps quiet when no RADE signal is in sync, instead of playing warbling noise. Hold sets how long it stays open through a brief loss of sync. Min SNR, if set, also keeps it closed below that signal-to-noise ratio.
+- TX level: how hard the RADE signal drives the transmitter. Lower it if ALC shows: RADE needs a clean signal.
+- Mic gate: silences the room between your words, so background noise doesn't become garble at the far end. Opens at and Hold set when it opens and how long it stays open.
+- Level my voice (mic AGC) and Mic tone (EQ): optional shaping before the encoder.
+- Back to defaults restores the engine's own values.
+"""),
+
+        ("Antenna analyser", """
+Tools > Antenna Analyser (touch: ☰ > Station > Analyser) sweeps SWR across a band or range and draws it.
+
+## Measuring with your radio
+"This radio" uses the radio's own SWR bridge. It transmits a low-power carrier, about 5 W, stepping across the range, so it asks before it starts:
+- Put an amplifier on standby or bypass first.
+- It transmits through the antenna selected for that band. To test the analyser itself, sweep a dummy load: it should show a flat line near 1.0.
+- Every frequency is checked against your band plan before it keys; a range outside your licence is refused.
+- If your radio gives too little power at the low setting, the analyser raises it a little by itself until the bridge can read it, and puts your TUNE power back afterwards.
+- The radio goes back to your frequency when the sweep ends. Stop ends a sweep at once.
+A Hermes-Lite 2 uses its built-in analyser instead.
+
+## Measuring with a NanoVNA
+Plug the NanoVNA in by USB, choose NanoVNA, pick its serial port and press Connect. It measures without transmitting, and also shows impedance (R + jX). Pick only the NanoVNA's port: your radio's CAT or an amplifier's port could be upset by it.
+
+## Reading the result
+- The graph shows SWR on a log scale, with lines at 1.5, 2 (dashed), 3 and 5. The band is shaded and the lowest point is marked.
+- Move the pointer over the graph to read the frequency and SWR at any point (and R + jX from a NanoVNA).
+- Beside it: the lowest SWR and where, return loss, the bandwidth under 1.5, 2 and 3, and impedance and Q when the source measures them.
+- Through a manual tuner, the dip shows the tuner's setting: SWR rises as you move away from where it was tuned.
+
+## Saved sweeps and calibration
+Every sweep is saved in the list on the right: click one to show it again, or delete it. Calibration (open, short, load, thru) appears only for sources that need it.
+"""),
+
+        ("ANAN G2 on its own Pi", """
+The ANAN G2 has a Raspberry Pi inside (a CM4 in the original G2, a CM5 in the newer one) with its own screen. SimpleHPSDR can run there, beside the G2's p2app, which talks to the radio's hardware. It installs from the same arm64 package on Raspberry Pi OS Bookworm or Trixie. The full steps are in the docs (g2-pi.md) on GitHub.
+
+## Setting it up
+- p2app must be running, with its panel option (p2app -p). The G2's own autostart can start it; turn off piHPSDR's autostart if it's there, as only one program can use the radio.
+- SimpleHPSDR can start at login a few seconds after p2app, and opens in its touch layout, full screen.
+- Pick the G2 in the radio list; if it isn't listed, type 127.0.0.1 as the address and choose ANAN-G2 or G2-1K.
+
+## The front panel
+The G2's knobs and buttons work through p2app: the original G2 panel (on GPIO v1 or v2) and the G2V2 / G2 Ultra panel. The VFO knob tunes; the other controls start with piHPSDR's layout. Config > Hardware > G2 FRONT PANEL shows whether p2app has connected and which panel it found, and lets you give any knob or button another job.
+
+## Quitting
+Tap Quit at the top of the ☰ drawer, then tap it again within 4 seconds. On the original G2 panel, holding FCN quits too; on any panel, "Quit SimpleHPSDR (hold)" can be given to a button in Config.
 """),
 
         ("Clock and ID timer", """
@@ -460,10 +542,16 @@ Config > Amp sets the delays that protect its relays. Pre-key delay holds back R
 ## Options for particular radios
 Config > Hardware shows only the options your radio has. On other pages, a jack, bias, antenna relay or receive input your radio doesn't have stays on the page, greyed out.
 - Dither and randomizer: can lower unwanted signals made inside the radio. For the ANAN-G2, G2-1K, 7000DLE and 8000DLE, and most radios on Protocol 1.
-- Hermes-Lite 2: band volts for an amp, the HL2+ codec, and the four user outputs. It also shows whether an IO board was found.
+- Hermes-Lite 2: band volts for an amp, the HL2+ codec, and the four user outputs.
+- HL2 IO board (N2ADR): when one is found, its inputs and any fault, an RX and TX antenna for each band (1 is the board's usual antenna; 2 and up only where your board has more wired), and its antenna tuner: Tune (sends a carrier while the tuner asks for it, 15 seconds at most), Bypass and Stop.
+- ANAN G2 front panel: see ANAN G2 on its own Pi.
 - Anvelina-PRO3: the extra outputs 7 to 10 for each band.
 
+## Palstar HF-AUTO tuner
+Config > Antennas shows the tuner's state from W1TR's HF-Auto program. In HF-Auto, choose TCI for the radio and point it at SimpleHPSDR's TCI (Config > CAT & TCI), and turn on its UDP status output to the port shown. Tick "Show the HF-AUTO tuner's status"; if HF-Auto runs on another computer, give its address and press Apply. The page then shows the mode, frequency, antenna, L and C, power, SWR, and whether it's tuned. HF-Auto still does the tuning.
+
 ## Also in Config > Station
+- Your callsign: sent by FreeDV at the end of each transmission. Type it and press Enter or Save.
 - Band plan: the band edges for your region or licence class, or General Coverage for no restrictions. Outside the plan it warns you or blocks transmit, as you choose. PA calibration also uses it; in General Coverage that's the last plan you chose.
 - Backup and restore: Back up saves all your settings to one file: radio settings, band memories, PA calibration, filters, Mem memories, colours and TX profiles. Restore replaces your settings with a backup's and restarts SimpleHPSDR. PureSignal's calibration isn't included; it learns again within seconds.
 - PTT: the radio's PTT input, or a foot switch on a serial port. Both can be turned off.
