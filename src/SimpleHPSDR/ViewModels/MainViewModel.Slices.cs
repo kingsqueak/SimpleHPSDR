@@ -306,6 +306,7 @@ public sealed partial class MainViewModel
     /// <summary>How long a drag rests at the end of the span before the dial recentres.</summary>
     private static readonly TimeSpan PanHold = TimeSpan.FromMilliseconds(700);
 
+    private const int PanStepMs = 35;
     private DispatcherTimer? _panHold;
     private int _panRx;
     private long _panWanted, _panShown;
@@ -325,7 +326,14 @@ public sealed partial class MainViewModel
         long dial = rx == ActiveRx ? VfoHz : (rx == 0 ? _sliceA : _sliceB)?.VfoHz ?? VfoHz;
         long reach = (long)(_sampleRateHz * 0.43);
         long shown = Math.Clamp(centerHz, dial - reach, dial + reach);
-        (_panSenders[rx] ??= new Latest<long>(hz => _client!.SetReceiverLoAsync(rx, hz))).Send(shown);
+        // At most one move per engine tick (33 ms): the radio retunes at once but
+        // the engine re-aligns the audio only on its tick, so a fast drag sending
+        // at mouse rate stacked several retunes per tick and the audio warbled.
+        (_panSenders[rx] ??= new Latest<long>(async hz =>
+        {
+            await _client!.SetReceiverLoAsync(rx, hz);
+            await Task.Delay(PanStepMs);
+        })).Send(shown);
 
         (_panRx, _panWanted, _panShown) = (rx, centerHz, shown);
         if (shown != centerHz && rx == ActiveRx && CtunOn && !VfoLocked && !IsTransmitting)
