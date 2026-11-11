@@ -245,7 +245,11 @@ public sealed class SpectrumView : Control
         else if (_wfCenterHz != 0 && f.HzPerPixel > 0)
         {
             // The centre moved: slide the history with it so signals stay lined up.
-            int shift = (int)Math.Round((f.CenterHz - _wfCenterHz) / f.HzPerPixel);
+            // Only past 3/4 of a pixel: the engine's centre can jitter by a few Hz,
+            // and rounding at the half pixel made a centre sitting there flip the
+            // whole waterfall a pixel back and forth on every frame.
+            double px = (f.CenterHz - _wfCenterHz) / f.HzPerPixel;
+            int shift = Math.Abs(px) > 0.75 ? (int)Math.Round(px) : 0;
             if (shift != 0)
             {
                 ShiftWaterfall(shift);
