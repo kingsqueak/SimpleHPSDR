@@ -33,6 +33,12 @@ public sealed class SpectrumView : Control
             defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
     public double PanFraction { get => GetValue(PanFractionProperty); set => SetValue(PanFractionProperty, value); }
     private const double MinPanFraction = 0.15, MaxPanFraction = 0.85;
+    /// <summary>The split at which SpecMin..SpecMax fills the spectrum. With the
+    /// divider lower than this the trace keeps its scale (more headroom on top)
+    /// instead of stretching; higher, it squeezes to fit as before.</summary>
+    public static readonly StyledProperty<double> ScaleFractionProperty =
+        AvaloniaProperty.Register<SpectrumView, double>(nameof(ScaleFraction), 0.38);
+    public double ScaleFraction { get => GetValue(ScaleFractionProperty); set => SetValue(ScaleFractionProperty, value); }
     private const double GripHalfHeight = 4;   // pointer distance that grabs the bar
     private static readonly IBrush GripBrush = new SolidColorBrush(Color.Parse("#2A2F3A"));
     private static readonly IBrush GripDots = new SolidColorBrush(Color.Parse("#7D8696"));
@@ -58,7 +64,7 @@ public sealed class SpectrumView : Control
     public bool PopMode { get => GetValue(PopModeProperty); set => SetValue(PopModeProperty, value); }
     private const double PopFloorDb = 3, PopSpanDb = 30;   // above the floor; gamma is 0.5
 
-    static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty, PanFractionProperty);
+    static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty, PanFractionProperty, ScaleFractionProperty);
     // Trace averaging per frame (30 frames/s): 0.35 settles in about 0.2 s.
     private const float TraceAlpha = 0.35f;
 
@@ -112,7 +118,13 @@ public sealed class SpectrumView : Control
     /// The span stays the same, so the shape compares with receive.</summary>
     private (double Lo, double Hi) TraceRange()
     {
-        double lo = SpecMinDb, hi = SpecMaxDb, span = Math.Max(1, hi - lo);
+        double lo = SpecMinDb, span = Math.Max(1, SpecMaxDb - lo);
+        // Drag the divider down and the trace keeps its scale: the floor stays
+        // at the bottom and the top shows more headroom, instead of the trace
+        // stretching taller. (Above ScaleFraction it squeezes, so peaks aren't cut.)
+        if (ScaleFraction > 0)
+            span *= Math.Max(1.0, PanFraction / ScaleFraction);
+        double hi = lo + span;
         if (!Transmitting || double.IsNaN(_txTracePeakDb)) return (lo, hi);
         double lift = Math.Max(0, _txTracePeakDb - (hi - TxHeadroom * span));
         return (lo + lift, hi + lift);

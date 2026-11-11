@@ -285,6 +285,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _autoSpectrum;
     [ObservableProperty] private double _panFraction;
 
+    /// <summary>The split where the Spec range fills the spectrum (see SpectrumView.ScaleFraction).</summary>
+    public double SpecScaleFraction => _settings.SpecScaleFraction ?? _settings.PanFraction;
+
     partial void OnPanFractionChanged(double value)
     {
         _settings.PanFraction = value;
@@ -555,6 +558,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _specMaxDb = _settings.SpecMaxDb;
         _autoSpectrum = _settings.AutoSpectrum;
         _panFraction = _settings.PanFraction;
+        if (_settings.SpecScaleFraction is null)
+        {
+            _settings.SpecScaleFraction = _settings.PanFraction;
+            _settings.Save();
+        }
         _autoAgcOffsetDb = Math.Clamp(_settings.AutoAgcOffsetDb, 0, 40);
         _dialPosition = Math.Clamp(_settings.DialPosition, -90, 90);
     }

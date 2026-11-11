@@ -56,6 +56,9 @@ public sealed class Settings
     public bool AutoSpectrum { get; set; } = true;
     /// <summary>Spectrum share of the panadapter height (rest is waterfall).</summary>
     public double PanFraction { get; set; } = 0.38;
+    /// <summary>The split at which Spec Min/Max fill the spectrum; dragged lower,
+    /// the trace keeps that scale. Null until first set (then the split as it was).</summary>
+    public double? SpecScaleFraction { get; set; }
     /// <summary>Auto AGC: how far above the noise floor the AGC threshold sits (Thetis default 20).</summary>
     public double AutoAgcOffsetDb { get; set; } = 20;
     /// <summary>Where the dial sits across the panadapter, -90 to +90 (% of half the span).</summary>

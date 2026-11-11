@@ -365,7 +365,7 @@
         <Panel>
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
                           PopMode="{Binding WaterfallPop}"
-                          PanFraction="{Binding PanFraction}" />
+                          PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" />
           <!-- SWL: what's scheduled on the tuned frequency. Clicks pass through to the waterfall.
                Dark in both themes, like the panadapter under it. -->
           <Border IsVisible="{Binding SwlStationShown}" IsHitTestVisible="False" HorizontalAlignment="Center"
@@ -397,7 +397,7 @@
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
               BorderBrush="Transparent" IsVisible="{Binding ShowPanadapterB}">
-        <c:SpectrumView Name="SpectrumB" Fling="True" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
+        <c:SpectrumView Name="SpectrumB" Fling="True" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
       </Border>
     </Grid>
 

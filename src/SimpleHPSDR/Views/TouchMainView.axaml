@@ -549,7 +549,7 @@
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}"
-                          PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" />
+                          PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" />
           <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
             <TextBlock Text="{Binding ZoomLabel}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
             <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel or ⌘+wheel, or pinch)" />
@@ -571,7 +571,7 @@
         </Panel>
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
-        <c:SpectrumView Name="SpectrumB" Fling="True" PanFraction="{Binding PanFraction}" PopMode="{Binding WaterfallPop}" />
+        <c:SpectrumView Name="SpectrumB" Fling="True" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
       </Border>
       <!-- Voice keyer: over the bottom of the waterfall, when turned on in REC's settings.
            Tap to transmit, tap again to stop; long press to set the label and recording. -->
