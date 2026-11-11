@@ -13,7 +13,7 @@ while the window is hidden or on another Space.
 
 Developed on an ANAN 7000DLE MkII over Protocol 2. It also supports ANAN G2s
 (including on the G2's own Pi), Hermes-Lite 2s and Brick SDRs. macOS and Linux
-packages are available, and a Windows x64 zip, with ASIO under Config > Audio.
+packages are available, and for Windows x64 an installer or a zip, with ASIO under Config > Audio.
 
 Not affiliated with or endorsed by the Zeus SDR project.
 
@@ -101,9 +101,13 @@ remove it, `sudo apt remove simplehpsdr`. Each release's debs are installed and
 started on Debian 13 in CI. The first-start tuning below takes much longer on a
 Pi than on a desktop computer, so leave it running.
 
-**Windows 10 or 11 (x64), preview:** unzip the folder anywhere you can write to
-and run `SimpleHPSDR.exe`; nothing needs installing, and the .NET and Visual C++
-runtimes are included. The app isn't signed, so SmartScreen warns the first time:
+**Windows 10 or 11 (x64), preview:** run `SimpleHPSDR-<version>-win-x64-setup.exe`.
+It installs for you alone, with no administrator password, and adds SimpleHPSDR to
+the Start menu and to Settings > Apps for uninstalling; for a new version, run its
+setup. Or unzip the `.zip` anywhere you can write to and run `SimpleHPSDR.exe`.
+The .NET and Visual C++ runtimes are included either way. Settings are kept in
+`%LOCALAPPDATA%\SimpleHPSDR`, so they carry over to new versions and stay if you
+uninstall. The app isn't signed, so SmartScreen warns the first time:
 choose More info, then Run anyway. If Windows Firewall asks about
 `StationEngine.exe`, or asks to let it change your device, say yes, or the radio
 won't be found. The rule is SimpleHPSDR's own, so Zeus on the same computer keeps
@@ -166,7 +170,7 @@ scripts/build-engine.sh          # publishes the engine to artifacts/engine/<rid
 dotnet run --project src/SimpleHPSDR
 ```
 
-`scripts/make-dmg.sh`, `scripts/make-linux.sh` and `scripts/make-windows.sh` build the packages. Set
+`scripts/make-dmg.sh`, `scripts/make-linux.sh` and `scripts/make-windows.sh` build the packages; CI turns the Windows folder into an installer with `scripts/windows-installer.iss` (Inno Setup 6). Set
 `SIMPLEHPSDR_ENGINE` to use an engine binary elsewhere.
 
 The `external/station-engine` submodule follows
