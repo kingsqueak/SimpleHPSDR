@@ -35,6 +35,7 @@ public sealed partial class MainViewModel
     private const double SettleMinSeconds = 8, SettleSpanDb = 1.5;
     private const int SettleReadings = 6;     // 3 s at two a second
     private double _twoToneF1 = 700, _twoToneF2 = 1900;
+    private const double MinToneSpacingPixels = 16;
     private double? _zoomBeforeImd;
 
     partial void OnImdTextChanged(string value) => OnPropertyChanged(nameof(ImdShown));
@@ -50,6 +51,18 @@ public sealed partial class MainViewModel
     private void FeedImd(DisplayFrame f)
     {
         if (f.RxId != 0 || !TwoToneOn || !IsTransmitting || !f.BodyFlags.HasFlag(DisplayBodyFlags.PanValid)) return;
+        // PS CAL's 3-5 s bursts run at whatever span is on screen while PS is
+        // still adapting: no meaningful IMD there (it once read IMD3 -3 dBc at
+        // the full 384 kHz span).
+        if (PsCalibrating) return;
+        // The tones and their products must be clearly apart on screen, or the
+        // tones' own spread is read as distortion.
+        if (f.HzPerPixel > 0 && Math.Abs(_twoToneF2 - _twoToneF1) / f.HzPerPixel < MinToneSpacingPixels)
+        {
+            ImdText = "IMD: zoom in to measure (the 2-TONE button does it)";
+            ImdCompareText = ImdSourceText = "";
+            return;
+        }
         var pan = f.PanDb.Span;
         if (_imdAvg is null || _imdAvg.Length != pan.Length || f.CenterHz != _imdCenterHz || f.HzPerPixel != _imdHzPerPixel)
         {

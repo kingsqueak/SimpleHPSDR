@@ -209,7 +209,7 @@
                 <TextBlock Grid.Row="2" Text="High cut" Classes="label" FontSize="12" />
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8"
                             IsEnabled="{Binding !TxFilterFollowsRx}">
-                  <NumericUpDown Value="{Binding TxHighCutHz}" Minimum="1000" Maximum="6000" Increment="50" FormatString="0" Width="140" />
+                  <NumericUpDown Value="{Binding TxHighCutHz}" Minimum="1000" Maximum="10000" Increment="50" FormatString="0" Width="140" />
                   <TextBlock Text="Hz" Classes="label" />
                 </StackPanel>
               </Grid>

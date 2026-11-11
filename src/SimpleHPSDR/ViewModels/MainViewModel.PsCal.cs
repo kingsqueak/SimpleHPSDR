@@ -47,6 +47,8 @@ public sealed partial class MainViewModel
         int generation = Volatile.Read(ref _txGeneration);
         using var cts = _psCalCts = new CancellationTokenSource();
         PsCalibrating = true;
+        // PS CAL's bursts don't measure IMD (see FeedImd): clear an old reading.
+        ImdText = ImdCompareText = ImdSourceText = "";
         try
         {
             if (!PsOn)

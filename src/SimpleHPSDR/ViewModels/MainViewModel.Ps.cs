@@ -190,7 +190,14 @@ public sealed partial class MainViewModel
         _psRangeWarned = true;
     }
 
-    partial void OnPsCalibratingChanged(bool value) => UpdatePsStatus();
+    partial void OnPsCalibratingChanged(bool value)
+    {
+        UpdatePsStatus();
+        HoldPopups();
+    }
+
+    // The PS panel stays open while 2-TONE or PS CAL is on the air.
+    private void HoldPopups() => SimpleHPSDR.Controls.PopupTimeout.Hold = TwoToneOn || PsCalibrating;
 
     partial void OnPsOnChanged(bool value)
     {
@@ -203,6 +210,7 @@ public sealed partial class MainViewModel
     partial void OnTwoToneOnChanged(bool value)
     {
         OnPropertyChanged(nameof(ImdShown));
+        HoldPopups();
         if (!value) RestoreAfterImd();
         if (_applyingTx || !IsConnected) return;
         CancelPsCalForOperatorKey();

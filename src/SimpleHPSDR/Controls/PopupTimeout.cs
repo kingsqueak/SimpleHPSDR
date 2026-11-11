@@ -21,6 +21,11 @@ public static class PopupTimeout
 
     private static void Touch() => _lastActivity = DateTime.UtcNow;
 
+    /// <summary>True keeps open popups from timing out (2-TONE or PS CAL on
+    /// the air, so the PS panel's readings stay in view). The 8 s count starts
+    /// again when it goes false.</summary>
+    public static bool Hold { get; set; }
+
     public static void Enable()
     {
         Popup.IsOpenProperty.Changed.AddClassHandler<Popup>((popup, e) =>
@@ -36,6 +41,7 @@ public static class PopupTimeout
         });
         Timer.Tick += (_, _) =>
         {
+            if (Hold) Touch();
             if (DateTime.UtcNow - _lastActivity < Timeout) return;
             foreach (var popup in Open.ToArray()) popup.Close();
         };
