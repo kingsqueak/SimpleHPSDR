@@ -14,6 +14,7 @@ public sealed partial class MainViewModel
     private bool _applyingMonitor;
     private bool _wasKeyedForMonitor;
     private Latest<double>? _monitorVolumeSender;
+    private Latest<(bool Preview, bool OnTransmit)>? _monitorSender;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MonitorOn))] [NotifyPropertyChangedFor(nameof(MonitorLabel))]
@@ -47,17 +48,30 @@ public sealed partial class MainViewModel
     [RelayCommand]
     private void CycleMonitor()
     {
-        (MonitorPreview, MonitorOnTransmit) = (MonitorPreview, MonitorOnTransmit) switch
+        var next = (MonitorPreview, MonitorOnTransmit) switch
         {
             (false, false) => (true, false),
             (true, false) => (false, true),
             (false, true) => (true, true),
             _ => (false, false),
         };
+        // Both flags change together and go to the engine as one request:
+        // set one at a time, the two halves were sent as separate requests
+        // that could arrive out of order and leave the engine on a step
+        // the button had already passed.
+        bool applying = _applyingMonitor;   // a load at connect may be under way
+        _applyingMonitor = true;
+        try { (MonitorPreview, MonitorOnTransmit) = next; }
+        finally { _applyingMonitor = applying; }
+        SendMonitor();
     }
 
-    private void WireMonitor(StationClient client) =>
+    private void WireMonitor(StationClient client)
+    {
         _monitorVolumeSender = new Latest<double>(db => client.SetMonitorVolumeAsync(db));
+        // One request at a time, newest wins, so quick clicks land in order.
+        _monitorSender = new Latest<(bool Preview, bool OnTransmit)>(m => client.SetMonitorAsync(m.Preview, m.OnTransmit));
+    }
 
     private async Task LoadMonitorAsync()
     {
@@ -99,7 +113,7 @@ public sealed partial class MainViewModel
         _settings.MonitorPreview = MonitorPreview;
         _settings.MonitorOnTransmit = MonitorOnTransmit;
         _settings.Save();
-        _ = Try(() => _client!.SetMonitorAsync(MonitorPreview, MonitorOnTransmit));
+        _monitorSender?.Send((MonitorPreview, MonitorOnTransmit));
     }
 
     /// <summary>Called on every MOX state frame.</summary>
