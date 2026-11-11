@@ -307,7 +307,7 @@ Before you transmit, make sure an antenna or dummy load is connected to the ante
 ## Keying
 - MOX transmits until you click it again.
 - TUNE sends a steady carrier at the tune level, for antenna tuners.
-- VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. Use headphones: there's no anti-VOX, so speakers can key the radio. It works in voice modes, turns off when you disconnect, and is off each time the app starts.
+- VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. Use headphones: there's no anti-VOX, so speakers can key the radio. While VOX is on, Mon is paused (its button goes dark) so the mic can't hear it and keep the radio keyed; turning VOX off brings Mon back. It works in voice modes, turns off when you disconnect, and is off each time the app starts.
 - Your microphone's PTT or a foot switch works too, once it's set in Config > Station.
 
 ## When transmit stops by itself
@@ -340,7 +340,7 @@ Mon steps through:
 - TX Mon: hearing yourself while transmitting.
 - Mon+TX: both.
 
-Use headphones. Right-click for the level.
+Use headphones. Right-click for the level. Mon pauses while VOX is on.
 
 ## Protection
 Config > Amp has a transmit timeout that drops transmit if you stay keyed too long, and a maximum drive that sets the top of the DRIVE and TUNE sliders.

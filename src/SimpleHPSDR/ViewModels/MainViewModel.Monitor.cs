@@ -35,7 +35,15 @@ public sealed partial class MainViewModel
     }
     public string MonitorPctText => $"{MonitorPct:0}%";
 
-    public bool MonitorOn => MonitorPreview || MonitorOnTransmit;
+    /// <summary>Lit: the monitor is set and not paused by VOX.</summary>
+    public bool MonitorOn => (MonitorPreview || MonitorOnTransmit) && !VoxOn;
+
+    // What the engine gets. VOX pauses the monitor: through speakers the mic
+    // hears it, and VOX keyed itself on the monitor and then held the radio
+    // keyed on that feedback (TX Mon kept it transmitting until unkeyed by hand).
+    // The buttons keep the operator's choice; turning VOX off brings it back.
+    private (bool Preview, bool OnTransmit) EngineMonitor =>
+        VoxOn ? (false, false) : (MonitorPreview, MonitorOnTransmit);
     public string MonitorLabel => (MonitorPreview, MonitorOnTransmit) switch
     {
         (true, true) => "Mon+TX",
@@ -91,8 +99,9 @@ public sealed partial class MainViewModel
             // so put back what the operator had.
             MonitorPreview = _settings.MonitorPreview;
             MonitorOnTransmit = _settings.MonitorOnTransmit;
-            if (m.Enabled != MonitorPreview || m.MonitorOnTransmit != MonitorOnTransmit)
-                await _client.SetMonitorAsync(MonitorPreview, MonitorOnTransmit);
+            var want = EngineMonitor;
+            if (m.Enabled != want.Preview || m.MonitorOnTransmit != want.OnTransmit)
+                await _client.SetMonitorAsync(want.Preview, want.OnTransmit);
         }
         catch (Exception ex)
         {
@@ -113,7 +122,7 @@ public sealed partial class MainViewModel
         _settings.MonitorPreview = MonitorPreview;
         _settings.MonitorOnTransmit = MonitorOnTransmit;
         _settings.Save();
-        _monitorSender?.Send((MonitorPreview, MonitorOnTransmit));
+        _monitorSender?.Send(EngineMonitor);
     }
 
     /// <summary>Called on every MOX state frame.</summary>
@@ -128,14 +137,15 @@ public sealed partial class MainViewModel
     // wait for that, then put back what the buttons say if it differs.
     private async Task RestoreMonitorAfterUnkeyAsync()
     {
-        if (!MonitorPreview && !MonitorOnTransmit) return;
+        if (EngineMonitor is (false, false)) return;
         await Task.Delay(300);
         if (IsTransmitting || !IsConnected) return;
         try
         {
             var m = await _client!.GetMonitorAsync();
-            if (m.Enabled != MonitorPreview || m.MonitorOnTransmit != MonitorOnTransmit)
-                await _client.SetMonitorAsync(MonitorPreview, MonitorOnTransmit);
+            var want = EngineMonitor;
+            if (m.Enabled != want.Preview || m.MonitorOnTransmit != want.OnTransmit)
+                await _client.SetMonitorAsync(want.Preview, want.OnTransmit);
         }
         catch (Exception ex)
         {

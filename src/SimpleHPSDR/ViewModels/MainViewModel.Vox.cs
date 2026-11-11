@@ -51,6 +51,11 @@ public sealed partial class MainViewModel
 
     partial void OnVoxOnChanged(bool value)
     {
+        // VOX pauses the monitor (see EngineMonitor) and lifting VOX restores it.
+        OnPropertyChanged(nameof(MonitorOn));
+        SendMonitor();
+        if (value && (MonitorPreview || MonitorOnTransmit))
+            Status = "Mon is paused while VOX is on: the mic would hear it and hold VOX keyed.";
         if (value)
         {
             _voxTimer ??= new DispatcherTimer(VoxTick, DispatcherPriority.Normal, (_, _) => CheckVox());
