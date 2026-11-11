@@ -307,7 +307,7 @@ Before you transmit, make sure an antenna or dummy load is connected to the ante
 ## Keying
 - MOX transmits until you click it again.
 - TUNE sends a steady carrier at the tune level, for antenna tuners.
-- VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. Use headphones: there's no anti-VOX, so speakers can key the radio. While VOX is on, Mon is paused (its button goes dark) so the mic can't hear it and keep the radio keyed; turning VOX off brings Mon back. It works in voice modes, turns off when you disconnect, and is off each time the app starts.
+- VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. It works in voice modes, turns off when you disconnect, and is off each time the app starts. Use headphones: there's no anti-VOX, so sound from speakers can key the radio. Mon pauses while VOX is on (see "VOX and Mon" below).
 - Your microphone's PTT or a foot switch works too, once it's set in Config > Station.
 
 ## When transmit stops by itself
@@ -340,7 +340,12 @@ Mon steps through:
 - TX Mon: hearing yourself while transmitting.
 - Mon+TX: both.
 
-Use headphones. Right-click for the level. Mon pauses while VOX is on.
+Use headphones. Right-click for the level.
+
+## VOX and Mon
+While VOX is on, Mon is paused: its button goes dark but keeps your setting, and the status bar says so. Turning VOX off brings Mon back as you had it.
+
+This is because VOX listens to your mic, and Mon plays your voice. Through speakers, even quiet ones, the mic hears Mon. VOX takes that for you still talking: it keys the radio on its own, and with TX Mon the transmit audio keeps VOX open, so the radio stays keyed sending that feedback until you unkey it. Pausing Mon while VOX is on means VOX only ever hears you. To hear yourself, turn VOX off and use MOX or your PTT.
 
 ## Protection
 Config > Amp has a transmit timeout that drops transmit if you stay keyed too long, and a maximum drive that sets the top of the DRIVE and TUNE sliders.
