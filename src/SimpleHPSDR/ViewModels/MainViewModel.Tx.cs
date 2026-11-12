@@ -130,7 +130,6 @@ public sealed partial class MainViewModel
 
     private async Task LoadTransmitAsync(StateDto s)
     {
-        SetRxResumeDelay(s.TxPostTxRxMuteDelayMs);
         // The app stopped during a CW hold: the engine still has the mic muted.
         if (_settings.CwHeldMicDb is int heldMic)
         {

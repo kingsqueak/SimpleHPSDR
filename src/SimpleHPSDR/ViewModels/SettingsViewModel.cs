@@ -176,8 +176,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public ObservableCollection<PaBandRow> PaBands { get; } = [];
     public event Action<int>? PaMaxPowerSaved;
-    /// <summary>The RX resume delay the engine kept, in ms (VOX waits it out).</summary>
-    public event Action<int>? RxResumeSaved;
 
     public SettingsViewModel(Func<StationClient> client) => _clientOf = client;
 

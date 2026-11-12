@@ -42,18 +42,13 @@ public sealed partial class MainViewModel
         }
     }
 
-    // The engine's RX resume delay: after any unkey it keeps the receiver muted
-    // this long while it switches back. VOX keying again inside that window had
-    // the two tripping over each other, so the hang can't be shorter than it
-    // (plus a margin), and VOX won't key again until it has passed.
-    private const int VoxResumeMarginMs = 20;
-    private int _rxResumeDelayMs;
-
     // VOX may key again only once the engine has confirmed the last unkey (its
-    // release runs the transmit tail first, about half a second) and the RX
-    // resume delay plus the margin has passed since then. Keying while that
-    // unkey was still in flight let its late "off" report arrive after VOX had
-    // keyed again: VOX then forgot it held the key and never let go.
+    // release runs the transmit tail first) and a short margin has passed.
+    // Keying while that unkey was still in flight let its late "off" report
+    // arrive after VOX had keyed again: VOX then forgot it held the key and
+    // never let go. The RX resume delay plays no part: it only mutes receive
+    // audio after an unkey, and the engine ends that mute when it is keyed.
+    private const int VoxRekeyMarginMs = 20;
     private const long UnkeyConfirmTimeoutMs = 3000;
     private const long StaleOffReportMs = 2000;
     private bool _unkeyPending;
@@ -84,30 +79,15 @@ public sealed partial class MainViewModel
 
     private bool VoxMayKey(long now) =>
         (!_unkeyPending || now - _unkeyRequestedMs > UnkeyConfirmTimeoutMs)
-        && now - _engineUnkeyedMs > _rxResumeDelayMs + VoxResumeMarginMs;
+        && now - _engineUnkeyedMs > VoxRekeyMarginMs;
 
-    /// <summary>The shortest VOX delay allowed: RX resume delay + 20 ms, at least 100 ms.</summary>
-    public double VoxDelayMinimum => Math.Max(100, _rxResumeDelayMs + VoxResumeMarginMs);
-    // Never below the saved delay: before connecting the resume delay isn't
-    // known yet, and the slider would clamp (and save) a longer delay.
-    public double VoxDelayMaximum => Math.Max(Math.Max(2000, VoxDelayMinimum + 500), _settings.VoxDelayMs);
+    /// <summary>The shortest VOX delay allowed.</summary>
+    public double VoxDelayMinimum => 100;
+    // Never below the saved delay, so the slider can't clamp (and save) it.
+    public double VoxDelayMaximum => Math.Max(2000, _settings.VoxDelayMs);
     public string VoxDelayTip =>
-        "How long transmit stays on after you stop speaking. 1000 ms is recommended: shorter, "
-        + "pauses between phrases drop transmit and words are lost while it switches back.";
-
-    private void SetRxResumeDelay(int ms)
-    {
-        if (ms == _rxResumeDelayMs) return;
-        _rxResumeDelayMs = Math.Max(0, ms);
-        OnPropertyChanged(nameof(VoxDelayMinimum));
-        OnPropertyChanged(nameof(VoxDelayMaximum));
-        if (_settings.VoxDelayMs < VoxDelayMinimum)
-        {
-            _settings.VoxDelayMs = VoxDelayMinimum;
-            _settings.Save();
-        }
-        OnPropertyChanged(nameof(VoxDelayMs));
-    }
+        "How long transmit stays on after you stop speaking. Shorter gets you back to receive "
+        + "sooner. Longer keeps transmit on through the pauses between phrases.";
 
     /// <summary>Headphone mode: Mon and TX Mon work while VOX is on.</summary>
     public bool VoxHeadphones

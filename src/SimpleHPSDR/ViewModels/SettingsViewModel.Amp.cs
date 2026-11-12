@@ -106,7 +106,6 @@ public sealed partial class SettingsViewModel
         // show what it kept.
         var s = await _client.GetStateAsync();
         _ampWas = new AmpValues(s.TxMoxPreKeyDelayMs, s.TxPostTxRxMuteDelayMs, s.TxTimeoutSec, s.DriveMaxPct);
-        if (_ampWas.RxResume != was.RxResume) RxResumeSaved?.Invoke(_ampWas.RxResume);
         if (_ampWas.PreKey != now.PreKey)
         {
             _populating = true;

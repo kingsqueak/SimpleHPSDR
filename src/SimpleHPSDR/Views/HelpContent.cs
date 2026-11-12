@@ -359,10 +359,10 @@ This is because VOX listens to your mic, and Mon plays your voice. Through speak
 
 Headphones must be used to monitor during VOX. With headphones on, right-click VOX and tick Headphone mode: Mon and TX Mon then keep working while VOX is on. Leave it off if you ever use speakers.
 
-## VOX delay and RX resume
-After any unkey the radio takes the RX resume delay (Config > Amp) to switch back to receive. VOX keying again inside that time made MOX and VOX trip over each other, so the VOX delay can't be set shorter than the RX resume delay plus 20 ms, and after an unkey VOX waits that long before it keys again. Raising the RX resume delay raises the shortest VOX delay with it.
+## VOX delay
+The VOX delay is how long transmit stays on after you stop speaking. A short delay gets you back to receive sooner, which suits a fast-moving group. A long one keeps transmit on through the pauses between phrases. It starts at 1 second. If VOX drops in the middle of your sentences, lengthen it.
 
-The delay starts at 1 second, so the pauses between phrases don't drop transmit. Each drop costs about three quarters of a second before VOX can key again, and words spoken then are lost, so if VOX drops in the middle of your sentences, lengthen it.
+When VOX lets go after a pause there is little or nothing left to send, so the radio returns to receive quickly. The RX resume delay (Config > Amp) is separate. It only keeps receive audio muted for a moment after any unkey, so you don't hear the switch back.
 
 ## Protection
 Config > Amp has a transmit timeout that drops transmit if you stay keyed too long, and a maximum drive that sets the top of the DRIVE and TUNE sliders.

@@ -491,7 +491,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             RadioName = _radio is { } r && r.Label.EndsWith(" " + r.Ip) ? r.Label[..^(r.Ip.Length + 1)] : null,
         };
         settings.PaMaxPowerSaved += SetPowerScale;
-        settings.RxResumeSaved += ms => Dispatcher.UIThread.Post(() => SetRxResumeDelay(ms));
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
         settings.TransvertersSaved += ShowTransverterBands;
         settings.BandStripChanged += () => _ = LoadBandStripAsync();
