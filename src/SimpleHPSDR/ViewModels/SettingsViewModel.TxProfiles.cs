@@ -29,6 +29,7 @@ public sealed partial class SettingsViewModel
         SelectedTxProfile = select is not null && TxProfiles.Contains(select) ? select : null;
         _choosingProfile = false;
         OnPropertyChanged(nameof(CanOverwriteProfile));
+        OnPropertyChanged(nameof(CanExportProfile));
     }
 
     private void PopulateTxProfiles() =>
@@ -37,6 +38,7 @@ public sealed partial class SettingsViewModel
     partial void OnSelectedTxProfileChanged(string? value)
     {
         OnPropertyChanged(nameof(CanOverwriteProfile));
+        OnPropertyChanged(nameof(CanExportProfile));
         if (_choosingProfile || value is null) return;
         _ = LoadTxProfileAsync(value);
     }
@@ -154,6 +156,35 @@ public sealed partial class SettingsViewModel
         {
             Status = $"Profile not saved: {ex.Message}";
         }
+    }
+
+    public bool CanExportProfile => SelectedTxProfile is not null;
+
+    /// <summary>Export the chosen profile to a file (the window picks where).</summary>
+    public async Task ExportTxProfileAsync(Stream stream, string fileName)
+    {
+        if (SelectedTxProfile is not { } name) return;
+        try
+        {
+            await TxProfileStore.ExportAsync(name, stream);
+            Status = TxProfileModified
+                ? $"Exported \"{name}\" to {fileName} as it was last saved, without your changes since."
+                : $"Exported \"{name}\" to {fileName}.";
+        }
+        catch (Exception ex) { Status = $"Profile not exported: {ex.Message}"; }
+    }
+
+    /// <summary>Import a profile file, add it to the list and load it.</summary>
+    public async Task ImportTxProfileAsync(Stream stream)
+    {
+        try
+        {
+            var name = await TxProfileStore.ImportAsync(stream);
+            RefreshProfileList(null);
+            SelectedTxProfile = name;   // loads it, as choosing it from the list does
+            Status = $"Imported TX profile \"{name}\" and loaded it.";
+        }
+        catch (Exception ex) { Status = $"Profile not imported: {ex.Message}"; }
     }
 
     [RelayCommand]

@@ -165,6 +165,10 @@
                           IsEnabled="{Binding CanOverwriteProfile}" ToolTip.Tip="Overwrite the chosen profile with the current settings" />
                   <Button Classes="flat" Content="Delete" Command="{Binding DeleteTxProfileCommand}"
                           IsEnabled="{Binding CanOverwriteProfile}" />
+                  <Button Classes="flat" Content="Export…" Click="OnExportTxProfile" IsEnabled="{Binding CanExportProfile}"
+                          ToolTip.Tip="Save the chosen profile to a file to share with another station. Only TX audio settings: nothing about your radio, power or calibration." />
+                  <Button Classes="flat" Content="Import…" Click="OnImportTxProfile"
+                          ToolTip.Tip="Add a profile from a file someone shared, and load it. Your own profiles are kept." />
                   <TextBlock Text="{Binding TxProfileHint}" Classes="label" FontSize="11" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Grid.Row="1" Text="Save as" Classes="label" FontSize="12" />

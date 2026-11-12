@@ -374,6 +374,9 @@ Config > TX Audio holds everything that shapes your voice, in the order it's pro
 ## Profiles
 Save your settings under a name and load them later: one for DX, one for ragchewing. Default is built in and can't be overwritten. A profile holds only what's on this TX Audio page, and it applies in every mode, so make a separate profile if you want different settings for AM, say. CW and FreeDV don't use the TX filter. PureSignal settings aren't part of a profile, so the internal or external coupler stays as set in Config on every band and mode.
 
+## Sharing a profile
+Export… saves the chosen profile to a .shtx file you can send to another SimpleHPSDR user, by email or a group, say. They press Import…, pick the file, and the profile is added to their list and loaded at once. Their own profiles are kept: if the name is taken, the imported one gets a number. A profile holds only TX audio settings, nothing about your radio, its power or its calibration, so it's safe to share. Export writes the profile as last saved, so press Save first if you've changed something.
+
 ## TX filter
 Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. In AM, SAM and DSB the receive filter covers both sidebands, so your audio goes up to half its width: a 10 kHz AM filter sends audio up to 5 kHz. In AM and SAM the low cut still applies either way, as the modulator's high-pass: to change it, untick follows, set the low cut and save your profile. Otherwise set both by hand: the high cut goes up to 10 kHz (8 kHz of audio in FM). 2.8 kHz is a usual SSB width; wider is for AM and wide-band SSB, where the band and your licence allow it.
 

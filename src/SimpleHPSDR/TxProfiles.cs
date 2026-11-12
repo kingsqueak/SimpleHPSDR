@@ -99,6 +99,33 @@ public static class TxProfileStore
         if (!IsDefault(name)) File.Delete(FileFor(name));
     }
 
+    /// <summary>File extension for a profile shared between stations (plain JSON inside).</summary>
+    public const string ShareExtension = "shtx";
+
+    /// <summary>Write a profile to share with another station. Only TX audio
+    /// settings are in it: nothing about the radio, its power or calibration.</summary>
+    public static async Task ExportAsync(string name, Stream stream)
+    {
+        var profile = Get(name) ?? throw new InvalidOperationException($"Profile \"{name}\" could not be read.");
+        await JsonSerializer.SerializeAsync(stream, profile, Json);
+    }
+
+    /// <summary>Add a profile from another station under a name that's free
+    /// ("Default" and names in use get " (2)", " (3)"…). Returns the name.</summary>
+    public static async Task<string> ImportAsync(Stream stream)
+    {
+        TxAudioProfile? p;
+        try { p = await JsonSerializer.DeserializeAsync<TxAudioProfile>(stream, Json); }
+        catch (JsonException) { p = null; }
+        if (p is null || string.IsNullOrWhiteSpace(p.Name) || p.Leveling is null || p.Equalizer is null
+            || p.Cfc is null || p.NoiseGate is null || p.PhaseRotator is null)
+            throw new InvalidDataException("That file isn't a SimpleHPSDR TX profile, or it's damaged.");
+        string baseName = p.Name.Trim(), name = baseName;
+        for (int n = 2; IsDefault(name) || File.Exists(FileFor(name)); n++) name = $"{baseName} ({n})";
+        Save(p with { Name = name });
+        return name;
+    }
+
     private static TxAudioProfile? Load(string path)
     {
         try { return File.Exists(path) ? JsonSerializer.Deserialize<TxAudioProfile>(File.ReadAllText(path), Json) : null; }

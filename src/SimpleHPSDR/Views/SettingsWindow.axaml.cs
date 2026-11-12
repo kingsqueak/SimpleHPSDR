@@ -74,6 +74,39 @@ public partial class SettingsWindow : Window
         if (files.Count > 0 && files[0].TryGetLocalPath() is { } path) vm.RestorePath = path;
     }
 
+    private async void OnExportTxProfile(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel { SelectedTxProfile: { } name } vm) return;
+        var safe = string.Concat(name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c)).Trim();
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export TX profile",
+            SuggestedFileName = $"{safe}.{TxProfileStore.ShareExtension}",
+            DefaultExtension = TxProfileStore.ShareExtension,
+            FileTypeChoices = [TxProfileFileType],
+        });
+        if (file is null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await vm.ExportTxProfileAsync(stream, file.Name);
+    }
+
+    private async void OnImportTxProfile(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not SettingsViewModel vm) return;
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import TX profile",
+            AllowMultiple = false,
+            FileTypeFilter = [TxProfileFileType],
+        });
+        if (files.Count == 0) return;
+        await using var stream = await files[0].OpenReadAsync();
+        await vm.ImportTxProfileAsync(stream);
+    }
+
+    private static readonly FilePickerFileType TxProfileFileType =
+        new("SimpleHPSDR TX profile (*.shtx)") { Patterns = ["*." + TxProfileStore.ShareExtension] };
+
     private static readonly FilePickerFileType BackupFileType =
         new("SimpleHPSDR backup (*.shbackup)") { Patterns = ["*." + Backup.Extension] };
 
