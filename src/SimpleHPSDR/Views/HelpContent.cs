@@ -235,7 +235,7 @@ A filter sets how wide a slice of the band you hear. Narrow it to remove a neigh
 Click a filter button. Each mode has its own set, and the highlighted button is the one in use.
 
 ## Setting the edges
-Drag the handles in the close-up at the top right. In USB, LSB and CW there are two: the low and high cuts. In AM, SAM and FM there's one, and both sides move together.
+Drag the handles in the close-up at the top right. In USB, LSB and CW there are two: the low and high cuts. In AM, SAM and FM there's one, and both sides move together. The box along the top of the close-up shows the low and high cuts in Hz as you drag.
 
 As a guide: 2.4 to 2.8 kHz for SSB voice, 200 to 500 Hz for CW, 6 to 10 kHz for AM.
 

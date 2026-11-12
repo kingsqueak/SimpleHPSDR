@@ -15,6 +15,7 @@ namespace SimpleHPSDR.Controls;
 /// double-sided modes only the upper side is shown, and its one edge sets both
 /// sides together. The scale marks every 100 Hz, labelled every 500 Hz. The dB
 /// range follows what's inside the span, so the signal fills the box.
+/// A box along the top shows the low and high cuts in Hz, updated as you drag.
 /// </summary>
 public sealed class FilterScope : Control
 {
@@ -39,6 +40,9 @@ public sealed class FilterScope : Control
     private static readonly IPen TickPen = new Pen(new SolidColorBrush(Color.Parse("#3A404C")), 1);
     private static readonly IPen MajorTickPen = new Pen(new SolidColorBrush(Color.Parse("#7D8696")), 1);
     private static readonly IBrush LabelBrush = new SolidColorBrush(Color.Parse("#7D8696"));
+    private static readonly IBrush ReadoutBg = new SolidColorBrush(Color.Parse("#D0101216"));
+    private static readonly IPen ReadoutPen = new Pen(new SolidColorBrush(Color.Parse("#3B82F6")), 1);
+    private static readonly IBrush ReadoutText = new SolidColorBrush(Color.Parse("#E6E8EB"));
     private static readonly Color[] DialColors = [Color.Parse("#F25F5C"), Color.Parse("#F5A524")];
     private static readonly Typeface LabelFace = new("Inter");
 
@@ -123,6 +127,23 @@ public sealed class FilterScope : Control
         ctx.DrawLine(dial, new Point(dialX, 0), new Point(dialX, plot.Height));
 
         DrawScale(ctx, b, plot.Bottom);
+        DrawReadout(ctx, b);
+    }
+
+    // The filter's low and high cuts as audio Hz (as on the scale), in a box
+    // a third of the height, centred along the top. Redrawn on every drag.
+    private void DrawReadout(DrawingContext ctx, Rect b)
+    {
+        double h = Math.Round(b.Height / 3);
+        if (h < 10) return;
+        int a = _side * _low, z = _side * _high;
+        string text = _symmetric ? $"\u00B1{_high} Hz" : $"{Math.Min(a, z)} \u2013 {Math.Max(a, z)} Hz";
+        var ft = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture,
+            FlowDirection.LeftToRight, LabelFace, Math.Clamp(h * 0.62, 9, 16), ReadoutText);
+        double w = Math.Min(b.Width - 4, ft.Width + h * 0.8);
+        var box = new Rect((b.Width - w) / 2, 2, w, h);
+        ctx.DrawRectangle(ReadoutBg, ReadoutPen, box, 4, 4);
+        ctx.DrawText(ft, new Point(box.X + (w - ft.Width) / 2, box.Y + (h - ft.Height) / 2));
     }
 
     private void DrawTrace(DrawingContext ctx, Rect r)
