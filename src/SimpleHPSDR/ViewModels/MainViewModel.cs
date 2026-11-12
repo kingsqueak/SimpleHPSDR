@@ -565,6 +565,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
         _autoAgcOffsetDb = Math.Clamp(_settings.AutoAgcOffsetDb, 0, 40);
         _closeUpColoured = _settings.CloseUpColoured;
+        _closeUpHighRes = _settings.CloseUpHighRes;
+        _closeUpDetail = Math.Clamp(_settings.CloseUpDetail, 0, 2);
         _closeUpAverageSec = Math.Clamp(_settings.CloseUpAverageSec, MinCloseUpAverageSec, MaxCloseUpAverageSec);
         _dialPosition = Math.Clamp(_settings.DialPosition, -90, 90);
     }

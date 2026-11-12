@@ -293,6 +293,23 @@ public sealed class StationClient : IDisposable
         return new(BitConverter.ToInt64(b, 4), BitConverter.ToInt64(b, 12), BitConverter.ToSingle(b, 20), trace, wf);
     }
 
+    /// <summary>The engine's high-resolution close-up around receiver rx's demodulation
+    /// point: its sample rate and dB bins, low to high, that point in the middle.
+    /// Null until it has enough signal. Each call keeps it running for a few seconds.</summary>
+    public async Task<(int RateHz, float[] Db)?> GetCloseUpAsync(int rx, int fftSize, CancellationToken ct = default)
+    {
+        using var r = await _http.GetAsync($"api/rx/{rx}/closeup?size={fftSize}", ct);
+        if (r.StatusCode == HttpStatusCode.NoContent) return null;
+        await ThrowIfFailed(r, ct);
+        var b = await r.Content.ReadAsByteArrayAsync(ct);
+        if (b.Length < 8) return null;
+        int rate = BitConverter.ToInt32(b, 0), n = BitConverter.ToInt32(b, 4);
+        if (rate <= 0 || n <= 0 || b.Length < 8 + 4 * n) return null;
+        var db = new float[n];
+        Buffer.BlockCopy(b, 8, db, 0, 4 * n);
+        return (rate, db);
+    }
+
     public sealed record VnaPoint(long FrequencyHz, double RawReal, double RawImaginary, double MagnitudeDb, double PhaseDeg,
         double? Swr, double? ReturnLossDb, double? ResistanceOhms, double? ReactanceOhms);
     public sealed record VnaMetrics(long ResonantFrequencyHz, double? MinimumSwr, double? MaximumReturnLossDb,

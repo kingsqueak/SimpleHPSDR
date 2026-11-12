@@ -75,6 +75,8 @@ public partial class DesktopMainView : UserControl
         Spectrum.PanEnded += () => Vm?.PanEnded();
         SpectrumB.PanEnded += () => Vm?.PanEnded();
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
+        _ = new CloseUpFeed(FilterScope, () => Vm, () => FilterScope.IsEffectivelyVisible
+            && TopLevel.GetTopLevel(FilterScope) is not Window { WindowState: WindowState.Minimized });
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, Spectrum);
         Spectrum.WheelTune += steps =>

@@ -65,6 +65,10 @@ public sealed class Settings
     public double CloseUpAverageSec { get; set; } = 0.05;
     /// <summary>Filter close-up fill in waterfall colours (true) or the plain spectrum fill (false).</summary>
     public bool CloseUpColoured { get; set; } = true;
+    /// <summary>Filter close-up from the engine's own fine spectrum (true) or cut from the panadapter (false).</summary>
+    public bool CloseUpHighRes { get; set; } = true;
+    /// <summary>High-resolution close-up detail: 0 = 4 Hz, 1 = 2 Hz, 2 = 1 Hz bins.</summary>
+    public int CloseUpDetail { get; set; } = 1;
     /// <summary>Where the dial sits across the panadapter, -90 to +90 (% of half the span).</summary>
     public double DialPosition { get; set; }
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>

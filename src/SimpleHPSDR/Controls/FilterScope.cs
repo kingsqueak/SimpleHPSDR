@@ -34,6 +34,12 @@ public sealed class FilterScope : Control
     private long _lastFrameTicks;
     /// <summary>Fill in waterfall colours by level; false is the plain spectrum fill.</summary>
     public bool ColouredFill { get; set; } = true;
+    // The engine's high-resolution close-up (CloseUpFeed), when it's coming in:
+    // dB bins, low to high, the demodulation point in the middle.
+    private float[]? _hi;
+    private int _hiRate;
+    private long _hiTicks;
+    private bool HiActive => _hi is not null && System.Diagnostics.Stopwatch.GetElapsedTime(_hiTicks).TotalSeconds < 1;
 
     /// <summary>An edge was dragged: the new (low, high) offsets from the dial.</summary>
     public event Action<int, int>? FilterDragged;
@@ -102,12 +108,31 @@ public sealed class FilterScope : Control
         _lastFrameTicks = System.Diagnostics.Stopwatch.GetTimestamp();
         _centerHz = f.CenterHz;
         _hzPerBin = f.HzPerPixel;
+        if (!HiActive) InvalidateVisual();
+    }
+
+    /// <summary>A high-resolution close-up from the engine; while they keep
+    /// coming the trace is drawn from these instead of the panadapter.</summary>
+    public void PushCloseUp(float[] db, int rateHz)
+    {
+        if (_hi is null || _hi.Length != db.Length || _hiRate != rateHz || !HiActive)
+            _hi = db;
+        else
+        {
+            double dt = Math.Clamp(System.Diagnostics.Stopwatch.GetElapsedTime(_hiTicks).TotalSeconds, 0.001, 0.5);
+            float a = (float)(1 - Math.Exp(-dt / Math.Max(0.01, AverageSeconds)));
+            for (int i = 0; i < _hi.Length; i++)
+                _hi[i] += (db[i] - _hi[i]) * a;
+        }
+        _hiRate = rateHz;
+        _hiTicks = System.Diagnostics.Stopwatch.GetTimestamp();
         InvalidateVisual();
     }
 
     public void Clear()
     {
         _pan = null;
+        _hi = null;
         InvalidateVisual();
     }
 
@@ -162,11 +187,17 @@ public sealed class FilterScope : Control
 
     private void DrawTrace(DrawingContext ctx, Rect r)
     {
-        if (_pan is not { Length: > 1 } pan || _hzPerBin <= 0 || r.Height <= 0) return;
-        int cols = Math.Max(2, (int)r.Width);
+        bool hi = HiActive;
+        if (r.Height <= 0 || (!hi && (_pan is not { Length: > 1 } || _hzPerBin <= 0))) return;
+        // One column per device pixel, so the fine data shows on a Retina screen.
+        double scale = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
+        int cols = Math.Max(2, (int)(r.Width * (hi ? scale : 1)));
         if (_cols.Length != cols) _cols = new double[cols];
+        if (hi) FillColumnsFromCloseUp(cols, r.Width);
+        else
         for (int i = 0; i < cols; i++)
         {
+            var pan = _pan!;
             double hz = _dialHz + Offset(i * r.Width / (cols - 1)) - _side * _pitch;
             double bin = (hz - _centerHz) / _hzPerBin + pan.Length / 2.0;
             int i0 = Math.Clamp((int)Math.Floor(bin), 0, pan.Length - 1);
@@ -205,6 +236,35 @@ public sealed class FilterScope : Control
         if (ColouredFill) DrawHeat(ctx, r, g, range);
         else ctx.DrawGeometry(SpectrumLook.Current.Fill, null, g);
         ctx.DrawGeometry(null, TracePen, line);
+    }
+
+    // Each column takes the strongest bin it covers, so a narrow carrier
+    // isn't lost between pixels; finer than a bin, it interpolates.
+    private void FillColumnsFromCloseUp(int cols, double width)
+    {
+        var hi = _hi!;
+        int n = hi.Length;
+        double hzPerBin = (double)_hiRate / n;
+        for (int i = 0; i < cols; i++)
+        {
+            double b0 = n / 2.0 + Offset(i * width / cols) / hzPerBin;
+            double b1 = n / 2.0 + Offset((i + 1) * width / cols) / hzPerBin;
+            if (b0 > b1) (b0, b1) = (b1, b0);
+            if (b1 - b0 < 1)
+            {
+                double bin = (b0 + b1) / 2;
+                int i0 = Math.Clamp((int)Math.Floor(bin), 0, n - 1), i1 = Math.Min(i0 + 1, n - 1);
+                double t = Math.Clamp(bin - i0, 0, 1);
+                _cols[i] = hi[i0] + (hi[i1] - hi[i0]) * t;
+            }
+            else
+            {
+                int k0 = Math.Clamp((int)Math.Floor(b0), 0, n - 1), k1 = Math.Clamp((int)Math.Ceiling(b1), k0 + 1, n);
+                float m = hi[k0];
+                for (int k = k0 + 1; k < k1; k++) if (hi[k] > m) m = hi[k];
+                _cols[i] = m;
+            }
+        }
     }
 
     // Fill under the trace, each column in the waterfall colour for its level;

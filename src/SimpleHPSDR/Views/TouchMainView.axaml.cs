@@ -58,6 +58,8 @@ public partial class TouchMainView : UserControl
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
         SpectrumB.ZoomRequested += Zoom;
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
+        _ = new CloseUpFeed(FilterScope, () => Vm, () => Drawer.IsPaneOpen && FilterScope.IsEffectivelyVisible
+            && TopLevel.GetTopLevel(FilterScope) is not Window { WindowState: WindowState.Minimized });
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
         Spectrum.PanEnded += () => Vm?.PanEnded();
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Contracts;
+using SimpleHPSDR.Engine;
 
 namespace SimpleHPSDR.ViewModels;
 
@@ -70,6 +71,26 @@ public sealed partial class MainViewModel
     {
         _settings.CloseUpColoured = value;
         _settings.Save();
+    }
+
+    [ObservableProperty] private bool _closeUpHighRes = true;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CloseUpFftSize))] private int _closeUpDetail = 1;
+    public static string[] CloseUpDetails { get; } = ["4 Hz", "2 Hz", "1 Hz"];
+    public int CloseUpFftSize => 4096 << Math.Clamp(CloseUpDetail, 0, 2);   // at 16 kHz: 3.9, 2.0, 1.0 Hz
+    private DateTime _closeUpRetryAfter;
+
+    partial void OnCloseUpHighResChanged(bool value) { _settings.CloseUpHighRes = value; _settings.Save(); }
+    partial void OnCloseUpDetailChanged(int value) { _settings.CloseUpDetail = value; _settings.Save(); }
+
+    /// <summary>One high-resolution close-up for the active receiver, or null (off,
+    /// not connected, not ready, or an engine without it: then it waits a minute).</summary>
+    internal async Task<(int RateHz, float[] Db)?> FetchCloseUpAsync()
+    {
+        if (!CloseUpHighRes || !IsConnected || _client is not { } c || DateTime.UtcNow < _closeUpRetryAfter) return null;
+        try { return await c.GetCloseUpAsync(ActiveRx, CloseUpFftSize); }
+        catch (StationException) { _closeUpRetryAfter = DateTime.UtcNow.AddMinutes(1); }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { }
+        return null;
     }
 
     [RelayCommand]

@@ -378,12 +378,20 @@
     </Grid>
   </DataTemplate>
   <DataTemplate x:Key="CloseUpPanel" x:DataType="vm:MainViewModel">
-    <Grid Width="340" Margin="4" ColumnDefinitions="70,*,56" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+    <Grid Width="340" Margin="4" ColumnDefinitions="70,*,56" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
       <TextBlock Grid.ColumnSpan="3" Text="Filter close-up" FontWeight="SemiBold" />
       <TextBlock Grid.Row="4" Text="Fill" Classes="label" FontSize="12" VerticalAlignment="Center" />
       <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="12">
         <RadioButton Content="Waterfall colours" IsChecked="{Binding CloseUpColoured}" GroupName="CloseUpFill" FontSize="12" />
         <RadioButton Content="Plain" IsChecked="{Binding !CloseUpColoured}" GroupName="CloseUpFill" FontSize="12" />
+      </StackPanel>
+      <CheckBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Content="High resolution" IsChecked="{Binding CloseUpHighRes}" FontSize="12"
+                ToolTip.Tip="The engine works out a fine spectrum just for the close-up. Off: the close-up is cut from the panadapter, coarser, with no extra work." />
+      <TextBlock Grid.Row="6" Text="Detail" Classes="label" FontSize="12" VerticalAlignment="Center" IsVisible="{Binding CloseUpHighRes}" />
+      <StackPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Spacing="6" IsVisible="{Binding CloseUpHighRes}">
+        <ComboBox ItemsSource="{x:Static vm:MainViewModel.CloseUpDetails}" SelectedIndex="{Binding CloseUpDetail}" FontSize="12" MinWidth="90" />
+        <TextBlock TextWrapping="Wrap" FontSize="12" Classes="label"
+                   Text="Finer detail looks back over a longer stretch (1 Hz is about one second), so it reacts more slowly." />
       </StackPanel>
       <TextBlock Grid.Row="1" Text="Averaging" Classes="label" FontSize="12" VerticalAlignment="Center" />
       <Slider Grid.Row="1" Grid.Column="1" Minimum="0.05" Maximum="3" SmallChange="0.05" TickFrequency="0.05" IsSnapToTickEnabled="True"
