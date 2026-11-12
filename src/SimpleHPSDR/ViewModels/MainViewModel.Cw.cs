@@ -51,6 +51,9 @@ public sealed partial class MainViewModel
     public string CwStateText => CwSending ? "Sending" : "Ready";
 
     private bool _applyingCw;
+    // Set once the engine's CW settings (macros included) have been read; until
+    // then a change would send defaults and an empty macro list over them.
+    private bool _cwLoaded;
     private int _cwAbortSeq;
     private int _cwSeq;
     private Latest<int>? _cwSender;
@@ -85,12 +88,13 @@ public sealed partial class MainViewModel
             for (int i = 0; i < s.Macros.Length; i++) CwMacros.Add(new CwMacro(i + 1, s.Macros[i], SendCwSettings));
         }
         _applyingCw = false;
+        _cwLoaded = true;
         OnPropertyChanged(nameof(CwWpmText));
     }
 
     private void SendCwSettings()
     {
-        if (_applyingCw || !IsConnected) return;
+        if (_applyingCw || !_cwLoaded || !IsConnected) return;
         _cwSender ??= new Latest<int>(_ => Try(() => _client!.SetCwSettingsAsync(new CwSettingsSetRequest(
             Wpm: CwWpm, FarnsworthWpm: CwFarnsworthWpm, Macros: [.. CwMacros.Select(m => m.Text)],
             SidetoneGainDb: CwSidetoneDb, SidetoneHz: CwSidetoneHz, KeyerMode: (CwKeyerMode)CwKeyerIndex,
@@ -187,6 +191,11 @@ public sealed partial class MainViewModel
 
     partial void OnCwDecoderOnChanged(bool value)
     {
+        if (_settings.CwDecoderOn != value)
+        {
+            _settings.CwDecoderOn = value;
+            _settings.Save();
+        }
         if (IsConnected) _ = Try(() => _client!.SetCwDecoderAsync(value));
         UpdateDeepCw();
     }

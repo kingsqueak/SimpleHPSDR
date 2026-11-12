@@ -29,6 +29,7 @@ public sealed partial class MainViewModel
     {
         CwDecoderIndex = _settings.CwDecoder == "DeepCW" ? 1 : 0;
         CwWordForming = _settings.CwWordForming;
+        CwDecoderOn = _settings.CwDecoderOn;
     }
 
     partial void OnCwDecoderIndexChanged(int value)

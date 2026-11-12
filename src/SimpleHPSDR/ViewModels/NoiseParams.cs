@@ -11,11 +11,16 @@ namespace SimpleHPSDR.ViewModels;
 public sealed partial class NoiseParam : ObservableObject
 {
     private bool _loading;
+    // Nothing is sent until the engine's value has been read: the popup can
+    // render first, and a slider would clamp an unloaded 0 to its Minimum and
+    // write that over the saved setting.
+    private bool _loaded;
+    private readonly double _default;
 
     public required string Label { get; init; }
     public required Func<NrConfig, double> Read { get; init; }
     public required Func<NrConfig, double, NrConfig> Write { get; init; }
-    public required double Default { get; init; }
+    public required double Default { get => _default; init { _default = value; Value = value; } }
     public double Min { get; init; }
     public double Max { get; init; } = 100;
     public double Step { get; init; } = 1;
@@ -46,11 +51,19 @@ public sealed partial class NoiseParam : ObservableObject
         Value = Read(nr);
         _loading = false;
         Touched = false;
+        _loaded = true;
+    }
+
+    /// <summary>Reset to default: an explicit choice, so it's sent even before a load.</summary>
+    public void ResetToDefault()
+    {
+        _loaded = true;
+        Value = Default;
     }
 
     partial void OnValueChanged(double value)
     {
-        if (_loading) return;
+        if (_loading || !_loaded) return;
         Touched = true;
         Changed?.Invoke();
     }
@@ -68,6 +81,6 @@ public sealed partial class NoisePanel(string title, string note, params NoisePa
     [RelayCommand]
     private void Reset()
     {
-        foreach (var r in Rows) r.Value = r.Default;
+        foreach (var r in Rows) r.ResetToDefault();
     }
 }

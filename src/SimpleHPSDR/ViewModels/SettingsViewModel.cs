@@ -172,7 +172,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _paEnabled;
     [ObservableProperty] private double _paMaxPowerWatts;
     [ObservableProperty] private string _status = "";
-    [ObservableProperty] private bool _loading = true;
+    [ObservableProperty] [NotifyCanExecuteChangedFor(nameof(UndoCommand))] private bool _loading = true;
 
     public ObservableCollection<PaBandRow> PaBands { get; } = [];
     public event Action<int>? PaMaxPowerSaved;
@@ -352,10 +352,14 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>Put every page back to how the engine had it when the window
     /// opened, and send whatever differs now.</summary>
-    [RelayCommand]
+    private bool CanUndo() => !Loading;
+
+    // Not while loading: the originals aren't all read yet, and Undo would
+    // send half-loaded pages (and end the load's own guard early).
+    [RelayCommand(CanExecute = nameof(CanUndo))]
     private async Task UndoAsync()
     {
-        if (_origPa is null || _origDevices is null || _origRadioAudio is null || _origState is null
+        if (Loading || _origPa is null || _origDevices is null || _origRadioAudio is null || _origState is null
             || _origAntennas is null) return;
         foreach (var cts in _pending.Values) cts.Cancel();
         _pending.Clear();
@@ -367,6 +371,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         var asio = _asioWas;
         var antennasNow = Antennas.ToDictionary(r => r.Band, r => r.Loaded);
         if (AppSettings is { } app && _parametricOpened is { } parametric) app.ParametricEq = parametric;
+        if (AppSettings is { } txApp && _txAppOpened is { } opened)
+        {
+            (txApp.TxFilterFollowsRx, txApp.TxLowCutHz, txApp.TxHighCutHz, txApp.LastTxProfile) = opened;
+            txApp.Save();
+            OnPropertyChanged(nameof(TxFilterFollowsRx));
+            RefreshProfileList(opened.Profile);
+        }
         Populate(_origPa, _origDevices, _origRadioAudio, _origState, _origAntennas);
         (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded) = (pa, devices, radio, ps, tx);
         _asioWas = asio;

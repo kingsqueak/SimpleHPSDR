@@ -16,6 +16,7 @@ public sealed class Settings
     public int TuneStepHz { get; set; } = 100;
     /// <summary>CW window decoder: "Engine" or "DeepCW".</summary>
     public string CwDecoder { get; set; } = "Engine";
+    public bool CwDecoderOn { get; set; }
     /// <summary>Put back word spaces the CW decoder missed.</summary>
     public bool CwWordForming { get; set; } = true;
     /// <summary>The release whose update note was closed with ✕.</summary>
@@ -208,7 +209,14 @@ public sealed class Settings
             if (File.Exists(FilePath))
                 return JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath)) ?? new();
         }
-        catch (JsonException) { }
+        catch (JsonException)
+        {
+            // Keep the damaged file: the next save would otherwise overwrite
+            // every setting in it with defaults.
+            try { File.Copy(FilePath, FilePath + ".bad", overwrite: true); } catch (IOException) { }
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
         return new();
     }
 

@@ -320,8 +320,19 @@ public sealed class EngineHost : IDisposable
         {
             if (_process is { HasExited: false })
             {
-                _process.Kill(entireProcessTree: true);
-                _process.WaitForExit(3000);
+                // Ask first, so the engine saves its last settings on the way
+                // out; a kill loses whatever changed in its last second.
+                try
+                {
+                    using var http = new HttpClient { BaseAddress = BaseUri, Timeout = TimeSpan.FromSeconds(2) };
+                    http.PostAsync("api/engine/shutdown", null).GetAwaiter().GetResult();
+                }
+                catch (Exception) { }
+                if (!_process.WaitForExit(12_000))   // the engine allows its services 10 s
+                {
+                    _process.Kill(entireProcessTree: true);
+                    _process.WaitForExit(3000);
+                }
             }
         }
         catch (InvalidOperationException) { }

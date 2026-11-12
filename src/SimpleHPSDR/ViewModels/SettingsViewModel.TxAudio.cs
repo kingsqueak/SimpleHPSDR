@@ -65,11 +65,16 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private string _fitText = "";
     public ObservableCollection<ParametricBandRow> ParametricBands { get; } = [];
     private ParametricEqSettings? _parametricOpened;
+    // App-side TX settings as the window opened, which a profile load changes:
+    // Undo puts them back with the engine's records.
+    private (bool Follows, int? Low, int? High, string? Profile)? _txAppOpened;
 
     private void PopulateParametric()
     {
         var saved = AppSettings?.ParametricEq ?? ParametricEqSettings.Default;
         _parametricOpened ??= saved;
+        if (AppSettings is { } a)
+            _txAppOpened ??= (a.TxFilterFollowsRx, a.TxLowCutHz, a.TxHighCutHz, a.LastTxProfile);
         ParametricEqOn = saved.Enabled;
         ParametricBands.Clear();
         for (int i = 0; i < saved.Bands.Length; i++)
@@ -310,7 +315,7 @@ public sealed partial class SettingsViewModel
                 app.Save();
             }
             // The radio's mode may have moved on since this page was loaded.
-            await _client.SetTxFilterAsync((await _client.GetStateAsync()).Mode, lo, hi);
+            await TxCuts.SendAsync(_client, lo, hi);
         }
 
         var lv = BuildLeveling(was);

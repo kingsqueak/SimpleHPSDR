@@ -48,7 +48,7 @@
       <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
                  Text="Moves the signal reading up or down. 6 dB is one S-unit. Only the reading changes, not what you hear." />
       <Grid ColumnDefinitions="*,70">
-        <Slider Minimum="-20" Maximum="20" SmallChange="0.5" TickFrequency="0.5" IsSnapToTickEnabled="True"
+        <Slider Minimum="-50" Maximum="50" SmallChange="0.5" TickFrequency="0.5" IsSnapToTickEnabled="True"
                 Value="{Binding SMeterTrimDb}" VerticalAlignment="Center" />
         <TextBlock Grid.Column="1" Text="{Binding SMeterTrimText}" FontSize="12" Margin="8,0,0,0"
                    VerticalAlignment="Center" />
@@ -61,6 +61,8 @@
       <StackPanel Spacing="8" IsVisible="{Binding ModeIsAm}">
         <TextBlock Text="AM transmit" FontWeight="SemiBold" />
         <CheckBox Content="Broadcast-style AM (asymmetric peaks)" IsChecked="{Binding AmBroadcastOn}" />
+        <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                   Text="Makes your AM sound like a broadcast station: louder and with more punch. Voice peaks may push the signal up past 100% (Positive peak), but the downward swings stop short of 100% (Negative peak), so the carrier never cuts out and splatters. The carrier level is set for you, and the audio is kept within your TX filter. Leave it off for plain AM with a carrier level you choose." />
         <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmBroadcastOn}">
           <TextBlock Text="Positive peak" Classes="label" FontSize="12" VerticalAlignment="Center" />
           <Slider Grid.Column="1" Minimum="100" Maximum="150" Value="{Binding AmPositivePeak}" VerticalAlignment="Center" />
@@ -71,8 +73,10 @@
         <Slider Grid.Column="1" Minimum="80" Maximum="100" Value="{Binding AmNegativePeak}" VerticalAlignment="Center" />
         <TextBlock Grid.Column="2" Text="{Binding AmNegativeText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
       </Grid>
-        <CheckBox Content="Pre-emphasis" IsChecked="{Binding AmPreEmphasis}" IsVisible="{Binding AmBroadcastOn}" />
-        <CheckBox Content="Invert polarity" IsChecked="{Binding AmInvert}" IsVisible="{Binding AmBroadcastOn}" />
+        <CheckBox Content="Pre-emphasis" IsChecked="{Binding AmPreEmphasis}" IsVisible="{Binding AmBroadcastOn}"
+                  ToolTip.Tip="Lifts the treble before it goes out, as broadcast stations do, for crisper speech." />
+        <CheckBox Content="Invert polarity" IsChecked="{Binding AmInvert}" IsVisible="{Binding AmBroadcastOn}"
+                  ToolTip.Tip="Most voices peak harder one way than the other. Tick this if your louder peaks are going downward, so they use the larger positive limit instead." />
       <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmSymmetric}">
         <TextBlock Text="Carrier level" Classes="label" FontSize="12" VerticalAlignment="Center" />
         <Slider Grid.Column="1" Minimum="0" Maximum="125" Value="{Binding AmCarrierPct}" VerticalAlignment="Center" />
@@ -177,16 +181,16 @@
               ToolTip.Tip="Dot and dash length against the gaps. 50 is normal." />
       <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding CwWeight}" VerticalAlignment="Center" Margin="8,0,0,0" />
       <TextBlock Grid.Row="4" Text="Sidetone pitch" Classes="label" FontSize="12" VerticalAlignment="Center" />
-      <Slider Grid.Row="4" Grid.Column="1" Minimum="300" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwSidetoneHz}" />
+      <Slider Grid.Row="4" Grid.Column="1" Minimum="200" Maximum="1200" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwSidetoneHz}" />
       <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding CwSidetoneHz, StringFormat={}{0} Hz}" VerticalAlignment="Center" Margin="8,0,0,0" />
       <TextBlock Grid.Row="5" Text="Sidetone level" Classes="label" FontSize="12" VerticalAlignment="Center" />
-      <Slider Grid.Row="5" Grid.Column="1" Minimum="-40" Maximum="0" Value="{Binding CwSidetoneDb}" />
+      <Slider Grid.Row="5" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding CwSidetoneDb}" />
       <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding CwSidetoneDb, StringFormat={}{0:0} dB}" VerticalAlignment="Center" Margin="8,0,0,0" />
       <CheckBox Grid.Row="6" Grid.ColumnSpan="2" Content="Break-in" IsChecked="{Binding CwBreakIn}"
                 ToolTip.Tip="Keying transmits by itself, and the radio drops back to receive after the hang time" />
       <TextBlock Grid.Row="7" Text="Hang time" Classes="label" FontSize="12" VerticalAlignment="Center"
                  ToolTip.Tip="How long transmit stays on after keying, for a key on the radio or the keyboard." />
-      <Slider Grid.Row="7" Grid.Column="1" Minimum="10" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwHangMs}" />
+      <Slider Grid.Row="7" Grid.Column="1" Minimum="0" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding CwHangMs}" />
       <TextBlock Grid.Row="7" Grid.Column="2" Text="{Binding CwHangMs, StringFormat={}{0} ms}" VerticalAlignment="Center" Margin="8,0,0,0" />
       <CheckBox Grid.Row="8" Grid.ColumnSpan="2" Content="Reverse paddles" IsChecked="{Binding CwPaddleReverse}" />
     </Grid>

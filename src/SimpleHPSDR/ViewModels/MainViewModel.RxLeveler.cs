@@ -12,6 +12,8 @@ public sealed partial class MainViewModel
     private Latest<int>? _rxLevSender;
     private int _rxLevSeq;
     private bool _rxLevLoading;
+    // Nothing is sent until the engine's settings have been read once.
+    private bool _rxLevLoaded;
 
     /// <summary>0 is Auto, 1 is Custom.</summary>
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(RxLevCustom))] private int _rxLevModeIndex;
@@ -32,7 +34,10 @@ public sealed partial class MainViewModel
 
     /// <summary>The popup shows what the engine has when it opens.</summary>
     public Task LoadRxLevelerAsync() => !IsConnected ? Task.CompletedTask : Try(async () =>
-        ShowRxLeveler((await _client!.GetStateAsync()).RxLeveler ?? new RxLevelerConfig()));
+    {
+        ShowRxLeveler((await _client!.GetStateAsync()).RxLeveler ?? new RxLevelerConfig());
+        _rxLevLoaded = true;
+    });
 
     private void ShowRxLeveler(RxLevelerConfig c)
     {
@@ -48,7 +53,7 @@ public sealed partial class MainViewModel
 
     private void SendRxLeveler()
     {
-        if (_rxLevLoading || !IsConnected) return;
+        if (_rxLevLoading || !_rxLevLoaded || !IsConnected) return;
         _rxLevSender ??= new Latest<int>(_ => _client!.SetRxLevelerConfigAsync(RxLevelerOn, new RxLevelerConfig(
             RxLevCustom ? RxLevelerMode.Custom : RxLevelerMode.Auto,
             RxLevTargetDb, RxLevMaxBoostDb,
@@ -60,6 +65,7 @@ public sealed partial class MainViewModel
     private void ResetRxLeveler()
     {
         ShowRxLeveler(new RxLevelerConfig());
+        _rxLevLoaded = true;
         SendRxLeveler();
     }
 }

@@ -93,7 +93,7 @@ public partial class App : Application
         Avalonia.Threading.Dispatcher.UIThread.Post(() => desktop.Shutdown());
         _ = Task.Run(async () =>
         {
-            await Task.Delay(TimeSpan.FromSeconds(8));
+            await Task.Delay(TimeSpan.FromSeconds(20));   // the engine may take up to 12 s to stop
             try { vm.Dispose(); } catch (Exception) { }
             Environment.Exit(0);
         });

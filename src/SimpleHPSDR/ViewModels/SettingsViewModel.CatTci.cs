@@ -142,6 +142,9 @@ public sealed partial class SettingsViewModel
 
     private async Task ApplyTciAsync()
     {
+        // Never loaded (the read failed): sending would replace the engine's
+        // settings with this page's defaults.
+        if (_tciWas is null) return;
         var cfg = new TciRuntimeConfig(TciEnabled, TciNetwork ? AllInterfaces : LocalOnly, (int)Math.Round(TciPort));
         if (cfg == _tciWas) return;
         await _client.SetTciConfigAsync(cfg);
@@ -153,7 +156,7 @@ public sealed partial class SettingsViewModel
     {
         var cfg = new CatRuntimeConfig(CatEnabled, CatNetwork ? AllInterfaces : LocalOnly,
             (int)Math.Round(CatPort), CatAutoReport);
-        if (cfg == _catWas) return;
+        if (_catWas is null || cfg == _catWas) return;
         await _client.SetCatConfigAsync(cfg);
         _catWas = cfg;
         await RefreshCatTciStatusAsync();
@@ -162,8 +165,9 @@ public sealed partial class SettingsViewModel
     // The engine replaces all four ports together and reconnects them live.
     private async Task ApplySerialAsync()
     {
+        if (_serialWas is not { } was) return;   // never loaded: would wipe all four ports
         var cfg = new CatSerialConfig(SerialCats.Select(r => r.ToConfig()).ToList());
-        if (_serialWas is { } was && cfg.Ports.SequenceEqual(was.Ports)) return;
+        if (cfg.Ports.SequenceEqual(was.Ports)) return;
         await _client.SetCatSerialConfigAsync(cfg);
         _serialWas = cfg;
         await Task.Delay(500);   // let the ports open before showing their state

@@ -88,7 +88,9 @@ public sealed partial class MainViewModel
 
     /// <summary>The shortest VOX delay allowed: RX resume delay + 20 ms, at least 100 ms.</summary>
     public double VoxDelayMinimum => Math.Max(100, _rxResumeDelayMs + VoxResumeMarginMs);
-    public double VoxDelayMaximum => Math.Max(2000, VoxDelayMinimum + 500);
+    // Never below the saved delay: before connecting the resume delay isn't
+    // known yet, and the slider would clamp (and save) a longer delay.
+    public double VoxDelayMaximum => Math.Max(Math.Max(2000, VoxDelayMinimum + 500), _settings.VoxDelayMs);
     public string VoxDelayTip =>
         "How long transmit stays on after you stop speaking. 1000 ms is recommended: shorter, "
         + "pauses between phrases drop transmit and words are lost while it switches back.";

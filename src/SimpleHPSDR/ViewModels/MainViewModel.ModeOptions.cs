@@ -52,6 +52,16 @@ public sealed partial class MainViewModel
     // opened before that would have its sliders snap the empty defaults to
     // their minimums and write those over the saved settings.
     private bool _modeOptionsLoaded;
+
+    /// <summary>On disconnect: what was read from the engine is no longer
+    /// known, so nothing is sent until it has been read again.</summary>
+    private void ForgetLoadedSettings()
+    {
+        _modeOptionsLoaded = false;
+        _cwLoaded = false;
+        _notchesLoaded = false;
+        _rxLevLoaded = false;
+    }
     private Latest<int>? _amSender, _fmSender;
     private int _modeOptionSeq;
     private FmConfig _fm = new();
@@ -113,7 +123,9 @@ public sealed partial class MainViewModel
         {
             _fm = _fm with
             {
-                DeviationHz = FmNarrow ? 2500 : 5000, CtcssEnabled = FmCtcssOn, CtcssToneHz = FmCtcssTone,
+                // Only flipping Narrow picks 2.5 or 5 kHz; any other deviation stays.
+                DeviationHz = FmNarrow == (_fm.DeviationHz <= 2500) ? _fm.DeviationHz : FmNarrow ? 2500 : 5000,
+                CtcssEnabled = FmCtcssOn, CtcssToneHz = FmCtcssTone,
                 RxToneSquelch = (FmRxToneSquelch)FmRxToneIndex, RepeaterShift = (FmRepeaterShift)FmShiftIndex,
                 RepeaterReverse = FmReverse, ToneBurstOnKeyUp = FmBurstOnKey,
                 PreEmphasisBeforeLimiting = FmPreEmphasisFirst,

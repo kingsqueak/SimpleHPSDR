@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Contracts;
+using SimpleHPSDR.Engine;
 
 namespace SimpleHPSDR.ViewModels;
 
@@ -50,6 +51,7 @@ public sealed partial class SettingsViewModel
         if (TxProfileStore.Get(name) is not { } p || _txLoaded is not { } was)
         {
             Status = $"Profile \"{name}\" could not be read.";
+            RevertProfileChoice();
             return;
         }
         if (_pending.Remove(Group.TxAudio, out var cts)) cts.Cancel();
@@ -64,7 +66,7 @@ public sealed partial class SettingsViewModel
                 cuts.Save();
                 OnPropertyChanged(nameof(TxFilterFollowsRx));
             }
-            await _client.SetTxFilterAsync((await _client.GetStateAsync()).Mode, p.LowCutHz, p.HighCutHz);
+            await TxCuts.SendAsync(_client, p.LowCutHz, p.HighCutHz);
             await _client.SetTxLevelingAsync(p.Leveling);
             await _client.SetLevelerMaxGainAsync(p.LevelerMaxGainDb);
             await _client.SetTxEqAsync(p.Equalizer);
@@ -95,11 +97,33 @@ public sealed partial class SettingsViewModel
         catch (Exception ex)
         {
             Status = $"Profile not loaded: {ex.Message}";
+            // Save must not write this page into the profile that failed.
+            RevertProfileChoice();
+            try
+            {
+                var state = await _client.GetStateAsync();
+                _populating = true;
+                try { PopulateTxAudio(state); }
+                finally { _populating = false; }
+                TxProfileModified = true;   // the engine may hold part of the failed profile
+            }
+            catch (Exception) { }
         }
         finally
         {
             _applyGate.Release();
         }
+    }
+
+    /// <summary>Back to the last profile that loaded, without loading it.</summary>
+    private void RevertProfileChoice()
+    {
+        _choosingProfile = true;
+        var last = AppSettings?.LastTxProfile;
+        SelectedTxProfile = last is not null && TxProfiles.Contains(last) ? last : null;
+        _choosingProfile = false;
+        OnPropertyChanged(nameof(CanOverwriteProfile));
+        OnPropertyChanged(nameof(CanExportProfile));
     }
 
     private TxAudioProfile SnapshotProfile(string name)

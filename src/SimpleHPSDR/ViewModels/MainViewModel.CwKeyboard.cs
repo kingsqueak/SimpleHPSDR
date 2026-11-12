@@ -124,7 +124,7 @@ public sealed partial class MainViewModel
         try
         {
             _settings.CwHeldMicDb ??= (int)Math.Round(MicGainDb);
-            _settings.Save();
+            _settings.SaveNow();   // on disk before the engine stores the muted mic
             await _client!.SetMicGainAsync(MicMutedDb);
             if ((await _client.GetStateAsync()).MicGainDb != MicMutedDb)
                 throw new InvalidOperationException("the mic didn't mute");

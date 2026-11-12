@@ -15,6 +15,15 @@ public static class TxCuts
     public static RxMode TxMode(StateDto s) =>
         s.TxReceiverIndex == 1 && s.Receivers?.FirstOrDefault(r => r.Index == 1) is { } b ? b.Mode : s.Mode;
 
+    /// <summary>Send operator cuts for the transmitting slice's mode (slice B's
+    /// when B transmits), with DSB's passband on both sides of the carrier.</summary>
+    public static async Task SendAsync(StationClient client, int low, int high)
+    {
+        var mode = TxMode(await client.GetStateAsync());
+        if (mode == RxMode.DSB) await client.SetTxFilterAsync(mode, -high, high);
+        else await client.SetTxFilterAsync(mode, low, high);
+    }
+
     public static (int Low, int High) Of(StateDto s)
     {
         int hi = Math.Max(Math.Abs(s.TxFilterLowHz), Math.Abs(s.TxFilterHighHz));

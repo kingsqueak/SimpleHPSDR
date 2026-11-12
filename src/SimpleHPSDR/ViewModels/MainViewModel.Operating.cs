@@ -182,8 +182,8 @@ public sealed partial class MainViewModel
 
     private async Task LoadNotchesAsync()
     {
-        try { _notches = await _client!.GetNotchesAsync(); }
-        catch (Exception) { _notches = []; }
+        try { _notches = await _client!.GetNotchesAsync(); _notchesLoaded = true; }
+        catch (Exception) { _notches = []; _notchesLoaded = false; }
         ShowNotchRows();
     }
 
@@ -220,8 +220,18 @@ public sealed partial class MainViewModel
         return true;
     }
 
+    // False when the engine's notches couldn't be read: adding to the empty
+    // local list would replace the saved ones, so read them again first.
+    private bool _notchesLoaded;
+
     private async Task AddNotchAsync(long hz)
     {
+        if (!_notchesLoaded) await LoadNotchesAsync();
+        if (!_notchesLoaded)
+        {
+            Status = "Couldn't read the notches from the engine; try again.";
+            return;
+        }
         await SendNotchesAsync([.. _notches, new NotchDto(hz, DefaultNotchHz)]);
         ShowNotchRows();
     }

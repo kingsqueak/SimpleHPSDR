@@ -351,8 +351,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (!AutoSpectrum || DateTime.UtcNow - _lastAutoRange < TimeSpan.FromMilliseconds(400)) return;
         _lastAutoRange = DateTime.UtcNow;
         _applyingAutoRange = true;
-        SpecMinDb = Math.Round(floorDb);
-        SpecMaxDb = Math.Round(floorDb + AutoRangeDb);
+        // Inside the Display sliders' ranges, or opening that popup would clamp
+        // the value, count it as an edit and turn Auto off.
+        SpecMinDb = Math.Clamp(Math.Round(floorDb), -160, -40);
+        SpecMaxDb = Math.Clamp(Math.Round(floorDb + AutoRangeDb), -130, 0);
         _applyingAutoRange = false;
     }
 
@@ -872,6 +874,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             var state = await client.GetStateAsync();
             bool firstFilters = await ApplyFilterDefaultsAsync();
             await ApplyStateAsync(state);
+            // The Mute button drives the engine's output mute, which a
+            // reconnect without an engine restart keeps: make them agree.
+            if (!DrmActive) await Try(() => client.SetMuteAsync(Muted));
             ActiveRx = 0;
             UpdateSlices(state);
             LoadSpanRates(radio.Protocol2, state.SampleRate);
@@ -905,7 +910,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await UnkeyAsync();
             try { await client.DisconnectAsync(radio.Protocol2); } catch (Exception) { }
             IsConnected = false;
-            _modeOptionsLoaded = false;
+            ForgetLoadedSettings();
             _statePoll.Stop();
             RadioLabel = "No radio";
             DisplayReset?.Invoke();
@@ -924,7 +929,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await StopG2PanelAsync();
         try { await _client.DisconnectAsync(_radio.Protocol2); } catch (Exception) { }
         IsConnected = false;
-        _modeOptionsLoaded = false;
+        ForgetLoadedSettings();
         _statePoll.Stop();
         RadioLabel = "No radio";
         (SignalDbm, PeakDbm, SUnits) = (-140, -140, "S0");
