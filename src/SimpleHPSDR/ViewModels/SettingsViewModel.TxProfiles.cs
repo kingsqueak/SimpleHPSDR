@@ -180,9 +180,10 @@ public sealed partial class SettingsViewModel
         try
         {
             var name = await TxProfileStore.ImportAsync(stream);
-            RefreshProfileList(null);
-            SelectedTxProfile = name;   // loads it, as choosing it from the list does
-            Status = $"Imported TX profile \"{name}\" and loaded it.";
+            RefreshProfileList(name);   // shown as chosen without loading it twice
+            await LoadTxProfileAsync(name);
+            if (Status.StartsWith("Loaded", StringComparison.Ordinal))
+                Status = $"Imported TX profile \"{name}\" and loaded it.";
         }
         catch (Exception ex) { Status = $"Profile not imported: {ex.Message}"; }
     }
