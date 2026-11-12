@@ -377,6 +377,19 @@
               Command="{Binding ResetAutoAgcOffsetCommand}" />
     </Grid>
   </DataTemplate>
+  <DataTemplate x:Key="CloseUpPanel" x:DataType="vm:MainViewModel">
+    <Grid Width="340" Margin="4" ColumnDefinitions="70,*,56" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+      <TextBlock Grid.ColumnSpan="3" Text="Filter close-up" FontWeight="SemiBold" />
+      <TextBlock Grid.Row="1" Text="Averaging" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <Slider Grid.Row="1" Grid.Column="1" Minimum="0.05" Maximum="3" SmallChange="0.05" TickFrequency="0.05" IsSnapToTickEnabled="True"
+              Value="{Binding CloseUpAverageSec}" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding CloseUpAverageText}" FontSize="12" VerticalAlignment="Center" />
+      <TextBlock Grid.Row="2" Grid.ColumnSpan="3" TextWrapping="Wrap" FontSize="12" Classes="label"
+                 Text="How long the close-up averages the signal. Short follows every syllable; a second or more shows where the audio's energy usually sits, steady, in the colours of the waterfall." />
+      <Button Grid.Row="3" Grid.Column="1" Classes="flat" Content="Back to 0.05 s" HorizontalAlignment="Left"
+              Command="{Binding ResetCloseUpAverageCommand}" />
+    </Grid>
+  </DataTemplate>
   <DataTemplate x:Key="RxLevelerPanel" x:DataType="vm:MainViewModel">
     <Grid Name="RxLevPanel" Width="380" Margin="4" ColumnDefinitions="100,*,64" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
       <TextBlock Grid.ColumnSpan="3" Text="RX leveler" FontWeight="SemiBold" />

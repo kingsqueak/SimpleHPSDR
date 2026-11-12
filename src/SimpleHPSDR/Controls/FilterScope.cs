@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.Controls;
@@ -15,6 +17,8 @@ namespace SimpleHPSDR.Controls;
 /// double-sided modes only the upper side is shown, and its one edge sets both
 /// sides together. The scale marks every 100 Hz, labelled every 500 Hz. The dB
 /// range follows what's inside the span, so the signal fills the box.
+/// The area under the trace is coloured by level in the waterfall palette
+/// (Config > Colors), so you see where the audio's energy sits.
 /// A box along the top shows the low and high cuts in Hz, updated as you drag.
 /// </summary>
 public sealed class FilterScope : Control
@@ -25,14 +29,15 @@ public sealed class FilterScope : Control
     private const double ScaleH = 13;         // tick and label strip at the bottom
     /// <summary>How close the pointer must be to take an edge (wider for fingers).</summary>
     public double GrabDistance { get; set; } = 6;
-    private const float TraceAlpha = 0.5f;
+    /// <summary>Averaging time constant for the trace, in seconds (right-click the close-up).</summary>
+    public double AverageSeconds { get; set; } = 0.05;
+    private long _lastFrameTicks;
 
     /// <summary>An edge was dragged: the new (low, high) offsets from the dial.</summary>
     public event Action<int, int>? FilterDragged;
 
     // Colours from Config > Colors, as on the spectrum.
     private static IBrush Background => SpectrumLook.Current.Background;
-    private static IBrush TraceFill => SpectrumLook.Current.Fill;
     private static IPen TracePen => SpectrumLook.Current.LinePen;
     private static readonly IBrush PassBrush = new SolidColorBrush(Color.Parse("#2E3B82F6"));
     private static readonly IPen EdgePen = new Pen(new SolidColorBrush(Color.Parse("#3B82F6")), 1.5);
@@ -48,6 +53,7 @@ public sealed class FilterScope : Control
 
     private float[]? _pan;
     private double[] _cols = [];
+    private WriteableBitmap? _heat;   // one row: each column's level in the waterfall colours
     private double _floorDb = -130, _topDb = -80;   // smoothed auto range
     private long _centerHz, _dialHz;
     private double _hzPerBin;
@@ -84,8 +90,14 @@ public sealed class FilterScope : Control
         if (_pan is null || _pan.Length != raw.Length || f.CenterHz != _centerHz)
             _pan = raw.ToArray();
         else
+        {
+            // Exponential average by time, so the frame rate doesn't change it.
+            double dt = Math.Clamp(System.Diagnostics.Stopwatch.GetElapsedTime(_lastFrameTicks).TotalSeconds, 0.001, 0.5);
+            float a = (float)(1 - Math.Exp(-dt / Math.Max(0.01, AverageSeconds)));
             for (int i = 0; i < _pan.Length; i++)
-                _pan[i] += (raw[i] - _pan[i]) * TraceAlpha;
+                _pan[i] += (raw[i] - _pan[i]) * a;
+        }
+        _lastFrameTicks = System.Diagnostics.Stopwatch.GetTimestamp();
         _centerHz = f.CenterHz;
         _hzPerBin = f.HzPerPixel;
         InvalidateVisual();
@@ -188,8 +200,29 @@ public sealed class FilterScope : Control
             c.EndFigure(true);
             l.EndFigure(false);
         }
-        ctx.DrawGeometry(TraceFill, null, g);
+        DrawHeat(ctx, r, g, range);
         ctx.DrawGeometry(null, TracePen, line);
+    }
+
+    // Fill under the trace, each column in the waterfall colour for its level;
+    // stretched smoothly between columns.
+    private unsafe void DrawHeat(DrawingContext ctx, Rect r, Geometry under, double range)
+    {
+        int cols = _cols.Length;
+        if (_heat is null || _heat.PixelSize.Width != cols)
+        {
+            _heat?.Dispose();
+            _heat = new WriteableBitmap(new PixelSize(cols, 1), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
+        }
+        var lut = SpectrumLook.Current.Palette;
+        using (var fb = _heat.Lock())
+        {
+            var px = new Span<uint>((void*)fb.Address, cols);
+            for (int i = 0; i < cols; i++)
+                px[i] = lut[Math.Clamp((int)((_cols[i] - _floorDb) / range * 255), 0, 255)];
+        }
+        using (ctx.PushGeometryClip(under))
+            ctx.DrawImage(_heat, new Rect(0, 0, cols, 1), r);
     }
 
     // Audio frequency, 0 at the dial (left) to 6000 Hz (right).

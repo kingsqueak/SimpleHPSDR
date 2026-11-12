@@ -52,6 +52,21 @@ public sealed partial class MainViewModel
     [RelayCommand]
     private void ResetAutoAgcOffset() => AutoAgcOffsetDb = DefaultAutoAgcOffsetDb;
 
+    // Filter close-up averaging (right-click the close-up). Saved, app only.
+    public const double MinCloseUpAverageSec = 0.05, MaxCloseUpAverageSec = 3, DefaultCloseUpAverageSec = 0.05;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(CloseUpAverageText))]
+    private double _closeUpAverageSec = DefaultCloseUpAverageSec;
+    public string CloseUpAverageText => $"{CloseUpAverageSec:0.00} s";
+
+    partial void OnCloseUpAverageSecChanged(double value)
+    {
+        _settings.CloseUpAverageSec = value;
+        _settings.Save();
+    }
+
+    [RelayCommand]
+    private void ResetCloseUpAverage() => CloseUpAverageSec = DefaultCloseUpAverageSec;
+
     public bool AgcManual => !AgcAuto;
     /// <summary>The fixed-gain slider: manual AGC with the speed Off.</summary>
     public bool AgcFixedShown => !AgcAuto && _agcMode == AgcMode.Fixed;
