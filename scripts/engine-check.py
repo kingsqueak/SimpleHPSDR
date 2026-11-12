@@ -153,6 +153,23 @@ def free_port():
         return s.getsockname()[1]
 
 
+def wait_for_wisdom(port, limit_s=1200):
+    """A new WDSP library rebuilds its FFT plans on first start (minutes), and
+    the DSP doesn't run until that is done. Wait for it."""
+    told = False
+    end = time.time() + limit_s
+    while time.time() < end:
+        _, d = get_json(port, "api/station/dsp-diagnostics")
+        phase = (d or {}).get("wdspWisdomPhase")
+        if phase not in ("Idle", "Building"):
+            return
+        if not told:
+            print("engine is building its FFT plans (new WDSP library); waiting...", flush=True)
+            told = True
+        time.sleep(2)
+    raise RuntimeError("FFT plans were not ready in time")
+
+
 def start_engine(workdir, engine):
     data = os.path.join(workdir, "data")
     os.makedirs(data)
@@ -177,6 +194,7 @@ def start_engine(workdir, engine):
             raise RuntimeError(f"engine exited with code {proc.returncode}")
         try:
             if request(port, "GET", "api/station/version", timeout=2)[0] == 200:
+                wait_for_wisdom(port)
                 return proc, port
         except OSError:
             pass

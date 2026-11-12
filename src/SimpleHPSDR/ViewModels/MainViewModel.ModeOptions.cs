@@ -134,48 +134,94 @@ public sealed partial class MainViewModel
         })).Send(++_modeOptionSeq);
     }
 
-    // ---- PureSignal correction ------------------------------------------
+    // ---- PureSignal correction, kept for each band ---------------------
+    //
+    // PureSignal adapts on speech, but each start and each band change began
+    // from nothing. So the correction is saved after an over that updated it,
+    // one file per band and feedback source, and loaded again on connect and
+    // on a band change. A loaded correction is only the starting point: the
+    // engine keeps adapting from it.
 
-    private static string PsCorrectionPath => Path.Combine(EngineHost.DataDir, "ps-correction.txt");
-
-    /// <summary>Save what PureSignal has learned, to bring back without recalibrating.</summary>
-    [RelayCommand]
-    private Task SavePsCorrectionAsync() => Try(async () =>
+    private string? PsCorrectionPath(long hz)
     {
-        await _client!.SavePsCorrectionAsync(PsCorrectionPath);
-        Status = "PureSignal correction saved.";
-    });
+        if (SimpleHPSDR.Band.Find(hz) is not { } band) return null;
+        string dir = Path.Combine(EngineHost.DataDir, "ps-corrections");
+        Directory.CreateDirectory(dir);
+        string name = string.Concat(band.Name.Select(c => char.IsLetterOrDigit(c) ? c : '_'));
+        return Path.Combine(dir, $"{name}-{(_psExternal ? "external" : "internal")}.txt");
+    }
 
-    /// <summary>Load the saved correction whenever a radio connects. A loaded
-    /// correction stays fixed: PureSignal no longer adapts until it's reset.</summary>
-    public bool PsRestoreAtStart
+    /// <summary>Keep PureSignal's correction for each band and start from it.</summary>
+    public bool PsRememberByBand
     {
-        get => _settings.PsLoadCorrectionAtStart;
+        get => _settings.PsRememberByBand;
         set
         {
-            if (_settings.PsLoadCorrectionAtStart == value) return;
-            _settings.PsLoadCorrectionAtStart = value;
+            if (_settings.PsRememberByBand == value) return;
+            _settings.PsRememberByBand = value;
             _settings.Save();
             OnPropertyChanged();
+            if (value) LoadPsCorrectionForBand(force: true);
         }
     }
 
-    /// <summary>At connect: bring back the saved correction if there is one.</summary>
-    private async Task RestorePsCorrectionAtStartAsync()
-    {
-        if (!_settings.PsLoadCorrectionAtStart || !File.Exists(PsCorrectionPath)) return;
-        await Try(() => _client!.RestorePsCorrectionAsync(PsCorrectionPath));
-    }
+    /// <summary>"Correction updated 14:32:05", or how it was loaded. Empty when there's nothing to say.</summary>
+    [ObservableProperty] private string _psUpdatedText = "";
 
-    [RelayCommand]
-    private Task RestorePsCorrectionAsync() => Try(async () =>
+    private ushort _psFitCount;
+    private bool _psFitCountKnown, _psFitThisOver, _psKeyed;
+    private string? _psLoadedPath;
+
+    /// <summary>Every PureSignal meter frame (UI thread).</summary>
+    private void TrackPsFits(PsMetersFrame f)
     {
-        if (!File.Exists(PsCorrectionPath))
+        if (!_psFitCountKnown)
         {
-            Status = "No saved PureSignal correction yet.";
+            (_psFitCount, _psFitCountKnown) = (f.FitCount, true);
             return;
         }
-        await _client!.RestorePsCorrectionAsync(PsCorrectionPath);
-        Status = "PureSignal correction restored.";
-    });
+        if (f.FitCount == _psFitCount) return;
+        _psFitCount = f.FitCount;
+        if (_psKeyed) _psFitThisOver = true;
+        PsUpdatedText = $"Correction updated {DateTime.Now:HH:mm:ss}";
+    }
+
+    /// <summary>Every engine key report (UI thread): after an over that
+    /// updated the correction, save it for this band.</summary>
+    private void TrackEngineKeyForPs(bool keyed)
+    {
+        if (keyed == _psKeyed) return;
+        _psKeyed = keyed;
+        if (keyed)
+        {
+            _psFitThisOver = false;
+            return;
+        }
+        if (!_psFitThisOver || !PsOn || !PsRememberByBand || !IsConnected) return;
+        if (PsCorrectionPath(VfoHz) is not { } path) return;
+        _psLoadedPath = path;      // what the engine holds now is this band's
+        _ = Try(() => _client!.SavePsCorrectionAsync(path));
+    }
+
+    /// <summary>On connect, on a band change and when PureSignal is switched
+    /// on: start from the correction saved for this band, if there is one.</summary>
+    private void LoadPsCorrectionForBand(bool force = false)
+    {
+        if (!IsConnected || !PsOn || !PsRememberByBand || _psKeyed || MoxOn || TunOn || TwoToneOn) return;
+        if (PsCorrectionPath(VfoHz) is not { } path) return;
+        if (!force && path == _psLoadedPath) return;
+        _psLoadedPath = path;
+        if (!File.Exists(path)) return;
+        _ = Try(async () =>
+        {
+            await _client!.RestorePsCorrectionAsync(path);
+            PsUpdatedText = "Started from the correction saved for this band";
+        });
+    }
+
+    private void ForgetPsCorrectionState()
+    {
+        (_psFitCountKnown, _psFitThisOver, _psKeyed, _psLoadedPath) = (false, false, false, null);
+        PsUpdatedText = "";
+    }
 }

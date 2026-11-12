@@ -338,13 +338,12 @@
     <StackPanel Orientation="Horizontal" Spacing="6">
       <Button Classes="flat" Content="Guided setup…" Command="{Binding OpenPsSetupCommand}"
               ToolTip.Tip="Step-by-step PureSignal setup" />
-      <Button Classes="flat" Content="Save correction" Command="{Binding SavePsCorrectionCommand}"
-              ToolTip.Tip="Keep what PureSignal has learned, to bring back without recalibrating" />
-      <Button Classes="flat" Content="Restore" Command="{Binding RestorePsCorrectionCommand}"
-              ToolTip.Tip="Load the saved correction now. PureSignal then keeps it fixed and stops adapting until it's reset (Config > PureSignal > Reset)." />
     </StackPanel>
-    <CheckBox Content="Load the saved correction at start" IsChecked="{Binding PsRestoreAtStart}"
-              ToolTip.Tip="Off is usually better: a loaded correction stays fixed and PureSignal stops adapting to the amplifier, band and drive you're on. Left to itself it settles within seconds of transmitting." />
+    <TextBlock Text="{Binding PsUpdatedText}" Classes="label" FontSize="11"
+               IsVisible="{Binding PsUpdatedText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+               ToolTip.Tip="PureSignal keeps adjusting the correction from your own speech while you transmit. This shows the last time it did." />
+    <CheckBox Content="Remember the correction for each band" IsChecked="{Binding PsRememberByBand}"
+              ToolTip.Tip="Saves the correction after you transmit and starts from it next time you are on that band, so PureSignal is right from the first word. It still keeps adjusting as you talk. If you change amplifier or how the sample is taken, use Reset in Config > PureSignal." />
     </StackPanel>
   </DataTemplate>
   <!-- Mem: 4 x 4 memories. Click tunes and sets the mode; right-click or long press stores. -->

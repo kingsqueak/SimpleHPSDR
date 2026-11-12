@@ -122,7 +122,17 @@ public sealed partial class SettingsViewModel
         try
         {
             await _client.ResetPsAsync();
-            Status = "PureSignal calibration reset.";
+            // The corrections saved for each band belong to the setup being left.
+            int forgotten = 0;
+            string dir = Path.Combine(SimpleHPSDR.Engine.EngineHost.DataDir, "ps-corrections");
+            if (Directory.Exists(dir))
+                foreach (string file in Directory.GetFiles(dir, "*.txt"))
+                {
+                    try { File.Delete(file); forgotten++; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                }
+            Status = forgotten > 0
+                ? "PureSignal calibration reset, and the saved corrections forgotten."
+                : "PureSignal calibration reset.";
         }
         catch (Exception ex)
         {

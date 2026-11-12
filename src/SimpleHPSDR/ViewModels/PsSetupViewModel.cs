@@ -72,8 +72,9 @@ public sealed partial class PsSetupViewModel : ObservableObject
             Finished = true;
         }
         ResultText = Succeeded
-            ? "PureSignal is set up and locked. It keeps its correction while you talk. " +
-              "Run PS CAL again (right-click PS) after changing band, power or amplifier. " +
+            ? "PureSignal is set up and correcting. From here it keeps adjusting from your own voice as you talk, " +
+              "and remembers the correction for each band. " +
+              "Run PS CAL again (right-click PS) only after changing amplifier or how the sample is taken. " +
               "To see how much cleaner it is, turn on 2-TONE (right-click PS) into the dummy load and leave it on about 15 seconds: " +
               "the PS panel shows the IMD before and after."
             : "It didn't lock. " + Main.PsAdvice;

@@ -72,6 +72,7 @@ public sealed partial class MainViewModel
                 Dispatcher.UIThread.Post(() =>
                 {
                     _psScheduled = 0;
+                    TrackPsFits(_latestPs);
                     UpdatePsStatus();
                 });
         };
@@ -204,7 +205,11 @@ public sealed partial class MainViewModel
         UpdatePsStatus();
         if (_applyingTx || !IsConnected) return;
         if (value) OfferPsSetup();
-        _ = Try(() => _client!.SetPsAsync(value));
+        _ = Try(async () =>
+        {
+            await _client!.SetPsAsync(value);
+            if (value) LoadPsCorrectionForBand(force: true);
+        });
     }
 
     partial void OnTwoToneOnChanged(bool value)
@@ -275,7 +280,9 @@ public sealed partial class MainViewModel
         else if (_psStalled)
             (PsStatus, PsLevel) = ("Stalled: HW peak", "bad");
         else if (f.Correcting)
-            (PsStatus, PsLevel) = ("Correcting", fb is >= 128 and <= 181 ? "ok" : "warn");
+            // The feedback level only means something while transmitting: a
+            // correction loaded at start has none yet, and that isn't a fault.
+            (PsStatus, PsLevel) = ("Correcting", !IsTransmitting || fb is >= 128 and <= 181 ? "ok" : "warn");
         else if (IsTransmitting)
             (PsStatus, PsLevel) = ("Calibrating", "warn");
         else
@@ -301,8 +308,8 @@ public sealed partial class MainViewModel
             : _psStalled ? $"Calibration can't finish. Check the {source} cable and that the right feedback source is chosen in Config > PureSignal, then press PS CAL."
             : f.Correcting && IsTransmitting && fb > 181 ? $"The {source} is too strong (FB {fb}). It's best between 128 and 181. Add an attenuator in the sample line."
             : f.Correcting && IsTransmitting && fb is > 0 and < 128 ? $"The {source} is too weak (FB {fb}). It's best between 128 and 181. Check the sample cable and coupler."
-            : f.Correcting ? "Working. The correction stays on while you talk. Run PS CAL again after changing band, power or amplifier."
-            : IsTransmitting ? "Learning your signal. 2-TONE (or PS CAL) locks in a few seconds; voice alone usually can't."
-            : "Ready. Press PS CAL with a dummy load connected to calibrate.";
+            : f.Correcting ? "Working. It keeps adjusting from your voice as you talk. Run PS CAL again only after changing amplifier or how the sample is taken."
+            : IsTransmitting ? "Learning your signal. Keep talking for a few seconds, or press PS CAL (dummy load) to get there at once."
+            : "Ready. It starts correcting a few seconds into your first over. PS CAL with a dummy load connected does it at once.";
     }
 }

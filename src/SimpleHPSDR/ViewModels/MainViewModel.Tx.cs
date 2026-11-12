@@ -91,6 +91,7 @@ public sealed partial class MainViewModel
         client.MoxState += f => Dispatcher.UIThread.Post(() =>
         {
             TrackEngineKeyForVox(f.MoxOn || f.TunOn);
+            TrackEngineKeyForPs(f.MoxOn || f.TunOn);
             _applyingTx = true;
             MoxOn = f.MoxOn;
             TunOn = f.TunOn;

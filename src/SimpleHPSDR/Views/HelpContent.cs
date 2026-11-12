@@ -405,17 +405,23 @@ The first time you turn on PS, a guided setup opens. It asks where the sample co
 
 To recalibrate by hand: connect a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts until PS turns green.
 
-Calibrate again after changing band, power or amplifier. The correction stays on while you talk; it isn't relearned from your voice, because speech rarely reaches its full peak for long enough.
+After that you rarely need PS CAL again. While you transmit, PureSignal keeps adjusting the correction from your own speech, about once a second, so it follows changes in power and band by itself. The PS right-click shows when it last did.
+
+## Remembered for each band
+"Remember the correction for each band" (PS right-click) is on to start with. After an over that updated the correction, it is saved for the band you are on. Next time you connect, or come back to that band, PureSignal starts from the saved correction, so your first words are already clean, and it carries on adjusting from there.
+
+Run PS CAL again, or Reset calibration in Config > PureSignal, after you change amplifier or how the sample is taken: the saved corrections belong to the old setup. Reset also forgets them.
 
 ## The PS button
-- Green: on and locked.
-- Yellow: on but not locked.
+- Green: on and correcting your signal.
+- Yellow: on but not correcting yet. Transmit for a few seconds, or run PS CAL.
 - Grey: off.
 
 ## Also on the right-click
 - 2-TONE transmits a test signal.
 - IMD: while 2-TONE transmits, the PS panel shows how far the 3rd- and 5th-order intermodulation products sit below the tones (IMD3, IMD5, in dBc; more negative is cleaner). With PureSignal on it measures your amplifier's real output (the PS sample) and starts PureSignal from a reset: leave 2-TONE on about 15 seconds and the panel shows the uncorrected and corrected IMD3 and the difference. 2-TONE zooms in to measure and puts your zoom back when it stops. PS CAL doesn't measure IMD: its bursts are too short, and PureSignal is still learning during them. Use 2-TONE from its button after PS CAL to see the result. If the panel says to zoom in, the tones are too close together on screen to measure; the 2-TONE button zooms for you.
-- Save correction keeps what PureSignal learned, and Restore brings it back without calibrating. A restored correction stays fixed: PureSignal stops adapting until you reset it, so an old one can do worse than none. Left alone, PureSignal settles within seconds of transmitting; "Load the saved correction at start" is off for that reason.
+- "Correction updated" shows the last time PureSignal adjusted the correction, or that it started from the one saved for this band.
+- "Remember the correction for each band": see above.
 - The status box shows the feedback level (FB), which is best around 128 to 181.
 - A line in plain words says what PureSignal is doing and what to do if it's stuck.
 - "Signal peak" and "HW peak" should be close: your signal's peak just under HW peak, at 94 to 100% of it. PS CAL sets this for you.

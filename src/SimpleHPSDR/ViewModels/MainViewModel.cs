@@ -413,6 +413,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         NotifyFrequencyDigits();
         RefreshSwlStation();
+        LoadPsCorrectionForBand();
     }
 
     private void NotifyFrequencyDigits()
@@ -885,7 +886,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await LoadAntennasAsync();
             await LoadTransmitAsync(state);
             LoadPureSignal(state);
-            await RestorePsCorrectionAtStartAsync();
+            ForgetPsCorrectionState();
             await LoadMonitorAsync();
             await LoadNotchesAsync();
             if (firstFilters && Filters.FirstOrDefault(f => f.SlotName == DefaultFilterSlot) is { } start)
@@ -896,6 +897,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await ApplyRadioSpeakerAsync(client);
             await LoadFreeDvAsync();
             IsConnected = true;
+            LoadPsCorrectionForBand(force: true);   // needs IsConnected
             await LoadModeOptionsAsync();   // before the Mode popup's sliders can write defaults
             _lostRadio = false;
             _statePoll.Start();

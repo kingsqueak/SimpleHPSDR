@@ -856,7 +856,7 @@
         <ScrollViewer>
           <StackPanel Spacing="12" Margin="0,12,0,0">
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="PureSignal makes your transmitted signal cleaner by correcting the amplifier's distortion. To set it up, press Guided setup below. The feedback level (FB) is best between about 128 and 181." />
+                       Text="PureSignal makes your transmitted signal cleaner by correcting the amplifier's distortion. To set it up, press Guided setup below. After that it keeps adjusting from your own voice as you talk. The feedback level (FB) is best between about 128 and 181." />
 
             <Border Classes="panel">
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
@@ -885,7 +885,8 @@
                 <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <Button Classes="flat accent" Content="Guided setup…" Click="OnPsSetup"
                           ToolTip.Tip="Step-by-step setup: closes Config and calibrates PureSignal" />
-                  <Button Classes="flat" Content="Reset calibration" Command="{Binding ResetPsCommand}" />
+                  <Button Classes="flat" Content="Reset calibration" Command="{Binding ResetPsCommand}"
+                        ToolTip.Tip="Starts PureSignal from nothing and forgets the corrections saved for each band. Use it after changing amplifier or how the sample is taken." />
                 </StackPanel>
               </Grid>
             </Border>
@@ -909,19 +910,22 @@
                             ToolTip.Tip="Lets the app correct HW peak when calibration gets stuck. Takes effect the next time you transmit." />
                   <TextBlock Text="{Binding MeasuredTxPeakText}" Classes="label" FontSize="11" TextWrapping="Wrap" />
                 </StackPanel>
-                <TextBlock Grid.Row="1" Text="MOX delay" Classes="label" FontSize="12" />
+                <TextBlock Grid.Row="1" Text="MOX delay" Classes="label" FontSize="12"
+                           ToolTip.Tip="How long PureSignal waits after you key before it starts measuring." />
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding PsMoxDelaySec}" Minimum="0.1" Maximum="1" Increment="0.05"
                                  FormatString="0.00" Width="150" />
                   <TextBlock Text="s" Classes="label" />
                 </StackPanel>
-                <TextBlock Grid.Row="2" Text="Loop delay" Classes="label" FontSize="12" />
+                <TextBlock Grid.Row="2" Text="Loop delay" Classes="label" FontSize="12"
+                           ToolTip.Tip="An extra pause between one correction and the next measurement. 0 is normal." />
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding PsLoopDelaySec}" Minimum="0" Maximum="100" Increment="0.1"
                                  FormatString="0.0" Width="150" />
                   <TextBlock Text="s" Classes="label" />
                 </StackPanel>
-                <TextBlock Grid.Row="3" Text="Amp delay" Classes="label" FontSize="12" />
+                <TextBlock Grid.Row="3" Text="Amp delay" Classes="label" FontSize="12"
+                           ToolTip.Tip="The time your signal takes to pass through the amplifier and come back as the sample. Leave it unless calibration won't settle." />
                 <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding PsAmpDelayNs}" Minimum="0" Maximum="25000" Increment="10"
                                  FormatString="0" Width="150" />
