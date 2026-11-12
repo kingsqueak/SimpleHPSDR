@@ -98,6 +98,12 @@ public sealed class Settings
     /// <summary>The real mic gain while a CW keyboard hold has it muted; set back on
     /// the next connect if the app stops mid-hold.</summary>
     public int? CwHeldMicDb { get; set; }
+    /// <summary>Main window's normal (not maximised) size and position; null until it has closed once.</summary>
+    public double? MainWidth { get; set; }
+    public double? MainHeight { get; set; }
+    public int? MainX { get; set; }
+    public int? MainY { get; set; }
+    public bool MainMaximized { get; set; }
     /// <summary>Mini window size, kept between uses.</summary>
     public double MiniWidth { get; set; } = 440;
     public double MiniHeight { get; set; } = 250;
