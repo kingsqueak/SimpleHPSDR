@@ -355,6 +355,7 @@ public partial class TouchMainView : UserControl
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
         if (f.RxId == vm.ActiveRx && Drawer.IsPaneOpen)
             FilterScope.AverageSeconds = vm.CloseUpAverageSec;
+            FilterScope.ColouredFill = vm.CloseUpColoured;
             FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric, vm.CwPitchHz);
         if (f.RxId == 1)
         {

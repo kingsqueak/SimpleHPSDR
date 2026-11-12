@@ -267,6 +267,7 @@ public partial class DesktopMainView : UserControl
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
         if (f.RxId == vm.ActiveRx)
             FilterScope.AverageSeconds = vm.CloseUpAverageSec;
+            FilterScope.ColouredFill = vm.CloseUpColoured;
             FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric, vm.CwPitchHz);
         if (f.RxId == 1)
         {

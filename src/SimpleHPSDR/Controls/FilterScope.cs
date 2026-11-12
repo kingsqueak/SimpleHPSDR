@@ -32,6 +32,8 @@ public sealed class FilterScope : Control
     /// <summary>Averaging time constant for the trace, in seconds (right-click the close-up).</summary>
     public double AverageSeconds { get; set; } = 0.05;
     private long _lastFrameTicks;
+    /// <summary>Fill in waterfall colours by level; false is the plain spectrum fill.</summary>
+    public bool ColouredFill { get; set; } = true;
 
     /// <summary>An edge was dragged: the new (low, high) offsets from the dial.</summary>
     public event Action<int, int>? FilterDragged;
@@ -200,7 +202,8 @@ public sealed class FilterScope : Control
             c.EndFigure(true);
             l.EndFigure(false);
         }
-        DrawHeat(ctx, r, g, range);
+        if (ColouredFill) DrawHeat(ctx, r, g, range);
+        else ctx.DrawGeometry(SpectrumLook.Current.Fill, null, g);
         ctx.DrawGeometry(null, TracePen, line);
     }
 

@@ -64,6 +64,14 @@ public sealed partial class MainViewModel
         _settings.Save();
     }
 
+    [ObservableProperty] private bool _closeUpColoured = true;
+
+    partial void OnCloseUpColouredChanged(bool value)
+    {
+        _settings.CloseUpColoured = value;
+        _settings.Save();
+    }
+
     [RelayCommand]
     private void ResetCloseUpAverage() => CloseUpAverageSec = DefaultCloseUpAverageSec;
 

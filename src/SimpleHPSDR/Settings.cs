@@ -63,6 +63,8 @@ public sealed class Settings
     public double AutoAgcOffsetDb { get; set; } = 20;
     /// <summary>Filter close-up averaging time in seconds (right-click it): short is lively, long shows the steady spread.</summary>
     public double CloseUpAverageSec { get; set; } = 0.05;
+    /// <summary>Filter close-up fill in waterfall colours (true) or the plain spectrum fill (false).</summary>
+    public bool CloseUpColoured { get; set; } = true;
     /// <summary>Where the dial sits across the panadapter, -90 to +90 (% of half the span).</summary>
     public double DialPosition { get; set; }
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
