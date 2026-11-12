@@ -892,6 +892,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await ApplyRadioSpeakerAsync(client);
             await LoadFreeDvAsync();
             IsConnected = true;
+            await LoadModeOptionsAsync();   // before the Mode popup's sliders can write defaults
             _lostRadio = false;
             _statePoll.Start();
             RadioLabel = radio.Label;
@@ -904,6 +905,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await UnkeyAsync();
             try { await client.DisconnectAsync(radio.Protocol2); } catch (Exception) { }
             IsConnected = false;
+            _modeOptionsLoaded = false;
             _statePoll.Stop();
             RadioLabel = "No radio";
             DisplayReset?.Invoke();
@@ -922,6 +924,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await StopG2PanelAsync();
         try { await _client.DisconnectAsync(_radio.Protocol2); } catch (Exception) { }
         IsConnected = false;
+        _modeOptionsLoaded = false;
         _statePoll.Stop();
         RadioLabel = "No radio";
         (SignalDbm, PeakDbm, SUnits) = (-140, -140, "S0");

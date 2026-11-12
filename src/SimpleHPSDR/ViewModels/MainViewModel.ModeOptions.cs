@@ -48,6 +48,10 @@ public sealed partial class MainViewModel
     [ObservableProperty] private bool _fmPreEmphasisFirst;
 
     private bool _applyingModeOptions;
+    // Nothing is sent until the engine's values have been read: a Mode popup
+    // opened before that would have its sliders snap the empty defaults to
+    // their minimums and write those over the saved settings.
+    private bool _modeOptionsLoaded;
     private Latest<int>? _amSender, _fmSender;
     private int _modeOptionSeq;
     private FmConfig _fm = new();
@@ -71,7 +75,9 @@ public sealed partial class MainViewModel
                 (_fm.CtcssEnabled, _fm.CtcssToneHz, (int)_fm.RxToneSquelch, (int)_fm.RepeaterShift, _fm.RepeaterReverse, _fm.ToneBurstOnKeyUp);
             FmPreEmphasisFirst = _fm.PreEmphasisBeforeLimiting;
             _applyingModeOptions = false;
+            _modeOptionsLoaded = true;
         });
+        _applyingModeOptions = false;
     }
 
     partial void OnAmBroadcastOnChanged(bool value) => SendAm();
@@ -83,7 +89,7 @@ public sealed partial class MainViewModel
 
     private void SendAm()
     {
-        if (_applyingModeOptions || !IsConnected) return;
+        if (_applyingModeOptions || !_modeOptionsLoaded || !IsConnected) return;
         (_amSender ??= new Latest<int>(async _ =>
         {
             await _client!.SetAmBroadcastAsync(new AmBroadcastConfig(AmBroadcastOn, Math.Round(AmPositivePeak), Math.Round(AmNegativePeak), AmPreEmphasis, AmInvert));
@@ -102,7 +108,7 @@ public sealed partial class MainViewModel
 
     private void SendFm()
     {
-        if (_applyingModeOptions || !IsConnected) return;
+        if (_applyingModeOptions || !_modeOptionsLoaded || !IsConnected) return;
         (_fmSender ??= new Latest<int>(async _ =>
         {
             _fm = _fm with
