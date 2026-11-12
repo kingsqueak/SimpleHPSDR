@@ -11,6 +11,9 @@ Starts a throwaway engine (its own data folder, no computer audio), then:
               spectrum and audio frames, changes mode, filter and frequency
               and reads them back, then disconnects. No transmit route is
               ever called.
+  order:      (only with --order) posts several settings changes at the same
+              moment, many times, and checks the DSP side always ends on the
+              newest one.
   5. quit:    POST /api/engine/shutdown; the engine must exit by itself
               within 15 s with no "failed to stop" or fatal lines in its log.
 
@@ -211,6 +214,63 @@ def check_stream(port, seconds):
         ws.close()
 
 
+def check_order(port, rounds, fails, threads=8):
+    """Many settings changes at the same moment must leave the DSP side on the
+    newest one. Each round posts several different dial frequencies at once,
+    then compares the engine's record (/api/state) with the last frequency the
+    DSP pipeline announced on the stream (VfoState frame)."""
+    import threading
+    ws = WebSocket(port)
+    ws.send(bytes([0x22, 2]))
+    ws.s.settimeout(0.05)
+    last = {"hz": None}
+
+    def drain(seconds):
+        end = time.time() + seconds
+        while time.time() < end:
+            try:
+                op, data = ws.recv()
+            except socket.timeout:
+                continue
+            if op == 2 and len(data) >= 18 and data[0] == 0x26 and data[1] == 0:
+                last["hz"] = struct.unpack_from("<q", data, 2)[0]
+
+    conns = [http.client.HTTPConnection("127.0.0.1", port, timeout=10) for _ in range(threads)]
+    stale, examples = 0, []
+    try:
+        # Warm-up: the pipeline only records the very first frequency it sees.
+        for hz in (6_999_000, 6_999_500):
+            request(port, "POST", "api/vfo", {"hz": hz, "receiver": 0})
+        drain(0.3)
+        for r in range(rounds):
+            barrier = threading.Barrier(threads)
+
+            def post(i, r=r, barrier=barrier):
+                body = json.dumps({"hz": 7_000_000 + r * 100 + i, "receiver": 0})
+                barrier.wait()
+                conns[i].request("POST", "/api/vfo", body=body, headers={"Content-Type": "application/json"})
+                conns[i].getresponse().read()
+
+            ts = [threading.Thread(target=post, args=(i,)) for i in range(threads)]
+            for t in ts: t.start()
+            for t in ts: t.join()
+            drain(0.08)
+            _, state = get_json(port, "api/state")
+            want = state and state.get("vfoHz")
+            if last["hz"] != want:
+                drain(0.3)   # give a slow push every chance before calling it stale
+            if last["hz"] != want:
+                stale += 1
+                if len(examples) < 3:
+                    examples.append({"state": want, "dsp": last["hz"]})
+    finally:
+        for c in conns: c.close()
+        ws.close()
+    if stale:
+        fails.append(f"order: DSP left on an older setting in {stale} of {rounds} rounds, e.g. {examples[0]}")
+    return {"rounds": rounds, "stale": stale, "examples": examples}
+
+
 def check_radio(port, ip, settings, fails):
     """Receive only. Connect, check frames, change mode/filter/VFO, disconnect."""
     r = {}
@@ -306,6 +366,8 @@ def main():
     ap.add_argument("--baseline", help="compare with this earlier result file")
     ap.add_argument("--out", help="write results here (default: a file in the work folder)")
     ap.add_argument("--engine", help="StationEngine executable (default: artifacts/engine/<rid>)")
+    ap.add_argument("--order", type=int, nargs="?", const=300, default=0, metavar="ROUNDS",
+                    help="also stress the order of settings changes (default 300 rounds)")
     ap.add_argument("--keep", action="store_true", help="keep the work folder")
     args = ap.parse_args()
 
@@ -341,6 +403,8 @@ def main():
             if not isinstance(st, int) or st >= 500:
                 fails.append(f"read failed: {p} -> {st}")
         res["stream"] = check_stream(port, 3)
+        if args.order:
+            res["order"] = check_order(port, args.order, fails)
         if args.radio is not None:
             res["radio"] = check_radio(port, ip, settings, fails)
     finally:
@@ -358,6 +422,8 @@ def main():
     print(f"engine {ver and ver.get('engine')}: {len(routes)} app routes, "
           f"{sum(1 for s in routes.values() if s != 404)} present; "
           f"{len(res['reads'])} reads; stream {res['stream']}")
+    if "order" in res:
+        print(f"order: {res['order']['stale']} stale of {res['order']['rounds']} rounds")
     if "radio" in res:
         print(f"radio: {json.dumps(res['radio'])}")
     print(f"quit: {res['quit']['shutdown']} in {res['quit'].get('seconds')} s, exit {res['quit']['exitCode']}")
