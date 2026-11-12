@@ -67,6 +67,9 @@ public sealed class Settings
     public bool CloseUpColoured { get; set; } = true;
     /// <summary>Filter close-up from the engine's own fine spectrum (true) or cut from the panadapter (false).</summary>
     public bool CloseUpHighRes { get; set; } = true;
+    /// <summary>Set once the release that turned high resolution and the colour fill
+    /// back on for everyone has done so; after that the operator's choice stands.</summary>
+    public bool CloseUpDefaultsApplied { get; set; }
     /// <summary>High-resolution close-up detail: 0 = 4 Hz, 1 = 2 Hz, 2 = 1 Hz bins.</summary>
     public int CloseUpDetail { get; set; } = 1;
     /// <summary>Where the dial sits across the panadapter, -90 to +90 (% of half the span).</summary>
@@ -102,7 +105,9 @@ public sealed class Settings
     public int? MiniY { get; set; }
     /// <summary>VOX: mic level that keys, and how long it holds after you stop.</summary>
     public double VoxThresholdDb { get; set; } = -30;
-    public double VoxDelayMs { get; set; } = 500;
+    public double VoxDelayMs { get; set; } = 1000;
+    /// <summary>VOX headphone mode: Mon and TX Mon keep working while VOX is on.</summary>
+    public bool VoxHeadphones { get; set; }
     /// <summary>Correction to the PWR display from an external meter, in dB.</summary>
     public double PowerMeterTrimDb { get; set; }
     /// <summary>ID timer: a reminder on the even ten minutes while connected.</summary>

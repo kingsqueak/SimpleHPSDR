@@ -31,7 +31,7 @@
       <!-- The banner covers the meters so the window keeps its scale -->
       <Panel>
       <Border Classes="panel">
-        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
           <TextBlock Text="SIGNAL" Classes="label" />
           <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
             <TextBlock Text="{Binding SUnits}" Width="62" Margin="12,0,0,0" FontFamily="{StaticResource MonoFont}" FontSize="13"
@@ -43,16 +43,26 @@
           </StackPanel>
           <c:SMeterBar Grid.Row="1" Grid.ColumnSpan="2" Value="{Binding SignalDbm}" Peak="{Binding PeakDbm}"
                        Height="8" Margin="0,6,0,0" />
-          <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,8,0,0">
-            <TextBlock Text="PWR" Classes="label" FontSize="11" VerticalAlignment="Center" />
+          <!-- Transmit meters, laid out like the signal meter: readings above, bars below.
+               ALC (DEV on FM) on the left, PWR and SWR on the right; the two bars are the same length. -->
+          <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="{Binding TxLevelTip}">
+              <TextBlock Text="{Binding TxLevelLabel}" Classes="label" FontSize="11" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding AlcText}" Width="40" VerticalAlignment="Center" FontSize="12" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="PWR" Classes="label" FontSize="11" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" VerticalAlignment="Center" FontSize="12" />
+              <TextBlock Text="SWR" Classes="label" FontSize="11" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding SwrText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+            </StackPanel>
+          </Grid>
+          <Grid Grid.Row="3" Grid.ColumnSpan="2" ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,6,0,0">
+            <c:TxLevelBar Value="{Binding TxLevel}" Peak="{Binding TxLevelPeak}" WarnAt="{Binding TxLevelWarnAt}"
+                          OverAt="{Binding TxLevelOverAt}" Height="8" ToolTip.Tip="{Binding TxLevelTip}" />
             <ProgressBar Grid.Column="1" Minimum="0" Maximum="{Binding PowerScaleWatts}" Value="{Binding FwdWatts}"
-                         MinWidth="0" Height="8" VerticalAlignment="Center" Foreground="#E5484D" Background="{DynamicResource ControlBg}" />
-            <TextBlock Grid.Column="2" Text="{Binding FwdWatts, StringFormat={}{0:0} W}" Width="40" TextAlignment="Right"
-                       VerticalAlignment="Center" FontSize="12" />
-            <TextBlock Grid.Column="3" Text="SWR" Classes="label" FontSize="11" Margin="4,0,0,0" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="4" Text="{Binding SwrText}" Width="34" VerticalAlignment="Center" FontSize="12" />
-            <TextBlock Grid.Column="5" Text="{Binding TxLevelLabel}" Classes="label" FontSize="11" VerticalAlignment="Center" ToolTip.Tip="{Binding TxLevelTip}" />
-            <TextBlock Grid.Column="6" Text="{Binding AlcText}" Width="34" VerticalAlignment="Center" FontSize="12" />
+                         MinWidth="0" Height="8" Foreground="#E5484D" Background="{DynamicResource ControlBg}"
+                         ToolTip.Tip="Forward power, full scale at the radio's rated power." />
           </Grid>
         </Grid>
       </Border>

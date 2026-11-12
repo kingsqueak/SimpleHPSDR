@@ -90,6 +90,7 @@ public sealed partial class MainViewModel
         // Key state from any source: our buttons, the radio's PTT, TCI, timeout.
         client.MoxState += f => Dispatcher.UIThread.Post(() =>
         {
+            TrackEngineKeyForVox(f.MoxOn || f.TunOn);
             _applyingTx = true;
             MoxOn = f.MoxOn;
             TunOn = f.TunOn;
@@ -129,6 +130,7 @@ public sealed partial class MainViewModel
 
     private async Task LoadTransmitAsync(StateDto s)
     {
+        SetRxResumeDelay(s.TxPostTxRxMuteDelayMs);
         // The app stopped during a CW hold: the engine still has the mic muted.
         if (_settings.CwHeldMicDb is int heldMic)
         {
@@ -209,7 +211,7 @@ public sealed partial class MainViewModel
 
     partial void OnMoxOnChanged(bool value)
     {
-        if (!value) _voxKeyed = false;   // whoever dropped it, VOX starts afresh
+        if (!value) VoxSawUnkey(fromEngine: _applyingTx);
         if (!value && _keyboardHold)   // from the hang, the button or the engine
         {
             _ = EndHoldAsync();
@@ -326,7 +328,11 @@ public sealed partial class MainViewModel
     {
         FwdWatts = Math.Max(0, f.FwdWatts) * Math.Pow(10, _settings.PowerMeterTrimDb / 10);
         SwrText = f.Swr is > 0.9f and < 100 ? $"{f.Swr:0.0}:1" : "—";
-        if (!FmDeviationShown) AlcText = $"{f.AlcGr:0} dB";
+        if (!FmDeviationShown)
+        {
+            AlcText = $"{f.AlcGr:0} dB";
+            ShowTxLevel(Math.Clamp(f.AlcGr / AlcScaleDb, 0, 1));
+        }
         CheckSwr(f.Swr, Environment.TickCount64);
     }
 
@@ -335,6 +341,7 @@ public sealed partial class MainViewModel
         FwdWatts = 0;
         SwrText = "—";
         AlcText = "—";
+        ClearTxLevel();
     }
 
     /// <summary>Unkey before letting go of the radio. Always sends both,

@@ -31,13 +31,94 @@ public sealed partial class MainViewModel
 
     public double VoxDelayMs
     {
-        get => _settings.VoxDelayMs;
+        get => Math.Max(_settings.VoxDelayMs, VoxDelayMinimum);
         set
         {
+            value = Math.Max(Math.Round(value / 10) * 10, VoxDelayMinimum);
             if (value == _settings.VoxDelayMs) return;
             _settings.VoxDelayMs = value;
             _settings.Save();
             OnPropertyChanged();
+        }
+    }
+
+    // The engine's RX resume delay: after any unkey it keeps the receiver muted
+    // this long while it switches back. VOX keying again inside that window had
+    // the two tripping over each other, so the hang can't be shorter than it
+    // (plus a margin), and VOX won't key again until it has passed.
+    private const int VoxResumeMarginMs = 20;
+    private int _rxResumeDelayMs;
+
+    // VOX may key again only once the engine has confirmed the last unkey (its
+    // release runs the transmit tail first, about half a second) and the RX
+    // resume delay plus the margin has passed since then. Keying while that
+    // unkey was still in flight let its late "off" report arrive after VOX had
+    // keyed again: VOX then forgot it held the key and never let go.
+    private const long UnkeyConfirmTimeoutMs = 3000;
+    private const long StaleOffReportMs = 2000;
+    private bool _unkeyPending;
+    private long _unkeyRequestedMs, _engineUnkeyedMs = long.MinValue / 2, _voxKeyedMs;
+
+    /// <summary>Every engine key report.</summary>
+    private void TrackEngineKeyForVox(bool keyed)
+    {
+        if (keyed) return;
+        _unkeyPending = false;
+        _engineUnkeyedMs = Environment.TickCount64;
+    }
+
+    /// <summary>MOX went off: our own request, or the engine's report.</summary>
+    private void VoxSawUnkey(bool fromEngine)
+    {
+        long now = Environment.TickCount64;
+        if (!fromEngine)
+        {
+            _unkeyPending = true;
+            _unkeyRequestedMs = now;
+        }
+        // A report of an earlier unkey can land just after VOX keyed again: it
+        // isn't about this key, so VOX keeps it and still drops it on silence.
+        if (fromEngine && _voxKeyed && now - _voxKeyedMs < StaleOffReportMs) return;
+        _voxKeyed = false;   // whoever dropped it, VOX starts afresh
+    }
+
+    private bool VoxMayKey(long now) =>
+        (!_unkeyPending || now - _unkeyRequestedMs > UnkeyConfirmTimeoutMs)
+        && now - _engineUnkeyedMs > _rxResumeDelayMs + VoxResumeMarginMs;
+
+    /// <summary>The shortest VOX delay allowed: RX resume delay + 20 ms, at least 100 ms.</summary>
+    public double VoxDelayMinimum => Math.Max(100, _rxResumeDelayMs + VoxResumeMarginMs);
+    public double VoxDelayMaximum => Math.Max(2000, VoxDelayMinimum + 500);
+    public string VoxDelayTip =>
+        "How long transmit stays on after you stop speaking. 1000 ms is recommended: shorter, "
+        + "pauses between phrases drop transmit and words are lost while it switches back.";
+
+    private void SetRxResumeDelay(int ms)
+    {
+        if (ms == _rxResumeDelayMs) return;
+        _rxResumeDelayMs = Math.Max(0, ms);
+        OnPropertyChanged(nameof(VoxDelayMinimum));
+        OnPropertyChanged(nameof(VoxDelayMaximum));
+        if (_settings.VoxDelayMs < VoxDelayMinimum)
+        {
+            _settings.VoxDelayMs = VoxDelayMinimum;
+            _settings.Save();
+        }
+        OnPropertyChanged(nameof(VoxDelayMs));
+    }
+
+    /// <summary>Headphone mode: Mon and TX Mon work while VOX is on.</summary>
+    public bool VoxHeadphones
+    {
+        get => _settings.VoxHeadphones;
+        set
+        {
+            if (value == _settings.VoxHeadphones) return;
+            _settings.VoxHeadphones = value;
+            _settings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(MonitorOn));
+            SendMonitor();
         }
     }
 
@@ -54,8 +135,8 @@ public sealed partial class MainViewModel
         // VOX pauses the monitor (see EngineMonitor) and lifting VOX restores it.
         OnPropertyChanged(nameof(MonitorOn));
         SendMonitor();
-        if (value && (MonitorPreview || MonitorOnTransmit))
-            Status = "Mon is paused while VOX is on: the mic would hear it and hold VOX keyed.";
+        if (value && !VoxHeadphones && (MonitorPreview || MonitorOnTransmit))
+            Status = "Mon is paused while VOX is on: the mic would hear it and hold VOX keyed. With headphones, turn on headphone mode in the VOX settings.";
         if (value)
         {
             _voxTimer ??= new DispatcherTimer(VoxTick, DispatcherPriority.Normal, (_, _) => CheckVox());
@@ -78,9 +159,10 @@ public sealed partial class MainViewModel
         if (fresh && _latestMicDbfs >= VoxThresholdDb)
         {
             _voxLastHeardMs = now;
-            if (!_voxKeyed && !MoxOn && !TunOn && !TwoToneOn)
+            if (!_voxKeyed && !MoxOn && !TunOn && !TwoToneOn && VoxMayKey(now))
             {
                 _voxKeyed = true;
+                _voxKeyedMs = now;
                 MoxOn = true;
             }
         }

@@ -489,6 +489,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             RadioName = _radio is { } r && r.Label.EndsWith(" " + r.Ip) ? r.Label[..^(r.Ip.Length + 1)] : null,
         };
         settings.PaMaxPowerSaved += SetPowerScale;
+        settings.RxResumeSaved += ms => Dispatcher.UIThread.Post(() => SetRxResumeDelay(ms));
         settings.AudioSaved += () => _ = LoadMicSourcesAsync();
         settings.TransvertersSaved += ShowTransverterBands;
         settings.BandStripChanged += () => _ = LoadBandStripAsync();
@@ -564,6 +565,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _settings.Save();
         }
         _autoAgcOffsetDb = Math.Clamp(_settings.AutoAgcOffsetDb, 0, 40);
+        // One time only: switch the close-up to high resolution with the colour fill
+        // for everyone, including anyone who had turned either off. Changes the
+        // operator makes after that are kept.
+        if (!_settings.CloseUpDefaultsApplied)
+        {
+            _settings.CloseUpHighRes = true;
+            _settings.CloseUpColoured = true;
+            _settings.CloseUpDefaultsApplied = true;
+            _settings.Save();
+        }
         _closeUpColoured = _settings.CloseUpColoured;
         _closeUpHighRes = _settings.CloseUpHighRes;
         _closeUpDetail = Math.Clamp(_settings.CloseUpDetail, 0, 2);

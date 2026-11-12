@@ -155,7 +155,17 @@ The lower part shows the same thing over time, with new rows arriving at the top
 - A red band is a manual notch.
 
 ## Close-up
-The small box at the top right shows 6 kHz from the dial as audio frequency, with the filter shaded. It's the best place to see how a voice fits in the filter.
+The small box at the top right shows 6 kHz from the dial as audio frequency (3 kHz in CW), with the receive filter shaded. It's the best place to see how a voice fits in the filter.
+- Drag the filter's edges in it to set the low and high cuts. The box along its top shows them in Hz.
+- The area under the trace is coloured like the waterfall, so the strongest part of the audio stands out.
+
+Right-click it (long press on a touch screen) for its options. They're remembered.
+- Fill: Waterfall colours (the default) or Plain, a single shade under the trace.
+- High resolution (on by default): the engine works out a fine spectrum just for the close-up, instead of cutting it from the panadapter. You see the separate tones in a voice, a CW signal as a narrow spike, and carriers and hums sharply. Off, it uses the panadapter's coarser picture, the same as before.
+- Detail (with High resolution): 4, 2 (the default) or 1 Hz. Finer detail looks back over a longer stretch, about a second at 1 Hz, so it reacts more slowly. 4 Hz follows speech best; 1 Hz is for spotting a carrier or hum exactly.
+- Averaging: 0.05 to 3 seconds. Short (the default) follows every syllable; a second or more shows where the signal's energy usually sits, which helps when setting the filter edges. Reset puts it back to the default.
+
+If the engine can't give the high-resolution picture (an older engine, or it stops coming), the close-up quietly falls back to the panadapter's and tries again a minute later.
 
 ## Adjusting the picture
 - Auto keeps the display range on the noise floor. It's on by default and needs no attention.
@@ -235,7 +245,7 @@ A filter sets how wide a slice of the band you hear. Narrow it to remove a neigh
 Click a filter button. Each mode has its own set, and the highlighted button is the one in use.
 
 ## Setting the edges
-Drag the handles in the close-up at the top right. In USB, LSB and CW there are two: the low and high cuts. In AM, SAM and FM there's one, and both sides move together. The box along the top of the close-up shows the low and high cuts in Hz as you drag. The signal under the trace is coloured like the waterfall, so the strongest part of the audio stands out. Right-click the close-up (long press on a touch screen) to choose waterfall colours or the plain fill, High resolution (a fine spectrum the engine works out just for the close-up, down to 1 Hz; off cuts it from the panadapter instead) and its Detail, and to set its averaging: short follows every syllable, a second or more shows where the signal's energy usually sits.
+Drag the handles in the close-up at the top right. In USB, LSB and CW there are two: the low and high cuts. In AM, SAM and FM there's one, and both sides move together. The box along the top of the close-up shows the low and high cuts in Hz as you drag. Right-click the close-up (long press on a touch screen) for its colours, high resolution, detail and averaging; "Close-up" under Reading the display describes them. A long averaging time shows where a voice's energy usually sits, which makes the edges easy to place.
 
 As a guide: 2.4 to 2.8 kHz for SSB voice, 200 to 500 Hz for CW, 6 to 10 kHz for AM.
 
@@ -307,7 +317,7 @@ Before you transmit, make sure an antenna or dummy load is connected to the ante
 ## Keying
 - MOX transmits until you click it again.
 - TUNE sends a steady carrier at the tune level, for antenna tuners.
-- VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. It works in voice modes, turns off when you disconnect, and is off each time the app starts. Use headphones: there's no anti-VOX, so sound from speakers can key the radio. Mon pauses while VOX is on (see "VOX and Mon" below).
+- VOX transmits when you speak. Right-click it to set the threshold against your mic level, and the delay after you stop. It works in voice modes, turns off when you disconnect, and is off each time the app starts. Use headphones: there's no anti-VOX, so sound from speakers can key the radio. Mon pauses while VOX is on unless you use headphone mode (see "VOX and Mon" below).
 - Your microphone's PTT or a foot switch works too, once it's set in Config > Station.
 
 ## When transmit stops by itself
@@ -332,7 +342,7 @@ Set MIC by speaking normally and watching the meters. Aim for steady ALC movemen
 ## Meters while transmitting
 - PWR is output power, from the radio's own meter. That meter can read low, so check it against an external one. Config > PA can correct it.
 - SWR is how well the antenna matches. Stop and check if it's high.
-- ALC shows the transmit audio being held back to stop overdriving.
+- ALC shows the transmit audio being held back to stop overdriving. Its bar runs to 20 dB: green is fine, orange from 10 dB, red from 15 dB means turn the mic gain down. On FM it shows deviation (DEV) instead, red when over full deviation.
 
 ## Hearing yourself
 Mon steps through:
@@ -346,6 +356,13 @@ Use headphones. Right-click for the level.
 While VOX is on, Mon is paused: its button goes dark but keeps your setting, and the status bar says so. Turning VOX off brings Mon back as you had it.
 
 This is because VOX listens to your mic, and Mon plays your voice. Through speakers, even quiet ones, the mic hears Mon. VOX takes that for you still talking: it keys the radio on its own, and with TX Mon the transmit audio keeps VOX open, so the radio stays keyed sending that feedback until you unkey it. Pausing Mon while VOX is on means VOX only ever hears you. To hear yourself, turn VOX off and use MOX or your PTT.
+
+Headphones must be used to monitor during VOX. With headphones on, right-click VOX and tick Headphone mode: Mon and TX Mon then keep working while VOX is on. Leave it off if you ever use speakers.
+
+## VOX delay and RX resume
+After any unkey the radio takes the RX resume delay (Config > Amp) to switch back to receive. VOX keying again inside that time made MOX and VOX trip over each other, so the VOX delay can't be set shorter than the RX resume delay plus 20 ms, and after an unkey VOX waits that long before it keys again. Raising the RX resume delay raises the shortest VOX delay with it.
+
+The delay starts at 1 second, so the pauses between phrases don't drop transmit. Each drop costs about three quarters of a second before VOX can key again, and words spoken then are lost, so if VOX drops in the middle of your sentences, lengthen it.
 
 ## Protection
 Config > Amp has a transmit timeout that drops transmit if you stay keyed too long, and a maximum drive that sets the top of the DRIVE and TUNE sliders.

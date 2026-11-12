@@ -47,7 +47,7 @@
               <StackPanel Spacing="4" Margin="0,4,8,8">
                 <TextBlock Text="FILTER (drag an edge)" Classes="head" />
                 <c:FilterScope Name="FilterScope" Height="80" GrabDistance="18"
-                               ToolTip.Tip="6 kHz around the dial with the receive filter shaded, coloured by strength like the waterfall. Drag an edge to set the low or high cut. Long press for averaging.">
+                               ToolTip.Tip="6 kHz around the dial with the receive filter shaded, coloured by strength like the waterfall. Drag an edge to set the low or high cut. Long press for colours, high resolution, detail and averaging.">
             <c:FilterScope.ContextFlyout>
               <Flyout Placement="BottomEdgeAlignedRight">
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CloseUpPanel}" />

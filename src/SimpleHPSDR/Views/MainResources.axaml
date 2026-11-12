@@ -277,7 +277,7 @@
     </Grid>
   </DataTemplate>
   <DataTemplate x:Key="VoxPanel" x:DataType="vm:MainViewModel">
-    <Grid Width="380" Margin="4" ColumnDefinitions="80,*,70" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
+    <Grid Width="380" Margin="4" ColumnDefinitions="80,*,70" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
       <TextBlock Text="Threshold" Classes="label" FontSize="12" VerticalAlignment="Center" />
       <Slider Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding VoxThresholdDb}" VerticalAlignment="Center"
               ToolTip.Tip="Mic level that keys. Set it above your room noise and below your voice." />
@@ -286,11 +286,17 @@
       <ProgressBar Grid.Row="1" Grid.Column="1" Minimum="-60" Maximum="0" Value="{Binding MicLevelDbfs}" MinWidth="0"
                    VerticalAlignment="Center" Foreground="#3DD68C" Background="{DynamicResource ControlBg}" />
       <TextBlock Grid.Row="2" Text="Delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
-      <Slider Grid.Row="2" Grid.Column="1" Minimum="100" Maximum="2000" TickFrequency="50" IsSnapToTickEnabled="True"
-              Value="{Binding VoxDelayMs}" VerticalAlignment="Center" ToolTip.Tip="How long transmit stays on after you stop speaking" />
+      <Slider Grid.Row="2" Grid.Column="1" Minimum="{Binding VoxDelayMinimum}" Maximum="{Binding VoxDelayMaximum}"
+              SmallChange="10" LargeChange="50"
+              Value="{Binding VoxDelayMs}" VerticalAlignment="Center" ToolTip.Tip="{Binding VoxDelayTip}" />
       <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding VoxDelayMs, StringFormat={}{0:0} ms}" Margin="8,0,0,0" VerticalAlignment="Center" />
       <TextBlock Grid.Row="3" Grid.ColumnSpan="3" Classes="label" FontSize="12" TextWrapping="Wrap"
-                 Text="Use headphones: there's no anti-VOX, so speakers can key the radio. Voice modes only, and off each time the app starts." />
+                 Text="{Binding VoxDelayTip}" />
+      <CheckBox Grid.Row="4" Grid.ColumnSpan="3" IsChecked="{Binding VoxHeadphones}" FontSize="12"
+                Content="Headphone mode: Mon and TX Mon work with VOX"
+                ToolTip.Tip="Off: VOX pauses Mon and TX Mon. On: they stay on, for operating with headphones." />
+      <TextBlock Grid.Row="5" Grid.ColumnSpan="3" Classes="label" FontSize="12" TextWrapping="Wrap"
+                 Text="Headphones must be used to monitor during VOX: through speakers the mic hears the monitor and holds the radio keyed. There's no anti-VOX, so use headphones with VOX anyway. Voice modes only, and VOX is off each time the app starts." />
     </Grid>
   </DataTemplate>
   <DataTemplate x:Key="PsPanel" x:DataType="vm:MainViewModel">

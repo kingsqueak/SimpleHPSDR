@@ -36,14 +36,18 @@ public sealed partial class MainViewModel
     public string MonitorPctText => $"{MonitorPct:0}%";
 
     /// <summary>Lit: the monitor is set and not paused by VOX.</summary>
-    public bool MonitorOn => (MonitorPreview || MonitorOnTransmit) && !VoxOn;
+    public bool MonitorOn => (MonitorPreview || MonitorOnTransmit) && !MonitorPausedByVox;
+
+    /// <summary>VOX pauses the monitor unless headphone mode is on.</summary>
+    private bool MonitorPausedByVox => VoxOn && !VoxHeadphones;
 
     // What the engine gets. VOX pauses the monitor: through speakers the mic
     // hears it, and VOX keyed itself on the monitor and then held the radio
     // keyed on that feedback (TX Mon kept it transmitting until unkeyed by hand).
     // The buttons keep the operator's choice; turning VOX off brings it back.
+    // Headphone mode (in the VOX panel) lets it run: the mic can't hear headphones.
     private (bool Preview, bool OnTransmit) EngineMonitor =>
-        VoxOn ? (false, false) : (MonitorPreview, MonitorOnTransmit);
+        MonitorPausedByVox ? (false, false) : (MonitorPreview, MonitorOnTransmit);
     public string MonitorLabel => (MonitorPreview, MonitorOnTransmit) switch
     {
         (true, true) => "Mon+TX",
