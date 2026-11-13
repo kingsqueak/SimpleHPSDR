@@ -142,7 +142,8 @@ public static class TxProfileStore
                     p with { ReleaseDelayMs = TimingDefaults.ReleaseDelayMs }, Json));
                 moved++;
             }
-            catch (IOException) { }
+            // A read-only or locked profile keeps its value; the rest still move.
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
         return moved;
     }

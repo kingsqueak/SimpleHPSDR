@@ -82,7 +82,7 @@ public sealed partial class MainViewModel
     {
         FollowTwoToneTones(s);
         _psAttnDb = s.PsTxFeedbackAttenuationDb;
-        _psExternal = s.PsFeedbackSource == PsFeedbackSource.External;
+        SetPsExternal(s.PsFeedbackSource == PsFeedbackSource.External);
         KeepPsFeedbackSource();
         _applyingTx = true;
         PsOn = s.PsEnabled;
@@ -104,10 +104,19 @@ public sealed partial class MainViewModel
         }
         else if (wanted != _psExternal)
         {
-            _psExternal = wanted;
+            SetPsExternal(wanted);
             _ = Try(() => _client!.SetPsFeedbackSourceAsync(wanted ? PsFeedbackSource.External : PsFeedbackSource.Internal));
             Status = $"PureSignal feedback set to {(wanted ? "external" : "internal")}, as chosen in Config.";
         }
+    }
+
+    /// <summary>The saved corrections are kept per feedback source, so a change
+    /// of source means starting from the other source's file for this band.</summary>
+    private void SetPsExternal(bool external)
+    {
+        if (external == _psExternal) return;
+        _psExternal = external;
+        if (IsConnected) LoadPsCorrectionForBand(force: true);
     }
 
     /// <summary>From the 1 s state poll: two-tone and the stall flag have no frame.</summary>
@@ -121,7 +130,7 @@ public sealed partial class MainViewModel
         _psStalled = s.PsCalibrationStalled;
         _psHwPeak = s.PsHwPeak;
         _psAttnDb = s.PsTxFeedbackAttenuationDb;
-        _psExternal = s.PsFeedbackSource == PsFeedbackSource.External;
+        SetPsExternal(s.PsFeedbackSource == PsFeedbackSource.External);
         UpdatePsStatus();
         WarnIfFeedbackOutOfRange();
         _ = MaybeAdjustHwPeakAsync(s);
@@ -247,7 +256,9 @@ public sealed partial class MainViewModel
     /// <summary>CW is sent straight to the radio, past the stage where
     /// PureSignal's correction is applied, so in CW the engine parks PureSignal
     /// and keeps the correction it has. 2-TONE and PS CAL still go through it.</summary>
-    private bool PsIdleForCw => ModeIsCw && !TwoToneOn && !PsCalibrating;
+    // It's the TX slice's mode that counts: in split, listening in CW while
+    // transmitting SSB still uses PureSignal.
+    private bool PsIdleForCw => (TxSlice().Mode is RxMode.CWL or RxMode.CWU) && !TwoToneOn && !PsCalibrating;
 
     private void UpdatePsStatus()
     {

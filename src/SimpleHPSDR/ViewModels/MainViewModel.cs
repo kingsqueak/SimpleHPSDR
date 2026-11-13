@@ -682,6 +682,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (v.Receiver == ActiveRx) { if (!_vfoSender.Busy) SetVfoLocal(v.VfoHz); }
             else if (v.Receiver == 0 && _sliceA is { } a) _sliceA = a with { VfoHz = v.VfoHz };
             else if (v.Receiver == 1 && _sliceB is { } b) _sliceB = b with { VfoHz = v.VfoHz };
+            // The TX slice in split: PureSignal follows its band.
+            if (v.Receiver != ActiveRx && v.Receiver == TxRx) LoadPsCorrectionForBand();
         });
         _client.CwStatus += f => Dispatcher.UIThread.Post(() => OnCwStatus(f));
         _client.CwDecoded += f => Dispatcher.UIThread.Post(() => OnCwDecoded(f));

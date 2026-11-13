@@ -119,9 +119,10 @@ def main():
         sys.exit("another engine is running: quit SimpleHPSDR first")
 
     work = tempfile.mkdtemp(prefix="retune-check-")
-    proc, port = ec.start_engine(work, engine)
+    proc = None
     fails = []
     try:
+        proc, port = ec.start_engine(work, engine)
         body = {"endpoint": settings["LastRadioIp"], "sampleRate": settings.get("SampleRate", 192000)}
         if settings.get("LastRadioBoardId") is not None:
             body["boardId"] = settings["LastRadioBoardId"]
@@ -203,7 +204,8 @@ def main():
         print(f"RESULT: {per_step:.1f} ms of disturbed audio per retune")
         post(port, "api/disconnect/p2" if settings.get("LastRadioP2", True) else "api/disconnect", {})
     finally:
-        ec.check_quit(proc, port, os.path.join(work, "engine.log"), fails)
+        if proc is not None:
+            ec.check_quit(proc, port, os.path.join(work, "engine.log"), fails)
         for f in fails:
             print("FAIL " + f)
 

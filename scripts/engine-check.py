@@ -188,19 +188,29 @@ def start_engine(workdir, engine):
     log = open(os.path.join(workdir, "engine.log"), "w")
     proc = subprocess.Popen([engine, "--port", str(port), "--native-audio-output", "false"],
                             cwd=os.path.dirname(engine), env=env, stdout=log, stderr=subprocess.STDOUT)
-    deadline = time.time() + 180
-    while time.time() < deadline:
-        if proc.poll() is not None:
-            raise RuntimeError(f"engine exited with code {proc.returncode}")
-        try:
-            if request(port, "GET", "api/station/version", timeout=2)[0] == 200:
-                wait_for_wisdom(port)
-                return proc, port
-        except OSError:
-            pass
-        time.sleep(0.25)
-    proc.kill()
-    raise RuntimeError("engine did not answer within 180 s")
+    try:
+        deadline = time.time() + 180
+        while time.time() < deadline:
+            if proc.poll() is not None:
+                raise RuntimeError(f"engine exited with code {proc.returncode}")
+            try:
+                if request(port, "GET", "api/station/version", timeout=2)[0] == 200:
+                    wait_for_wisdom(port)
+                    return proc, port
+            except OSError:
+                pass
+            time.sleep(0.25)
+        raise RuntimeError("engine did not answer within 180 s")
+    except BaseException:
+        # Only ever stop the process this script started, through its own Popen object.
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+        raise
 
 
 # ---------------------------------------------------------------- checks
@@ -407,8 +417,9 @@ def main():
 
     work = tempfile.mkdtemp(prefix="engine-check-")
     fails, res = [], {}
-    proc, port = start_engine(work, engine)
+    proc = None
     try:
+        proc, port = start_engine(work, engine)
         _, ver = get_json(port, "api/station/version")
         res["version"] = ver
         paths = app_paths()
@@ -426,7 +437,9 @@ def main():
         if args.radio is not None:
             res["radio"] = check_radio(port, ip, settings, fails)
     finally:
-        if proc.poll() is None:
+        if proc is None:
+            pass
+        elif proc.poll() is None:
             res["quit"] = check_quit(proc, port, os.path.join(work, "engine.log"), fails)
         else:
             fails.append(f"engine died during the check (code {proc.returncode})")

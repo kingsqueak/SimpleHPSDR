@@ -142,6 +142,24 @@ public sealed partial class MainViewModel
     // on a band change. A loaded correction is only the starting point: the
     // engine keeps adapting from it.
 
+    /// <summary>The transmitting slice's dial and mode. PureSignal corrects what
+    /// goes out, so its band and its CW state are the TX slice's, which in split
+    /// isn't the one being listened to.</summary>
+    private (long Hz, RxMode Mode) TxSlice()
+    {
+        // The active slice's own values are fresher than its last state record.
+        if (TxRx == ActiveRx) return (VfoHz, Mode);
+        return (TxRx == 0 ? _sliceA : _sliceB) is { } r ? (r.VfoHz, r.Mode) : (VfoHz, Mode);
+    }
+
+    /// <summary>The TX slice moved, changed mode, or another slice took over
+    /// transmit: start from that band's correction and put the panel right.</summary>
+    private void FollowTxSliceForPs()
+    {
+        LoadPsCorrectionForBand();
+        UpdatePsStatus();
+    }
+
     private string? PsCorrectionPath(long hz)
     {
         if (SimpleHPSDR.Band.Find(hz) is not { } band) return null;
@@ -170,7 +188,7 @@ public sealed partial class MainViewModel
 
     private ushort _psFitCount;
     private bool _psFitCountKnown, _psFitThisOver, _psKeyed;
-    private string? _psLoadedPath;
+    private string? _psLoadedPath, _psLoadingPath;
 
     /// <summary>Every PureSignal meter frame (UI thread).</summary>
     private void TrackPsFits(PsMetersFrame f)
@@ -200,30 +218,46 @@ public sealed partial class MainViewModel
             return;
         }
         if (!_psFitThisOver || !PsOn || !PsRememberByBand || !IsConnected) return;
-        if (PsCorrectionPath(VfoHz) is not { } path) return;
+        if (PsCorrectionPath(TxSlice().Hz) is not { } path) return;
         _psLoadedPath = path;      // what the engine holds now is this band's
         _ = Try(() => _client!.SavePsCorrectionAsync(path));
     }
 
-    /// <summary>On connect, on a band change and when PureSignal is switched
-    /// on: start from the correction saved for this band, if there is one.</summary>
+    /// <summary>On connect, on a band change of the TX slice, when transmit moves
+    /// to the other slice, when the feedback source changes and when PureSignal
+    /// is switched on: start from the correction saved for the TX slice's band,
+    /// if there is one.</summary>
     private void LoadPsCorrectionForBand(bool force = false)
     {
-        if (!IsConnected || !PsOn || !PsRememberByBand || _psKeyed || MoxOn || TunOn || TwoToneOn) return;
-        if (PsCorrectionPath(VfoHz) is not { } path) return;
-        if (!force && path == _psLoadedPath) return;
-        _psLoadedPath = path;
-        if (!File.Exists(path)) return;
+        if (!IsConnected || !PsOn || !PsRememberByBand || _psKeyed || MoxOn || TunOn || TwoToneOn || PsCalibrating) return;
+        if (PsCorrectionPath(TxSlice().Hz) is not { } path) return;
+        if (!force && (path == _psLoadedPath || path == _psLoadingPath)) return;
+        if (!File.Exists(path))
+        {
+            _psLoadedPath = path;  // nothing saved for this band, nothing to retry
+            return;
+        }
+        // Only a load that worked counts: if it fails, the next trigger tries again.
+        // Meanwhile tuning within the band mustn't send it again and again.
+        _psLoadingPath = path;
         _ = Try(async () =>
         {
-            await _client!.RestorePsCorrectionAsync(path);
-            PsUpdatedText = "Started from the correction saved for this band";
+            try
+            {
+                await _client!.RestorePsCorrectionAsync(path);
+                _psLoadedPath = path;
+                PsUpdatedText = "Started from the correction saved for this band";
+            }
+            finally
+            {
+                if (_psLoadingPath == path) _psLoadingPath = null;
+            }
         });
     }
 
     private void ForgetPsCorrectionState()
     {
-        (_psFitCountKnown, _psFitThisOver, _psKeyed, _psLoadedPath) = (false, false, false, null);
+        (_psFitCountKnown, _psFitThisOver, _psKeyed, _psLoadedPath, _psLoadingPath) = (false, false, false, null, null);
         PsUpdatedText = "";
     }
 }

@@ -162,8 +162,14 @@ public sealed partial class MainViewModel
         if (SliceBEnabled && _sliceB!.ZoomLevel != s.ZoomLevel && IsConnected)
             _ = Try(SyncSliceBZoomAsync);
         TxRx = SliceBEnabled ? s.TxReceiverIndex : 0;
+        // A TX slice that isn't the active one is only seen here: follow its
+        // band and mode. The active slice's own changes come through VfoHz and
+        // Mode, and while it's being switched VfoHz can still be the other's.
+        if (TxRx != ActiveRx) FollowTxSliceForPs();
         if (!SliceBEnabled && ActiveRx != 0) _ = MakeActiveAsync(0);
     }
+
+    partial void OnTxRxChanged(int value) => FollowTxSliceForPs();
 
     /// <summary>The engine's view of the active slice.</summary>
     private (long Hz, RxMode Mode, int Low, int High, string? Preset) ActiveOf(StateDto s)
