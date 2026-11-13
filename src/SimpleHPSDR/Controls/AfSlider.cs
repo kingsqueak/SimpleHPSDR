@@ -7,48 +7,40 @@ using Avalonia.Media;
 namespace SimpleHPSDR.Controls;
 
 /// <summary>
-/// The AF slider: the ball is the main (overall) AF. With slice B on, two
-/// flags ride the same track for each slice's own level: A (red) above the
-/// track, B (amber) below. Drag the ball or a flag, or use the wheel over
-/// either; clicking the bare track moves the ball there.
+/// The AF slider: a ball on a track. Drag it, click the track, or use the
+/// wheel (1 dB a click). With slice B on, the main view swaps the single
+/// main-AF slider for two compact ones, A over B, each in its slice colour.
 /// </summary>
 public sealed class AfSlider : Control
 {
     public static readonly StyledProperty<double> ValueProperty =
         AvaloniaProperty.Register<AfSlider, double>(nameof(Value), defaultBindingMode: BindingMode.TwoWay);
-    public static readonly StyledProperty<double> TrimAProperty =
-        AvaloniaProperty.Register<AfSlider, double>(nameof(TrimA), defaultBindingMode: BindingMode.TwoWay);
-    public static readonly StyledProperty<double> TrimBProperty =
-        AvaloniaProperty.Register<AfSlider, double>(nameof(TrimB), defaultBindingMode: BindingMode.TwoWay);
-    public static readonly StyledProperty<bool> ShowTrimsProperty =
-        AvaloniaProperty.Register<AfSlider, bool>(nameof(ShowTrims));
+    public static readonly StyledProperty<IBrush?> BallBrushProperty =
+        AvaloniaProperty.Register<AfSlider, IBrush?>(nameof(BallBrush));
+    public static readonly StyledProperty<bool> CompactProperty =
+        AvaloniaProperty.Register<AfSlider, bool>(nameof(Compact));
 
     public double Value { get => GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
-    public double TrimA { get => GetValue(TrimAProperty); set => SetValue(TrimAProperty, value); }
-    public double TrimB { get => GetValue(TrimBProperty); set => SetValue(TrimBProperty, value); }
-    public bool ShowTrims { get => GetValue(ShowTrimsProperty); set => SetValue(ShowTrimsProperty, value); }
+    /// <summary>Ball and fill colour; the theme accent when not set.</summary>
+    public IBrush? BallBrush { get => GetValue(BallBrushProperty); set => SetValue(BallBrushProperty, value); }
+    /// <summary>A smaller ball and a thinner track, for two sliders stacked in one row.</summary>
+    public bool Compact { get => GetValue(CompactProperty); set => SetValue(CompactProperty, value); }
 
     public double Minimum { get; set; } = -50;
     public double Maximum { get; set; } = 20;
 
     static AfSlider()
     {
-        AffectsRender<AfSlider>(ValueProperty, TrimAProperty, TrimBProperty, ShowTrimsProperty);
-        AffectsMeasure<AfSlider>(ShowTrimsProperty);
+        AffectsRender<AfSlider>(ValueProperty, BallBrushProperty, CompactProperty);
+        AffectsMeasure<AfSlider>(CompactProperty);
     }
 
-    private const double Ball = 9;          // ball radius
-    private const double FlagW = 15, FlagH = 12, Pole = 5;
     private static readonly IBrush TrackBrush = new SolidColorBrush(Color.Parse("#5A606B"));
-    private static readonly IBrush FlagA = new SolidColorBrush(Color.Parse("#F25F5C"));
-    private static readonly IBrush FlagB = new SolidColorBrush(Color.Parse("#F5A524"));
-    private static readonly IBrush FlagText = new SolidColorBrush(Color.Parse("#0B0D11"));
-    private static readonly Typeface FlagFace = new("Inter", FontStyle.Normal, FontWeight.Bold);
 
-    private enum Part { None, Main, A, B }
-    private Part _drag;
-    private readonly Dictionary<Part, double> _wheel = [];
+    private bool _drag;
+    private double _wheel;
 
+    private double Ball => Compact ? 6 : 9;          // ball radius
     private double Left => Ball;
     private double Right => Bounds.Width - Ball;
     private double TrackY => Bounds.Height / 2;
@@ -60,75 +52,27 @@ public sealed class AfSlider : Control
             ? new SolidColorBrush(col) : new SolidColorBrush(Color.Parse("#3B82F6"));
 
     protected override Size MeasureOverride(Size available) =>
-        new(double.IsInfinity(available.Width) ? 170 : available.Width,
-            ShowTrims ? 2 * (FlagH + Pole) + 6 : 2 * Ball + 4);
-
-    // A flag: a pole from the track out to a tag with the letter.
-    private Rect FlagRect(double v, bool above)
-    {
-        double x = X(v);
-        double y = above ? TrackY - Pole - FlagH : TrackY + Pole;
-        return new Rect(x - 1, y, FlagW, FlagH);
-    }
+        new(double.IsInfinity(available.Width) ? 170 : available.Width, 2 * Ball + (Compact ? 2 : 4));
 
     public override void Render(DrawingContext ctx)
     {
         double y = TrackY, xv = X(Value);
-        var accent = AccentBrush;
+        var fill = BallBrush ?? AccentBrush;
+        float half = Compact ? 1.5f : 2f;
         ctx.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));   // whole area takes the pointer
-        ctx.FillRectangle(TrackBrush, new Rect(Left, y - 2, Right - Left, 4), 2);
-        ctx.FillRectangle(accent, new Rect(Left, y - 2, Math.Max(0, xv - Left), 4), 2);
-
-        if (ShowTrims)
-        {
-            DrawFlag(ctx, TrimB, false, FlagB, "B");
-            DrawFlag(ctx, TrimA, true, FlagA, "A");
-        }
-        ctx.DrawEllipse(accent, null, new Point(xv, y), Ball, Ball);
+        ctx.FillRectangle(TrackBrush, new Rect(Left, y - half, Right - Left, 2 * half), half);
+        ctx.FillRectangle(fill, new Rect(Left, y - half, Math.Max(0, xv - Left), 2 * half), half);
+        ctx.DrawEllipse(fill, null, new Point(xv, y), Ball, Ball);
     }
 
-    private void DrawFlag(DrawingContext ctx, double v, bool above, IBrush brush, string tag)
-    {
-        double x = X(v);
-        var r = FlagRect(v, above);
-        double poleEnd = above ? r.Bottom : r.Top;
-        ctx.DrawLine(new Pen(brush, 2), new Point(x, TrackY), new Point(x, poleEnd));
-        ctx.FillRectangle(brush, r, 2);
-        var ft = new FormattedText(tag, System.Globalization.CultureInfo.InvariantCulture,
-            FlowDirection.LeftToRight, FlagFace, 9, FlagText);
-        ctx.DrawText(ft, new Point(r.X + (r.Width - ft.Width) / 2, r.Y + (r.Height - ft.Height) / 2));
-    }
-
-    private Part HitTest(Point p)
-    {
-        if (ShowTrims)
-        {
-            if (FlagRect(TrimA, true).Inflate(3).Contains(p) || (p.Y < TrackY - 3 && Math.Abs(p.X - X(TrimA)) < 5)) return Part.A;
-            if (FlagRect(TrimB, false).Inflate(3).Contains(p) || (p.Y > TrackY + 3 && Math.Abs(p.X - X(TrimB)) < 5)) return Part.B;
-        }
-        return Part.Main;
-    }
-
-    private void Set(Part part, double v)
-    {
-        v = Math.Clamp(v, Minimum, Maximum);
-        switch (part)
-        {
-            case Part.A: TrimA = v; break;
-            case Part.B: TrimB = v; break;
-            case Part.Main: Value = v; break;
-        }
-    }
-
-    private double Get(Part part) => part switch { Part.A => TrimA, Part.B => TrimB, _ => Value };
+    private void Set(double v) => Value = Math.Clamp(v, Minimum, Maximum);
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-        var p = e.GetPosition(this);
-        _drag = HitTest(p);
-        Set(_drag, V(p.X));
+        _drag = true;
+        Set(V(e.GetPosition(this).X));
         e.Pointer.Capture(this);
         e.Handled = true;
     }
@@ -136,29 +80,26 @@ public sealed class AfSlider : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        var p = e.GetPosition(this);
-        if (_drag != Part.None) Set(_drag, V(p.X));
-        else Cursor = new Cursor(HitTest(p) == Part.Main ? StandardCursorType.Arrow : StandardCursorType.Hand);
+        if (_drag) Set(V(e.GetPosition(this).X));
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        _drag = Part.None;
+        _drag = false;
         e.Pointer.Capture(null);
     }
 
-    // One wheel click is 1 dB on whatever is under the pointer.
+    // One wheel click is 1 dB.
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
         double amount = SliderWheel.Amount(e);
         if (amount == 0) return;
         e.Handled = true;
-        var part = HitTest(e.GetPosition(this));
-        double acc = _wheel.GetValueOrDefault(part) + amount / SliderWheel.ClickDelta;
+        double acc = _wheel + amount / SliderWheel.ClickDelta;
         int clicks = (int)Math.Truncate(acc + Math.CopySign(1e-6, acc));
-        _wheel[part] = acc - clicks;
-        if (clicks != 0) Set(part, Math.Round(Get(part)) + clicks);
+        _wheel = acc - clicks;
+        if (clicks != 0) Set(Math.Round(Value) + clicks);
     }
 }

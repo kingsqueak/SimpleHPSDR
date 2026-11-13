@@ -34,7 +34,7 @@ public sealed partial class MainViewModel
     public bool SliceBActive => ActiveRx == 1 && TxRx != 1;
     public bool SliceATx => TxRx == 0;
     public bool SliceBTx => TxRx == 1;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))] [NotifyPropertyChangedFor(nameof(AfTip))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))]
     [NotifyPropertyChangedFor(nameof(ShowPanadapterB))]
     private bool _sliceBEnabled;
 
@@ -71,16 +71,14 @@ public sealed partial class MainViewModel
         }
     }
 
-    // Each slice's own AF, on top of the main (master) AF. Shown under the
-    // main AF while slice B is on.
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfText))] [NotifyPropertyChangedFor(nameof(AfTip))]
+    // Each slice's own AF, on top of the main (master) AF. While slice B is on
+    // these two sliders (A over B) take the main AF slider's place.
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfAText))]
     private double _sliceAfA;
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfText))] [NotifyPropertyChangedFor(nameof(AfTip))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfBText))]
     private double _sliceAfB;
-    public string SliceAfText => $"A{SliceAfA:0} B{SliceAfB:0}";
-    public string AfTip => HasSliceB
-        ? $"Ball: main AF, the overall volume ({AfGainDb:0} dB). Flags: each slice's own level on top of it — A {SliceAfA:0} dB above the track, B {SliceAfB:0} dB below. Drag a flag or use the wheel over it."
-        : "Main AF: the overall volume";
+    public string SliceAfAText => $"{SliceAfA:0} dB";
+    public string SliceAfBText => $"{SliceAfB:0} dB";
     private readonly Latest<double>[] _sliceAfSenders;
     private bool _applyingSliceAf;
     private DateTime _sliceAfMovedAt;

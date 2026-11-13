@@ -594,13 +594,22 @@
                 </Flyout>
               </Button.ContextFlyout>
             </Button>
-            <c:AfSlider Value="{Binding AfGainDb}" TrimA="{Binding SliceAfA}" TrimB="{Binding SliceAfB}"
-                        ShowTrims="{Binding HasSliceB}" Width="150" VerticalAlignment="Center"
-                        ToolTip.Tip="{Binding AfTip}" />
-            <StackPanel VerticalAlignment="Center" Width="44">
-              <TextBlock Text="{Binding AfGainText}" FontSize="12" />
-              <TextBlock Text="{Binding SliceAfText}" FontSize="9" Opacity="0.75" IsVisible="{Binding HasSliceB}" />
-            </StackPanel>
+            <!-- One slice: the main AF. Slice B on: A's volume over B's, in the slice colours. -->
+            <c:AfSlider Value="{Binding AfGainDb}" Width="150" VerticalAlignment="Center"
+                        IsVisible="{Binding !HasSliceB}" ToolTip.Tip="AF: the volume" />
+            <TextBlock Text="{Binding AfGainText}" FontSize="12" Width="44" VerticalAlignment="Center"
+                       IsVisible="{Binding !HasSliceB}" />
+            <Grid ColumnDefinitions="12,150,44" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="2"
+                  VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
+              <TextBlock Text="A" FontSize="11" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
+              <c:AfSlider Grid.Column="1" Value="{Binding SliceAfA}" Minimum="-40" Maximum="20" Compact="True"
+                          BallBrush="#F25F5C" ToolTip.Tip="Slice A volume" />
+              <TextBlock Grid.Column="2" Text="{Binding SliceAfAText}" FontSize="11" VerticalAlignment="Center" />
+              <TextBlock Grid.Row="1" Text="B" FontSize="11" FontWeight="Bold" Foreground="#F5A524" VerticalAlignment="Center" />
+              <c:AfSlider Grid.Row="1" Grid.Column="1" Value="{Binding SliceAfB}" Minimum="-40" Maximum="20" Compact="True"
+                          BallBrush="#F5A524" ToolTip.Tip="Slice B volume" />
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SliceAfBText}" FontSize="11" VerticalAlignment="Center" />
+            </Grid>
             <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
           </StackPanel>
           <Button Classes="seg" Classes.lit="{Binding SquelchOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"

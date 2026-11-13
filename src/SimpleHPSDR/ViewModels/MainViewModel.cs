@@ -1333,7 +1333,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         UpdateDrmVolume();
         OnPropertyChanged(nameof(AfGainText));
-        OnPropertyChanged(nameof(AfTip));
         if (!_applyingState && IsConnected) _afSender.Send(Math.Round(value));
     }
 
