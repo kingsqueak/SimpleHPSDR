@@ -1,15 +1,14 @@
 # SimpleHPSDR
 
-A clean, simple interface for OpenHPSDR radios, built on its own fork of
-[Station Engine](https://github.com/kingsqueak/station-engine) with
-[Avalonia](https://avaloniaui.net/). The everyday controls stay on screen and
-the rest is a click or right-click away.
+A clean, simple interface for OpenHPSDR radios, my intention for this project
+is "it's a radio". The everyday controls stay on screen and
+the rest is a click or right-click away. As lean and clean an interface as
+possible but allowing for all the functions of the supported hardware.
 
 ![SimpleHPSDR on 40 m with PureSignal on](docs/main.png)
 
-Audio runs natively in the engine, so receive audio and the microphone never
-pass through the interface. That keeps latency low, and audio keeps playing
-while the window is hidden or on another Space.
+A lot of work has gone into reducing TX/RX latency in the turnover times, 
+improving Pure Signal lock speed and function as well.
 
 Developed on an ANAN 7000DLE MkII over Protocol 2. It also supports ANAN G2s
 (including on the G2's own Pi), Hermes-Lite 2s and Brick SDRs. macOS and Linux
