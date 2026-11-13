@@ -1146,6 +1146,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ModeIsFm));
         OnPropertyChanged(nameof(ModeIsCw));
         if (!ModeIsCw) ReleaseCwKeys();
+        UpdatePsStatus();
         OnPropertyChanged(nameof(ModeHasNoOptions));
         Mark(Modes, mode);
         OnPropertyChanged(nameof(ModeLabel));

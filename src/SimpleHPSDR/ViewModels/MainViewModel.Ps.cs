@@ -140,6 +140,7 @@ public sealed partial class MainViewModel
     // applies from the next key-down; the badge says so.
     private async Task MaybeAdjustHwPeakAsync(StateDto s)
     {
+        if (PsIdleForCw) return;
         // PS CAL makes its own HW peak changes between bursts.
         if (PsCalibrating || !_settings.AutoHwPeak || !PsOn || _hwPeakAdjustedThisTx || _keyedSince is not { } since) return;
         var keyedFor = DateTime.UtcNow - since;
@@ -178,7 +179,7 @@ public sealed partial class MainViewModel
     // once per transmission, while correcting data is current.
     private void WarnIfFeedbackOutOfRange()
     {
-        if (!PsOn || _keyedSince is not { } since || _psRangeWarned
+        if (!PsOn || PsIdleForCw || _keyedSince is not { } since || _psRangeWarned
             || DateTime.UtcNow - since < TimeSpan.FromSeconds(3)) return;
         double fb = _latestPs.FeedbackLevel;
         string source = _psExternal ? "amplifier sample" : "feedback";
@@ -243,6 +244,11 @@ public sealed partial class MainViewModel
 
     // Feedback level is calcc's info[4], 0..256. Thetis colours it: about
     // 128-181 is right, lower means too little sample, higher too much.
+    /// <summary>CW is sent straight to the radio, past the stage where
+    /// PureSignal's correction is applied, so in CW the engine parks PureSignal
+    /// and keeps the correction it has. 2-TONE and PS CAL still go through it.</summary>
+    private bool PsIdleForCw => ModeIsCw && !TwoToneOn && !PsCalibrating;
+
     private void UpdatePsStatus()
     {
         if (IsTransmitting)
@@ -269,6 +275,14 @@ public sealed partial class MainViewModel
             (PsStatus, PsLevel, PsFeedbackText) = ("PS off", "off", "");
             PsLocked = false;
             PsAdvice = "PureSignal cleans up your transmitted signal. Press PS CAL with a dummy load connected to set it up.";
+            PsPeakText = "";
+            return;
+        }
+        if (PsIdleForCw)
+        {
+            (PsStatus, PsLevel, PsFeedbackText) = ("Not used in CW", "off", "");
+            PsLocked = false;
+            PsAdvice = "PureSignal isn't used in CW: a CW signal doesn't go through it. The correction you have is kept for your next voice transmission. 2-TONE and PS CAL work as usual.";
             PsPeakText = "";
             return;
         }

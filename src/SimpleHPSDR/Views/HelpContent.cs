@@ -412,6 +412,9 @@ After that you rarely need PS CAL again. While you transmit, PureSignal keeps ad
 
 Run PS CAL again, or Reset calibration in Config > PureSignal, after you change amplifier or how the sample is taken: the saved corrections belong to the old setup. Reset also forgets them.
 
+## In CW
+PureSignal isn't used in CW. A CW signal is sent straight to the radio and doesn't pass through the correction, and a single keyed tone has no splatter of the kind PureSignal removes. While you send CW it stands still: it keeps the correction it has, changes nothing, and picks up where it left off on your next voice transmission. The PS panel says "Not used in CW" and the PS button is yellow. 2-TONE and PS CAL work in any mode.
+
 ## The PS button
 - Green: on and correcting your signal.
 - Yellow: on but not correcting yet. Transmit for a few seconds, or run PS CAL.

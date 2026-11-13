@@ -182,6 +182,8 @@ public sealed partial class MainViewModel
         }
         if (f.FitCount == _psFitCount) return;
         _psFitCount = f.FitCount;
+        // A fit that slips in at the start of a CW send isn't worth keeping.
+        if (PsIdleForCw) return;
         if (_psKeyed) _psFitThisOver = true;
         PsUpdatedText = $"Correction updated {DateTime.Now:HH:mm:ss}";
     }
