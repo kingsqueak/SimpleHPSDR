@@ -24,9 +24,10 @@ public sealed record TxAudioProfile(
 {
     public const string DefaultName = "Default";
 
-    /// <summary>PTT release delay to start with: covers the ~210 ms the TX
-    /// processing holds with CFC at FFT 16384, with margin (user-tested).</summary>
-    public const int DefaultReleaseDelayMs = 275;
+    /// <summary>PTT release delay to start with. The engine already holds
+    /// transmit for the speech still in the TX chain, so this is only a short
+    /// extra wait (user-tested on air; 275 before 0.10.7).</summary>
+    public const int DefaultReleaseDelayMs = TimingDefaults.ReleaseDelayMs;
 
     /// <summary>The starting point, from DefaultTxProfile.json: the operator's tested setup.</summary>
     public static TxAudioProfile Default => TxProfileStore.BuiltInDefault;
@@ -124,6 +125,26 @@ public static class TxProfileStore
         for (int n = 2; IsDefault(name) || File.Exists(FileFor(name)); n++) name = $"{baseName} ({n})";
         Save(p with { Name = name });
         return name;
+    }
+
+    /// <summary>Saved profiles still on the old PTT release default get the new
+    /// one (once, with the other timing defaults). Returns how many changed.</summary>
+    public static int MoveOldReleaseDelay()
+    {
+        int moved = 0;
+        if (!Directory.Exists(Dir)) return 0;
+        foreach (var path in Directory.GetFiles(Dir, "*.json"))
+        {
+            if (Load(path) is not { ReleaseDelayMs: TimingDefaults.OldReleaseDelayMs } p) continue;
+            try
+            {
+                File.WriteAllText(path, JsonSerializer.Serialize(
+                    p with { ReleaseDelayMs = TimingDefaults.ReleaseDelayMs }, Json));
+                moved++;
+            }
+            catch (IOException) { }
+        }
+        return moved;
     }
 
     private static TxAudioProfile? Load(string path)

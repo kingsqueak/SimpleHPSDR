@@ -155,6 +155,38 @@ public sealed partial class MainViewModel
             catch (Exception ex) { Status = ex.Message; }   // tried again next connect
         }
 
+        // 0.10.7 shortened the timing defaults. Move values still on the old
+        // defaults once; anything the operator chose stays.
+        if (!_settings.TimingDefaultsMoved)
+        {
+            try
+            {
+                var moved = new List<string>();
+                if (s.TxMoxTailDelayMs == TimingDefaults.OldReleaseDelayMs)
+                {
+                    await _client!.SetTxTailDelayAsync(TimingDefaults.ReleaseDelayMs);
+                    moved.Add($"PTT release {TimingDefaults.ReleaseDelayMs} ms");
+                }
+                if (s.TxPostTxRxMuteDelayMs is TimingDefaults.OldRxResumeDelayMs or TimingDefaults.OlderRxResumeDelayMs)
+                {
+                    await _client!.SetRxResumeDelayAsync(TimingDefaults.RxResumeDelayMs);
+                    moved.Add($"RX resume {TimingDefaults.RxResumeDelayMs} ms");
+                }
+                if (_settings.VoxDelayMs == TimingDefaults.OldVoxDelayMs)
+                {
+                    VoxDelayMs = TimingDefaults.VoxDelayMs;
+                    moved.Add($"VOX delay {TimingDefaults.VoxDelayMs:0} ms");
+                }
+                int profiles = TxProfileStore.MoveOldReleaseDelay();
+                if (profiles > 0) moved.Add($"{profiles} TX profile{(profiles == 1 ? "" : "s")}");
+                _settings.TimingDefaultsMoved = true;
+                _settings.Save();
+                if (moved.Count > 0)
+                    Status = "Shorter transmit timing defaults applied: " + string.Join(", ", moved) + ".";
+            }
+            catch (Exception ex) { Status = ex.Message; }   // tried again next connect
+        }
+
         _applyingTx = true;
         try
         {

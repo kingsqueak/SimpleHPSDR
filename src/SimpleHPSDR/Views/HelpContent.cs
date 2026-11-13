@@ -360,7 +360,7 @@ This is because VOX listens to your mic, and Mon plays your voice. Through speak
 Headphones must be used to monitor during VOX. With headphones on, right-click VOX and tick Headphone mode: Mon and TX Mon then keep working while VOX is on. Leave it off if you ever use speakers.
 
 ## VOX delay
-The VOX delay is how long transmit stays on after you stop speaking. A short delay gets you back to receive sooner, which suits a fast-moving group. A long one keeps transmit on through the pauses between phrases. It starts at 1 second. If VOX drops in the middle of your sentences, lengthen it.
+The VOX delay is how long transmit stays on after you stop speaking. A short delay gets you back to receive sooner, which suits a fast-moving group. A long one keeps transmit on through the pauses between phrases. It starts at 300 ms. If VOX drops in the middle of your sentences, lengthen it. Going much below 300 ms gains little, because your last word is still on its way out of the transmit processing.
 
 When VOX lets go after a pause there is little or nothing left to send, so the radio returns to receive quickly. The RX resume delay (Config > Amp) is separate. It only keeps receive audio muted for a moment after any unkey, so you don't hear the switch back.
 
@@ -589,6 +589,8 @@ If your radio has a speaker or headphone jack, choose Radio speaker jack as the 
 
 ## External amplifier
 Config > Amp sets the delays that protect its relays. Pre-key delay holds back RF until the relays close, and Config > Outputs switches its bands through the radio's outputs.
+
+RX resume delay keeps receive audio quiet for a moment after you unkey, so you don't hear the switch back. It starts at 33 ms. If you hear a click or thump from a relay-switched amplifier on each unkey, raise it a little. It doesn't protect the amplifier, so a longer setting only delays hearing the other station.
 
 ## Options for particular radios
 Config > Hardware shows only the options your radio has. On other pages, a jack, bias, antenna relay or receive input your radio doesn't have stays on the page, greyed out.

@@ -122,5 +122,5 @@
     "reverse": false,
     "autoMode": false
   },
-  "releaseDelayMs": 275
+  "releaseDelayMs": 60
 }

@@ -44,6 +44,10 @@ public sealed class Settings
     /// <summary>Set once the engine's PTT release delay has been given the
     /// app's default, so a deliberate 0 later is left alone.</summary>
     public bool ReleaseDelayDefaulted { get; set; }
+    /// <summary>Set once the shorter timing defaults (0.10.7) have replaced values
+    /// still on the old ones: PTT release 275, RX resume 200 or 100, VOX delay 1000,
+    /// and release 275 in saved TX profiles. Values the operator chose stay.</summary>
+    public bool TimingDefaultsMoved { get; set; }
     /// <summary>MON and MON TX: the engine forgets them on restart.</summary>
     public bool MonitorPreview { get; set; }
     public bool MonitorOnTransmit { get; set; }
@@ -111,7 +115,7 @@ public sealed class Settings
     public int? MiniY { get; set; }
     /// <summary>VOX: mic level that keys, and how long it holds after you stop.</summary>
     public double VoxThresholdDb { get; set; } = -30;
-    public double VoxDelayMs { get; set; } = 1000;
+    public double VoxDelayMs { get; set; } = TimingDefaults.VoxDelayMs;
     /// <summary>VOX headphone mode: Mon and TX Mon keep working while VOX is on.</summary>
     public bool VoxHeadphones { get; set; }
     /// <summary>Correction to the PWR display from an external meter, in dB.</summary>
