@@ -1,9 +1,15 @@
 # SimpleHPSDR
 
 A clean, simple interface for OpenHPSDR radios, my intention for this project
-is "it's a radio". The everyday controls stay on screen and
+is "it's a radio". 
+
+The everyday controls stay on screen and
 the rest is a click or right-click away. As lean and clean an interface as
 possible but allowing for all the functions of the supported hardware.
+
+This radio has a TCI server so any loggers or digital mode software you choose
+should integrate well. I have no intentions to integrate non radio functions into
+this project.
 
 ![SimpleHPSDR on 40 m with PureSignal on](docs/main.png)
 
