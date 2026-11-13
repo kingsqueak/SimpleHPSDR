@@ -180,7 +180,7 @@ public sealed class DeepCwDecoder : IDisposable
     private string RunWindow(float[] audio, long startFrame)
     {
         if (audio.Length < _meta.FftLength) return "";
-        var (spec, frames) = _spectrogram.Compute(audio);
+        var (spec, frames) = _spectrogram.Compute(audio, startFrame * _stitcher.HopLength);
         var input = new DenseTensor<float>(spec, [1, 1, frames, _meta.Bins]);
         using var results = _session.Run([NamedOnnxValue.CreateFromTensor(_meta.InputName, input)]);
         var output = results.First(r => r.Name == _meta.OutputName).AsTensor<float>();
@@ -315,8 +315,16 @@ public sealed class DeepCwDecoder : IDisposable
             _rayleigh = Math.Sqrt(-2.0 * Math.Log(1.0 - _quantile));
         }
 
-        /// <summary>Normalised log-magnitude spectrogram, [frames, bins] row-major.</summary>
-        public (float[] Data, int Frames) Compute(float[] audio)
+        // Magnitudes of frames lying wholly inside the audio, by the absolute
+        // model-rate sample their FFT starts at. Windows overlap by up to 11 s,
+        // so without this each frame was transformed about 12 times. Only the
+        // edge frames, which see the reflect padding, depend on the window and
+        // are always computed. Same input, same arithmetic: identical values.
+        private readonly Dictionary<long, float[]> _frameCache = new();
+
+        /// <summary>Normalised log-magnitude spectrogram, [frames, bins] row-major.
+        /// <paramref name="startSample"/> is the absolute model-rate index of audio[0].</summary>
+        public (float[] Data, int Frames) Compute(float[] audio, long startSample)
         {
             int pad = _fft / 2, n = audio.Length;
             // numpy "reflect" padding: mirror without repeating the edge sample.
@@ -329,8 +337,19 @@ public sealed class DeepCwDecoder : IDisposable
             Array.Copy(audio, 0, x, pad, n);
             int frames = 1 + (x.Length - _fft) / _hop;
             var spec = new float[frames * _bins];
+            long firstKey = startSample - pad;
+            foreach (var key in _frameCache.Keys.Where(k => k < firstKey).ToList())
+                _frameCache.Remove(key);
             for (int f = 0; f < frames; f++)
             {
+                int at = f * _hop - pad;                     // frame start within audio
+                bool interior = at >= 0 && at + _fft <= n;
+                long key = startSample + at;
+                if (interior && _frameCache.TryGetValue(key, out var hit))
+                {
+                    hit.CopyTo(spec, f * _bins);
+                    continue;
+                }
                 var frame = x.AsSpan(f * _hop, _fft);
                 for (int b = 0; b < _bins; b++)
                 {
@@ -344,6 +363,8 @@ public sealed class DeepCwDecoder : IDisposable
                     }
                     spec[f * _bins + b] = MathF.Sqrt(re * re + im * im);
                 }
+                if (interior)
+                    _frameCache[key] = spec.AsSpan(f * _bins, _bins).ToArray();
             }
             var sorted = (float[])spec.Clone();
             Array.Sort(sorted);
