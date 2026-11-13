@@ -258,7 +258,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
 
         ("Receiving", """
 ## Volume
-- AF sets the overall level. Its A and B flags set each slice's own level on top of that.
+- AF sets the overall level. With slice B on, it becomes two sliders, A over B, each setting that slice's own level on top of the overall level, which stays where you left it.
 - Mute silences the receiver.
 - REC and the voice keyer: see Recording and the voice keyer.
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.
