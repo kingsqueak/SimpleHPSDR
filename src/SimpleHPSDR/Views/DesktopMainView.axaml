@@ -347,8 +347,10 @@
             </Flyout>
           </Button.ContextFlyout>
         </Button>
-        <!-- Close-up of the received signal with the filter: drag its edges -->
-        <c:FilterScope Name="FilterScope" Grid.Column="4" Grid.RowSpan="2" Margin="12,0,0,0"
+        <!-- Close-up of the received signal with the filter: drag its edges.
+             The negative margin cancels the panel's padding (10,8) so it runs to
+             the panel's top, right and bottom edges. -->
+        <c:FilterScope Name="FilterScope" Grid.Column="4" Grid.RowSpan="2" Margin="12,-8,-10,-8"
                        ToolTip.Tip="6 kHz around the dial with the receive filter shaded, coloured by strength like the waterfall. Drag an edge to set the low or high cut. Right-click for colours, high resolution, detail and averaging. Scale: audio frequency in Hz.">
             <c:FilterScope.ContextFlyout>
               <Flyout Placement="BottomEdgeAlignedRight">

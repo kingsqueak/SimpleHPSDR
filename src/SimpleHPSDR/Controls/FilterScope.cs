@@ -143,7 +143,8 @@ public sealed class FilterScope : Control
     public override void Render(DrawingContext ctx)
     {
         var b = new Rect(Bounds.Size);
-        ctx.DrawRectangle(Background, null, b, 6, 6);
+        // Same radius as Border.panel, so the corners match where it meets the panel edge.
+        ctx.DrawRectangle(Background, null, b, 8, 8);
         // Too small to draw into (a panel that's closing or still opening).
         if (b.Width < 60 || b.Height <= ScaleH) return;
         var plot = new Rect(0, 0, b.Width, Math.Max(0, b.Height - ScaleH));
