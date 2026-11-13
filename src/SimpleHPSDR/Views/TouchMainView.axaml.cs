@@ -353,6 +353,7 @@ public partial class TouchMainView : UserControl
         Spectrum.Strip = SpectrumB.Strip = vm.BandStrip;
         Spectrum.StripOpacity = SpectrumB.StripOpacity = vm.BandStripOpacity;
         Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
+        Spectrum.HoldView = SpectrumB.HoldView = vm.CtunOn;
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
         if (f.RxId == vm.ActiveRx && Drawer.IsPaneOpen)

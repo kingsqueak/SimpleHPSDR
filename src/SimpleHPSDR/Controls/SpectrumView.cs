@@ -145,23 +145,39 @@ public sealed class SpectrumView : Control
     /// middle part is spread across the width.</summary>
     public double TargetSpanHz { get; set; }
 
+    /// <summary>CTUN on: a click moves only the dial, so the picture must stay put.</summary>
+    public bool HoldView { get; set; }
+
     // The visible part of the bins: first bin (fractional) and how many.
     // Stretched between the engine's whole zoom levels, the window is placed so
     // the dial stays where it is on screen: the engine keeps the dial at the
     // Centre slider's position (or wherever CTUN left it), and zooming around
     // the middle instead slid the picture sideways, then jumped back at each
     // whole level when the engine re-centred.
+    // With CTUN on, the window is placed only when the zoom changes or the dial
+    // leaves it; otherwise each click slid the picture after the dial.
+    private double _heldAt = double.NaN, _heldStretch;
+    private int _heldBins;
     private (double First, double Count) ViewBins(int bins)
     {
         double stretch = TargetSpanHz > 0 && _hzPerPixel > 0 && bins > 0
             ? Math.Clamp(bins * _hzPerPixel / TargetSpanHz, 1.0, 4.0) : 1.0;
         double count = bins / stretch;
         double spare = bins - count;
-        if (spare <= 0) return (0, count);
+        if (spare <= 0) { _heldAt = double.NaN; return (0, count); }
         var dial = Slices.FirstOrDefault(m => m.Active) ?? Slices.FirstOrDefault();
         if (dial is null) return (spare / 2.0, count);
         // Where the dial is across what arrives (0 left .. 1 right); kept there.
-        double at = Math.Clamp(((dial.Hz - _centerHz) / _hzPerPixel + bins / 2.0) / bins, 0, 1);
+        double dialBin = (dial.Hz - _centerHz) / _hzPerPixel + bins / 2.0;
+        double at = Math.Clamp(dialBin / bins, 0, 1);
+        if (HoldView && !double.IsNaN(_heldAt) && bins == _heldBins && Math.Abs(stretch - _heldStretch) < 1e-9)
+        {
+            double first = _heldAt * spare, edge = 0.02 * count;
+            if (dialBin >= first + edge && dialBin <= first + count - edge) at = _heldAt;
+        }
+        _heldAt = at;
+        _heldStretch = stretch;
+        _heldBins = bins;
         return (at * spare, count);
     }
     private double StripH => Strip.Count > 0 ? StripHeight : 0;
