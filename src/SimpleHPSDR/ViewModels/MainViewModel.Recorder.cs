@@ -276,14 +276,26 @@ public sealed partial class MainViewModel
         }
     }
 
+    /// <summary>True while a recording is being removed from the list.</summary>
+    internal bool DeckDeleting { get; private set; }
+
     internal void DeleteRecording(RecordingRow row)
     {
         try
         {
             File.Delete(Path.Combine(RecorderFolder, row.FileName));
-            bool wasSelected = ReferenceEquals(DeckSelected, row);
-            Recordings.Remove(row);
-            if (wasSelected) DeckSelected = Recordings.FirstOrDefault();
+            // Move the selection off the row before it leaves the list, and
+            // tell the list this isn't the user picking one: it closes itself
+            // on a pick, and closing from inside its own delete click left an
+            // empty window behind on Windows.
+            DeckDeleting = true;
+            try
+            {
+                if (ReferenceEquals(DeckSelected, row))
+                    DeckSelected = Recordings.FirstOrDefault(r => !ReferenceEquals(r, row));
+                Recordings.Remove(row);
+            }
+            finally { DeckDeleting = false; }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

@@ -3,7 +3,7 @@ using SimpleHPSDR.Contracts;
 namespace SimpleHPSDR.ViewModels;
 
 /// <summary>Band and mode memory. Each pair, such as 40 m DIGU, keeps its own
-/// frequency, filter, AGC, drive, tune, mic gain, NR and NB. The settings are
+/// frequency, filter, AGC, drive, tune, NR and NB. Mic gain is not part of it. The settings are
 /// saved on leaving a pair and come back on returning; a pair not used yet
 /// keeps what's set now. Choosing a band goes to the mode last used there, at
 /// its frequency. Choosing a mode leaves the dial alone, as on a radio.
@@ -74,7 +74,8 @@ public sealed partial class MainViewModel
         await ApplyFilterAsync(m.FilterLowHz, m.FilterHighHz);
         DrivePct = m.DrivePct;
         TunePct = m.TunePct;
-        MicGainDb = m.MicGainDb;
+        // Mic gain is one setting for the station, not part of a band and mode
+        // (users, 0.10.6). The stored value stays in the record for old files.
         if ((NrMode)m.NrMode != NoiseReductions.FirstOrDefault(c => c.IsSelected)?.Value as NrMode?)
             await SelectNrAsync((NrMode)m.NrMode);
         if ((NbMode)m.NbMode != NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Value as NbMode?)

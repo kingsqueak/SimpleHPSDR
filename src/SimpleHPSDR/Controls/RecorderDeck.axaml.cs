@@ -23,9 +23,11 @@ public partial class RecorderDeck : UserControl
         e.Handled = true;
     }
 
-    // Choosing one closes the list.
+    // Choosing one closes the list. Deleting one doesn't: the list stays open
+    // for the next, and never closes from inside its own button's click.
     private void OnPicked(object? sender, SelectionChangedEventArgs e)
     {
+        if (DataContext is MainViewModel { DeckDeleting: true }) return;
         if (e.AddedItems.Count > 0) ListButton.Flyout?.Hide();
     }
 }
