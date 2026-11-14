@@ -39,6 +39,63 @@ public sealed partial class SettingsViewModel
         }
     }
 
+    // ---- what the Amp button switches: app settings, saved as they change ----
+
+    public static string[] AmpSwitchChoices { get; } =
+        ["Nothing: the drive limits only", "A radio output wired to the amplifier", "An RF2K-S amplifier, over the network"];
+    private static readonly string[] AmpSwitchKeys = ["None", "Output", "Rf2k"];
+
+    public int AmpSwitchIndex
+    {
+        get => Math.Max(0, Array.IndexOf(AmpSwitchKeys, AppSettings?.AmpSwitch ?? "None"));
+        set
+        {
+            if (AppSettings is null || value < 0 || value >= AmpSwitchKeys.Length) return;
+            AppSettings.AmpSwitch = AmpSwitchKeys[value];
+            AppSettings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(AmpUsesOutput));
+            OnPropertyChanged(nameof(AmpUsesRf2k));
+        }
+    }
+
+    public bool AmpUsesOutput => AppSettings?.AmpSwitch == "Output";
+    public bool AmpUsesRf2k => AppSettings?.AmpSwitch == "Rf2k";
+
+    public double AmpOutputPin
+    {
+        get => AppSettings?.AmpOutputPin ?? 1;
+        set
+        {
+            if (AppSettings is null) return;
+            AppSettings.AmpOutputPin = (int)Math.Clamp(Math.Round(value), 1, 7);
+            AppSettings.Save();
+            OnPropertyChanged();
+        }
+    }
+
+    public string AmpAddress
+    {
+        get => AppSettings?.AmpAddress ?? "";
+        set
+        {
+            if (AppSettings is null) return;
+            AppSettings.AmpAddress = (value ?? "").Trim();
+            AppSettings.Save();
+            OnPropertyChanged();
+        }
+    }
+
+    [ObservableProperty] private string _ampTestResult = "";
+
+    /// <summary>Reads from the amplifier only; it switches nothing.</summary>
+    [RelayCommand]
+    private async Task TestAmpAsync()
+    {
+        AmpTestResult = "Looking…";
+        AmpTestResult = await Rf2kAmp.DescribeAsync(AmpAddress) ?? "No RF2K-S answered at that address.";
+    }
+
     [ObservableProperty] private double _preKeyDelayMs;
     [ObservableProperty] private double _rxResumeDelayMs;
     [ObservableProperty] private double _txTimeoutSec;

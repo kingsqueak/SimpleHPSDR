@@ -81,25 +81,6 @@ public sealed partial class MainViewModel
         (_tuneMaxSender ??= new Latest<int>(p => Try(() => _client!.SetTuneMaxAsync(p)))).Send((int)Math.Round(value));
     }
 
-    [CommunityToolkit.Mvvm.Input.RelayCommand]
-    private async Task ToggleAmpAsync()
-    {
-        if (!IsConnected || _client is null) return;
-        if (IsTransmitting)
-        {
-            Status = "Stop transmitting before switching Amp.";
-            return;
-        }
-        try
-        {
-            await _client.SetAmpAsync(!AmpOn);
-            // The engine has lowered the levels to the new maximums and
-            // recalled the ones last used in this state: show them.
-            ApplyTxLimits(await _client.GetStateAsync(), levelsToo: true);
-        }
-        catch (Exception ex) { Status = ex.Message; }
-    }
-
     /// <summary>Takes the amplifier switch, the maximums and the slider tops
     /// from the engine, and the Drive and Tune levels when asked (the engine
     /// changes them itself on a band or mode change). Nothing is sent back.</summary>

@@ -759,6 +759,8 @@ public sealed class StationClient : IDisposable
     public Task SetTuneMaxAsync(int percent) => PostAsync("api/tx/tune-max", new TuneMaxSetRequest(percent));
     /// <summary>Whether an external amplifier is in line. The engine refuses while transmitting.</summary>
     public Task SetAmpAsync(bool on) => PostAsync("api/tx/amp", new AmpSetRequest(on));
+    /// <summary>The radio output (1 to 7) wired to the amplifier's key input, or 0 for none.</summary>
+    public Task SetAmpKeyPinAsync(int pin) => PostAsync("api/tx/amp-key-pin", new AmpKeyPinSetRequest(pin));
     public async Task<RadioSupplyVoltsDto> GetSupplyVoltsAsync() =>
         (await _http.GetFromJsonAsync<RadioSupplyVoltsDto>("api/radio/supply-volts", Json))!;
 

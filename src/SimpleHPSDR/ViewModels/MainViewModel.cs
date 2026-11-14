@@ -1460,6 +1460,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             // The levels too: the engine recalls its own on a band or mode
             // change. Not just after a change here, which it may not have yet.
             ApplyTxLimits(s, levelsToo: !TxEditedLately);
+            // Config > Amp's choice of output, kept in step (it lives in the engine).
+            if (s.AmpKeyPin != WantedAmpKeyPin && !IsTransmitting) await Try(() => _client.SetAmpKeyPinAsync(WantedAmpKeyPin));
+            _ = WatchAmpAsync();
             if (AttOnRx2Jack) await ShowRx2JackAttAsync();
             else
             {

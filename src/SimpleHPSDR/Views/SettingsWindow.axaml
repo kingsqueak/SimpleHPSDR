@@ -963,6 +963,32 @@
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
                        Text="Timing and safety limits for an external amplifier. The Amp button, with the transmit controls, says whether the amplifier is in line." />
             <Border Classes="panel">
+              <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="170,*">
+                  <TextBlock Text="Amp button switches" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <ComboBox Grid.Column="1" ItemsSource="{x:Static vm:SettingsViewModel.AmpSwitchChoices}"
+                            SelectedIndex="{Binding AmpSwitchIndex}" MinWidth="320" />
+                </Grid>
+                <TextBlock Margin="170,0,0,0" Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="The Amp button always switches the drive limits. This says how it also takes the amplifier itself in and out of line. The radio&apos;s PTT OUT jack keys the amplifier on every transmission and can&apos;t be held back, so with &quot;Nothing&quot; you put the amplifier in standby yourself before turning Amp off." />
+                <Grid ColumnDefinitions="170,*" IsVisible="{Binding AmpUsesOutput}">
+                  <TextBlock Text="Output" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="1" Value="{Binding AmpOutputPin}" Minimum="1" Maximum="7" Increment="1" FormatString="0"
+                                 Width="140" HorizontalAlignment="Left" />
+                </Grid>
+                <TextBlock Margin="170,0,0,0" Classes="label" FontSize="11" TextWrapping="Wrap" IsVisible="{Binding AmpUsesOutput}"
+                           Text="Move the amplifier&apos;s key cable from PTT OUT to this output (1 to 7, the same ones as on the Outputs tab). It is on while transmitting with Amp on, and never with Amp off, whatever the Outputs tab says for it." />
+                <Grid ColumnDefinitions="170,Auto,Auto,*" ColumnSpacing="8" IsVisible="{Binding AmpUsesRf2k}">
+                  <TextBlock Text="Amplifier&apos;s address" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <TextBox Grid.Column="1" Text="{Binding AmpAddress}" Width="200" PlaceholderText="192.168.1.50" />
+                  <Button Grid.Column="2" Classes="flat" Content="Test" Command="{Binding TestAmpCommand}" />
+                  <TextBlock Grid.Column="3" Text="{Binding AmpTestResult}" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </Grid>
+                <TextBlock Margin="170,0,0,0" Classes="label" FontSize="11" TextWrapping="Wrap" IsVisible="{Binding AmpUsesRf2k}"
+                           Text="Amp on puts the amplifier in operate; Amp off puts it in standby first, and stays on if the amplifier doesn&apos;t confirm. The button also follows the amplifier when you switch it there. Test only reads from the amplifier." />
+              </StackPanel>
+            </Border>
+            <Border Classes="panel">
               <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
                 <TextBlock Grid.Row="0" Text="Pre-key delay" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">

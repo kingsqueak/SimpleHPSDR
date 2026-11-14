@@ -97,6 +97,12 @@ public sealed class Settings
     /// <summary>SWR levels for MOX: an amber warning, and where the app stops
     /// transmit. The engine still stops MOX at 2.5:1 by itself.</summary>
     public double SwrWarnAt { get; set; } = 2.0;
+    /// <summary>What the Amp button switches besides the drive limits: "None",
+    /// "Output" (a radio output wired to the amplifier's key input) or "Rf2k"
+    /// (an RF2K-S amplifier, over the network).</summary>
+    public string AmpSwitch { get; set; } = "None";
+    public int AmpOutputPin { get; set; } = 1;
+    public string AmpAddress { get; set; } = "";
     public double SwrStopAt { get; set; } = SwrWatch.EngineLimit;
     /// <summary>Outside the band plan: block transmit, or only warn.</summary>
     public bool BandPlanBlocks { get; set; }
