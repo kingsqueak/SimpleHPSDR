@@ -90,6 +90,10 @@ public sealed class SpectrumView : Control
     private static readonly Typeface TagFace = new("Inter", FontStyle.Normal, FontWeight.SemiBold);
     private readonly List<(Rect Box, int Rx)> _tagBoxes = [];
     private static readonly Typeface LabelFace = new("Inter");
+    // The frequency at the pointer: the clock's face (Styles.axaml MonoFont), a size
+    // larger, fixed-width so the flag doesn't change width as the digits change.
+    private static readonly Typeface HoverFace = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
+    private const double HoverFontSize = 14;
 
     private WriteableBitmap? _waterfall;
     private int _wfWidth;
@@ -506,12 +510,12 @@ public sealed class SpectrumView : Control
         ctx.DrawLine(HoverPen, new Point(x, 0), new Point(x, b.Height));
         long hz = XToHz(p.X, b.Width);
         var ft = new FormattedText($"{hz / 1e6:0.000000} MHz", System.Globalization.CultureInfo.InvariantCulture,
-            FlowDirection.LeftToRight, LabelFace, 11, HoverTextBrush);
-        double w = ft.Width + 10, h = ft.Height + 4;
+            FlowDirection.LeftToRight, HoverFace, HoverFontSize, HoverTextBrush);
+        double w = ft.Width + 12, h = ft.Height + 6;
         double tx = x + 8 + w <= b.Width ? x + 8 : x - 8 - w;
         double ty = Math.Clamp(p.Y - h / 2, 0, b.Height - h);
         ctx.FillRectangle(HoverTagBrush, new Rect(tx, ty, w, h), 3);
-        ctx.DrawText(ft, new Point(tx + 5, ty + 2));
+        ctx.DrawText(ft, new Point(tx + 6, ty + 3));
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
