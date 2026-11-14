@@ -43,12 +43,12 @@ A small mark in a button's bottom right corner means it has more behind a right-
 ## DRM
 Where the DRM decoder is installed, the Mode menu has DRM. It needs the TCI server on, in Config > CAT & TCI. Choosing it opens a list of DRM broadcasts: click one to tune it, or tune by hand. DRM stations are listed by the centre of their channel. CTUN turns off while DRM is on and comes back afterwards.
 
-While DRM is on, a DRM button appears beside Mode, and a box at the bottom of the waterfall shows the station, how the signal is doing and any text message it sends. Mute and AF work as usual. Click the button to open the list again. Right-click it to pick another service on stations that carry more than one, or to turn DRM off. DRM is receive only.
+While DRM is on, a DRM button appears beside the filters, and a box at the bottom of the waterfall shows the station, how the signal is doing and any text message it sends. Mute and AF work as usual. Click the button to open the list again. Right-click it to pick another service on stations that carry more than one, or to turn DRM off. DRM is receive only.
 
 ## The station guide (SWL)
 Choose SWL from the Mode menu. The radio defaults to SAM, with a 10 kHz broadcast filter if SAM has no saved settings on that band, and the station guide opens. SAM is only the starting point: change the mode or filter as you like and SWL stays on.
 
-While SWL is on, an SWL button appears beside Mode. Click it to open the guide; you can close the guide at any time and SWL carries on. Right-click the button to turn SWL off.
+While SWL is on, an SWL button appears beside the filters. Click it to open the guide; you can close the guide at any time and SWL carries on. Right-click the button to turn SWL off.
 
 The guide lists non-digital stations from the EiBi shortwave schedule (eibispace.de), from long wave up, in your local time. It updates itself and works from its saved copy when you're offline. Click a heading to sort, pick a language, or search. Click a station to tune it; your mode doesn't change.
 
@@ -157,7 +157,7 @@ The lower part shows the same thing over time, with new rows arriving at the top
 - A red band is a manual notch.
 
 ## Close-up
-The small box at the top right shows 6 kHz from the dial as audio frequency (3 kHz in CW), with the receive filter shaded. It's the best place to see how a voice fits in the filter.
+The close-up, beside the filters, shows 6 kHz from the dial as audio frequency (3 kHz in CW), with the receive filter shaded. It's the best place to see how a voice fits in the filter.
 - Drag the filter's edges in it to set the low and high cuts. The box along its top shows them in Hz.
 - The area under the trace is coloured like the waterfall, so the strongest part of the audio stands out.
 
@@ -198,7 +198,7 @@ Right-click the mode button in AM, SAM or FM. AM has broadcast-style transmit se
 """),
 
         ("CW", """
-Choose CWL or CWU with the mode button, and a WPM button appears beside ANF.
+Choose CWL or CWU with the mode button, and a WPM button appears beside the filters.
 
 ## Your paddle or key
 Connect it to the radio. Right-click WPM to choose a straight key or iambic A or B, and to set the speed, weight, sidetone and paddle direction. The wheel over the WPM button changes speed at any time.
@@ -235,7 +235,7 @@ Press Decode in the CW window to show the active slice's CW as text. The box bes
 ## Tuning and filters
 In CW the frequency shown is the carrier of the signal, and the filter is centred on the dial. Click a signal on the panadapter, or tune until it lines up with the dial line, and you'll hear it at a 600 Hz tone.
 
-The close-up at the top right is your tuning indicator. It spans 3 kHz in CW, and its dial line sits at the 600 Hz CW offset, not at 0. Tune so the signal's peak sits on that line, in the middle of the shaded filter, and you're on frequency.
+The close-up beside the filters is your tuning indicator. It spans 3 kHz in CW, and its dial line sits at the 600 Hz CW offset, not at 0. Tune so the signal's peak sits on that line, in the middle of the shaded filter, and you're on frequency.
 
 Use a narrow filter, 200 to 500 Hz. The receive tone is fixed at 600 Hz, so leave the sidetone there if you want to match signals by ear.
 """),
@@ -247,7 +247,7 @@ A filter sets how wide a slice of the band you hear. Narrow it to remove a neigh
 Click a filter button. Each mode has its own set, and the highlighted button is the one in use.
 
 ## Setting the edges
-Drag the handles in the close-up at the top right. In USB, LSB and CW there are two: the low and high cuts. In AM, SAM and FM there's one, and both sides move together. The box along the top of the close-up shows the low and high cuts in Hz as you drag. Right-click the close-up (long press on a touch screen) for its colours, high resolution, detail and averaging; "Close-up" under Reading the display describes them. A long averaging time shows where a voice's energy usually sits, which makes the edges easy to place.
+Drag the handles in the close-up beside the filters. In USB, LSB and CW there are two: the low and high cuts. In AM, SAM and FM there's one, and both sides move together. The box along the top of the close-up shows the low and high cuts in Hz as you drag. Right-click the close-up (long press on a touch screen) for its colours, high resolution, detail and averaging; "Close-up" under Reading the display describes them. A long averaging time shows where a voice's energy usually sits, which makes the edges easy to place.
 
 As a guide: 2.4 to 2.8 kHz for SSB voice, 200 to 500 Hz for CW, 6 to 10 kHz for AM.
 
@@ -465,7 +465,7 @@ Turn on TX (it goes red) and ▶ transmits the recording instead, at the TX leve
 Right-click REC for the full list: rename, delete, listen, transmit and Open folder. Recordings are WAV files in Music/SimpleHPSDR.
 
 ## The voice keyer
-The four grey buttons right of REC each transmit one recording. Right-click one (long press on touch) to give it a label and choose its recording. Click it to transmit, at the recorder's TX level; it's red while on the air, and a second click or MOX stops it. A button with nothing assigned is dimmed.
+The four grey voice keyer buttons each transmit one recording. Right-click one (long press on touch) to give it a label and choose its recording. Click it to transmit, at the recorder's TX level; it's red while on the air, and a second click or MOX stops it. A button with nothing assigned is dimmed.
 
 Keys: ⌘1 to ⌘4 on a Mac, Ctrl+1 to Ctrl+4 on Windows and Linux, or F5 to F8 (on a Mac hold fn, as F5 is dictation).
 
@@ -556,7 +556,7 @@ Tap Quit at the top of the ☰ drawer, then tap it again within 4 seconds. On th
 The clock at the bottom right shows your local time and UTC.
 
 ## ID timer
-Click ID above the clock to turn on a reminder at each even ten minutes on the clock, while connected to a radio.
+Click ID beside the clock to turn on a reminder at each even ten minutes on the clock, while connected to a radio.
 - Grey at 00:00: off.
 - White: counting down.
 - Green: from 5 seconds before the mark to 5 seconds after.
@@ -651,7 +651,7 @@ Logging, digital and contest programs can control the radio through Config > CAT
 
 Turn on the server you need and note the port. Network changes need Apply now; the radio reconnects in a few seconds.
 
-"This computer only" keeps TCI private. Choose Network only if another computer needs it. The running TCI status shows at the bottom right, beside CPU.
+"This computer only" keeps TCI private. Choose Network only if another computer needs it. The running TCI status shows under the panadapter, beside CPU.
 """),
 
         ("Troubleshooting", """

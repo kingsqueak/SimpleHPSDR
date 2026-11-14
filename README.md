@@ -13,6 +13,12 @@ this project.
 
 ![SimpleHPSDR on 40 m with PureSignal on](docs/main.png)
 
+The same controls can sit in a panel at the side instead, which gives the
+panadapter the window's full height. The view button under the panadapter
+switches between the two.
+
+![The side arrangement: controls in a panel beside a full-height panadapter](docs/side.png)
+
 A lot of work has gone into reducing TX/RX latency in the turnover times, 
 improving Pure Signal lock speed and function as well.
 
