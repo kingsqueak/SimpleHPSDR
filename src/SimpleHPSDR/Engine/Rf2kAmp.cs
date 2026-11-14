@@ -24,6 +24,11 @@ public static class Rf2kAmp
         text = text.TrimEnd('/');
         var parts = text.Split(':');
         if (parts.Length is 0 or > 2 || Uri.CheckHostName(parts[0]) == UriHostNameType.Unknown) return null;
+        // Numbers and dots must be a whole four-part address. "192.168.16" is
+        // a valid short form of another address, and a half-typed one must
+        // never be contacted.
+        if (parts[0].All(c => char.IsAsciiDigit(c) || c == '.')
+            && (parts[0].Split('.') is not { Length: 4 } quad || !quad.All(q => byte.TryParse(q, out _)))) return null;
         int port = 8080;
         if (parts.Length == 2 && (!int.TryParse(parts[1], out port) || port is < 1 or > 65535)) return null;
         return new Uri($"http://{parts[0]}:{port}/{path}");

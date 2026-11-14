@@ -157,7 +157,7 @@ public sealed partial class MainViewModel
             case PanelKnobAction.Xit: NudgeXit(steps); break;
             case PanelKnobAction.FilterHigh: DragFilter(FilterLowHz, FilterHighHz + steps * 50); break;
             case PanelKnobAction.FilterLow: DragFilter(FilterLowHz + steps * 50, FilterHighHz); break;
-            case PanelKnobAction.Attenuation: if (!PreampOn) AttenDb = Math.Clamp(AttenDb + steps, 0, 31); break;
+            case PanelKnobAction.Attenuation: if (AttOnRx2Jack || !PreampOn) AttenDb = Math.Clamp(AttenDb + steps, 0, 31); break;
             case PanelKnobAction.TuneB: if (SliceBEnabled) _ = TuneSliceByStepsAsync(1, steps); break;
         }
     }

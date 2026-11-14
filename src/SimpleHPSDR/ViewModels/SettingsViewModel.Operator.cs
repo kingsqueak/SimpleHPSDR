@@ -47,23 +47,34 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private decimal _cwIdIntervalMin = 10;
     public string CwIdLevelText => $"{CwIdLevelDb:0} dB";
 
-    partial void OnCwIdWpmChanged(decimal value) => SendCwId(new CwIdSettingsSetRequest(Wpm: (int)value));
-    partial void OnCwIdToneHzChanged(decimal value) => SendCwId(new CwIdSettingsSetRequest(ToneHz: (int)value));
+    partial void OnCwIdWpmChanged(decimal value) => SendCwId();
+    partial void OnCwIdToneHzChanged(decimal value) => SendCwId();
     partial void OnCwIdLevelDbChanged(double value)
     {
         OnPropertyChanged(nameof(CwIdLevelText));
-        SendCwId(new CwIdSettingsSetRequest(LevelDb: Math.Round(value)));
+        SendCwId();
     }
-    partial void OnCwIdIntervalMinChanged(decimal value) => SendCwId(new CwIdSettingsSetRequest(IntervalMinutes: (int)value));
+    partial void OnCwIdIntervalMinChanged(decimal value) => SendCwId();
 
-    private void SendCwId(CwIdSettingsSetRequest req)
+    // All four together, one request at a time and the newest last, so a
+    // dragged slider can't leave the engine on a value from part-way along.
+    private Latest<(int Wpm, int ToneHz, double LevelDb, int IntervalMin)>? _cwIdSender;
+
+    private void SendCwId()
     {
         if (_populating) return;
-        _ = Task.Run(async () =>
+        (_cwIdSender ??= new(async v =>
         {
-            try { await _client.SetCwIdSettingsAsync(req); }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException) { }
-        });
+            try
+            {
+                await _client.SetCwIdSettingsAsync(new CwIdSettingsSetRequest(
+                    Wpm: v.Wpm, ToneHz: v.ToneHz, LevelDb: v.LevelDb, IntervalMinutes: v.IntervalMin));
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException)
+            {
+                Status = $"CW ID settings weren't saved: {ex.Message}";
+            }
+        })).Send(((int)CwIdWpm, (int)CwIdToneHz, Math.Round(CwIdLevelDb), (int)CwIdIntervalMin));
     }
 
     [RelayCommand]

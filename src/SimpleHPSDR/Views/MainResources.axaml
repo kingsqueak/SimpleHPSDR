@@ -260,7 +260,7 @@
       <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding AutoFloorLiftText}" Margin="8,0,0,0"
                  VerticalAlignment="Center" FontSize="12" />
       <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
-        <Button Classes="seg" Padding="8,0" VerticalAlignment="Center"
+        <Button Classes="seg" Padding="8,2" VerticalAlignment="Center"
                 ToolTip.Tip="Display resolution (FFT size): bigger shows finer detail, at more CPU">
           <StackPanel Spacing="-1">
             <TextBlock Text="Res" FontSize="12" HorizontalAlignment="Center" />
@@ -274,7 +274,7 @@
                         ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
           </Button.Flyout>
         </Button>
-        <Button Classes="seg" Padding="8,0" VerticalAlignment="Center" ToolTip.Tip="Waterfall speed (rows per second)">
+        <Button Classes="seg" Padding="8,2" VerticalAlignment="Center" ToolTip.Tip="Waterfall speed (rows per second)">
           <StackPanel Spacing="-1">
             <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
             <StackPanel Orientation="Horizontal" Spacing="3" HorizontalAlignment="Center">
@@ -295,8 +295,15 @@
   </DataTemplate>
   <!-- Amp's right-click: the most Drive and Tune can be while the amplifier is in line -->
   <DataTemplate x:Key="AmpPanel" x:DataType="vm:MainViewModel">
-    <Grid Width="400" Margin="4" ColumnDefinitions="84,*,96" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="12">
+    <Grid Width="400" Margin="4" ColumnDefinitions="84,*,96" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="12">
       <TextBlock Grid.ColumnSpan="3" Text="Amplifier maximums" FontWeight="SemiBold" />
+      <!-- Only while an RF2K-S isn't answering and Amp is on -->
+      <StackPanel Grid.Row="4" Grid.ColumnSpan="3" Spacing="6" IsVisible="{Binding AmpOffByHandShown}">
+        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WarnText}"
+                   Text="The amplifier isn&apos;t answering, so Amp can&apos;t take it out of line or tell what it&apos;s doing. Turn Amp off here only if the amplifier is switched off or in standby: with Amp off the radio can send full power." />
+        <Button Classes="flat" Content="The amplifier is off: turn Amp off" HorizontalAlignment="Left"
+                Command="{Binding AmpOffByHandCommand}" c:FlyoutClose.OnClick="True" />
+      </StackPanel>
       <TextBlock Grid.Row="1" Text="Drive max" Classes="label" FontSize="12" VerticalAlignment="Center" />
       <Slider Grid.Row="1" Grid.Column="1" Minimum="1" Maximum="100" Value="{Binding AmpDriveMaxPct}" VerticalAlignment="Center"
               TickFrequency="1" IsSnapToTickEnabled="True" />

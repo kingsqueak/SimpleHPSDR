@@ -101,17 +101,23 @@ public sealed partial class MainViewModel
     private CwIdStatusDto? _cwId;
     private bool _cwIdBusy;
     private DateTime _cwIdCallCheckedAt;
+    private DateTime _cwIdReadAt;
+    private string? _cwIdErrorSaid;
 
     /// <summary>Make the engine's CW ID match the setting (connect, engine
     /// restart, Config) and read its state for the ID box. From the 1 s poll.</summary>
     private async Task SyncCwIdAsync()
     {
         if (!IsConnected || _client is not { } client || _cwIdBusy) return;
+        bool want = _settings.CwIdAuto;
+        // Off here and known to be off in the engine: nothing to keep in step,
+        // so only look again now and then (another program may have started it).
+        if (!want && _cwId is { Running: false } && DateTime.UtcNow - _cwIdReadAt < TimeSpan.FromSeconds(10)) return;
         _cwIdBusy = true;
         try
         {
             var st = await client.GetCwIdAsync();
-            bool want = _settings.CwIdAuto;
+            _cwIdReadAt = DateTime.UtcNow;
             // The callsign can change in Config: check it now and then.
             bool recheck = want && st.Running && DateTime.UtcNow - _cwIdCallCheckedAt > TimeSpan.FromSeconds(10);
             if (want && (!st.Running || recheck))
@@ -138,10 +144,14 @@ public sealed partial class MainViewModel
                 st = await client.GetCwIdAsync();
             }
             _cwId = st;
+            _cwIdErrorSaid = null;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException)
         {
-            Status = $"CW ID: {ex.Message}";
+            // Said once per fault, and only to someone who has CW ID on: this
+            // runs every second and must not take over the status line.
+            if (want && _cwIdErrorSaid != ex.Message) Status = $"CW ID: {ex.Message}";
+            _cwIdErrorSaid = ex.Message;
         }
         finally { _cwIdBusy = false; }
     }

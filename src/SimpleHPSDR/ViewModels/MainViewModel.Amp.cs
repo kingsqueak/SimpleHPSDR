@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Engine;
 
@@ -22,10 +23,12 @@ public sealed partial class MainViewModel
     private DateTime _ampSwitchedAt;
     private static readonly TimeSpan AmpSettle = TimeSpan.FromSeconds(4);
     private bool _ampWatchBusy;
-    private bool _ampUnreachableSaid;
-    // A second click within this time turns Amp off although the amplifier
-    // can't be reached (it is switched off, say).
-    private DateTime _ampOffAnywayUntil;
+
+    /// <summary>The RF2K-S isn't answering, so the button can't follow it or
+    /// take it out of line. Amp's popup then offers to turn Amp off on the
+    /// operator's word that the amplifier is switched off.</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AmpOffByHandShown))] private bool _ampUnreachable;
+    public bool AmpOffByHandShown => AmpUnreachable && AmpOn && AmpIsRf2k;
 
     [RelayCommand]
     private async Task ToggleAmpAsync()
@@ -43,14 +46,12 @@ public sealed partial class MainViewModel
             // Off lifts the limits, so the amplifier has to be out of line first.
             if (AmpIsRf2k && !on && !await Rf2kAmp.SetOperatingAsync(_settings.AmpAddress, false))
             {
-                if (DateTime.UtcNow > _ampOffAnywayUntil)
-                {
-                    _ampOffAnywayUntil = DateTime.UtcNow + TimeSpan.FromSeconds(6);
-                    Status = "The amplifier didn't answer, so Amp stays on. If it's switched off, click Amp again now to turn Amp off anyway.";
-                    return;
-                }
+                AmpUnreachable = await Rf2kAmp.IsOperatingAsync(_settings.AmpAddress) is null;
+                Status = AmpUnreachable
+                    ? "The amplifier didn't answer, so Amp stays on. If the amplifier is switched off, right-click Amp to turn Amp off."
+                    : "The amplifier didn't go to standby, so Amp stays on.";
+                return;
             }
-            _ampOffAnywayUntil = default;
             await _client.SetAmpAsync(on);
             // The engine has lowered the levels to the new maximums and
             // recalled the ones last used in this state: show them.
@@ -62,10 +63,35 @@ public sealed partial class MainViewModel
         finally { _ampSwitchedAt = DateTime.UtcNow; }
     }
 
+    /// <summary>Amp's popup, while the amplifier isn't answering: turn Amp
+    /// off on the operator's word that the amplifier is switched off. Nothing
+    /// can check that, which is why it is its own labelled button.</summary>
+    [RelayCommand]
+    private async Task AmpOffByHandAsync()
+    {
+        if (!IsConnected || _client is null || !AmpOn) return;
+        if (IsTransmitting)
+        {
+            Status = "Stop transmitting before switching Amp.";
+            return;
+        }
+        _ampSwitchedAt = DateTime.UtcNow;
+        try
+        {
+            await _client.SetAmpAsync(false);
+            ApplyTxLimits(await _client.GetStateAsync(), levelsToo: true);
+            Status = "Amp is off on your word that the amplifier is switched off. It will follow the amplifier again when it answers.";
+        }
+        catch (Exception ex) { Status = ex.Message; }
+        finally { _ampSwitchedAt = DateTime.UtcNow; }
+    }
+
+    partial void OnAmpOnChanged(bool value) => OnPropertyChanged(nameof(AmpOffByHandShown));
+
     /// <summary>Once a second, with the state poll: the Amp button follows an
     /// RF2K-S switched at the amplifier. Operate with Amp off is the dangerous
-    /// case (full drive into the amplifier), so that one stops a transmission
-    /// to bring the limits down.</summary>
+    /// case (full drive into the amplifier): the engine brings the limits
+    /// down at once, in the middle of an over if need be.</summary>
     private async Task WatchAmpAsync()
     {
         if (!AmpIsRf2k || _client is null || _ampWatchBusy || DateTime.UtcNow - _ampSwitchedAt < AmpSettle) return;
@@ -76,25 +102,24 @@ public sealed partial class MainViewModel
             if (!IsConnected || _client is null || DateTime.UtcNow - _ampSwitchedAt < AmpSettle) return;
             if (operating is null)
             {
-                if (!_ampUnreachableSaid)
+                if (!AmpUnreachable)
                     Status = "Can't reach the amplifier: the Amp button isn't following it.";
-                _ampUnreachableSaid = true;
+                AmpUnreachable = true;
                 return;
             }
-            _ampUnreachableSaid = false;
+            AmpUnreachable = false;
             if (operating == true && !AmpOn)
             {
-                if (IsTransmitting) { MoxOn = false; TunOn = false; }
-                for (int attempt = 0; attempt < 10; attempt++)
+                try
                 {
-                    try
-                    {
-                        await _client.SetAmpAsync(true);
-                        ApplyTxLimits(await _client.GetStateAsync(), levelsToo: true);
-                        Status = "The amplifier is in operate, so Amp is on.";
-                        break;
-                    }
-                    catch (Exception) { await Task.Delay(200); }   // still unkeying
+                    await _client.SetAmpAsync(true);
+                    ApplyTxLimits(await _client.GetStateAsync(), levelsToo: true);
+                    Status = "The amplifier is in operate, so Amp is on.";
+                }
+                catch (Exception ex)
+                {
+                    // Not left unsaid: full drive may be going into the amplifier.
+                    Status = $"The amplifier is in operate but Amp couldn't be turned on: {ex.Message}";
                 }
             }
             else if (operating == false && AmpOn && !IsTransmitting)

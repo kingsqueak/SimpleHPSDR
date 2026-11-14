@@ -980,7 +980,7 @@
                            Text="Move the amplifier&apos;s key cable from PTT OUT to this output (1 to 7, the same ones as on the Outputs tab). It is on while transmitting with Amp on, and never with Amp off, whatever the Outputs tab says for it." />
                 <Grid ColumnDefinitions="170,Auto,Auto,*" ColumnSpacing="8" IsVisible="{Binding AmpUsesRf2k}">
                   <TextBlock Text="Amplifier&apos;s address" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                  <TextBox Grid.Column="1" Text="{Binding AmpAddress}" Width="200" PlaceholderText="192.168.1.50" />
+                  <TextBox Grid.Column="1" Text="{Binding AmpAddress, UpdateSourceTrigger=LostFocus}" Width="200" PlaceholderText="192.168.1.50" />
                   <Button Grid.Column="2" Classes="flat" Content="Test" Command="{Binding TestAmpCommand}" />
                   <TextBlock Grid.Column="3" Text="{Binding AmpTestResult}" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                 </Grid>

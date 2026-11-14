@@ -246,7 +246,7 @@
                 </Grid>
                 <TextBlock Text="TUNE DRIVE" Classes="head" />
                 <Grid ColumnDefinitions="*,70" ColumnSpacing="10">
-                  <Slider Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding TunePct}" VerticalAlignment="Center" />
+                  <Slider Minimum="0" Maximum="{Binding TuneCeilingPct}" Value="{Binding TunePct}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="1" Text="{Binding TuneLine}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </Grid>
                 <TextBlock Text="MIC GAIN" Classes="head" />

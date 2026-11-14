@@ -12,6 +12,14 @@
     <Style Selector="Slider:horizontal">
       <Setter Property="Margin" Value="0,-14" />
     </Style>
+    <!-- The buttons with a value under their name need room above and below
+         it; the one-line buttons beside them match that height so a row stays
+         even. (Step, lock, RIT and XIT keep their own: two of them stack to
+         the height of the frequency.) -->
+    <Style Selector="Button.seg:not(.ant), ToggleButton.seg">
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
     <!-- Band, Mode and Mem: as tall as the frequency in the bottom layout,
          ordinary buttons under it in the side panel (MainGrid has class "side" then). -->
     <Style Selector="Button.tune">
@@ -29,7 +37,7 @@
       <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
     <Style Selector="Grid.side Button.tune">
-      <Setter Property="Height" Value="26" />
+      <Setter Property="Height" Value="30" />
       <Setter Property="MinWidth" Value="52" />
       <Setter Property="Padding" Value="8,0" />
       <Setter Property="FontSize" Value="12" />
@@ -144,7 +152,7 @@
             </Border>
           </StackPanel>
           <Viewbox Name="VfoScale" Stretch="Uniform" StretchDirection="DownOnly">
-          <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,0" Cursor="Hand"
+          <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,2" Cursor="Hand"
                   ToolTip.Tip="Click to type a frequency (kHz or MHz). The wheel over a digit tunes that digit; elsewhere it tunes by the step.">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <!-- Click the frequency to type one in its place -->
@@ -166,7 +174,7 @@
           <!-- Step and lock beside the frequency, the same height as RIT and XIT.
                Outside the scaled frequency box so they keep their size. -->
           <StackPanel Name="StepLockButtons" Grid.Column="1" Spacing="4" VerticalAlignment="Center" Margin="10,0,0,0">
-            <Button Name="StepButton" Classes="seg ant" Content="Step" FontSize="12" Height="24" Padding="8,0" MinWidth="44"
+            <Button Name="StepButton" Classes="seg ant" Content="Step" FontSize="12" Height="24" Padding="8,2" MinWidth="44"
                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                     ToolTip.Tip="{Binding StepLabel, StringFormat=Tuning step for the wheel: {0}}">
               <!-- Filled when it opens: the steps, then Snap clicks to step -->
@@ -175,7 +183,7 @@
               </Button.Flyout>
             </Button>
             <Button Classes="seg ant" Classes.lit="{Binding VfoLocked}" Command="{Binding ToggleVfoLockCommand}"
-                    Height="24" Padding="8,0" MinWidth="44"
+                    Height="24" Padding="8,2" MinWidth="44"
                     HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                     ToolTip.Tip="Lock the VFO against tuning here. CAT and TCI can still tune it.">
               <Viewbox Width="15" Height="15">
@@ -314,7 +322,7 @@
           <WrapPanel Grid.Row="1" Grid.Column="1" LineSpacing="4">
             <Button Classes="seg" Classes.lit="{Binding LnaOn}" Content="LNA" VerticalAlignment="Center"
                     IsVisible="{Binding ShowLna}" Command="{Binding ToggleLnaCommand}" ToolTip.Tip="{Binding LnaTip}" />
-            <Button Classes="seg" Classes.lit="{Binding AutoAtt}" Padding="8,0" VerticalAlignment="Center"
+            <Button Classes="seg" Classes.lit="{Binding AutoAtt}" Padding="8,2" VerticalAlignment="Center"
                     ToolTip.Tip="Front end: attenuator and preamp (blue = auto attenuation on)">
               <StackPanel Spacing="-1">
                 <TextBlock Text="RFG" FontSize="12" HorizontalAlignment="Center" />
@@ -334,7 +342,7 @@
                     <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
                       <ToggleButton Classes="seg" Content="Auto ATT" IsChecked="{Binding AutoAtt}"
                                     ToolTip.Tip="Automatic attenuation: adds attenuation when the ADC overloads (blue = on)" />
-                      <Button Classes="seg" Classes.lit="{Binding PreampOn}" Command="{Binding CyclePreCommand}" Padding="8,0" MinWidth="44"
+                      <Button Classes="seg" Classes.lit="{Binding PreampOn}" Command="{Binding CyclePreCommand}" Padding="8,2" MinWidth="44"
                               VerticalAlignment="Center"
                               ToolTip.Tip="Front end: preamp on → 0 dB → −10 → −20 → −30 dB (attenuator). Blue = preamp on.">
                         <StackPanel Spacing="-1">
@@ -352,7 +360,7 @@
               <TextBlock Text="OVL" FontSize="11" FontWeight="SemiBold" Foreground="White" />
             </Border>
             <Button Classes="seg more" Classes.lit="{Binding AgcAuto}" Command="{Binding ToggleAgcAutoCommand}"
-                    Padding="8,0" MinWidth="44" VerticalAlignment="Center"
+                    Padding="8,2" MinWidth="44" VerticalAlignment="Center"
                     ToolTip.Tip="AGC: blue = auto (the engine sets the AGC gain), grey = manual (choose the speed). Right-click for the auto setting.">
               <StackPanel Spacing="-1">
                 <TextBlock Text="AGC" FontSize="12" HorizontalAlignment="Center" />
@@ -364,7 +372,7 @@
                 </Flyout>
               </Button.ContextFlyout>
             </Button>
-            <Button Classes="seg" Padding="8,0" VerticalAlignment="Center" IsVisible="{Binding AgcManual}"
+            <Button Classes="seg" Padding="8,2" VerticalAlignment="Center" IsVisible="{Binding AgcManual}"
                     ToolTip.Tip="AGC speed (manual)">
               <StackPanel Spacing="-1">
                 <TextBlock Text="Speed" FontSize="12" HorizontalAlignment="Center" />
@@ -383,7 +391,7 @@
                       ToolTip.Tip="Fixed receive gain while AGC is off" />
               <TextBlock Text="{Binding AgcFixedText}" Width="44" VerticalAlignment="Center" FontSize="12" />
             </StackPanel>
-            <Button Classes="seg more" Classes.lit="{Binding NbOn}" Padding="8,0" MinWidth="52"
+            <Button Classes="seg more" Classes.lit="{Binding NbOn}" Padding="8,2" MinWidth="52"
                     VerticalAlignment="Center" ToolTip.Tip="Noise blanker for impulse noise. Right-click for its settings.">
               <StackPanel Spacing="-1">
                 <TextBlock Text="NB" FontSize="12" HorizontalAlignment="Center" />
@@ -399,7 +407,7 @@
                 </Flyout>
               </Button.ContextFlyout>
             </Button>
-            <Button Classes="seg more" Classes.lit="{Binding NrOn}" Padding="8,0" MinWidth="52"
+            <Button Classes="seg more" Classes.lit="{Binding NrOn}" Padding="8,2" MinWidth="52"
                     VerticalAlignment="Center" ToolTip.Tip="Noise reduction. Right-click for its settings.">
               <StackPanel Spacing="-1">
                 <TextBlock Text="NR" FontSize="12" HorizontalAlignment="Center" />
@@ -423,7 +431,7 @@
                 </Flyout>
               </Button.ContextFlyout>
             </Button>
-            <Button Classes="seg more" Classes.lit="{Binding SquelchOn}" Padding="8,0" MinWidth="40" VerticalAlignment="Center"
+            <Button Classes="seg more" Classes.lit="{Binding SquelchOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"
                     Command="{Binding ToggleSquelchCommand}" ToolTip.Tip="Squelch: click on or off, right-click for the level (blue = on)">
               <StackPanel Spacing="-1">
                 <TextBlock Text="SQL" FontSize="12" HorizontalAlignment="Center" />
@@ -520,7 +528,7 @@
       <StackPanel Orientation="Horizontal" Spacing="4">
         <Button Classes="seg" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}"
                 ToolTip.Tip="CTUN: clicking the panadapter moves only the receive frequency; the display stays put (blue = on)" />
-        <Button Classes="seg more" Classes.lit="{Binding ZoomOn}" Padding="8,0" Command="{Binding ToggleZoomCommand}"
+        <Button Classes="seg more" Classes.lit="{Binding ZoomOn}" Padding="8,2" Command="{Binding ToggleZoomCommand}"
                 ToolTip.Tip="Zoom: click for full span (grey) or zoomed (blue). Right-click to set the zoomed span. Ctrl+wheel (⌘+wheel on a Mac) over the spectrum zooms too.">
           <StackPanel Spacing="-1">
             <TextBlock Text="Zoom" FontSize="12" HorizontalAlignment="Center" />
@@ -545,7 +553,7 @@
             </Flyout>
           </Button.ContextFlyout>
         </Button>
-        <Button Classes="seg" Padding="8,0" IsEnabled="{Binding IsConnected}" VerticalAlignment="Center"
+        <Button Classes="seg" Padding="8,2" IsEnabled="{Binding IsConnected}" VerticalAlignment="Center"
                 ToolTip.Tip="Panadapter span (receiver sample rate)">
           <StackPanel Spacing="-1">
             <TextBlock Text="Span" FontSize="12" HorizontalAlignment="Center" />
@@ -596,7 +604,7 @@
       </DockPanel>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
         <!-- Antennas for the current band: one button, lit when TX and RX differ -->
-        <Button Classes="seg" Classes.lit="{Binding AntennasDiffer}" Padding="8,0" VerticalAlignment="Center"
+        <Button Classes="seg" Classes.lit="{Binding AntennasDiffer}" Padding="8,2" VerticalAlignment="Center"
                 IsEnabled="{Binding AntennaBoxesEnabled}" ToolTip.Tip="TX and RX antenna for this band">
           <StackPanel Spacing="-1">
             <TextBlock Text="Ant" FontSize="12" HorizontalAlignment="Center" />
@@ -696,7 +704,7 @@
         </Grid>
         <WrapPanel Name="BottomWrap" ItemSpacing="18" LineSpacing="6" VerticalAlignment="Center">
         <StackPanel Name="AudioBlock" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Classes="seg more" Classes.lit="{Binding RxEqOn}" Padding="8,0" MinWidth="40" VerticalAlignment="Center"
+          <Button Classes="seg more" Classes.lit="{Binding RxEqOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"
                   Command="{Binding ToggleRxEqCommand}" ToolTip.Tip="{Binding RxEqTip}">
             <StackPanel Spacing="-1">
               <TextBlock Text="AF" FontSize="12" HorizontalAlignment="Center" />
@@ -806,7 +814,7 @@
             </Button.ContextFlyout>
           </Button>
           <!-- The recorder: REC pops the tape deck up above it, over the waterfall. -->
-          <Button Name="RecButton" Classes="seg more" Classes.lit="{Binding DeckOpen}" Classes.rec="{Binding IsRecording}" Padding="8,0" MinWidth="44"
+          <Button Name="RecButton" Classes="seg more" Classes.lit="{Binding DeckOpen}" Classes.rec="{Binding IsRecording}" Padding="8,2" MinWidth="44"
                   VerticalAlignment="Center" Command="{Binding ToggleDeckCommand}" ToolTip.Tip="{Binding DeckTip}">
             <StackPanel Spacing="-1">
               <TextBlock Text="REC" FontSize="12" HorizontalAlignment="Center" />
@@ -825,7 +833,7 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:VoiceKeyerSlot">
               <Button Classes="seg vk more" Classes.playing="{Binding IsPlaying}" Classes.empty="{Binding !HasClip}"
-                      MinWidth="56" MaxWidth="110" Padding="8,0" VerticalAlignment="Center"
+                      MinWidth="56" MaxWidth="110" Padding="8,2" VerticalAlignment="Center"
                       Command="{Binding FireCommand}" ToolTip.Tip="{Binding Tip}">
                 <StackPanel Spacing="-1">
                   <TextBlock Text="{Binding Label}" FontSize="12" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
