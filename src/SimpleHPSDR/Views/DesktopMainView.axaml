@@ -659,6 +659,8 @@
           <Button Classes="seg" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}"
                   VerticalAlignment="Center"
                   ToolTip.Tip="Full duplex: keep hearing the receivers while transmitting (needs a separate RX antenna or a cross-band slice). Blue = on, grey = off." />
+          <Button Classes="seg" Classes.lit="{Binding LnaOn}" Content="LNA" Margin="12,0,-6,0" VerticalAlignment="Center"
+                  IsVisible="{Binding ShowLna}" Command="{Binding ToggleLnaCommand}" ToolTip.Tip="{Binding LnaTip}" />
           <Button Classes="seg" Classes.lit="{Binding AutoAtt}" Padding="8,2" Margin="12,0,4,0" VerticalAlignment="Center"
                   ToolTip.Tip="Front end: attenuator and preamp (blue = auto attenuation on)">
             <StackPanel Spacing="-3">

@@ -345,8 +345,13 @@ public sealed partial class SettingsViewModel
         if (now.RxW != was.RxW) await _client.SetRxFilterWindowAsync((BandpassWindow)now.RxW);
         if (now.TxW != was.TxW) await _client.SetTxFilterWindowAsync((BandpassWindow)now.TxW);
         if ((now.All, now.OnTx, now.OnPs) != (was.All, was.OnTx, was.OnPs))
+        {
+            // Read again: the main window's LNA button may have changed it since.
+            var cur = await _client.GetRfFiltersAsync();
             await _client.SetRfFiltersAsync(new RfFilterSettingsSetRequest(
-                _rf.CustomMatrixEnabled, now.All, now.OnTx, now.OnPs, _rf.Profiles));
+                cur.CustomMatrixEnabled, now.All, now.OnTx, now.OnPs, cur.Profiles,
+                cur.Adc0Rx6mLnaDisabled, cur.Adc1Rx6mLnaDisabled));
+        }
         // With linear phase the engine limits TX to 16k taps: show what it kept.
         var s = await _client.GetStateAsync();
         _filtersWas = now with { RxW = (int)s.RxFilterWindow, TxW = (int)s.TxFilterWindow };

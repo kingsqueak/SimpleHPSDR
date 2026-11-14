@@ -82,6 +82,7 @@ public sealed partial class MainViewModel
         bool rx2 = AttOnRx2Jack;
         if (rx2 == _attWasRx2) return;
         _attWasRx2 = rx2;
+        NotifyLna();
         _ = rx2 ? ShowRx2JackAttAsync(baseline: true) : ShowMainAttAsync();
     }
 
@@ -179,6 +180,7 @@ public sealed partial class MainViewModel
             }
         ShowAntennasForBand();
         await LoadRx2JackAsync();
+        await LoadLnaAsync();
     }
 
     /// <summary>Show the routing for the band the VFO is in.</summary>

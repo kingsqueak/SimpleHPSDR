@@ -981,6 +981,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var c in Bands) c.IsSelected = ReferenceEquals(c.Value, band);
         OnPropertyChanged(nameof(BandLabel));
         ShowAntennasForBand();
+        NotifyLna();
     }
 
     /// <summary>Text of the blue Band button: the band the VFO is in, or
