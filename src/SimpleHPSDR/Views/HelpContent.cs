@@ -307,6 +307,9 @@ A marker beside the frequency shows that transmit is on the other slice.
 ## RIT and XIT
 These move receive (RIT) or transmit (XIT) a little without moving the dial. Click to turn on or off, use the wheel for 10 Hz a click, and right-click to clear. RIT works on slice A only.
 
+## Slice B on the Rx2 jack
+Both slices normally hear the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have slice B listen on an antenna plugged in there, such as a receive-only antenna, open Ant and set B to Rx2 jack. The Ant button then lights and shows B:Rx2 jack. With nothing in the jack, slice B goes quiet. While slice B is the active slice, ATT and Pre set the Rx2 jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
+
 ## DUP
 DUP keeps you hearing the receivers while transmitting. It needs a separate receive antenna or a slice on another band, or the radio's own signal will overload them.
 """),

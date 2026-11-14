@@ -80,6 +80,17 @@
                                   ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
                     </Button.Flyout>
                   </Button>
+                  <Button Classes="seg ant" IsVisible="{Binding ShowSliceBInput}"
+                          ToolTip.Tip="What slice B listens on: the main antenna, like slice A, or the Rx2 jack on the back of the radio">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock Text="B" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding SliceBInputLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button.Flyout>
+                      <MenuFlyout ItemsSource="{Binding SliceBInputs}" Placement="BottomEdgeAlignedLeft"
+                                  ItemContainerTheme="{StaticResource ChoiceMenuItem}" />
+                    </Button.Flyout>
+                  </Button>
                 </StackPanel>
               </Flyout>
             </Button.Flyout>

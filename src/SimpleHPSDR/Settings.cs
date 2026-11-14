@@ -80,6 +80,8 @@ public sealed class Settings
     public double DialPosition { get; set; }
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
+    /// <summary>Slice B listens on the radio's Rx2 jack (its second ADC) instead of the main antenna.</summary>
+    public bool SliceBOnRx2Jack { get; set; }
 
     /// <summary>Slice B's own panadapter beside A's rather than below it.</summary>
     public bool PanadaptersSideBySide { get; set; }

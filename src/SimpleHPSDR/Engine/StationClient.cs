@@ -226,6 +226,9 @@ public sealed class StationClient : IDisposable
     public Task SetPsMonitorAsync(bool on) => PostAsync("api/tx/ps/monitor", new PsMonitorSetRequest(on));
     public Task ResetPsAsync() => PostAsync("api/tx/ps/reset", new { });
 
+    public async Task<BoardCapabilities> GetCapabilitiesAsync() =>
+        (await _http.GetFromJsonAsync<BoardCapabilities>("api/radio/capabilities", Json))!;
+
     public async Task<AntennaSettingsDto> GetAntennasAsync() =>
         (await _http.GetFromJsonAsync<AntennaSettingsDto>("api/radio/antenna", Json))!;
 
@@ -637,8 +640,8 @@ public sealed class StationClient : IDisposable
 
     public async Task<G2OptionsDto> GetG2OptionsAsync() =>
         (await _http.GetFromJsonAsync<G2OptionsDto>("api/radio/g2-options", Json))!;
-    public Task SetG2OptionsAsync(bool? dither = null, bool? random = null) =>
-        PutAsync("api/radio/g2-options", new G2OptionsSetRequest(dither, random));
+    public Task SetG2OptionsAsync(bool? dither = null, bool? random = null, int? adc1AttenDb = null) =>
+        PutAsync("api/radio/g2-options", new G2OptionsSetRequest(dither, random, adc1AttenDb));
 
     /// <summary>The port the G2's p2app connects to for its front panel (0 = off);
     /// Supported only while connected to a G2 / G2-1K.</summary>
@@ -773,6 +776,9 @@ public sealed class StationClient : IDisposable
         return (await r.Content.ReadFromJsonAsync<CalibrationReport>(Json))!;
     }
 
+    /// <summary>Each ADC's attenuation and overload state (ADC1 = the Rx2 jack).</summary>
+    public async Task<AdcProtectionStatusDto> GetAdcStatusAsync() =>
+        (await _http.GetFromJsonAsync<AdcProtectionStatusDto>("api/rx/adc-protection", Json))!;
     public async Task<AdcProtectionConfig> GetAdcProtectionAsync() =>
         (await _http.GetFromJsonAsync<AdcProtectionStatusDto>("api/rx/adc-protection", Json))!.Config;
     public async Task SetAdcProtectionAsync(int maxOffsetDb, int releaseHoldMs) =>

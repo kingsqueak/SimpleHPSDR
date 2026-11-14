@@ -35,7 +35,7 @@ public sealed partial class MainViewModel
     public bool SliceATx => TxRx == 0;
     public bool SliceBTx => TxRx == 1;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))]
-    [NotifyPropertyChangedFor(nameof(ShowPanadapterB))]
+    [NotifyPropertyChangedFor(nameof(ShowPanadapterB))] [NotifyPropertyChangedFor(nameof(ShowSliceBInput))]
     private bool _sliceBEnabled;
 
     [ObservableProperty] private bool _fullDuplex;
@@ -165,6 +165,8 @@ public sealed partial class MainViewModel
         // Mode, and while it's being switched VfoHz can still be the other's.
         if (TxRx != ActiveRx) FollowTxSliceForPs();
         if (!SliceBEnabled && ActiveRx != 0) _ = MakeActiveAsync(0);
+        SyncSliceBInput();
+        CheckAttSource();
     }
 
     partial void OnTxRxChanged(int value) => FollowTxSliceForPs();

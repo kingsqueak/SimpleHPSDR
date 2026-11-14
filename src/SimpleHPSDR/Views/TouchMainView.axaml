@@ -152,6 +152,15 @@
                       </Flyout>
                     </Button.Flyout>
                   </Button>
+                  <Button Classes="seg t" IsVisible="{Binding ShowSliceBInput}">
+                    <StackPanel><TextBlock Text="B input" HorizontalAlignment="Center" /><TextBlock Text="{Binding SliceBInputLabel}" Classes="sub" /></StackPanel>
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ItemsControl ItemsSource="{Binding SliceBInputs}" ItemTemplate="{StaticResource ChoiceTile}"
+                                      ItemsPanel="{StaticResource Grid3}" Width="300" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
                 </WrapPanel>
 
                 <TextBlock Text="DISPLAY" Classes="head" />

@@ -24,7 +24,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private RadioChoice? _radio;
     private readonly Latest<long> _vfoSender;
     private readonly Latest<double> _afSender;
-    private readonly Latest<int> _attSender;
+    private readonly Latest<int> _attSender, _att1Sender;
     private bool _applyingState;
     private readonly ConcurrentQueue<DisplayFrame> _frames = new();
     private int _framesScheduled;
@@ -430,7 +430,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private static readonly int[] PreAttenSteps = [0, 10, 20, 30];
 
     /// <summary>Second line of the Pre button: "on", "0 dB", or the attenuation.</summary>
-    public string PreLabel => PreampOn ? "on" : AttenDb < 0.5 ? "0 dB" : $"−{AttenDb:0}";
+    public string PreLabel => PreampOn && !AttOnRx2Jack ? "on" : AttenDb < 0.5 ? "0 dB" : $"−{AttenDb:0}";
 
     /// <summary>preamp on → 0 dB → −10 → −20 → −30 → preamp on. From an
     /// in-between attenuation, go to the next step down.</summary>
@@ -438,7 +438,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void CyclePre()
     {
         if (!IsConnected) return;
-        if (PreampOn)
+        if (PreampOn && !AttOnRx2Jack)
         {
             PreampOn = false;
             AttenDb = 0;
@@ -446,7 +446,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
         int att = (int)Math.Round(AttenDb);
         int next = PreAttenSteps.FirstOrDefault(s => s > att, -1);
-        if (next < 0)
+        if (next < 0 && AttOnRx2Jack)
+        {
+            AttenDb = 0;   // the preamp is the main input's; the Rx2 jack cycles 0 to 30 dB
+        }
+        else if (next < 0)
         {
             AttenDb = 0;
             PreampOn = true;
@@ -457,9 +461,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    public string AttenText => AttOffsetDb > 0 ? $"{AttenDb:0}+{AttOffsetDb} dB" : $"{AttenDb:0} dB";
+    public string AttenText => (AttOffsetDb > 0 ? $"{AttenDb:0}+{AttOffsetDb} dB" : $"{AttenDb:0} dB")
+        + (AttOnRx2Jack ? " Rx2" : "");
     /// <summary>What the RF button shows.</summary>
-    public string RfText => PreampOn ? "pre on" : AttenText;
+    public string RfText => PreampOn && !AttOnRx2Jack ? "pre on" : AttenText;
 
     /// <summary>Set by the window: shows Config beside the main window, and
     /// completes when it closes. The radio stays usable meanwhile.</summary>
@@ -532,6 +537,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _sliceAfSenders = [.. Enumerable.Range(0, 2).Select(rx => new Latest<double>(
             db => _client!.SetReceiverAsync(rx, new ReceiverSetRequest(AfGainDb: db))))];
         _attSender = new Latest<int>(db => _client!.SetAttenuatorAsync(db));
+        _att1Sender = new Latest<int>(db => _client!.SetG2OptionsAsync(adc1AttenDb: db));
 
         foreach (var b in SimpleHPSDR.Band.All)
             Bands.Add(new Choice(b.Name, b, c => _ = SelectBandAsync((Band)c.Value)));
@@ -1341,7 +1347,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(AttenText));
         OnPropertyChanged(nameof(PreLabel));
         OnPropertyChanged(nameof(RfText));
-        if (!_applyingState && IsConnected) _attSender.Send((int)Math.Round(value));
+        if (_applyingState || !IsConnected) return;
+        if (AttOnRx2Jack) _att1Sender.Send((int)Math.Round(value));
+        else _attSender.Send((int)Math.Round(value));
     }
 
     private Task SelectNbAsync(NbMode mode)
@@ -1430,8 +1438,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             var s = await _client.GetStateAsync();
             ApplyDriveCeiling(s.DriveMaxPct);
-            AttOffsetDb = s.AttOffsetDb;
-            AdcOverload = s.AdcOverloadWarning;
+            if (AttOnRx2Jack) await ShowRx2JackAttAsync();
+            else
+            {
+                AttOffsetDb = s.AttOffsetDb;
+                AdcOverload = s.AdcOverloadWarning;
+            }
             PollPureSignal(s);
             UpdateSlices(s);
             // The engine can change mode itself (it remembers a mode per
