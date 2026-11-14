@@ -170,7 +170,7 @@ Right-click it (long press on a touch screen) for its options. They're remembere
 If the engine can't give the high-resolution picture (an older engine, or it stops coming), the close-up quietly falls back to the panadapter's and tries again a minute later.
 
 ## Adjusting the picture
-- Auto keeps the display range on the noise floor. It's on by default and needs no attention.
+- Auto keeps the display range on the noise floor. It's on by default and needs no attention. Floor lift, in the Display popup, raises the noise up off the waterfall while Auto is on: 0 leaves it at the bottom of the trace.
 - Display sets the range by hand, the resolution, the waterfall speed and POP.
 - POP makes the waterfall follow the noise floor, which lifts weak signals out of it.
 - Config > Colors changes the spectrum line, the shading under it, the background (plain or fading) and the waterfall colours. Custom… beside each colour picks any colour you like. "Back to the original colours" undoes it all.

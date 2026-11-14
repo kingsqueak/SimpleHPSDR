@@ -58,6 +58,8 @@ public sealed class Settings
     public double SpecMaxDb { get; set; } = -60;
     /// <summary>Spec Min/Max follow the noise floor.</summary>
     public bool AutoSpectrum { get; set; } = true;
+    /// <summary>With Auto on: how many dB of empty room the trace shows under the noise floor.</summary>
+    public double AutoFloorLiftDb { get; set; }
     /// <summary>Spectrum share of the panadapter height (rest is waterfall).</summary>
     public double PanFraction { get; set; } = 0.38;
     /// <summary>The split at which Spec Min/Max fill the spectrum; dragged lower,

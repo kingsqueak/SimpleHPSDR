@@ -57,6 +57,12 @@ public sealed class SpectrumView : Control
     /// <summary>dB at the top of the panadapter trace.</summary>
     public double SpecMaxDb { get => GetValue(SpecMaxDbProperty); set => SetValue(SpecMaxDbProperty, value); }
 
+    public static readonly StyledProperty<double> FloorLiftDbProperty =
+        AvaloniaProperty.Register<SpectrumView, double>(nameof(FloorLiftDb));
+    /// <summary>Extra dB the trace shows below Spec Min, which lifts the noise
+    /// floor up off the waterfall. The waterfall's colours don't use it.</summary>
+    public double FloorLiftDb { get => GetValue(FloorLiftDbProperty); set => SetValue(FloorLiftDbProperty, value); }
+
     public static readonly StyledProperty<bool> PopModeProperty =
         AvaloniaProperty.Register<SpectrumView, bool>(nameof(PopMode));
     /// <summary>POP: new waterfall rows follow the noise floor instead of Spec
@@ -64,7 +70,7 @@ public sealed class SpectrumView : Control
     public bool PopMode { get => GetValue(PopModeProperty); set => SetValue(PopModeProperty, value); }
     private const double PopFloorDb = 3, PopSpanDb = 30;   // above the floor; gamma is 0.5
 
-    static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty, PanFractionProperty, ScaleFractionProperty);
+    static SpectrumView() => AffectsRender<SpectrumView>(SpecMinDbProperty, SpecMaxDbProperty, FloorLiftDbProperty, PanFractionProperty, ScaleFractionProperty);
     // Trace averaging per frame (30 frames/s): 0.35 settles in about 0.2 s.
     private const float TraceAlpha = 0.35f;
 
@@ -118,7 +124,8 @@ public sealed class SpectrumView : Control
     /// The span stays the same, so the shape compares with receive.</summary>
     private (double Lo, double Hi) TraceRange()
     {
-        double lo = SpecMinDb, span = Math.Max(1, SpecMaxDb - lo);
+        // The top stays where Spec Max puts it, so lifting the floor costs no headroom.
+        double lo = SpecMinDb - Math.Max(0, FloorLiftDb), span = Math.Max(1, SpecMaxDb - lo);
         // Drag the divider down and the trace keeps its scale: the floor stays
         // at the bottom and the top shows more headroom, instead of the trace
         // stretching taller. (Above ScaleFraction it squeezes, so peaks aren't cut.)

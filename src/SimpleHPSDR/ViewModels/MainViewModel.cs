@@ -322,6 +322,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         _settings.AutoSpectrum = value;
         _settings.Save();
+        OnPropertyChanged(nameof(TraceFloorLiftDb));
+    }
+
+    // With Auto on, the noise floor sits at the bottom of the trace. This
+    // lifts it: the trace (only the trace, not the waterfall's colours) shows
+    // this many more dB under the floor. Display popup; saved, app only.
+    public const double MaxAutoFloorLiftDb = 40;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AutoFloorLiftText), nameof(TraceFloorLiftDb))]
+    private double _autoFloorLiftDb;
+    public string AutoFloorLiftText => $"{AutoFloorLiftDb:0} dB";
+    /// <summary>What the panadapters use: the lift while Auto is on, none otherwise
+    /// (by hand, Spec Min does the same job).</summary>
+    public double TraceFloorLiftDb => AutoSpectrum ? AutoFloorLiftDb : 0;
+
+    partial void OnAutoFloorLiftDbChanged(double value)
+    {
+        _settings.AutoFloorLiftDb = value;
+        _settings.Save();
     }
 
     [RelayCommand]
@@ -566,6 +584,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _specMinDb = _settings.SpecMinDb;
         _specMaxDb = _settings.SpecMaxDb;
         _autoSpectrum = _settings.AutoSpectrum;
+        _autoFloorLiftDb = Math.Clamp(_settings.AutoFloorLiftDb, 0, MaxAutoFloorLiftDb);
         _panFraction = _settings.PanFraction;
         if (_settings.SpecScaleFraction is null)
         {

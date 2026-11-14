@@ -241,7 +241,7 @@
     </Grid>
   </DataTemplate>
   <DataTemplate x:Key="DisplayPanel" x:DataType="vm:MainViewModel">
-    <Grid Width="340" Margin="4" ColumnDefinitions="74,*,60" RowDefinitions="Auto,Auto,Auto" RowSpacing="14">
+    <Grid Width="340" Margin="4" ColumnDefinitions="74,*,60" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="14">
       <TextBlock Text="Spec Min" Classes="label" FontSize="12" VerticalAlignment="Center" />
       <Slider Grid.Column="1" Minimum="-160" Maximum="-40" Value="{Binding SpecMinDb}" VerticalAlignment="Center"
               TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Bottom of the panadapter trace (dB)" />
@@ -252,7 +252,14 @@
               TickFrequency="1" IsSnapToTickEnabled="True" ToolTip.Tip="Top of the panadapter trace (dB)" />
       <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SpecMaxDb, StringFormat={}{0:0} dB}" Margin="8,0,0,0"
                  VerticalAlignment="Center" FontSize="12" />
-      <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
+      <!-- Auto only: by hand, Spec Min does this -->
+      <TextBlock Grid.Row="2" Text="Floor lift" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="{x:Static vm:MainViewModel.MaxAutoFloorLiftDb}" Value="{Binding AutoFloorLiftDb}"
+              VerticalAlignment="Center" TickFrequency="1" IsSnapToTickEnabled="True" IsEnabled="{Binding AutoSpectrum}"
+              ToolTip.Tip="With Auto on: how far the noise floor sits above the waterfall. 0 puts the noise at the bottom of the trace; more lifts it and leaves room underneath. The waterfall's colours don't change." />
+      <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding AutoFloorLiftText}" Margin="8,0,0,0"
+                 VerticalAlignment="Center" FontSize="12" />
+      <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="6">
         <Button Classes="seg" Padding="8,0" VerticalAlignment="Center"
                 ToolTip.Tip="Display resolution (FFT size): bigger shows finer detail, at more CPU">
           <StackPanel Spacing="-1">
