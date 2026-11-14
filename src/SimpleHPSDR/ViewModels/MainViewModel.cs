@@ -1446,6 +1446,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             }
             PollPureSignal(s);
             UpdateSlices(s);
+            _ = SyncCwIdAsync();
             // The engine can change mode itself (it remembers a mode per
             // frequency range), so follow it, filters included.
             var a = ActiveOf(s);

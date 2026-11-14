@@ -731,12 +731,26 @@
     <!-- Clock in the bottom corner, over the empty end of the panel -->
     <Grid Grid.Row="4" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8"
           HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,10">
-      <Button Classes="idclock" Classes.on="{Binding IdTimerRunning}" Classes.mark="{Binding IdTimerAtMark}" Content="ID"
+      <Button Classes="idclock" Classes.on="{Binding IdTimerRunning}" Classes.mark="{Binding IdTimerAtMark}" Content="{Binding IdLabel}"
               FontFamily="Inter" FontSize="11" Command="{Binding ToggleIdTimerCommand}"
-              ToolTip.Tip="ID timer: click to turn it on or off. It reminds you on the even ten minutes while connected to a radio." />
+              ToolTip.Tip="ID timer: click to turn the reminder on or off. Right-click to send your callsign in CW automatically.">
+        <Button.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Send my callsign in CW automatically" ToggleType="CheckBox" IsChecked="{Binding CwIdAuto}"
+                      ToolTip.Tip="Mixed into your voice transmissions, at least every 10 minutes. It never keys the radio by itself." />
+          </ContextMenu>
+        </Button.ContextMenu>
+      </Button>
       <Button Grid.Column="1" Classes="idclock" Classes.on="{Binding IdTimerRunning}" Classes.mark="{Binding IdTimerAtMark}"
               Content="{Binding IdCountdownText}" Command="{Binding ToggleIdTimerCommand}"
-              ToolTip.Tip="ID timer: click to turn it on or off. It reminds you on the even ten minutes while connected to a radio." />
+              ToolTip.Tip="ID timer: click to turn the reminder on or off. Right-click to send your callsign in CW automatically.">
+        <Button.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="Send my callsign in CW automatically" ToggleType="CheckBox" IsChecked="{Binding CwIdAuto}"
+                      ToolTip.Tip="Mixed into your voice transmissions, at least every 10 minutes. It never keys the radio by itself." />
+          </ContextMenu>
+        </Button.ContextMenu>
+      </Button>
       <TextBlock Grid.Row="1" Text="{Binding LocalZoneText}" Classes="label" FontSize="11" VerticalAlignment="Center" />
       <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LocalTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
       <TextBlock Grid.Row="2" Text="UTC" Classes="label" FontSize="11" VerticalAlignment="Center" />

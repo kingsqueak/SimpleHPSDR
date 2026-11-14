@@ -547,6 +547,14 @@ Click ID above the clock to turn on a reminder at each even ten minutes on the c
 If you're transmitting at the mark, it waits and plays when you unkey.
 
 It plays on this computer's speakers and never goes out over the air. Config > Station has the sound, your own .wav, the volume and a Test button.
+
+## CW ID
+Right-click ID and choose Send my callsign in CW automatically (in the touch layout: CW ID in the drawer). Your callsign then goes out in Morse as a tone mixed into your voice, at least every 10 minutes of operating. It needs your callsign in Config > Station.
+- The box reads CW ID and counts down to the next ID.
+- next over (green): an ID is owed and goes out when you next talk.
+- sending (green): it's on the air now. If you unkey mid-ID, it finishes first.
+
+It never keys the radio by itself: it only rides on your own SSB, AM or FM transmissions, not CW or digital modes. Turning it off sends one last ID on your next over. Config > Station sets its speed (20 WPM at most), tone, level and interval.
 """),
 
         ("Your station", """

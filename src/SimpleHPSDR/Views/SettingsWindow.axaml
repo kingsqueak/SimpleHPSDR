@@ -539,6 +539,26 @@
                   <TextBlock Text="{Binding IdVolumeText}" Width="44" FontSize="12" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Text="{Binding IdSoundStatus}" Classes="label" FontSize="12" TextWrapping="Wrap" />
+                <CheckBox Content="Send my callsign in CW automatically" IsChecked="{Binding CwIdAuto}" Margin="0,6,0,0"
+                          ToolTip.Tip="Also on the ID box's right-click menu" />
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="A CW tone mixed into your voice transmissions (SSB, AM, FM), at least once every interval, and once more on your next over after you turn it off. It never keys the radio by itself. Uses your callsign above." />
+                <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6" IsEnabled="{Binding CwIdAuto}">
+                  <TextBlock Text="Speed (WPM)" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Column="1" Value="{Binding CwIdWpm}" Minimum="5" Maximum="20" Increment="1" FormatString="0" Width="140" HorizontalAlignment="Left"
+                                 ToolTip.Tip="20 WPM at most: the US limit for a CW ID with a voice signal" />
+                  <TextBlock Grid.Row="1" Text="Tone (Hz)" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding CwIdToneHz}" Minimum="400" Maximum="1200" Increment="50" FormatString="0" Width="140" HorizontalAlignment="Left" />
+                  <TextBlock Grid.Row="2" Text="Level" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Slider Minimum="-40" Maximum="-6" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding CwIdLevelDb}" Width="220" VerticalAlignment="Center"
+                            ToolTip.Tip="How loud the ID is under your voice" />
+                    <TextBlock Text="{Binding CwIdLevelText}" Width="50" FontSize="12" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="3" Text="Every (minutes)" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding CwIdIntervalMin}" Minimum="1" Maximum="10" Increment="1" FormatString="0" Width="140" HorizontalAlignment="Left"
+                                 ToolTip.Tip="Counted while you operate; 10 at most" />
+                </Grid>
               </StackPanel>
             </Expander>
             <Expander Header="Waterfall while transmitting" IsExpanded="True" HorizontalAlignment="Stretch">

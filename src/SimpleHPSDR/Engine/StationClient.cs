@@ -825,6 +825,14 @@ public sealed class StationClient : IDisposable
     public async Task<FilterPreset[]> GetFilterPresetsAsync(RxMode mode) =>
         await _http.GetFromJsonAsync<FilterPreset[]>($"api/filter/presets?mode={mode}", Json) ?? [];
 
+    // CW station ID: the engine mixes the callsign into voice transmissions
+    // (it never keys the radio for it on this path).
+    public async Task<CwIdStatusDto> GetCwIdAsync() =>
+        (await _http.GetFromJsonAsync<CwIdStatusDto>("api/cwid", Json))!;
+    public Task StartCwIdAsync(string callsign) => PostAsync("api/cwid/start", new CwIdStartRequest(callsign, OnTheTen: false));
+    public Task StopCwIdAsync() => PostAsync("api/cwid/stop", new CwIdStopRequest(SkipFinalId: false));
+    public Task SetCwIdSettingsAsync(CwIdSettingsSetRequest req) => PutAsync("api/cwid/settings", req);
+
     private async Task PutAsync<T>(string path, T body) =>
         await Checked(_http.PutAsJsonAsync(path, body, Json));
 

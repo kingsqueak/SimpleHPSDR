@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SimpleHPSDR.Contracts;
 using SimpleHPSDR.Engine;
 
 namespace SimpleHPSDR.ViewModels;
@@ -17,6 +18,52 @@ public sealed partial class SettingsViewModel
         var op = await _client.GetOperatorAsync();
         Callsign = _callsignLoaded = op.Callsign ?? "";
         _grid = op.Grid ?? "";
+        try
+        {
+            var cw = (await _client.GetCwIdAsync()).Settings;
+            (CwIdWpm, CwIdToneHz, CwIdLevelDb, CwIdIntervalMin) = (cw.Wpm, cw.ToneHz, cw.LevelDb, cw.IntervalMinutes);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException) { }
+    }
+
+    // ---- CW ID: on/off is an app setting; speed, tone, level and interval
+    // are the engine's, saved as they change ----
+
+    public bool CwIdAuto
+    {
+        get => AppSettings?.CwIdAuto ?? false;
+        set
+        {
+            if (AppSettings is null || AppSettings.CwIdAuto == value) return;
+            AppSettings.CwIdAuto = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+        }
+    }
+
+    [ObservableProperty] private decimal _cwIdWpm = 20;
+    [ObservableProperty] private decimal _cwIdToneHz = 800;
+    [ObservableProperty] private double _cwIdLevelDb = -18;
+    [ObservableProperty] private decimal _cwIdIntervalMin = 10;
+    public string CwIdLevelText => $"{CwIdLevelDb:0} dB";
+
+    partial void OnCwIdWpmChanged(decimal value) => SendCwId(new CwIdSettingsSetRequest(Wpm: (int)value));
+    partial void OnCwIdToneHzChanged(decimal value) => SendCwId(new CwIdSettingsSetRequest(ToneHz: (int)value));
+    partial void OnCwIdLevelDbChanged(double value)
+    {
+        OnPropertyChanged(nameof(CwIdLevelText));
+        SendCwId(new CwIdSettingsSetRequest(LevelDb: Math.Round(value)));
+    }
+    partial void OnCwIdIntervalMinChanged(decimal value) => SendCwId(new CwIdSettingsSetRequest(IntervalMinutes: (int)value));
+
+    private void SendCwId(CwIdSettingsSetRequest req)
+    {
+        if (_populating) return;
+        _ = Task.Run(async () =>
+        {
+            try { await _client.SetCwIdSettingsAsync(req); }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException) { }
+        });
     }
 
     [RelayCommand]

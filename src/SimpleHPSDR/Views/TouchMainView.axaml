@@ -305,6 +305,7 @@
                 <TextBlock Text="ID TIMER" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
                   <Button Classes="seg t" Content="{Binding IdCountdownText}" Command="{Binding ToggleIdTimerCommand}" />
+                  <Button Classes="seg t" Classes.lit="{Binding CwIdAuto}" Content="CW ID" Command="{Binding ToggleCwIdCommand}" />
                   <StackPanel VerticalAlignment="Center" Margin="8,0,0,0">
                     <TextBlock Text="{Binding LocalTimeText}" FontSize="15" />
                     <TextBlock Text="{Binding ZuluTimeText}" Classes="label" />

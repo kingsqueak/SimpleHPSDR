@@ -82,6 +82,8 @@ public sealed class Settings
     public bool SliceBOwnPanadapter { get; set; } = true;
     /// <summary>Slice B listens on the radio's Rx2 jack (its second ADC) instead of the main antenna.</summary>
     public bool SliceBOnRx2Jack { get; set; }
+    /// <summary>Send the callsign in CW, mixed into voice transmissions, at least every interval.</summary>
+    public bool CwIdAuto { get; set; }
 
     /// <summary>Slice B's own panadapter beside A's rather than below it.</summary>
     public bool PanadaptersSideBySide { get; set; }
