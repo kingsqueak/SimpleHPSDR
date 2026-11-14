@@ -841,9 +841,12 @@
                     IsVisible="{Binding DeckOpen}" />
 
     <!-- The side panel: empty until the side arrangement is chosen, when the
-         pieces above move in. It scrolls if the window is too short for it. -->
-    <ScrollViewer Name="SideRail" Grid.Column="1" Grid.RowSpan="5" IsVisible="False" Width="338" Margin="10,0,-8,0"
-                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+         pieces above move in. The clock stays in the window's bottom corner,
+         level with the line under the panadapter; the rest scrolls if the
+         window is too short for it. -->
+    <DockPanel Name="SideRail" Grid.Column="1" Grid.RowSpan="5" IsVisible="False" Width="338" Margin="10,0,-8,0">
+      <Panel Name="SideClockHost" DockPanel.Dock="Bottom" HorizontalAlignment="Right" MinHeight="26" Margin="0,8,10,0" />
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Spacing="8" Margin="0,0,8,0">
         <Border Classes="panel">
           <StackPanel Name="SideTuneHost" Spacing="8">
@@ -855,9 +858,9 @@
         <Border Classes="panel">
           <StackPanel Name="SideTxHost" Spacing="8" />
         </Border>
-        <Panel Name="SideClockHost" HorizontalAlignment="Right" />
       </StackPanel>
-    </ScrollViewer>
+      </ScrollViewer>
+    </DockPanel>
   </Grid>
   </DockPanel>
 </UserControl>

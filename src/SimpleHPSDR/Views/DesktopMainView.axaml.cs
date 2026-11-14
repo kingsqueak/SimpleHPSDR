@@ -278,7 +278,18 @@ public partial class DesktopMainView : UserControl
         ReceiveButtons.ColumnSpacing = side ? 0 : 12;
         SideAudioHost.Margin = side ? new Thickness(0, 8, 0, 0) : default;
         ReceivePanel.Margin = side ? default : new Thickness(0, 0, 0, 10);
-        ClockBlock.Margin = side ? new Thickness(0, 0, 8, 0) : new Thickness(12, 0, 4, 0);
+        // The clock: three short rows at the end of the bottom row, or one
+        // line in the side panel's bottom corner.
+        ClockBlock.Margin = side ? default : new Thickness(12, 0, 4, 0);
+        ClockBlock.ColumnDefinitions = new ColumnDefinitions(side ? "Auto,Auto,Auto,Auto,Auto,Auto" : "Auto,Auto");
+        for (int i = 0; i < ClockBlock.Children.Count; i++)
+        {
+            var part = ClockBlock.Children[i];
+            Grid.SetRow(part, side ? 0 : i / 2);
+            Grid.SetColumn(part, side ? i : i % 2);
+            // A wider gap before each label after the first, so the three pairs read apart.
+            part.Margin = side && i > 0 && i % 2 == 0 ? new Thickness(10, 0, 0, 0) : default;
+        }
 
         FitTopBar(Bounds.Width);
         FitVfo();
