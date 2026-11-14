@@ -163,6 +163,27 @@
     <Setter Property="Foreground" Value="White" />
   </Style>
 
+  <!-- Corner mark: this button has more on right-click (long press on a touch screen). -->
+  <Style Selector="Button.more, ToggleButton.more">
+    <Setter Property="(AdornerLayer.Adorner)">
+      <Template>
+        <Path Data="M6 0 V6 H0 Z" Width="6" Height="6" Margin="0,0,3,3" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Fill="{DynamicResource TextMain}" Opacity="0.45" IsHitTestVisible="False" />
+      </Template>
+    </Setter>
+  </Style>
+  <!-- A button's value, under or beside its name; and the ▾ on a button that opens a list. -->
+  <Style Selector="TextBlock.val">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="Opacity" Value="0.85" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.caret">
+    <Setter Property="FontSize" Value="9" />
+    <Setter Property="Opacity" Value="0.6" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <!-- Flyouts wider than the default frame (456 px), so the frame holds them. -->
   <Style Selector="FlyoutPresenter.wide">
     <Setter Property="MaxWidth" Value="900" />

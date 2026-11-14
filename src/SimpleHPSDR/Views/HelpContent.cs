@@ -34,7 +34,7 @@ If no radio appears, check that it's on and on the same network, or type its add
 - The Tools menu has the antenna analyser and the wideband view; the Help menu has this window and update checks.
 
 ## The most useful tip
-Most controls have more behind a right-click. Hover over anything for a short explanation. Blue means a control is on.
+A small mark in a button's bottom right corner means it has more behind a right-click. A ▾ means a click opens a list or a popup. Hover over anything for a short explanation. Blue means a control is on.
 """),
 
         ("Shortwave listening", """
@@ -109,7 +109,7 @@ CTUN changes what a click does. With it on, the display stays still and only the
 """),
 
         ("Mini window", """
-The MINI button to the right of the meters swaps the main window for a small one you can keep in a corner of the screen. Drag its edges to any size and everything scales to fit.
+The button with two arrows pointing inward, to the right of the meters, swaps the main window for a small one you can keep in a corner of the screen. Drag its edges to any size and everything scales to fit.
 
 - The frequency tunes with the wheel, or click it to type one.
 - Below it are the signal, power, SWR and ALC meters.

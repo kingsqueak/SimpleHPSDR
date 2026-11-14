@@ -62,7 +62,7 @@ Not affiliated with or endorsed by the Zeus SDR project.
 - **SWL:** starts in SAM with a station guide from EiBi, in your local time. Click a
   station to tune it.
 - **Firmware loader** for Protocol 2 radios.
-- **Mini window:** the MINI button at the right of the meters shrinks
+- **Mini window:** the button with two inward arrows at the right of the meters shrinks
   SimpleHPSDR to the frequency, the meters, Mute and a TX button that transmits
   while held down. The arrows in its corner bring the full window back.
 - **Light and dark themes**, following the system.
