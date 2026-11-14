@@ -103,8 +103,9 @@ public partial class MainWindow : Window
         await InfoWindow.About(App.Version, engine).ShowDialog(this);
     }
 
-    // The mini window replaces this one until it's closed.
-    public void OpenMini()
+    // The mini window replaces this one until it's closed. From the view
+    // button's circle (below, side, small) closing it goes on to "below".
+    public void OpenMini(bool thenControlsBelow = false)
     {
         if (Vm is not { } vm) return;
         var (width, height) = vm.MiniSize;
@@ -116,7 +117,11 @@ public partial class MainWindow : Window
             mini.Position = new PixelPoint(at.X, at.Y);
         }
         mini.Closing += (_, _) => vm.RememberMiniWindow(mini.Width, mini.Height, mini.Position.X, mini.Position.Y);
-        mini.Closed += (_, _) => Dispatcher.UIThread.Post(Show);
+        mini.Closed += (_, _) => Dispatcher.UIThread.Post(() =>
+        {
+            if (thenControlsBelow) vm.SidePanel = false;
+            Show();
+        });
         mini.Show();
         Hide();
     }

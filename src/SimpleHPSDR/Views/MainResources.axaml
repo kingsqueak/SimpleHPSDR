@@ -380,8 +380,14 @@
     </StackPanel>
   </DataTemplate>
   <DataTemplate x:Key="AutoAgcPanel" x:DataType="vm:MainViewModel">
-    <Grid Width="340" Margin="4" ColumnDefinitions="90,*,56" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+    <Grid Width="340" Margin="4" ColumnDefinitions="90,*,56" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
       <TextBlock Grid.ColumnSpan="3" Text="Auto AGC" FontWeight="SemiBold" />
+      <TextBlock Grid.Row="4" Text="Threshold" Classes="label" FontSize="12" VerticalAlignment="Center" IsVisible="{Binding AgcTopShown}" />
+      <Slider Grid.Row="4" Grid.Column="1" Minimum="30" Maximum="120" Value="{Binding AgcTopDb}" VerticalAlignment="Center"
+              IsVisible="{Binding AgcTopShown}" />
+      <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding AgcTopText}" FontSize="12" VerticalAlignment="Center" IsVisible="{Binding AgcTopShown}" />
+      <TextBlock Grid.Row="5" Grid.ColumnSpan="3" TextWrapping="Wrap" FontSize="12" Classes="label" IsVisible="{Binding AgcTopShown}"
+                 Text="The AGC threshold, set by hand: raise it until the yellow line sits just above the noise. Moving it turns auto AGC off." />
       <TextBlock Grid.Row="1" Text="Above noise" Classes="label" FontSize="12" VerticalAlignment="Center" />
       <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="40" SmallChange="1" TickFrequency="1" IsSnapToTickEnabled="True"
               Value="{Binding AutoAgcOffsetDb}" VerticalAlignment="Center" />

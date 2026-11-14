@@ -121,16 +121,36 @@ SetProp(vm, "VfoHz", 14_225_000L);
 foreach (var (slot, lbl, lo, hi) in new[] { ("F1", "5.0k", 63, 5000), ("F2", "4.0k", 100, 4000), ("F3", "3.5k", 100, 3500), ("F4", "3.0k", 100, 3000), ("F5", "2.8k", 100, 2800) })
     vm.Filters.Add(new FilterSlot(SimpleHPSDR.Contracts.RxMode.USB, new SimpleHPSDR.Engine.FilterPreset(slot, lbl, lo, hi), _ => Task.CompletedTask, _ => Task.CompletedTask, _ => Task.CompletedTask) { IsSelected = slot == "F2" });
 void Notify(object o, string n) => o.GetType().GetMethod("OnPropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance, [typeof(string)])!.Invoke(o, [n]);
+vm.SidePanel = args.Contains("--side");
 var main = new MainWindow { DataContext = vm };
 SimpleHPSDR.Platform.LayoutMode.Watch(main, vm.AppSettings);
 SimpleHPSDR.Platform.TouchWindows.Enable();
 typeof(MainWindow).GetField("_started", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(main, true);
-var mainPrefix = SimpleHPSDR.Platform.LayoutMode.Override == "Touch" ? "touch-" : "";
+var mainPrefix = SimpleHPSDR.Platform.LayoutMode.Override == "Touch" ? "touch-" : args.Contains("--side") ? "side-" : "";
 foreach (var (w, h, n0) in new[] { (1200.0, 760.0, "main-1200x760-desktop"), (900.0, 532.0, "main-900x532"), (W, H, "main-1024x535"), (W, 600.0, "main-1024x600-fullscreen") })
 {
     Make(main, w, h);
     if (!main.IsVisible) main.Show();
     Shot(main, mainPrefix + n0);
+}
+// --bench: how long resizing and button changes take, and how many layout
+// passes they cause (a loop in the layout shows as passes far above the steps).
+if (args.Contains("--bench"))
+{
+    int passes = 0;
+    main.LayoutUpdated += (_, _) => passes++;
+    void Bench(string what, int steps, Action<int> step)
+    {
+        Pump(); passes = 0;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        for (int i = 0; i < steps; i++) { step(i); Pump(); main.CaptureRenderedFrame()?.Dispose(); }
+        Console.WriteLine($"BENCH {what}: {sw.ElapsedMilliseconds / (double)steps:0.0} ms a step, {passes / (double)steps:0.0} layout passes a step");
+    }
+    Bench("idle", 100, _ => { });
+    Bench("resize", 100, i => Make(main, 1000 + (i % 20) * 20, 600 + (i % 10) * 16));
+    Bench("toggle ANF", 100, i => SetProp(vm, "AnfOn", i % 2 == 0));
+    Bench("retune", 100, i => SetProp(vm, "VfoHz", 14_225_000L + i * 100));
+    return 0;
 }
 // Touch layout: the drawer on each tab
 if (main.GetVisualDescendants().OfType<SplitView>().FirstOrDefault() is { } drawer)

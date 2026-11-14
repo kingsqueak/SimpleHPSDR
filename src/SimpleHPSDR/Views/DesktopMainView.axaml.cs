@@ -28,9 +28,13 @@ public partial class DesktopMainView : UserControl
         VfoArea.SizeChanged += (_, _) => FitVfo();
         OffsetButtons.SizeChanged += (_, _) => FitVfo();
         StepLockButtons.SizeChanged += (_, _) => FitVfo();
-        MemButton.SizeChanged += (_, _) => FitVfo();
         SliceBadges.SizeChanged += (_, _) => FitVfo();
-        SliceBadges.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) FitVfo(); };
+        SliceBadges.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != IsVisibleProperty) return;
+            VfoGrid.InvalidateMeasure();   // the badges' column must make room for them
+            FitVfo();
+        };
         MainGrid.LayoutUpdated += (_, _) => PlaceDeck();
         VfoDigitWheel.Attach(FrequencyReadout, () => Vm);
         if (StepButton.Flyout is MenuFlyout stepMenu) stepMenu.Opening += (_, _) => FillStepMenu(stepMenu);
@@ -111,7 +115,8 @@ public partial class DesktopMainView : UserControl
     {
         // The buttons beside the frequency keep their size (their gaps are
         // margins, so the A/B badges take no room while hidden); the frequency gets the rest.
-        double others = MemButton.DesiredSize.Width + StepLockButtons.DesiredSize.Width + OffsetButtons.DesiredSize.Width
+        // In the side panel Step, lock, RIT and XIT sit under the frequency, not beside it.
+        double others = (_side ? 0 : StepLockButtons.DesiredSize.Width + OffsetButtons.DesiredSize.Width)
                         + (SliceBadges.IsVisible ? SliceBadges.DesiredSize.Width : 0);
         VfoScale.MaxWidth = Math.Max(0, VfoArea.Bounds.Width - others);
     }
@@ -121,8 +126,9 @@ public partial class DesktopMainView : UserControl
         bool narrow = width < FullTopBarWidth;
         RadioText.MaxWidth = narrow ? 96 : double.PositiveInfinity;
         StatusText.MaxWidth = narrow ? 230 : 300;
-        SignalPanel.Width = Math.Clamp(width - 800, 236, 300);
-        SignalLabel.IsVisible = SignalPanel.Width >= 290;
+        // The side panel sets the meter's width; below, a narrow window narrows it.
+        SignalPanel.Width = _side ? double.NaN : Math.Clamp(width - 800, 236, 300);
+        SignalLabel.IsVisible = _side || SignalPanel.Width >= 290;
     }
 
     // The tuning steps, and whether a panadapter click snaps to the step.
@@ -180,6 +186,103 @@ public partial class DesktopMainView : UserControl
     }
 
     private void OnOpenMini(object? sender, RoutedEventArgs e) => (TopLevel.GetTopLevel(this) as MainWindow)?.OpenMini();
+
+    // ---- the two arrangements ------------------------------------------
+
+    private bool _side;
+    private bool _arranged;
+
+    // The view button: controls below, controls at the side, the small
+    // window, and round again (closing the small window goes on to "below").
+    private void OnNextView(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { } vm) return;
+        if (!vm.SidePanel) vm.SidePanel = true;
+        else (TopLevel.GetTopLevel(this) as MainWindow)?.OpenMini(thenControlsBelow: true);
+    }
+
+    private void OnViewBelow(object? sender, RoutedEventArgs e) { if (Vm is { } vm) vm.SidePanel = false; }
+
+    private void OnViewSide(object? sender, RoutedEventArgs e) { if (Vm is { } vm) vm.SidePanel = true; }
+
+    // The view button's right-click menu: a dot on the arrangement in use.
+    private void OnViewMenuOpening(object? sender, EventArgs e)
+    {
+        if (sender is not MenuFlyout { Items: [MenuItem below, MenuItem atSide, ..] }) return;
+        below.IsChecked = !_side;
+        atSide.IsChecked = _side;
+    }
+
+    private static void Move(Control piece, Panel to, int index = -1)
+    {
+        if (ReferenceEquals(piece.Parent, to)) return;
+        (piece.Parent as Panel)?.Children.Remove(piece);
+        if (index < 0 || index > to.Children.Count) to.Children.Add(piece);
+        else to.Children.Insert(index, piece);
+    }
+
+    /// <summary>Puts the pieces where the chosen arrangement wants them. The
+    /// controls are the same objects either way, so nothing they show or hold
+    /// is lost by switching.</summary>
+    private void Arrange(bool side)
+    {
+        if (_arranged && _side == side) return;
+        _arranged = true;
+        _side = side;
+        MainGrid.Classes.Set("side", side);
+        if (side)
+        {
+            Move(VfoArea, SideTuneHost, 0);
+            Move(TuneButtons, SideTuneRow);
+            Move(StepLockButtons, SideTuneRow);
+            Move(OffsetButtons, SideTuneRow);
+            Move(SignalPanel, SideMeterHost);
+            Move(ReceivePanel, SideReceiveHost);
+            Move(AudioBlock, SideAudioHost);
+            Move(TxBlock, SideTxHost);
+            Move(VkBlock, SideTxHost);
+            Move(ClockBlock, SideClockHost);
+        }
+        else
+        {
+            Move(TuneButtons, TopHost);
+            Move(VfoArea, TopHost);
+            Move(SignalPanel, TopHost);
+            Move(StepLockButtons, VfoGrid);
+            Move(OffsetButtons, VfoGrid);
+            Move(ReceivePanel, MainGrid);
+            Move(ClockBlock, BottomHost, 0);     // docked right: before the wrap panel that fills
+            Move(AudioBlock, BottomWrap, 0);
+            Move(TxBlock, BottomWrap, 1);
+            Move(VkBlock, BottomWrap, 2);
+        }
+        TopHost.IsVisible = BottomPanel.IsVisible = !side;
+        SideRail.IsVisible = side;
+
+        // Step, lock, RIT and XIT: stacked beside the frequency, or in a row under it.
+        var flow = side ? Avalonia.Layout.Orientation.Horizontal : Avalonia.Layout.Orientation.Vertical;
+        StepLockButtons.Orientation = OffsetButtons.Orientation = flow;
+        StepLockButtons.Margin = OffsetButtons.Margin = side ? default : new Thickness(10, 0, 0, 0);
+        VfoArea.Margin = side ? default : new Thickness(8, 0);
+
+        // Receive panel: buttons beside the close-up, or the close-up on top
+        // with the buttons and the volume under it.
+        var star = new GridLength(1, GridUnitType.Star);
+        ReceiveGrid.ColumnDefinitions[0].Width = side ? star : GridLength.Auto;
+        ReceiveGrid.ColumnDefinitions[1].Width = side ? new GridLength(0) : star;
+        Grid.SetColumn(FilterScope, side ? 0 : 1);
+        Grid.SetRow(ReceiveButtons, side ? 1 : 0);
+        FilterScope.Height = side ? 64 : double.NaN;
+        FilterScope.Margin = side ? new Thickness(-10, -8, -10, 8) : new Thickness(12, -8, -10, -8);
+        FilterLabel.IsVisible = ReceiveLabel.IsVisible = !side;
+        ReceiveButtons.ColumnSpacing = side ? 0 : 12;
+        SideAudioHost.Margin = side ? new Thickness(0, 8, 0, 0) : default;
+        ReceivePanel.Margin = side ? default : new Thickness(0, 0, 0, 10);
+        ClockBlock.Margin = side ? new Thickness(0, 0, 8, 0) : new Thickness(12, 0, 4, 0);
+
+        FitTopBar(Bounds.Width);
+        FitVfo();
+    }
 
     private void OnOpenCw(object? sender, RoutedEventArgs e) => (TopLevel.GetTopLevel(this) as MainWindow)?.OpenCw();
 
@@ -241,6 +344,7 @@ public partial class DesktopMainView : UserControl
         vm.Display += OnDisplay;
         vm.DisplayReset += OnDisplayReset;
         vm.PropertyChanged += OnVmPropertyChanged;
+        Arrange(vm.SidePanel);
         LayoutPanadapters();
     }
 
@@ -294,7 +398,8 @@ public partial class DesktopMainView : UserControl
         if (!DeckHost.IsVisible) return;
         var at = RecButton.TranslatePoint(new Point(0, 0), MainGrid);
         if (at is null) return;
-        double x = Math.Max(0, Math.Min(at.Value.X, MainGrid.Bounds.Width - 24 - DeckHost.Bounds.Width));
+        // Inside the panadapter's width: in the side panel REC is to the right of it.
+        double x = Math.Max(0, Math.Min(at.Value.X, PanGrid.Bounds.Width - 12 - DeckHost.Bounds.Width));
         var margin = new Thickness(x, 0, 0, 8);
         if (DeckHost.Margin != margin) DeckHost.Margin = margin;
     }
@@ -306,6 +411,8 @@ public partial class DesktopMainView : UserControl
         if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx)
             or nameof(MainViewModel.PanadaptersSideBySide))
             LayoutPanadapters();
+        else if (e.PropertyName == nameof(MainViewModel.SidePanel) && _wired is { } v)
+            Arrange(v.SidePanel);
         // Zooming: redraw now with the new span instead of waiting for the next
         // frame. At each whole zoom level the engine sends no frames for about
         // 130 ms while it rebuilds its analyser, and the picture froze then leapt.

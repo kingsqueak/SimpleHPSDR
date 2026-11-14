@@ -168,6 +168,8 @@ public sealed class Settings
     /// <summary>Main window layout: Automatic (touch on screens narrower
     /// than 1080), Desktop or Touch.</summary>
     public string Layout { get; set; } = "Automatic";
+    /// <summary>Desktop layout: the controls in a panel at the side of the panadapter instead of above and below it.</summary>
+    public bool SidePanel { get; set; }
     /// <summary>SimpleHPSDR runs on an ANAN-G2's own computer (Linux arm64 only).</summary>
     public bool G2Computer { get; set; }
     /// <summary>Config > Colors: names from SpectrumLook's lists.</summary>

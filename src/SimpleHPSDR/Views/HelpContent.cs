@@ -27,10 +27,12 @@ Brick SDRs (Brick2 and Brick3) are recognised and named in the list.
 If no radio appears, check that it's on and on the same network, or type its address under "Or by address". Network help lists what a firewall has to allow.
 
 ## Finding your way around
-- Top row: radio, Config, Span, antenna, frequency and meters.
-- Second row: band, mode, filters, ANF, NB, NR, and a close-up of the signal.
+- Top row: band, mode and memories, the frequency, and the meters.
+- Second row: the filters, then everything that shapes what you hear (RFG, AGC, NB, NR, ANF, SQL, RX Lev), and a close-up of the signal.
 - Middle: the band strip, the panadapter and the waterfall.
-- Bottom: display controls, then transmit and receive controls, and the clock.
+- Under the panadapter: its display controls on the left; the antenna, the radio's name, Config and the view button on the right.
+- Bottom row: volume, transmit, the voice keyer and the clock.
+- The view button, at the right end of the line under the panadapter, changes the arrangement: controls above and below the panadapter, then all the controls in a panel at its side (the panadapter gets the window's full height), then the small window. Right-click it to pick one. Your choice is remembered.
 - The Tools menu has the antenna analyser and the wideband view; the Help menu has this window and update checks.
 
 ## The most useful tip
@@ -62,7 +64,7 @@ Nearly everything on a front panel is here under a different name. This is where
 - Keypad frequency entry: click the frequency and type.
 - Band scope: the panadapter. The waterfall below it is the same picture over time.
 - AF gain: the AF slider.
-- RF gain: the AGC-T slider, which sets where AGC starts working.
+- RF gain: the Threshold slider on AGC's right-click, which sets where AGC starts working.
 - Preamp and attenuator: RFG.
 - IF width or filter: the filter buttons, or drag the edges in the close-up.
 - Noise blanker: NB. Noise reduction: NR. Notch: ANF, with manual notches on its right-click.
@@ -96,7 +98,7 @@ The highlighted digit is the one your step moves. Use Step beside the frequency 
 The padlock stops tuning from here, so you can't bump the dial. Software using CAT or TCI can still tune it.
 
 ## Memories
-Mem, left of the frequency, opens 16 memories, the same on every band. Click one to tune to its frequency and mode. Right-click one (long-press on a touch screen) to store the frequency and mode you're on; that replaces what was there. An empty one says Open. When the popup closes they sort by frequency, lowest first, left to right.
+Mem, beside Band and Mode, opens 16 memories, the same on every band. Click one to tune to its frequency and mode. Right-click one (long-press on a touch screen) to store the frequency and mode you're on; that replaces what was there. An empty one says Open. When the popup closes they sort by frequency, lowest first, left to right.
 
 ## Moving the display
 Drag the panadapter to slide the band under the display. With CTUN on, a drag that reaches the end of the span pauses for a moment, then the tuned frequency moves to the middle of the display so you can keep going.
@@ -109,7 +111,7 @@ CTUN changes what a click does. With it on, the display stays still and only the
 """),
 
         ("Mini window", """
-The button with two arrows pointing inward, to the right of the meters, swaps the main window for a small one you can keep in a corner of the screen. Drag its edges to any size and everything scales to fit.
+The view button, at the right end of the line under the panadapter, steps to the small window on its third click (or right-click it and choose Small window). That swaps the main window for a small one you can keep in a corner of the screen. Drag its edges to any size and everything scales to fit.
 
 - The frequency tunes with the wheel, or click it to type one.
 - Below it are the signal, power, SWR and ALC meters.
@@ -273,7 +275,7 @@ Click RFG to open the front end. Each click steps through preamp, 0 dB and 10 to
 ## AGC
 AGC keeps the audio level steady as signals change. On the AGC button, blue is automatic. Grey is manual, where you choose the speed: slow for steady voice, fast for quick changes such as CW. Right-click AGC for automatic AGC's setting: how far above the band's noise it sets the threshold. 20 dB is usual; lower brings weak signals up, along with the noise.
 
-AGC-T is the threshold, much like RF gain on an analogue radio. Raise it until the yellow line sits just above the noise. Moving it turns automatic AGC off.
+Threshold, on the same right-click, is much like RF gain on an analogue radio. Raise it until the yellow line sits just above the noise. Moving it turns automatic AGC off.
 
 ## Noise tools
 - NB is the noise blanker, for sharp pulses such as ignition or power-line noise. It works best on strong impulses, and too much can distort strong nearby signals.
@@ -311,7 +313,7 @@ These move receive (RIT) or transmit (XIT) a little without moving the dial. Cli
 Both slices normally hear the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have slice B listen on an antenna plugged in there, such as a receive-only antenna, open Ant and set B to Rx2 jack. The Ant button then lights and shows B:Rx2 jack. With nothing in the jack, slice B goes quiet. While slice B is the active slice, ATT and Pre set the Rx2 jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
 
 ## DUP
-DUP keeps you hearing the receivers while transmitting. It needs a separate receive antenna or a slice on another band, or the radio's own signal will overload them.
+DUP, at the bottom of the TX button's popup, keeps you hearing the receivers while transmitting. It needs a separate receive antenna or a slice on another band, or the radio's own signal will overload them.
 """),
 
         ("Transmitting", """
@@ -333,7 +335,7 @@ The engine protects the radio, and a red banner in the main and mini windows say
 VOX turns itself off after any of these, so it can't key straight back into the same fault. PS CAL, queued CW and two-tone stop too. If you use a paddle, it stays off until you transmit once some other way, such as MOX.
 
 ## The TX button
-The TX button in the bottom row opens three levels:
+The TX button, with the transmit controls, opens three levels:
 - DRIVE sets output power. It's your RF power control.
 - TUNE sets the power used by the TUNE button. Keep it low.
 
@@ -435,7 +437,7 @@ PureSignal isn't used in CW. A CW signal is sent straight to the radio and doesn
 
         ("Recording and the voice keyer", """
 ## Recording
-REC, right of TX, opens a small tape deck over the bottom of the waterfall. Click REC again to put it away; it stays open while you use the rest of the radio.
+REC, beside TX, opens a small tape deck over the bottom of the waterfall. Click REC again to put it away; it stays open while you use the rest of the radio.
 - RX / MIC picks what ● records: RX is what you hear on the active slice after the receive filter; MIC is your microphone, for voice keyer messages such as your CQ or call.
 - ● starts and stops recording (red while recording). The counter shows the time.
 - The name box shows the recording ▶ plays: the newest unless you choose another from ▾. Type in the box to rename it. ▾ lists them all; ✕ deletes one (click twice).
@@ -561,7 +563,7 @@ It never keys the radio by itself: it only rides on your own SSB, AM or FM trans
 Config holds settings you set once. Changes take effect as you make them, and Undo changes puts every page back to how it was when the window opened.
 
 ## Antennas
-Ant in the top row picks this band's transmit and receive antennas. Config > Antennas shows every band at once.
+Ant, under the panadapter, picks this band's transmit and receive antennas. Config > Antennas shows every band at once.
 
 ## Radio, PA and calibration
 - Radio: your radio model, the light or dark theme, and the layout (desktop, or large buttons for touch screens).

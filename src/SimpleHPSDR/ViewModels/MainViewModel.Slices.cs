@@ -71,6 +71,20 @@ public sealed partial class MainViewModel
         }
     }
 
+    /// <summary>The desktop layout's controls in a panel at the side of the
+    /// panadapter (true), or above and below it.</summary>
+    public bool SidePanel
+    {
+        get => _settings.SidePanel;
+        set
+        {
+            if (_settings.SidePanel == value) return;
+            _settings.SidePanel = value;
+            _settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     // Each slice's own AF, on top of the main (master) AF. While slice B is on
     // these two sliders (A over B) take the main AF slider's place.
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfAText))]
