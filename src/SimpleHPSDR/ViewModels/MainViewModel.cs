@@ -1457,7 +1457,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             var s = await _client.GetStateAsync();
-            ApplyDriveCeiling(s.DriveMaxPct);
+            // The levels too: the engine recalls its own on a band or mode
+            // change. Not just after a change here, which it may not have yet.
+            ApplyTxLimits(s, levelsToo: !TxEditedLately);
             if (AttOnRx2Jack) await ShowRx2JackAttAsync();
             else
             {

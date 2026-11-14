@@ -206,6 +206,8 @@
                   <ToggleButton Classes="seg t ps" Classes.locked="{Binding PsLocked}" Content="PS" IsChecked="{Binding PsOn}" />
                   <Button Classes="seg t" Classes.lit="{Binding MonitorOn}" Content="{Binding MonitorLabel}"
                           Command="{Binding CycleMonitorCommand}" ToolTip.Tip="Mon, TX Mon, Mon+TX, off" />
+                  <Button Classes="seg t" Classes.lit="{Binding AmpOn}" Content="Amp" Command="{Binding ToggleAmpCommand}"
+                          ToolTip.Tip="Amp: on (blue) while your amplifier is in line. Drive and Tune are then held to the amplifier&apos;s maximums and go back to the levels you last used with it. Off, the radio runs to full power with its own remembered levels. Use ⚙ Amp to set the maximums. It can&apos;t be switched while transmitting." />
                 </WrapPanel>
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
                   <Button Classes="seg t" Content="⚙ VOX">
@@ -219,6 +221,13 @@
                     <Button.Flyout>
                       <Flyout Placement="RightEdgeAlignedTop">
                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource PsPanel}" />
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="seg t" Content="⚙ Amp">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AmpPanel}" />
                       </Flyout>
                     </Button.Flyout>
                   </Button>

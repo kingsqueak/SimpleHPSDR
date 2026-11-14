@@ -312,6 +312,16 @@ These move receive (RIT) or transmit (XIT) a little without moving the dial. Cli
 ## Slice B on the Rx2 jack
 Both slices normally hear the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have slice B listen on an antenna plugged in there, such as a receive-only antenna, open Ant and set B to Rx2 jack. The Ant button then lights and shows B:Rx2 jack. With nothing in the jack, slice B goes quiet. While slice B is the active slice, ATT and Pre set the Rx2 jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
 
+## Amp
+The Amp button, with the transmit controls, tells SimpleHPSDR whether your amplifier is in line. It doesn't switch the amplifier itself: put that in operate or standby as you do now, and set Amp to match.
+
+- Amp on (blue): Drive and Tune can't go above the amplifier's maximums. Right-click Amp to set them, one for Drive and one for Tune, from your amplifier's rated drive. They're also in Config > Amp.
+- Amp off: the sliders go to the radio's full power.
+
+Each setting remembers its own Drive and Tune levels, so switching Amp brings back the levels you last used that way. Levels are kept per band, and separately for sideband (USB and LSB together), CW, AM, FM and each digital mode.
+
+Amp can't be switched while transmitting. Take care with Amp off: if the amplifier is still in line, full drive can overdrive it.
+
 ## DUP
 DUP, at the bottom of the TX button's popup, keeps you hearing the receivers while transmitting. It needs a separate receive antenna or a slice on another band, or the radio's own signal will overload them.
 """),

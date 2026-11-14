@@ -774,7 +774,7 @@
                   <Slider Grid.Column="1" Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding DrivePct}" VerticalAlignment="Center" />
                   <TextBlock Grid.Column="2" Text="{Binding DriveLine}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
                   <TextBlock Grid.Row="1" Text="TUNE" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                  <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding TunePct}" VerticalAlignment="Center" />
+                  <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="{Binding TuneCeilingPct}" Value="{Binding TunePct}" VerticalAlignment="Center" />
                   <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding TuneLine}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
                   <TextBlock Grid.Row="2" Text="MIC" Classes="label" FontSize="12" VerticalAlignment="Center" />
                   <Slider Grid.Row="2" Grid.Column="1" Minimum="-20" Maximum="40" Value="{Binding MicGainDb}" VerticalAlignment="Center"
@@ -795,6 +795,15 @@
                 </Grid>
               </Flyout>
             </Button.Flyout>
+          </Button>
+          <!-- An amplifier is in line: its maximums and its own remembered levels -->
+          <Button Classes="seg more" Classes.lit="{Binding AmpOn}" Content="Amp" Command="{Binding ToggleAmpCommand}"
+                  VerticalAlignment="Center" ToolTip.Tip="Amp: on (blue) while your amplifier is in line. Drive and Tune are then held to the amplifier&apos;s maximums and go back to the levels you last used with it. Off, the radio runs to full power with its own remembered levels. Right-click to set the maximums. It can&apos;t be switched while transmitting.">
+            <Button.ContextFlyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AmpPanel}" />
+              </Flyout>
+            </Button.ContextFlyout>
           </Button>
           <!-- The recorder: REC pops the tape deck up above it, over the waterfall. -->
           <Button Name="RecButton" Classes="seg more" Classes.lit="{Binding DeckOpen}" Classes.rec="{Binding IsRecording}" Padding="8,0" MinWidth="44"

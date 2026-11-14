@@ -116,7 +116,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(PsHwPeak)] = Group.PureSignal, [nameof(PsMonitor)] = Group.PureSignal,
 
         [nameof(PreKeyDelayMs)] = Group.Amp, [nameof(RxResumeDelayMs)] = Group.Amp,
-        [nameof(TxTimeoutSec)] = Group.Amp, [nameof(DriveMaxPct)] = Group.Amp,
+        [nameof(TxTimeoutSec)] = Group.Amp, [nameof(DriveMaxPct)] = Group.Amp, [nameof(TuneMaxPct)] = Group.Amp,
 
         [nameof(SMeterTrimDb)] = Group.Calibration, [nameof(FrequencyPpm)] = Group.Calibration,
         [nameof(ExternalRefOn)] = Group.Calibration, [nameof(ExternalRefPpm)] = Group.Calibration,

@@ -756,6 +756,9 @@ public sealed class StationClient : IDisposable
     public Task SetRxResumeDelayAsync(int ms) => PostAsync("api/tx/rx-resume-delay", new TxRxResumeDelaySetRequest(ms));
     public Task SetTxTimeoutAsync(int seconds) => PostAsync("api/tx/timeout", new TxTimeoutSetRequest(seconds));
     public Task SetDriveMaxAsync(int percent) => PostAsync("api/tx/drive-max", new DriveMaxSetRequest(percent));
+    public Task SetTuneMaxAsync(int percent) => PostAsync("api/tx/tune-max", new TuneMaxSetRequest(percent));
+    /// <summary>Whether an external amplifier is in line. The engine refuses while transmitting.</summary>
+    public Task SetAmpAsync(bool on) => PostAsync("api/tx/amp", new AmpSetRequest(on));
     public async Task<RadioSupplyVoltsDto> GetSupplyVoltsAsync() =>
         (await _http.GetFromJsonAsync<RadioSupplyVoltsDto>("api/radio/supply-volts", Json))!;
 

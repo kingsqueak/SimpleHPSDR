@@ -293,6 +293,22 @@
       </StackPanel>
     </Grid>
   </DataTemplate>
+  <!-- Amp's right-click: the most Drive and Tune can be while the amplifier is in line -->
+  <DataTemplate x:Key="AmpPanel" x:DataType="vm:MainViewModel">
+    <Grid Width="400" Margin="4" ColumnDefinitions="84,*,96" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="12">
+      <TextBlock Grid.ColumnSpan="3" Text="Amplifier maximums" FontWeight="SemiBold" />
+      <TextBlock Grid.Row="1" Text="Drive max" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <Slider Grid.Row="1" Grid.Column="1" Minimum="1" Maximum="100" Value="{Binding AmpDriveMaxPct}" VerticalAlignment="Center"
+              TickFrequency="1" IsSnapToTickEnabled="True" />
+      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AmpDriveMaxText}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
+      <TextBlock Grid.Row="2" Text="Tune max" Classes="label" FontSize="12" VerticalAlignment="Center" />
+      <Slider Grid.Row="2" Grid.Column="1" Minimum="1" Maximum="100" Value="{Binding AmpTuneMaxPct}" VerticalAlignment="Center"
+              TickFrequency="1" IsSnapToTickEnabled="True" />
+      <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding AmpTuneMaxText}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" />
+      <TextBlock Grid.Row="3" Grid.ColumnSpan="3" TextWrapping="Wrap" FontSize="12" Classes="label"
+                 Text="The most the radio may put into your amplifier. They apply while Amp is on; with Amp off the Drive and Tune sliders go to the radio's full power. Set them from your amplifier's rated drive." />
+    </Grid>
+  </DataTemplate>
   <DataTemplate x:Key="VoxPanel" x:DataType="vm:MainViewModel">
     <Grid Width="380" Margin="4" ColumnDefinitions="80,*,70" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
       <TextBlock Text="Threshold" Classes="label" FontSize="12" VerticalAlignment="Center" />

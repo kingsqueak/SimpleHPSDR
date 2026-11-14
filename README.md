@@ -65,6 +65,9 @@ Not affiliated with or endorsed by the Zeus SDR project.
 - **Two arrangements:** the controls above and below the panadapter, or all of
   them in a panel at its side so the panadapter gets the window's full height.
   The view button under the panadapter steps between them and the mini window.
+- **Amp button:** says whether your amplifier is in line. On, Drive and Tune
+  stop at the maximums you set for it; off, the radio runs to full power. Each
+  keeps its own remembered levels, per band and per mode.
 - **Mini window:** the view button under the panadapter (third click, or its right-click) shrinks
   SimpleHPSDR to the frequency, the meters, Mute and a TX button that transmits
   while held down. The arrows in its corner bring the full window back.

@@ -10,7 +10,7 @@ namespace SimpleHPSDR.ViewModels;
 /// connection could leave the radio keyed, and this page doesn't offer that.</summary>
 public sealed partial class SettingsViewModel
 {
-    private sealed record AmpValues(int PreKey, int RxResume, int Timeout, int DriveMax);
+    private sealed record AmpValues(int PreKey, int RxResume, int Timeout, int DriveMax, int TuneMax);
     private sealed record CalValues(double Trim, double Ppm, bool ExtRef, double ExtPpm, int AdcMax, int AdcHold);
     private AmpValues? _ampWas, _ampOrig;
     private CalValues? _calWas, _calOrig;
@@ -43,6 +43,7 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _rxResumeDelayMs;
     [ObservableProperty] private double _txTimeoutSec;
     [ObservableProperty] private double _driveMaxPct;
+    [ObservableProperty] private double _tuneMaxPct;
     [ObservableProperty] private string _supplyText = "—";
 
     [ObservableProperty] private double _sMeterTrimDb;
@@ -56,7 +57,7 @@ public sealed partial class SettingsViewModel
 
     private async Task LoadAmpCalibrationAsync(StateDto s)
     {
-        _ampWas = new AmpValues(s.TxMoxPreKeyDelayMs, s.TxPostTxRxMuteDelayMs, s.TxTimeoutSec, s.DriveMaxPct);
+        _ampWas = new AmpValues(s.TxMoxPreKeyDelayMs, s.TxPostTxRxMuteDelayMs, s.TxTimeoutSec, s.DriveMaxPct, s.TuneMaxPct);
         _ampOrig = _ampWas;
         ShowAmp(_ampWas);
         var freq = await _client.GetFrequencyCalibrationAsync();
@@ -69,7 +70,7 @@ public sealed partial class SettingsViewModel
     }
 
     private void ShowAmp(AmpValues a) =>
-        (PreKeyDelayMs, RxResumeDelayMs, TxTimeoutSec, DriveMaxPct) = (a.PreKey, a.RxResume, a.Timeout, a.DriveMax);
+        (PreKeyDelayMs, RxResumeDelayMs, TxTimeoutSec, DriveMaxPct, TuneMaxPct) = (a.PreKey, a.RxResume, a.Timeout, a.DriveMax, a.TuneMax);
 
     private void ShowCalibration(CalValues c) =>
         (SMeterTrimDb, FrequencyPpm, ExternalRefOn, ExternalRefPpm, AdcMaxOffsetDb, AdcReleaseHoldMs) =
@@ -97,15 +98,16 @@ public sealed partial class SettingsViewModel
     {
         if (_ampWas is not { } was) return;
         var now = new AmpValues((int)Math.Round(PreKeyDelayMs), (int)Math.Round(RxResumeDelayMs),
-            (int)Math.Round(TxTimeoutSec), (int)Math.Round(DriveMaxPct));
+            (int)Math.Round(TxTimeoutSec), (int)Math.Round(DriveMaxPct), (int)Math.Round(TuneMaxPct));
         if (now.PreKey != was.PreKey) await _client.SetPreKeyDelayAsync(now.PreKey);
         if (now.RxResume != was.RxResume) await _client.SetRxResumeDelayAsync(now.RxResume);
         if (now.Timeout != was.Timeout) await _client.SetTxTimeoutAsync(now.Timeout);
         if (now.DriveMax != was.DriveMax) await _client.SetDriveMaxAsync(now.DriveMax);
+        if (now.TuneMax != was.TuneMax) await _client.SetTuneMaxAsync(now.TuneMax);
         // The engine can hold the pre-key delay below PureSignal's hold-off:
         // show what it kept.
         var s = await _client.GetStateAsync();
-        _ampWas = new AmpValues(s.TxMoxPreKeyDelayMs, s.TxPostTxRxMuteDelayMs, s.TxTimeoutSec, s.DriveMaxPct);
+        _ampWas = new AmpValues(s.TxMoxPreKeyDelayMs, s.TxPostTxRxMuteDelayMs, s.TxTimeoutSec, s.DriveMaxPct, s.TuneMaxPct);
         if (_ampWas.PreKey != now.PreKey)
         {
             _populating = true;

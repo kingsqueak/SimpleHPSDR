@@ -36,30 +36,111 @@ public sealed partial class MainViewModel
     public double TxWaterfallRangeDb => IsTransmitting ? _settings.TxWaterfallRangeDb : 0;
     public double PowerScaleWatts { get; private set; } = 100;
 
-    /// <summary>Config > Amp's maximum drive: the top of the DRIVE and TUNE sliders.</summary>
+    /// <summary>The top of the DRIVE slider: the amplifier's maximum while Amp
+    /// is on, the radio's full power otherwise.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DriveLine), nameof(DriveWattsText), nameof(TuneLine), nameof(TuneWattsText))]
+    [NotifyPropertyChangedFor(nameof(DriveLine), nameof(DriveWattsText))]
     private int _driveCeilingPct = 100;
 
-    // The engine has already lowered anything above a new maximum; no slider
-    // may be open to do it here, so match it, without sending it back.
-    private void ApplyDriveCeiling(int ceilingPct)
+    /// <summary>The top of the TUNE slider, likewise.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TuneLine), nameof(TuneWattsText))]
+    private int _tuneCeilingPct = 100;
+
+    // ---- Amp: an external amplifier is in line ---------------------------
+    // The engine holds the switch, the two maximums and a separate set of
+    // remembered Drive and Tune levels (per band and per mode) for each state.
+
+    [ObservableProperty] private bool _ampOn;
+
+    /// <summary>The amplifier's maximums (Amp's right-click, and Config > Amp).</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AmpDriveMaxText))] private double _ampDriveMaxPct = 100;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(AmpTuneMaxText))] private double _ampTuneMaxPct = 100;
+    public string AmpDriveMaxText => $"{AmpDriveMaxPct:0}%  {Watts(AmpDriveMaxPct)}";
+    public string AmpTuneMaxText => $"{AmpTuneMaxPct:0}%  {Watts(AmpTuneMaxPct)}";
+    private Latest<int>? _driveMaxSender, _tuneMaxSender;
+
+    // When a level or maximum was last changed here. The state poll leaves
+    // them alone for a moment after, so it can't put back a value the engine
+    // hasn't received yet.
+    private DateTime _txEditedAt;
+    private void NoteTxEdit() => _txEditedAt = DateTime.UtcNow;
+    private bool TxEditedLately => DateTime.UtcNow - _txEditedAt < TimeSpan.FromSeconds(2);
+
+    partial void OnAmpDriveMaxPctChanged(double value)
     {
-        DriveCeilingPct = ceilingPct;
-        _applyingTx = true;
-        if (DrivePct > ceilingPct) DrivePct = ceilingPct;
-        if (TunePct > ceilingPct) TunePct = ceilingPct;
-        _applyingTx = false;
+        if (_applyingTx || !IsConnected) return;
+        NoteTxEdit();
+        (_driveMaxSender ??= new Latest<int>(p => Try(() => _client!.SetDriveMaxAsync(p)))).Send((int)Math.Round(value));
     }
 
-    // The sliders read 100% at the maximum, whatever it's set to.
-    private string OfCeiling(double pct) => $"{pct / Math.Max(1, DriveCeilingPct) * 100:0}%";
+    partial void OnAmpTuneMaxPctChanged(double value)
+    {
+        if (_applyingTx || !IsConnected) return;
+        NoteTxEdit();
+        (_tuneMaxSender ??= new Latest<int>(p => Try(() => _client!.SetTuneMaxAsync(p)))).Send((int)Math.Round(value));
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private async Task ToggleAmpAsync()
+    {
+        if (!IsConnected || _client is null) return;
+        if (IsTransmitting)
+        {
+            Status = "Stop transmitting before switching Amp.";
+            return;
+        }
+        try
+        {
+            await _client.SetAmpAsync(!AmpOn);
+            // The engine has lowered the levels to the new maximums and
+            // recalled the ones last used in this state: show them.
+            ApplyTxLimits(await _client.GetStateAsync(), levelsToo: true);
+        }
+        catch (Exception ex) { Status = ex.Message; }
+    }
+
+    /// <summary>Takes the amplifier switch, the maximums and the slider tops
+    /// from the engine, and the Drive and Tune levels when asked (the engine
+    /// changes them itself on a band or mode change). Nothing is sent back.</summary>
+    private void ApplyTxLimits(StateDto s, bool levelsToo)
+    {
+        _applyingTx = true;
+        try
+        {
+            int driveTop = s.AmpOn ? Math.Clamp(s.DriveMaxPct, 1, 100) : 100;
+            int tuneTop = s.AmpOn ? Math.Clamp(s.TuneMaxPct, 1, 100) : 100;
+            AmpOn = s.AmpOn;
+            if (levelsToo)
+            {
+                AmpDriveMaxPct = s.DriveMaxPct;
+                AmpTuneMaxPct = s.TuneMaxPct;
+            }
+            // Raise a slider's top before its value and lower it after, so an
+            // open slider never has to cut the value itself.
+            if (driveTop > DriveCeilingPct) DriveCeilingPct = driveTop;
+            if (tuneTop > TuneCeilingPct) TuneCeilingPct = tuneTop;
+            if (levelsToo)
+            {
+                DrivePct = s.DrivePct;
+                TunePct = s.TunePct;
+            }
+            if (DrivePct > driveTop) DrivePct = driveTop;
+            if (TunePct > tuneTop) TunePct = tuneTop;
+            DriveCeilingPct = driveTop;
+            TuneCeilingPct = tuneTop;
+        }
+        finally { _applyingTx = false; }
+    }
+
+    // The sliders read 100% at their top, whatever it's set to.
+    private static string OfCeiling(double pct, int ceiling) => $"{pct / Math.Max(1, ceiling) * 100:0}%";
     private string Watts(double pct) => $"{pct / 100 * PowerScaleWatts:0} W";
 
     public string DriveWattsText => Watts(DrivePct);
     public string TuneWattsText => Watts(TunePct);
-    public string DriveLine => $"{OfCeiling(DrivePct)}  {Watts(DrivePct)}";
-    public string TuneLine => $"{OfCeiling(TunePct)}  {Watts(TunePct)}";
+    public string DriveLine => $"{OfCeiling(DrivePct, DriveCeilingPct)}  {Watts(DrivePct)}";
+    public string TuneLine => $"{OfCeiling(TunePct, TuneCeilingPct)}  {Watts(TunePct)}";
 
     // The radio's own rating when the engine gives one (a Brick: 15 W driven
     // through the 100 W gain table, so 100 % drive is 15 W, not 100 W).
@@ -74,6 +155,8 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(TuneWattsText));
         OnPropertyChanged(nameof(DriveLine));
         OnPropertyChanged(nameof(TuneLine));
+        OnPropertyChanged(nameof(AmpDriveMaxText));
+        OnPropertyChanged(nameof(AmpTuneMaxText));
     }
 
     private void WireTransmit(StationClient client)
@@ -187,12 +270,10 @@ public sealed partial class MainViewModel
             catch (Exception ex) { Status = ex.Message; }   // tried again next connect
         }
 
+        ApplyTxLimits(s, levelsToo: true);
         _applyingTx = true;
         try
         {
-            DriveCeilingPct = s.DriveMaxPct;
-            DrivePct = s.DrivePct;
-            TunePct = s.TunePct;
             MicGainDb = s.MicGainDb;
             MoxOn = false;
             TunOn = false;
@@ -334,14 +415,18 @@ public sealed partial class MainViewModel
     {
         OnPropertyChanged(nameof(DriveLine));
         OnPropertyChanged(nameof(DriveWattsText));
-        if (!_applyingTx && IsConnected) _driveSender?.Send((int)Math.Round(value));
+        if (_applyingTx || !IsConnected) return;
+        NoteTxEdit();
+        _driveSender?.Send((int)Math.Round(value));
     }
 
     partial void OnTunePctChanged(double value)
     {
         OnPropertyChanged(nameof(TuneLine));
         OnPropertyChanged(nameof(TuneWattsText));
-        if (!_applyingTx && IsConnected) _tuneDriveSender?.Send((int)Math.Round(value));
+        if (_applyingTx || !IsConnected) return;
+        NoteTxEdit();
+        _tuneDriveSender?.Send((int)Math.Round(value));
     }
 
     partial void OnMicGainDbChanged(double value)
