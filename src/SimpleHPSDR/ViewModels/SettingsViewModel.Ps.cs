@@ -23,12 +23,45 @@ public sealed partial class SettingsViewModel
         if (value) PsAutoAttenuate = true;
     }
 
-    // A real property for the other radio button: a negated binding ("!x")
-    // only works one way, so the pair would fight and flip the source.
-    public bool PsInternalFeedback
+    /// <summary>For the other radio button. Both buttons only show the choice
+    /// (one-way); a click goes through <see cref="ChooseFeedbackCommand"/>.</summary>
+    public bool PsInternalFeedback => !PsExternalFeedback;
+
+    /// <summary>The feedback source is one setting for the station, and it
+    /// changes in exactly one way here: a click on Internal or External. It is
+    /// sent at once and by itself. It is not part of the page's "send what
+    /// differs" pass or of Undo, which compare against a copy of the engine's
+    /// settings that can be out of date, and have put a station back on the
+    /// internal coupler with nobody asking.</summary>
+    [RelayCommand]
+    private async Task ChooseFeedbackAsync(string which)
     {
-        get => !PsExternalFeedback;
-        set { if (value) PsExternalFeedback = false; }
+        bool external = which == "External";
+        if (_psLoaded is null) return;
+        try
+        {
+            await _client.SetPsFeedbackSourceAsync(
+                external ? PsFeedbackSource.External : PsFeedbackSource.Internal, "Config: clicked");
+            if (AppSettings is { } app)
+            {
+                app.PsExternalFeedback = external;
+                app.Save();
+            }
+            _psLoaded = _psLoaded with { PsFeedbackSource = external ? PsFeedbackSource.External : PsFeedbackSource.Internal };
+            _populating = true;
+            try { PsExternalFeedback = external; }
+            finally { _populating = false; }
+            Status = $"PureSignal feedback: {(external ? "external" : "internal")} coupler.";
+            // External turns automatic attenuation on: send that with the rest of the page.
+            Schedule(Group.PureSignal);
+        }
+        catch (Exception ex)
+        {
+            Status = $"Not applied: {ex.Message}";
+            // Put the buttons back on what the engine still has.
+            OnPropertyChanged(nameof(PsExternalFeedback));
+            OnPropertyChanged(nameof(PsInternalFeedback));
+        }
     }
     [ObservableProperty] private bool _psAutoAttenuate;
     [ObservableProperty] private double _psFeedbackAttenDb;
@@ -81,20 +114,7 @@ public sealed partial class SettingsViewModel
     private async Task ApplyPureSignalAsync()
     {
         if (_psLoaded is not { } was) return;
-        var source = PsExternalFeedback ? PsFeedbackSource.External : PsFeedbackSource.Internal;
-        // Only when the source itself was changed on this page. Saving it on any
-        // PureSignal change wrote back whatever the page loaded, which may be
-        // stale (the guided setup can change it while Config is open), and the
-        // next connect then forced the engine back to it: External became Internal.
-        if (source != was.PsFeedbackSource)
-        {
-            await _client.SetPsFeedbackSourceAsync(source);
-            if (AppSettings is { } app)
-            {
-                app.PsExternalFeedback = PsExternalFeedback;
-                app.Save();
-            }
-        }
+        // The feedback source is not sent from here: see ChooseFeedbackAsync.
         bool autoAttenuate = PsAutoAttenuate || PsExternalFeedback;
         if (autoAttenuate != was.PsAutoAttenuate || PsMoxDelaySec != was.PsMoxDelaySec
             || PsLoopDelaySec != was.PsLoopDelaySec || PsAmpDelayNs != was.PsAmpDelayNs

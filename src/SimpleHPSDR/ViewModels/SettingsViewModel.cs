@@ -110,7 +110,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(SelectedAsioOutput)] = Group.Audio, [nameof(SelectedAsioInput)] = Group.Audio,
         [nameof(SelectedAsioBuffer)] = Group.Audio,
 
-        [nameof(PsExternalFeedback)] = Group.PureSignal, [nameof(PsAutoAttenuate)] = Group.PureSignal,
+        [nameof(PsAutoAttenuate)] = Group.PureSignal,
         [nameof(PsFeedbackAttenDb)] = Group.PureSignal, [nameof(PsMoxDelaySec)] = Group.PureSignal,
         [nameof(PsLoopDelaySec)] = Group.PureSignal, [nameof(PsAmpDelayNs)] = Group.PureSignal,
         [nameof(PsHwPeak)] = Group.PureSignal, [nameof(PsMonitor)] = Group.PureSignal,
@@ -379,6 +379,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         Populate(_origPa, _origDevices, _origRadioAudio, _origState, _origAntennas);
         (_loaded, _devicesWas, _radioAudio, _psLoaded, _txLoaded) = (pa, devices, radio, ps, tx);
         _asioWas = asio;
+        // Undo leaves the PureSignal feedback source alone: it is a station
+        // setting with its own two buttons, and what it was when this window
+        // opened may be long out of date.
+        _populating = true;
+        try { PsExternalFeedback = ps?.PsFeedbackSource == SimpleHPSDR.Contracts.PsFeedbackSource.External; }
+        finally { _populating = false; }
         // Compare restored antenna rows against what the engine has now.
         foreach (var row in Antennas)
             if (antennasNow.TryGetValue(row.Band, out var now)) row.Loaded = now;

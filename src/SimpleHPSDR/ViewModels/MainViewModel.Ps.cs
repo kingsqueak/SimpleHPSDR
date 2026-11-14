@@ -105,7 +105,7 @@ public sealed partial class MainViewModel
         else if (wanted != _psExternal)
         {
             SetPsExternal(wanted);
-            _ = Try(() => _client!.SetPsFeedbackSourceAsync(wanted ? PsFeedbackSource.External : PsFeedbackSource.Internal));
+            _ = Try(() => _client!.SetPsFeedbackSourceAsync(wanted ? PsFeedbackSource.External : PsFeedbackSource.Internal, "connect: the saved choice"));
             Status = $"PureSignal feedback set to {(wanted ? "external" : "internal")}, as chosen in Config.";
         }
     }

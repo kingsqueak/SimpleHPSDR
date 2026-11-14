@@ -219,8 +219,10 @@ public sealed class StationClient : IDisposable
     public Task SetPsAsync(bool enabled, bool auto = true, bool single = false) =>
         PostAsync("api/tx/ps", new PsControlSetRequest(enabled, auto, single));
     public Task SetPsAdvancedAsync(PsAdvancedSetRequest req) => PostAsync("api/tx/ps/advanced", req);
-    public Task SetPsFeedbackSourceAsync(PsFeedbackSource source) =>
-        PostAsync("api/tx/ps/feedback-source", new PsFeedbackSourceSetRequest(source));
+    /// <summary><paramref name="reason"/> goes in the engine's log beside the
+    /// change, so a source that moved can be traced to what moved it.</summary>
+    public Task SetPsFeedbackSourceAsync(PsFeedbackSource source, string reason) =>
+        PostAsync("api/tx/ps/feedback-source", new PsFeedbackSourceSetRequest(source, reason));
     public Task SetPsFeedbackAttenuationAsync(int db) =>
         PostAsync("api/tx/ps/feedback-attenuation", new PsFeedbackAttenuationSetRequest(db));
     public Task SetPsMonitorAsync(bool on) => PostAsync("api/tx/ps/monitor", new PsMonitorSetRequest(on));

@@ -51,7 +51,7 @@ public sealed partial class MainViewModel
         {
             if (external != _psExternal)
             {
-                await client.SetPsFeedbackSourceAsync(external ? PsFeedbackSource.External : PsFeedbackSource.Internal);
+                await client.SetPsFeedbackSourceAsync(external ? PsFeedbackSource.External : PsFeedbackSource.Internal, "guided setup");
                 _psExternal = external;
             }
             _settings.PsExternalFeedback = external;

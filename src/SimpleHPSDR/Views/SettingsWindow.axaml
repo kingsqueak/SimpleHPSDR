@@ -882,8 +882,10 @@
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
                 <TextBlock Text="Feedback source" Classes="label" FontSize="12" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16">
-                  <RadioButton Content="Internal coupler" IsChecked="{Binding PsInternalFeedback}" GroupName="psfb" />
-                  <RadioButton Content="External (after an amplifier)" IsChecked="{Binding PsExternalFeedback}" GroupName="psfb" />
+                  <RadioButton Content="Internal coupler" IsChecked="{Binding PsInternalFeedback, Mode=OneWay}"
+                               Command="{Binding ChooseFeedbackCommand}" CommandParameter="Internal" />
+                  <RadioButton Content="External (after an amplifier)" IsChecked="{Binding PsExternalFeedback, Mode=OneWay}"
+                               Command="{Binding ChooseFeedbackCommand}" CommandParameter="External" />
                 </StackPanel>
                 <TextBlock Grid.Row="1" Text="Feedback attenuation" Classes="label" FontSize="12" />
                 <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6">
