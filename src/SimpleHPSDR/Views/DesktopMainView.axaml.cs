@@ -86,6 +86,7 @@ public partial class DesktopMainView : UserControl
             double b = beside ? PanBorderB.Bounds.Width : PanBorderB.Bounds.Height;
             if (a + b > 0) vm.PanSplit = a / (a + b);
         };
+        WireSideGrip();
         PanSplitter.DoubleTapped += (_, _) => { if (Vm is { } vm) vm.PanSplit = 0.5; };
         Spectrum.TuneRequested += TuneA;
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
@@ -253,6 +254,45 @@ public partial class DesktopMainView : UserControl
         else to.Children.Insert(index, piece);
     }
 
+    // The bar at the side panel's left edge: drag it to widen or narrow the
+    // panel (kept in the settings), double-click for the standard width.
+    private double? _gripFrom;
+    private double _gripWidth;
+
+    private void WireSideGrip()
+    {
+        SideGrip.PointerPressed += (_, e) =>
+        {
+            if (!e.GetCurrentPoint(SideGrip).Properties.IsLeftButtonPressed) return;
+            _gripFrom = e.GetPosition(this).X;
+            _gripWidth = SideRail.Bounds.Width;
+            e.Pointer.Capture(SideGrip);
+            e.Handled = true;
+        };
+        SideGrip.PointerMoved += (_, e) =>
+        {
+            if (_gripFrom is not double from) return;
+            double most = Math.Max(MainViewModel.SideRailMin, Math.Min(MainViewModel.SideRailMax, Bounds.Width - 420));
+            SideRail.Width = Math.Clamp(_gripWidth + from - e.GetPosition(this).X, MainViewModel.SideRailMin, most);
+        };
+        SideGrip.PointerReleased += (_, e) => { e.Pointer.Capture(null); EndGrip(); };
+        SideGrip.PointerCaptureLost += (_, _) => EndGrip();
+        SideGrip.DoubleTapped += (_, e) =>
+        {
+            if (Vm is not { } vm) return;
+            vm.SideRailWidth = MainViewModel.SideRailDefault;
+            SideRail.Width = vm.SideRailWidth;
+            e.Handled = true;
+        };
+    }
+
+    private void EndGrip()
+    {
+        if (_gripFrom is null) return;
+        _gripFrom = null;
+        if (Vm is { } vm) vm.SideRailWidth = SideRail.Width;
+    }
+
     /// <summary>Puts the pieces where the chosen arrangement wants them. The
     /// controls are the same objects either way, so nothing they show or hold
     /// is lost by switching.</summary>
@@ -271,8 +311,12 @@ public partial class DesktopMainView : UserControl
             Move(SignalPanel, SideMeterHost);
             Move(ReceivePanel, SideReceiveHost);
             Move(AudioBlock, SideAudioHost);
-            Move(TxBlock, SideTxHost);
-            Move(VkBlock, SideTxHost);
+            // REC with the voice keyer first, then the transmit row, then MOX and TUNE last.
+            Move(TxBlock, SideTxHost, 1);
+            Move(RecButton, SideRecRow);
+            Move(VkBlock, SideRecRow);
+            Move(MoxToggle, SideMoxRow);
+            Move(TuneToggle, SideMoxRow);
             Move(ClockBlock, SideClockHost);
         }
         else
@@ -284,12 +328,19 @@ public partial class DesktopMainView : UserControl
             Move(OffsetButtons, VfoGrid);
             Move(ReceivePanel, MainGrid);
             Move(ClockBlock, BottomHost, 0);     // docked right: before the wrap panel that fills
+            Move(MoxToggle, TxBlock, 0);
+            Move(TuneToggle, TxBlock, 1);
+            Move(RecButton, TxBlock);
             Move(AudioBlock, BottomWrap, 0);
             Move(TxBlock, BottomWrap, 1);
             Move(VkBlock, BottomWrap, 2);
         }
         TopHost.IsVisible = BottomPanel.IsVisible = !side;
         SideRail.IsVisible = side;
+
+        Grid.SetColumn(TuneToggle, side ? 1 : 0);
+        // The volume sliders: a fixed width below, the panel's width at the side.
+        AfMain.Width = AfSliceA.Width = AfSliceB.Width = side ? double.NaN : 150;
 
         // Step, lock, RIT and XIT: stacked beside the frequency, or in a row under it.
         var flow = side ? Avalonia.Layout.Orientation.Horizontal : Avalonia.Layout.Orientation.Vertical;
@@ -388,6 +439,7 @@ public partial class DesktopMainView : UserControl
         vm.DisplayReset += OnDisplayReset;
         vm.PropertyChanged += OnVmPropertyChanged;
         Arrange(vm.SidePanel);
+        SideRail.Width = vm.SideRailWidth;
         LayoutPanadapters();
     }
 

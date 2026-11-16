@@ -58,9 +58,18 @@
       <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="Grid.side ToggleButton.txbig">
-      <Setter Property="MinWidth" Value="147" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="Height" Value="36" />
       <Setter Property="FontSize" Value="14" />
+    </Style>
+    <!-- The bar at the side panel's left edge that drags its width. -->
+    <Style Selector="Border#SideGrip > Border">
+      <Setter Property="Opacity" Value="0.3" />
+    </Style>
+    <Style Selector="Border#SideGrip:pointerover > Border">
+      <Setter Property="Opacity" Value="0.8" />
     </Style>
     <Style Selector="TextBlock.hd">
       <Setter Property="FontSize" Value="10" />
@@ -730,8 +739,10 @@
           <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ZuluTimeText}" FontFamily="{StaticResource MonoFont}" FontSize="13" />
         </Grid>
         <WrapPanel Name="BottomWrap" ItemSpacing="18" LineSpacing="6" VerticalAlignment="Center">
-        <StackPanel Name="AudioBlock" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-          <Button Classes="seg more" Classes.lit="{Binding RxEqOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"
+        <!-- The volume: AF EQ and Mute at the ends, the sliders between them
+             (in the side panel they stretch to the panel's width). -->
+        <DockPanel Name="AudioBlock" VerticalAlignment="Center">
+          <Button DockPanel.Dock="Left" Margin="0,0,8,0" Classes="seg more" Classes.lit="{Binding RxEqOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"
                   Command="{Binding ToggleRxEqCommand}" ToolTip.Tip="{Binding RxEqTip}">
             <StackPanel Spacing="-1">
               <TextBlock Text="AF" FontSize="12" HorizontalAlignment="Center" />
@@ -743,28 +754,31 @@
               </Flyout>
             </Button.ContextFlyout>
           </Button>
-          <!-- One slice: the main AF. Slice B on: A's volume over B's, in the slice colours. -->
-          <c:AfSlider Value="{Binding AfGainDb}" Width="150" VerticalAlignment="Center"
-                      IsVisible="{Binding !HasSliceB}" ToolTip.Tip="AF: the volume" />
-          <TextBlock Text="{Binding AfGainText}" FontSize="12" Width="44" VerticalAlignment="Center"
-                     IsVisible="{Binding !HasSliceB}" />
-          <Grid ColumnDefinitions="Auto,150,44" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="2"
-                VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
-            <TextBlock Text="{Binding AfLabelA}" FontSize="11" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
-            <c:AfSlider Grid.Column="1" Value="{Binding SliceAfA}" Minimum="-40" Maximum="20" Compact="True"
-                        BallBrush="#F25F5C" ToolTip.Tip="RX1 (slice A) volume" />
-            <TextBlock Grid.Column="2" Text="{Binding SliceAfAText}" FontSize="11" VerticalAlignment="Center" />
-            <TextBlock Grid.Row="1" Text="{Binding AfLabelB}" FontSize="11" FontWeight="Bold" Foreground="#F5A524" VerticalAlignment="Center" />
-            <c:AfSlider Grid.Row="1" Grid.Column="1" Value="{Binding SliceAfB}" Minimum="-40" Maximum="20" Compact="True"
-                        BallBrush="#F5A524" ToolTip.Tip="RX2 (slice B) volume" />
-            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SliceAfBText}" FontSize="11" VerticalAlignment="Center" />
-          </Grid>
-          <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
-        </StackPanel>
+          <ToggleButton DockPanel.Dock="Right" Margin="8,0,0,0" Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
+          <Panel VerticalAlignment="Center">
+            <!-- One slice: the main AF. Slice B on: A's volume over B's, in the slice colours. -->
+            <Grid ColumnDefinitions="*,52" VerticalAlignment="Center" IsVisible="{Binding !HasSliceB}">
+              <c:AfSlider Name="AfMain" Value="{Binding AfGainDb}" Width="150" VerticalAlignment="Center"
+                          ToolTip.Tip="AF: the volume" />
+              <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding AfGainText}" FontSize="12" VerticalAlignment="Center" />
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*,44" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="2"
+                  VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
+              <TextBlock Text="{Binding AfLabelA}" FontSize="11" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
+              <c:AfSlider Name="AfSliceA" Grid.Column="1" Width="150" Value="{Binding SliceAfA}" Minimum="-40" Maximum="20" Compact="True"
+                          BallBrush="#F25F5C" ToolTip.Tip="RX1 (slice A) volume" />
+              <TextBlock Grid.Column="2" Text="{Binding SliceAfAText}" FontSize="11" VerticalAlignment="Center" />
+              <TextBlock Grid.Row="1" Text="{Binding AfLabelB}" FontSize="11" FontWeight="Bold" Foreground="#F5A524" VerticalAlignment="Center" />
+              <c:AfSlider Name="AfSliceB" Grid.Row="1" Grid.Column="1" Width="150" Value="{Binding SliceAfB}" Minimum="-40" Maximum="20" Compact="True"
+                          BallBrush="#F5A524" ToolTip.Tip="RX2 (slice B) volume" />
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SliceAfBText}" FontSize="11" VerticalAlignment="Center" />
+            </Grid>
+          </Panel>
+        </DockPanel>
           <WrapPanel Name="TxBlock" LineSpacing="6" VerticalAlignment="Center">
-          <ToggleButton Classes="seg tx txbig" Content="MOX" IsChecked="{Binding MoxOn}"
+          <ToggleButton Name="MoxToggle" Classes="seg tx txbig" Content="MOX" IsChecked="{Binding MoxOn}"
                         ToolTip.Tip="Transmit" />
-          <ToggleButton Classes="seg tx txbig" Content="TUNE" IsChecked="{Binding TunOn}"
+          <ToggleButton Name="TuneToggle" Classes="seg tx txbig" Content="TUNE" IsChecked="{Binding TunOn}"
                         ToolTip.Tip="Tune carrier at the tune drive level" />
           <ToggleButton Classes="seg more" Content="VOX" IsChecked="{Binding VoxOn}"
                         ToolTip.Tip="Transmit when you speak. Use headphones, or the speakers will key it. Right-click for its settings." VerticalAlignment="Center">
@@ -888,7 +902,12 @@
          pieces above move in. The clock stays in the window's bottom corner,
          level with the line under the panadapter; the rest scrolls if the
          window is too short for it. -->
-    <DockPanel Name="SideRail" Grid.Column="1" Grid.RowSpan="5" IsVisible="False" Width="338" Margin="10,0,-8,0">
+    <DockPanel Name="SideRail" Grid.Column="1" Grid.RowSpan="5" IsVisible="False" Width="410" Margin="0,0,-8,0">
+      <Border Name="SideGrip" DockPanel.Dock="Left" Width="10" Background="Transparent" Cursor="SizeWestEast"
+              ToolTip.Tip="Drag to make the side panel wider or narrower. Double-click for the standard width.">
+        <Border Width="3" Height="44" CornerRadius="1.5" Background="{DynamicResource TextMuted}"
+                HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
       <Panel Name="SideClockHost" DockPanel.Dock="Bottom" HorizontalAlignment="Right" MinHeight="26" Margin="0,8,10,0" />
       <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Spacing="8" Margin="0,0,8,0">
@@ -900,7 +919,11 @@
         <Panel Name="SideMeterHost" />
         <Panel Name="SideReceiveHost" />
         <Border Classes="panel">
-          <StackPanel Name="SideTxHost" Spacing="8" />
+          <!-- REC with the voice keyer, then the transmit row, then MOX and TUNE at the foot. -->
+          <StackPanel Name="SideTxHost" Spacing="8">
+            <StackPanel Name="SideRecRow" Orientation="Horizontal" />
+            <Grid Name="SideMoxRow" ColumnDefinitions="*,*" ColumnSpacing="8" />
+          </StackPanel>
         </Border>
       </StackPanel>
       </ScrollViewer>

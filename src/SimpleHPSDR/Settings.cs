@@ -183,6 +183,8 @@ public sealed class Settings
     public string Layout { get; set; } = "Automatic";
     /// <summary>Desktop layout: the controls in a panel at the side of the panadapter instead of above and below it.</summary>
     public bool SidePanel { get; set; }
+    /// <summary>The side panel's width (the bar at its left edge drags it).</summary>
+    public double SideRailWidth { get; set; } = 410;
     /// <summary>SimpleHPSDR runs on an ANAN-G2's own computer (Linux arm64 only).</summary>
     public bool G2Computer { get; set; }
     /// <summary>Config > Colors: names from SpectrumLook's lists.</summary>

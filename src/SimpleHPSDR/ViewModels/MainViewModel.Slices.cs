@@ -163,6 +163,22 @@ public sealed partial class MainViewModel
         }
     }
 
+    public const double SideRailDefault = 410, SideRailMin = 330, SideRailMax = 900;
+
+    /// <summary>The side panel's width, dragged by the bar at its left edge.</summary>
+    public double SideRailWidth
+    {
+        get => Math.Clamp(_settings.SideRailWidth, SideRailMin, SideRailMax);
+        set
+        {
+            value = Math.Clamp(value, SideRailMin, SideRailMax);
+            if (Math.Abs(_settings.SideRailWidth - value) < 0.5) return;
+            _settings.SideRailWidth = value;
+            _settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
     // Each slice's own AF, on top of the main (master) AF. While slice B is on
     // these two sliders (A over B) take the main AF slider's place.
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfAText))]
