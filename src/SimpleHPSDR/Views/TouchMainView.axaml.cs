@@ -26,6 +26,9 @@ public partial class TouchMainView : UserControl
     {
         InitializeComponent();
 
+        // A tap on a panadapter's small VFO drops the keypad down from it, for that receiver.
+        MiniVfoA.EntryRequested += v => OpenKeypad(v, v.Rx);
+        MiniVfoB.EntryRequested += v => OpenKeypad(v, v.Rx);
         VfoBox.PointerPressed += OnVfoPressed;
         VfoBox.PointerMoved += OnVfoMoved;
         VfoBox.PointerReleased += OnVfoReleased;
@@ -54,7 +57,7 @@ public partial class TouchMainView : UserControl
         SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
         SpectrumB.PanEnded += () => Vm?.PanEnded();
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
-        SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB);
+        SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB, offerRx2: true);
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
         SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
@@ -63,7 +66,7 @@ public partial class TouchMainView : UserControl
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
         Spectrum.PanEnded += () => Vm?.PanEnded();
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
-        Spectrum.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, Spectrum);
+        Spectrum.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, Spectrum, offerRx2: true);
         Spectrum.WheelTune += steps =>
         {
             if (Vm is not { } vm) return;
@@ -260,12 +263,16 @@ public partial class TouchMainView : UserControl
 
     private string _keys = "";
 
-    private void OpenKeypad()
+    private int _keypadRx = -1;   // the receiver the keypad tunes; -1 = the one with the controls
+
+    // The one keypad, under the main frequency or under a panadapter's small VFO.
+    private void OpenKeypad(Control? at = null, int rx = -1)
     {
         if (Vm is not { IsConnected: true }) return;
         _keys = "";
+        _keypadRx = rx;
         KeypadText.Text = "";
-        FlyoutBase.ShowAttachedFlyout(VfoBox);
+        FlyoutBase.GetAttachedFlyout(VfoBox)?.ShowAt(at ?? VfoBox);
     }
 
     private void KeyDigit(object? sender, RoutedEventArgs e)
@@ -294,8 +301,9 @@ public partial class TouchMainView : UserControl
         if (double.TryParse(_keys, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v > 0)
         {
             long hz = (long)Math.Round(v * unitHz);
-            if (Band.Tunable(hz)) vm.TuneTo(hz);
-            else vm.Status = Band.RangeHint;
+            if (!Band.Tunable(hz)) vm.Status = Band.RangeHint;
+            else if (_keypadRx >= 0) _ = vm.TuneSliceAsync(_keypadRx, hz);
+            else vm.TuneTo(hz);
         }
         FlyoutBase.GetAttachedFlyout(VfoBox)?.Hide();
     }

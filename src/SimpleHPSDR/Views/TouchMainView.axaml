@@ -292,7 +292,7 @@
                   <Button Classes="seg t" Content="RX2 off" Click="Rx2Off" IsEnabled="{Binding ShowPanadapterB}" />
                 </WrapPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
-                           Text="RX2 is a second receiver in its own panadapter. RX1 and RX2 pick the one the frequency and the controls act on; a tap on a panadapter does the same." />
+                           Text="RX2 is a second receiver in its own panadapter. RX1 and RX2 pick the one the frequency and the controls act on; a tap on a panadapter does the same. A right-click or long press on the spectrum turns RX2 on or off too." />
                 <TextBlock Text="SLICES" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
                   <Button Classes="seg t" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding HasSliceB}" />
@@ -579,7 +579,7 @@
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}" FloorLiftDb="{Binding TraceFloorLiftDb}"
                           PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" />
           <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
-            <c:MiniVfo Rx="0" Touch="True" VerticalAlignment="Center" IsVisible="{Binding ShowPanadapterB}" />
+            <c:MiniVfo Name="MiniVfoA" Rx="0" Touch="True" VerticalAlignment="Center" IsVisible="{Binding ShowPanadapterB}" />
             <TextBlock Text="{Binding ZoomLabel}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
             <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel or ⌘+wheel, or pinch)" />
             <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel or ⌘+wheel, or pinch)" />
@@ -602,7 +602,7 @@
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
           <c:SpectrumView Name="SpectrumB" Fling="True" FloorLiftDb="{Binding TraceFloorLiftDb}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
-          <c:MiniVfo Rx="1" Touch="True" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
+          <c:MiniVfo Name="MiniVfoB" Rx="1" Touch="True" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
                      IsVisible="{Binding ShowPanadapterB}" />
         </Panel>
       </Border>

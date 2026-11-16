@@ -61,8 +61,9 @@ public static class MainMenus
     // Right-click on a panadapter. With RX2 on: which receiver has the
     // controls, which transmits, mute, the arrangement, RX2 off. With one
     // panadapter: add, select, move, mute and remove slice B the same way.
-    // The second panadapter itself opens from the RX2 button.
-    public static void ShowSliceMenu(MainViewModel? vm, long hz, Control at)
+    // The second panadapter itself opens from the RX2 button; the touch layout
+    // has that button in its drawer, so there the menu offers RX2 as well.
+    public static void ShowSliceMenu(MainViewModel? vm, long hz, Control at, bool offerRx2 = false)
     {
         if (vm is not { IsConnected: true }) return;
         string where = $"{hz / 1e6:0.000000} MHz";
@@ -70,12 +71,14 @@ public static class MainMenus
 
         if (!vm.SliceBEnabled)
         {
+            if (offerRx2) items.Add(Item("Turn RX2 on (second receiver, own panadapter)", () => vm.SelectRxAsync(1)));
             items.Add(Item($"Add slice B at {where}", () => vm.AddSliceBAsync(hz, ownPanadapter: false)));
         }
         else
         {
             bool two = vm.SliceBOwnPanadapter;
             int other = vm.ActiveRx == 0 ? 1 : 0;
+            if (offerRx2 && !two) items.Add(Item("Move slice B to its own panadapter as RX2", () => vm.SelectRxAsync(1)));
             items.Add(Item($"Make {vm.SliceName(other)} active", () => vm.MakeActiveAsync(other)));
             items.Add(Item($"Move {vm.SliceName(1)} here ({where})", () => vm.MoveSliceBAsync(hz)));
             items.Add(new Separator());

@@ -296,6 +296,8 @@ Click RX2, left of the frequency. A second panadapter opens on RX1's frequency a
 
 RX1 and RX2 beside the frequency show which receiver the frequency, band, mode and filter controls act on: blue has the controls. Click the other one to switch; RX2 outlined in blue is on and waiting. A click or the wheel on a panadapter gives that receiver the controls too.
 
+In the touch layout, RX1 and RX2 are in the drawer (☰) under Slices, and a long press or right-click on the spectrum offers "Turn RX2 on".
+
 To turn RX2 off, click the ✕ on its small frequency display, or right-click RX2. The right-click menu also puts the two panadapters side by side or one above the other, and swaps the two receivers' frequencies.
 
 ## The small frequency display on each panadapter

@@ -21,8 +21,8 @@ public partial class MiniVfo : UserControl
     public int Rx { get => GetValue(RxProperty); set => SetValue(RxProperty, value); }
 
     public static readonly StyledProperty<bool> TouchProperty = AvaloniaProperty.Register<MiniVfo, bool>(nameof(Touch));
-    /// <summary>Touch layout: larger, and a tap on the frequency gives the
-    /// receiver the controls (the main frequency's keypad types one).</summary>
+    /// <summary>Touch layout: larger, and a tap on the frequency asks the
+    /// layout for its keypad (EntryRequested) instead of a text box.</summary>
     public bool Touch { get => GetValue(TouchProperty); set => SetValue(TouchProperty, value); }
 
     private static readonly IBrush[] SliceBrush =
@@ -30,6 +30,9 @@ public partial class MiniVfo : UserControl
     private static readonly IBrush Idle = new SolidColorBrush(Color.Parse("#40FFFFFF"));
     private static readonly IBrush TxRed = new SolidColorBrush(Color.Parse("#A8232A"));
     private static readonly IBrush Dim = new SolidColorBrush(Color.Parse("#8A93A3"));
+
+    /// <summary>Touch: the frequency was tapped; the layout shows its keypad here.</summary>
+    public event Action<MiniVfo>? EntryRequested;
 
     private MainViewModel? _wired;
 
@@ -48,7 +51,7 @@ public partial class MiniVfo : UserControl
         {
             e.Handled = true;
             if (Vm is not { IsConnected: true } vm || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-            if (Touch) { _ = vm.MakeActiveAsync(Rx); return; }
+            if (Touch) { EntryRequested?.Invoke(this); return; }
             if (Entry.IsVisible) return;
             Entry.Text = "";
             Entry.IsVisible = true;
