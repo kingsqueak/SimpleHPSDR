@@ -159,6 +159,7 @@ The lower part shows the same thing over time, with new rows arriving at the top
 ## Close-up
 The close-up, beside the filters, shows 6 kHz from the dial as audio frequency (3 kHz in CW), with the receive filter shaded. It's the best place to see how a voice fits in the filter.
 - Drag the filter's edges in it to set the low and high cuts. The box along its top shows them in Hz.
+- Move the mouse over it: a line follows the pointer and a flag beside it shows the audio frequency there.
 - The area under the trace is coloured like the waterfall, so the strongest part of the audio stands out.
 
 Right-click it (long press on a touch screen) for its options. They're remembered.

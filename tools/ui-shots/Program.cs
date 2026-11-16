@@ -334,6 +334,25 @@ foreach (var t in typeof(InputElement).Assembly.GetTypes().Where(t => t.IsPublic
     fw2.Close();
 }
 
+// ---- The close-up's pointer line and frequency flag ----
+{
+    var fs = new SimpleHPSDR.Controls.FilterScope();
+    var scopeType = typeof(SimpleHPSDR.Controls.FilterScope);
+    scopeType.GetField("_low", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(fs, 100);
+    scopeType.GetField("_high", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(fs, 2800);
+    var scopeWin = new Window { Content = fs, Width = 420, Height = 84 }; scopeWin.Show(); Pump();
+    foreach (var (x, y, n) in new[] { (105.0, 50.0, "mid"), (400.0, 10.0, "right-edge"), (2.0, 80.0, "left-bottom") })
+    {
+        scopeWin.MouseMove(new Point(x, y));
+        Shot(scopeWin, "closeup-hover-" + n);
+    }
+    bool shown = scopeType.GetField("_hover", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(fs) is not null;
+    scopeWin.MouseMove(new Point(210, 200));   // out of the window
+    Pump();
+    report.AppendLine($"PROBE close-up hover: shown inside {shown}, shown after leaving {scopeType.GetField("_hover", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(fs) is not null}");
+    scopeWin.Close();
+}
+
 // ---- A height-limited flyout presenter scrolls (what ScreenFit relies on) ----
 var tall = new StackPanel { Children = { new Border { Height = 900, Width = 300 } } };
 var fp = new FlyoutPresenter { Content = tall, MaxHeight = 519 };

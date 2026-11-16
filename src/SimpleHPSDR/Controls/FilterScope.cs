@@ -20,6 +20,7 @@ namespace SimpleHPSDR.Controls;
 /// The area under the trace is coloured by level in the waterfall palette
 /// (Config > Colors), so you see where the audio's energy sits.
 /// A box along the top shows the low and high cuts in Hz, updated as you drag.
+/// Under the mouse: a line top to bottom and a flag with the audio frequency there.
 /// </summary>
 public sealed class FilterScope : Control
 {
@@ -58,6 +59,14 @@ public sealed class FilterScope : Control
     private static readonly IBrush ReadoutText = new SolidColorBrush(Color.Parse("#E6E8EB"));
     private static readonly Color[] DialColors = [Color.Parse("#F25F5C"), Color.Parse("#F5A524")];
     private static readonly Typeface LabelFace = new("Inter");
+    // The pointer's line and flag, as on the panadapter (SpectrumView.DrawHover), a size smaller.
+    private static readonly IPen HoverPen = new Pen(new SolidColorBrush(Color.Parse("#B3E6E8EB")), 1);
+    private static readonly IBrush HoverTagBrush = new SolidColorBrush(Color.Parse("#E61F232C"));
+    private static readonly Typeface HoverFace = new("Menlo, Consolas, DejaVu Sans Mono, monospace");
+    private const double HoverFontSize = 12;
+    private static readonly Cursor ArrowCursor = new(StandardCursorType.Arrow);
+    private static readonly Cursor EdgeCursor = new(StandardCursorType.SizeWestEast);
+    private Point? _hover;   // mouse position, whole pixels; null when it's outside or dragging an edge
 
     private float[]? _pan;
     private double[] _cols = [];
@@ -76,7 +85,7 @@ public sealed class FilterScope : Control
     public FilterScope()
     {
         ClipToBounds = true;
-        Cursor = new Cursor(StandardCursorType.Arrow);
+        Cursor = ArrowCursor;
     }
 
     /// <summary>A display frame from the active slice's receiver, with that
@@ -168,6 +177,33 @@ public sealed class FilterScope : Control
 
         DrawScale(ctx, b, plot.Bottom);
         DrawReadout(ctx, b);
+        DrawHover(ctx, b, plot);
+    }
+
+    // A 1 px line through the mouse, top to bottom, and the audio frequency
+    // there (as on the scale, to 10 Hz) beside it: to the right, or to the left
+    // near the right edge.
+    private void DrawHover(DrawingContext ctx, Rect b, Rect plot)
+    {
+        if (_hover is not { } p || _drag != Edge.None) return;
+        double x = Math.Clamp(Math.Floor(p.X), 0, b.Width - 1) + 0.5;
+        ctx.DrawLine(HoverPen, new Point(x, 0), new Point(x, b.Height));
+        int hz = (int)(Math.Round(Math.Clamp(p.X / b.Width, 0, 1) * SpanHz / StepHz) * StepHz);
+        var ft = new FormattedText($"{hz} Hz", System.Globalization.CultureInfo.InvariantCulture,
+            FlowDirection.LeftToRight, HoverFace, HoverFontSize, ReadoutText);
+        double w = ft.Width + 10, h = ft.Height + 4;
+        double tx = x + 6 + w <= b.Width ? x + 6 : x - 6 - w;
+        double ty = Math.Clamp(p.Y - h / 2, 0, Math.Max(0, plot.Height - h));
+        ctx.FillRectangle(HoverTagBrush, new Rect(tx, ty, w, h), 3);
+        ctx.DrawText(ft, new Point(tx + 5, ty + 2));
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        if (_hover is null) return;
+        _hover = null;
+        InvalidateVisual();
     }
 
     // The filter's low and high cuts as audio Hz (as on the scale), in a box
@@ -328,12 +364,22 @@ public sealed class FilterScope : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        double x = e.GetPosition(this).X;
+        var pos = e.GetPosition(this);
+        double x = pos.X;
         if (_drag == Edge.None)
         {
-            Cursor = new Cursor(EdgeAt(x) == Edge.None ? StandardCursorType.Arrow : StandardCursorType.SizeWestEast);
+            var cursor = EdgeAt(x) == Edge.None ? ArrowCursor : EdgeCursor;
+            if (!ReferenceEquals(Cursor, cursor)) Cursor = cursor;
+            // A finger has no hover; a mouse reports many moves per pixel, so
+            // redraw only when the line moves.
+            if (e.Pointer.Type == PointerType.Touch) return;
+            Point? hover = new Point(Math.Round(pos.X), Math.Round(pos.Y));
+            if (hover == _hover) return;
+            _hover = hover;
+            InvalidateVisual();
             return;
         }
+        _hover = null;
         int hz = (int)(Math.Round(Offset(Math.Clamp(x, 0, Bounds.Width)) / StepHz) * StepHz);
         if (_symmetric) (_low, _high) = (-(int)Math.Max(hz, MinWidthHz / 2), (int)Math.Max(hz, MinWidthHz / 2));
         else if (_drag == Edge.Low) _low = (int)Math.Min(hz, _high - MinWidthHz);
@@ -348,5 +394,11 @@ public sealed class FilterScope : Control
         if (_drag == Edge.None) return;
         _drag = Edge.None;
         e.Pointer.Capture(null);
+        if (e.Pointer.Type != PointerType.Touch)
+        {
+            var pos = e.GetPosition(this);
+            if (new Rect(Bounds.Size).Contains(pos)) _hover = new Point(Math.Round(pos.X), Math.Round(pos.Y));
+        }
+        InvalidateVisual();
     }
 }
