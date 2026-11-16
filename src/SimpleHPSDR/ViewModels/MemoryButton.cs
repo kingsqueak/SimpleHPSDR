@@ -4,7 +4,7 @@ using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
 
-/// <summary>One of the 16 Mem buttons: "Open" when empty, otherwise the
+/// <summary>One of the Mem buttons (16 on each tab, A to C): "Open" when empty, otherwise the
 /// frequency over the mode. Click recalls it, right-click (long press) stores.</summary>
 public sealed partial class MemoryButton : ObservableObject
 {
@@ -23,14 +23,16 @@ public sealed partial class MemoryButton : ObservableObject
     public static readonly Avalonia.Data.Converters.FuncValueConverter<bool, double> EmptyOpacity = new(e => e ? 0.55 : 1.0);
 
     public int Index { get; }
+    /// <summary>Tab letter and place on it: A1 to C16.</summary>
+    public string Name => $"{(char)('A' + Index / MainViewModel.MemoriesPerPage)}{Index % MainViewModel.MemoriesPerPage + 1}";
     public IAsyncRelayCommand Recall { get; }
     public IRelayCommand Store { get; }
     public bool IsEmpty => Slot is null;
     public string Top => Slot is { } s ? FormatMHz(s.Hz) : "Open";
     public string Bottom => Slot is { } s ? ((RxMode)s.Mode).ToString() : "";
     public string Tip => Slot is null
-        ? $"Memory {Index + 1} is open. Right-click (or long-press) to store the frequency and mode you're on."
-        : $"Memory {Index + 1}: {FormatMHz(Slot.Hz)} MHz {Bottom}. Click to tune; right-click (or long-press) to store what you're on instead.";
+        ? $"Memory {Name} is open. Right-click (or long-press) to store the frequency and mode you're on."
+        : $"Memory {Name}: {FormatMHz(Slot.Hz)} MHz {Bottom}. Click to tune; right-click (or long-press) to store what you're on instead.";
 
     /// <summary>MHz with the kHz always shown and finer digits only when set: 7.255, 14.0745.</summary>
     public static string FormatMHz(long hz) =>

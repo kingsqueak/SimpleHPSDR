@@ -397,9 +397,9 @@
           </Button.Flyout>
         </Button>
 
-        <!-- Mem: 16 memories, the same on every band -->
+        <!-- Mem: tabs A, B, C of 16 memories, the same on every band -->
         <Button Grid.Column="3" Classes="seg t" MinWidth="40" Padding="8,0" FontSize="13" Content="Mem"
-                ToolTip.Tip="Memories: tap one to tune to it, long-press one to store the frequency and mode you're on. They sort by frequency when the popup closes.">
+                ToolTip.Tip="Memories: tap one to tune to it, long-press one to store the frequency and mode you're on. Three tabs, A, B and C, of 16 each; each tab sorts by frequency when the popup closes.">
           <Button.Flyout>
             <Flyout Placement="BottomEdgeAlignedLeft" Closed="OnMemoriesClosed">
               <ContentControl Content="{Binding}" ContentTemplate="{StaticResource MemoryPanel}" />

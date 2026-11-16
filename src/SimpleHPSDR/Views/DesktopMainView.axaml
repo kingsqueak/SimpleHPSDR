@@ -131,10 +131,10 @@
             </Flyout>
           </Button.ContextFlyout>
         </Button>
-        <!-- Mem: 16 memories, the same on every band -->
+        <!-- Mem: tabs A, B, C of 16 memories, the same on every band -->
         <Button Name="MemButton" Classes="seg tune" MinWidth="0"
                 VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                ToolTip.Tip="Memories: click a memory to tune to it, right-click one to store the frequency and mode you're on. They sort by frequency when the popup closes.">
+                ToolTip.Tip="Memories: click a memory to tune to it, right-click one to store the frequency and mode you're on. Three tabs, A, B and C, of 16 each; each tab sorts by frequency when the popup closes.">
           <TextBlock Text="Mem" />
           <Button.Flyout>
             <Flyout Placement="BottomEdgeAlignedLeft" Closed="OnMemoriesClosed">

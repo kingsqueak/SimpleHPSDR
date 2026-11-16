@@ -230,8 +230,8 @@ public sealed class Settings
     public Dictionary<string, ModeMemory> ModeMemories { get; set; } = [];
     /// <summary>The mode last used on each band.</summary>
     public Dictionary<string, int> BandLastMode { get; set; } = [];
-    /// <summary>The 16 Mem buttons, the same on every band; null = open.</summary>
-    public MemorySlot?[] Memories { get; set; } = new MemorySlot?[16];
+    /// <summary>The 48 Mem buttons (tabs A, B, C of 16), the same on every band; null = open.</summary>
+    public MemorySlot?[] Memories { get; set; } = new MemorySlot?[48];
 
     private static string FilePath => Path.Combine(EngineHost.DataDir, "settings.json");
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
