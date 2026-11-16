@@ -681,7 +681,7 @@
                 IsEnabled="{Binding IsConnected}" ToolTip.Tip="Configuration" />
         <!-- One button steps through the views; its right-click picks one. -->
         <Button Name="ViewButton" Classes="seg more" Click="OnNextView" Padding="7,0" MinWidth="0" Margin="0" VerticalAlignment="Stretch"
-                ToolTip.Tip="Change the view: controls below the panadapter, controls at the side, then the small window. Right-click to pick one.">
+                ToolTip.Tip="Change the view: controls below the panadapter, controls at the side, then the small window. Right-click to pick one, or the touch layout with its large buttons.">
           <Viewbox Width="15" Height="15" VerticalAlignment="Center">
             <Path Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="2" Data="M3 5 H21 V19 H3 Z M15 5 V19" />
           </Viewbox>
@@ -689,6 +689,7 @@
             <MenuFlyout Placement="TopEdgeAlignedRight" Opening="OnViewMenuOpening">
               <MenuItem Header="Controls below the panadapter" ToggleType="Radio" Click="OnViewBelow" />
               <MenuItem Header="Controls at the side" ToggleType="Radio" Click="OnViewSide" />
+              <MenuItem Header="Touch layout (large buttons)" Click="OnViewTouch" />
               <MenuItem Header="Small window" Click="OnOpenMini" />
             </MenuFlyout>
           </Button.ContextFlyout>

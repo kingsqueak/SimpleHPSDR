@@ -329,7 +329,7 @@
                   </StackPanel>
                 </WrapPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"
-                           Text="This is the large-button layout for small screens. Config &gt; Radio &gt; Layout switches it." />
+                           Text="This is the large-button layout for small screens. The view button beside ☰ goes to the desktop layout and back; Config &gt; Radio &gt; Layout sets it too." />
               </StackPanel>
             </ScrollViewer>
           </TabItem>
@@ -350,7 +350,30 @@
 
       <!-- Top bar: drawer, band, mode, frequency, meter, transmit -->
       <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="6" Margin="0,0,0,6">
-        <Button Classes="seg t" Content="☰" FontSize="20" Click="OpenDrawer" ToolTip.Tip="More controls" />
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Classes="seg t" Content="☰" FontSize="20" Click="OpenDrawer" ToolTip.Tip="More controls" />
+          <!-- The view button: the way back to the desktop layout -->
+          <Button Name="ViewButton" Classes="seg t" MinWidth="48" Padding="0"
+                  ToolTip.Tip="Change the view: this large-button layout, the desktop layout with its controls below or at the side of the panadapter, or the small window.">
+            <StackPanel>
+              <Viewbox Width="18" Height="18" HorizontalAlignment="Center">
+                <Path Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="2" Data="M3 5 H21 V19 H3 Z M15 5 V19" />
+              </Viewbox>
+              <TextBlock Text="View" Classes="sub" />
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Width="300" Spacing="6">
+                  <TextBlock Text="VIEW" Classes="head" />
+                  <Button Classes="seg t lit" Content="Touch (large buttons)" HorizontalAlignment="Stretch" Click="ClosePicker" />
+                  <Button Classes="seg t" Content="Desktop, controls below" HorizontalAlignment="Stretch" Click="OnViewBelow" />
+                  <Button Classes="seg t" Content="Desktop, controls at the side" HorizontalAlignment="Stretch" Click="OnViewSide" />
+                  <Button Classes="seg t" Content="Small window" HorizontalAlignment="Stretch" Click="OnViewMini" />
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
         <Button Grid.Column="1" Name="BandButton" Classes="seg t" MinWidth="76"
                 ToolTip.Tip="Choose a band. Long-press or right-click for frequencies saved on this band.">
           <StackPanel><TextBlock Text="{Binding BandLabel}" HorizontalAlignment="Center" /><TextBlock Text="Band" Classes="sub" /></StackPanel>

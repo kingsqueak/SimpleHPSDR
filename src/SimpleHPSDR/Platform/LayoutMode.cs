@@ -53,6 +53,20 @@ public static class LayoutMode
 
     public static void NotifySettingChanged() => SettingChanged?.Invoke();
 
+    /// <summary>
+    /// The view buttons' choice. It's kept as Automatic when that gives the
+    /// same layout on this screen (so a small screen gets its full screen
+    /// back), and it replaces a layout chosen on the command line.
+    /// </summary>
+    public static void Choose(Settings s, UiLayout layout)
+    {
+        Override = null;
+        double width = double.IsFinite(ScreenWidth) ? ScreenWidth : double.PositiveInfinity;
+        s.Layout = Resolve(Automatic, width) == layout ? Automatic : layout == UiLayout.Touch ? Touch : Desktop;
+        s.Save();
+        NotifySettingChanged();
+    }
+
     /// <summary>One line for Config: what's in use and why.</summary>
     public static string Describe(Settings s)
     {

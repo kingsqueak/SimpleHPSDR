@@ -62,6 +62,12 @@ public partial class MainWindow : Window
             WindowState = WindowState.Normal;
     }
 
+    /// <summary>The view buttons: go to the desktop or the touch layout, and remember it.</summary>
+    public void SwitchLayout(UiLayout layout)
+    {
+        if (Vm is { } vm) LayoutMode.Choose(vm.AppSettings, layout);
+    }
+
     public void ToggleFullScreen() =>
         WindowState = WindowState == WindowState.FullScreen ? WindowState.Normal : WindowState.FullScreen;
 

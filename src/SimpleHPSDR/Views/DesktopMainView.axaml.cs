@@ -233,6 +233,10 @@ public partial class DesktopMainView : UserControl
 
     private void OnViewSide(object? sender, RoutedEventArgs e) { if (Vm is { } vm) vm.SidePanel = true; }
 
+    // The large-button layout; its own view button comes back.
+    private void OnViewTouch(object? sender, RoutedEventArgs e) =>
+        (TopLevel.GetTopLevel(this) as MainWindow)?.SwitchLayout(Platform.UiLayout.Touch);
+
     // The view button's right-click menu: a dot on the arrangement in use.
     private void OnViewMenuOpening(object? sender, EventArgs e)
     {

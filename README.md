@@ -71,7 +71,8 @@ Not affiliated with or endorsed by the Zeus SDR project.
 - **Firmware loader** for Protocol 2 radios.
 - **Two arrangements:** the controls above and below the panadapter, or all of
   them in a panel at its side so the panadapter gets the window's full height.
-  The view button under the panadapter steps between them and the mini window.
+  The view button under the panadapter steps between them and the mini window;
+  its right-click menu also has the touch layout.
 - **Amp button:** says whether your amplifier is in line. On, Drive and Tune
   stop at the maximums you set for it; off, the radio runs to full power. Each
   keeps its own remembered levels, per band and per mode.
@@ -152,7 +153,9 @@ and PureSignal defaults.
 
 On a screen narrower than 1080 pixels, such as the 1024x600 front panel of
 some radios, SimpleHPSDR switches to a layout with large buttons and opens
-full screen. Config > Radio > Layout picks Automatic, Desktop or Touch;
+full screen. The View button beside ☰ goes to the desktop layout or the mini
+window, and the desktop view button's right-click menu comes back to it.
+Config > Radio > Layout picks Automatic, Desktop or Touch;
 `simplehpsdr --touch` or `--desktop` overrides it for one run. Everything in
 it works with a mouse as well as a finger, and a long press does what a
 right-click does.

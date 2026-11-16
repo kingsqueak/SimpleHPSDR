@@ -94,6 +94,27 @@ public partial class TouchMainView : UserControl
         (TopLevel.GetTopLevel(this) as MainWindow)?.OpenMini();
     }
 
+    // ---- the view button -----------------------------------------------
+
+    private void OnViewBelow(object? sender, RoutedEventArgs e) => ToDesktop(sender, side: false);
+
+    private void OnViewSide(object? sender, RoutedEventArgs e) => ToDesktop(sender, side: true);
+
+    // The picker closes first: this view is replaced by the desktop one.
+    private void ToDesktop(object? sender, bool side)
+    {
+        MainMenus.CloseFlyout(sender);
+        if (Vm is not { } vm || TopLevel.GetTopLevel(this) is not MainWindow window) return;
+        vm.SidePanel = side;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => window.SwitchLayout(Platform.UiLayout.Desktop));
+    }
+
+    private void OnViewMini(object? sender, RoutedEventArgs e)
+    {
+        MainMenus.CloseFlyout(sender);
+        (TopLevel.GetTopLevel(this) as MainWindow)?.OpenMini();
+    }
+
     private void OnOpenCw(object? sender, RoutedEventArgs e)
     {
         Drawer.IsPaneOpen = false;

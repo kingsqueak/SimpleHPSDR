@@ -32,7 +32,7 @@ If no radio appears, check that it's on and on the same network, or type its add
 - Middle: the band strip, the panadapter and the waterfall.
 - Under the panadapter: its display controls on the left; the antenna, the radio's name, Config and the view button on the right.
 - Bottom row: volume, transmit, the voice keyer and the clock.
-- The view button, at the right end of the line under the panadapter, changes the arrangement: controls above and below the panadapter, then all the controls in a panel at its side (the panadapter gets the window's full height), then the small window. Right-click it to pick one. Your choice is remembered.
+- The view button, at the right end of the line under the panadapter, changes the arrangement: controls above and below the panadapter, then all the controls in a panel at its side (the panadapter gets the window's full height), then the small window. Right-click it to pick one; the menu also has the touch layout, with large buttons, whose own view button (beside ☰) brings this one back. Your choice is remembered.
 - The Tools menu has the antenna analyser and the wideband view; the Help menu has this window and update checks.
 
 ## The most useful tip
@@ -124,8 +124,10 @@ The small arrows at the top right, or closing the mini window, bring the main wi
         ("Touch screens and small screens", """
 On a small screen, such as a radio's 1024 by 600 front panel, SimpleHPSDR shows a layout with large buttons instead of the desktop one. Config > Radio > Layout chooses: Automatic uses it on screens narrower than 1080, or pick Desktop or Touch. Everything in it works with a mouse too.
 
+To change layout without opening Config, use the view button. In the touch layout it's beside ☰ at the top left: tap it and pick the desktop layout (controls below or at the side of the panadapter) or the small window. In the desktop layout, right-click the view button under the panadapter and choose Touch layout.
+
 ## On screen
-- Top: the drawer (☰), band, mode, the frequency, the meter, MOX and TUNE.
+- Top: the drawer (☰), the view button, band, mode, the frequency, the meter, MOX and TUNE.
 - Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT.
 - ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window, the antenna analyser and Full screen. Quit is at the top of the drawer, beside ✕: tap it, then tap again within 4 seconds.
 
