@@ -815,8 +815,11 @@ public sealed class SpectrumView : Control
         // The finest 1-2-5 step whose labels still have room (about 52 px apart):
         // 10 kHz across a normal window at the usual spans.
         long step = NiceStep(spanHz * MinMarkerGapPx / Math.Max(1.0, r.Width));
-        long start = (_centerHz - (long)(spanHz / 2)) / step * step;
-        for (long hz = start; hz <= _centerHz + spanHz / 2; hz += step)
+        // From the window's real edges: zoomed in, it can sit anywhere across
+        // what arrives (dragged, or the Centre slider), not just the middle.
+        long viewLo = XToHz(0, r.Width), viewHi = XToHz(r.Width, r.Width);
+        long start = viewLo / step * step;
+        for (long hz = start; hz <= viewHi + step; hz += step)
         {
             double x = Math.Floor(HzToX(hz, r.Width)) + 0.5;
             if (x < 0 || x > r.Width) continue;
