@@ -506,15 +506,45 @@
             </Flyout>
           </Button.ContextFlyout>
         </Button>
-        <Grid Grid.Column="1" ColumnDefinitions="*,46" ColumnSpacing="6">
+        <!-- One receiver: the main AF. Two: each one's own volume, one over
+             the other in the slice colours, and Pan takes the left of DRV's space. -->
+        <Grid Grid.Column="1" ColumnDefinitions="*,46" ColumnSpacing="6" IsVisible="{Binding !HasSliceB}">
           <Slider Minimum="-50" Maximum="20" Value="{Binding AfGainDb}" VerticalAlignment="Center" ToolTip.Tip="Volume" />
           <TextBlock Grid.Column="1" Text="{Binding AfGainText}" VerticalAlignment="Center" />
         </Grid>
-        <TextBlock Grid.Column="2" Text="DRV" Classes="label" FontSize="13" Margin="6,0,0,0" />
-        <Grid Grid.Column="3" ColumnDefinitions="*,46" ColumnSpacing="6">
+        <Grid Grid.Column="1" ColumnDefinitions="Auto,*,46" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="2"
+              VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
+          <TextBlock Text="{Binding AfLabelA}" FontSize="12" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
+          <c:AfSlider Grid.Column="1" Value="{Binding SliceAfA}" Minimum="-40" Maximum="20"
+                      BallBrush="#F25F5C" ToolTip.Tip="RX1 (slice A) volume" />
+          <TextBlock Grid.Column="2" Text="{Binding SliceAfAText}" FontSize="12" VerticalAlignment="Center" />
+          <TextBlock Grid.Row="1" Text="{Binding AfLabelB}" FontSize="12" FontWeight="Bold" Foreground="#F5A524" VerticalAlignment="Center" />
+          <c:AfSlider Grid.Row="1" Grid.Column="1" Value="{Binding SliceAfB}" Minimum="-40" Maximum="20"
+                      BallBrush="#F5A524" ToolTip.Tip="RX2 (slice B) volume" />
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SliceAfBText}" FontSize="12" VerticalAlignment="Center" />
+        </Grid>
+        <!-- Two receivers: Pan has this space and the drive is set from the
+             DRV button's slider. One: the drive slider is here as well. -->
+        <Grid Grid.Column="3" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6" Margin="6,0,0,0" IsVisible="{Binding HasSliceB}">
+            <TextBlock Text="Pan" Classes="label" FontSize="13" VerticalAlignment="Center" />
+            <c:AfSlider Grid.Column="1" Value="{Binding RxPan}" Minimum="-100" Maximum="100" Step="10" Centered="True"
+                        VerticalAlignment="Center" ToolTip.Tip="{Binding RxPanTip}" />
+          </Grid>
           <Slider Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding DrivePct}" VerticalAlignment="Center"
-                  ToolTip.Tip="Transmit drive" />
-          <TextBlock Grid.Column="1" Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
+                  Margin="6,0,0,0" IsVisible="{Binding !HasSliceB}" ToolTip.Tip="Transmit drive" />
+          <Button Grid.Column="1" Classes="seg t" MinWidth="64" ToolTip.Tip="Transmit drive: tap for its slider">
+            <StackPanel><TextBlock Text="DRV" HorizontalAlignment="Center" /><TextBlock Text="{Binding DriveWattsText}" Classes="sub" /></StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="TopEdgeAlignedLeft">
+                <Grid Width="340" ColumnDefinitions="Auto,*,52" ColumnSpacing="10">
+                  <TextBlock Text="DRV" Classes="label" FontSize="13" VerticalAlignment="Center" />
+                  <Slider Grid.Column="1" Minimum="0" Maximum="{Binding DriveCeilingPct}" Value="{Binding DrivePct}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Text="{Binding DriveWattsText}" VerticalAlignment="Center" />
+                </Grid>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
         </Grid>
         <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6">
           <ToggleButton Classes="seg t" Content="Mute" IsChecked="{Binding Muted}" />

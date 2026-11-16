@@ -340,7 +340,7 @@ public partial class DesktopMainView : UserControl
 
         Grid.SetColumn(TuneToggle, side ? 1 : 0);
         // The volume sliders: a fixed width below, the panel's width at the side.
-        AfMain.Width = AfSliceA.Width = AfSliceB.Width = side ? double.NaN : 150;
+        AfMain.Width = AfSliceA.Width = AfSliceB.Width = RxPanRow.Width = side ? double.NaN : 150;
 
         // Step, lock, RIT and XIT: stacked beside the frequency, or in a row under it.
         var flow = side ? Avalonia.Layout.Orientation.Horizontal : Avalonia.Layout.Orientation.Vertical;

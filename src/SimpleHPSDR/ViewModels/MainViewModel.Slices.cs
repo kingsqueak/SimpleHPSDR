@@ -61,6 +61,7 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(ShowPanadapterB));
             OnPropertyChanged(nameof(ShowAbBadges));
             OnPropertyChanged(nameof(AfLabelA));
+            OnPropertyChanged(nameof(RxPanTip));
             OnPropertyChanged(nameof(AfLabelB));
             OnPropertyChanged(nameof(Rx1Active));
             OnPropertyChanged(nameof(Rx2Active));
@@ -210,6 +211,50 @@ public sealed partial class MainViewModel
         _sliceAfMovedAt = DateTime.UtcNow;
         _sliceAfSenders[rx].Send(Math.Round(db));
     }
+    // The pan under the two volume sliders: RX1 towards one ear, RX2 towards
+    // the other. The engine keeps it only while it runs, so it's sent on
+    // every connect.
+    private Latest<double>? _rxPanSender;
+
+    /// <summary>-100 = RX1 in the left ear and RX2 in the right, 0 = both in
+    /// both ears, +100 = RX1 right and RX2 left.</summary>
+    public double RxPan
+    {
+        get => _settings.RxPan;
+        set
+        {
+            int pan = (int)Math.Round(Math.Clamp(value, -100, 100));
+            if (_settings.RxPan == pan) return;
+            _settings.RxPan = pan;
+            _settings.Save();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RxPanTip));
+            SendRxPan();
+        }
+    }
+
+    private double EngineRxPan => RxPan / 100.0;
+
+    public string RxPanTip
+    {
+        get
+        {
+            double pan = EngineRxPan;
+            if (pan == 0) return $"Pan: {AfLabelA} and {AfLabelB} in both ears. Slide to split them left and right.";
+            string where = Math.Abs(pan) >= 1 ? "" : $" ({Math.Abs(pan) * 100:0}%)";
+            return pan < 0
+                ? $"Pan: {AfLabelA} left, {AfLabelB} right{where}"
+                : $"Pan: {AfLabelA} right, {AfLabelB} left{where}";
+        }
+    }
+
+    private void SendRxPan()
+    {
+        if (!IsConnected) return;
+        _rxPanSender ??= new Latest<double>(pan => _client?.SetRxPanAsync(pan) ?? Task.CompletedTask);
+        _rxPanSender.Send(EngineRxPan);
+    }
+
     public string ActiveSliceLabel => ActiveRx == 0 ? "A" : "B";
     /// <summary>Shown under the VFO slice letter when transmit is on the other slice.</summary>
     public string SplitText => SliceBEnabled && TxRx != ActiveRx ? $"TX {(TxRx == 0 ? "A" : "B")}" : "";

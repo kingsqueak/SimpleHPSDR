@@ -28,6 +28,11 @@ public sealed class AfSlider : Control
 
     public double Minimum { get; set; } = -50;
     public double Maximum { get; set; } = 20;
+    /// <summary>What one wheel click adds.</summary>
+    public double Step { get; set; } = 1;
+    /// <summary>A pan control: the fill runs from the middle (0) to the ball,
+    /// the middle is marked, and a drag catches at the middle.</summary>
+    public bool Centered { get; set; }
 
     static AfSlider()
     {
@@ -45,7 +50,11 @@ public sealed class AfSlider : Control
     private double Right => Bounds.Width - Ball;
     private double TrackY => Bounds.Height / 2;
     private double X(double v) => Left + (Math.Clamp(v, Minimum, Maximum) - Minimum) / (Maximum - Minimum) * (Right - Left);
-    private double V(double x) => Math.Round(Minimum + Math.Clamp((x - Left) / (Right - Left), 0, 1) * (Maximum - Minimum));
+    private double V(double x)
+    {
+        double v = Math.Round(Minimum + Math.Clamp((x - Left) / (Right - Left), 0, 1) * (Maximum - Minimum));
+        return Centered && Math.Abs(X(v) - X(0)) <= 4 ? 0 : v;
+    }
 
     private IBrush AccentBrush =>
         this.TryFindResource("SystemAccentColor", ActualThemeVariant, out var c) && c is Color col
@@ -61,7 +70,14 @@ public sealed class AfSlider : Control
         float half = Compact ? 1.5f : 2f;
         ctx.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));   // whole area takes the pointer
         ctx.FillRectangle(TrackBrush, new Rect(Left, y - half, Right - Left, 2 * half), half);
-        ctx.FillRectangle(fill, new Rect(Left, y - half, Math.Max(0, xv - Left), 2 * half), half);
+        if (Centered)
+        {
+            double mid = X(0);
+            ctx.FillRectangle(fill, new Rect(Math.Min(mid, xv), y - half, Math.Abs(xv - mid), 2 * half));
+            ctx.FillRectangle(TrackBrush, new Rect(mid - 0.75, y - Ball, 1.5, 2 * Ball));
+        }
+        else
+            ctx.FillRectangle(fill, new Rect(Left, y - half, Math.Max(0, xv - Left), 2 * half), half);
         ctx.DrawEllipse(fill, null, new Point(xv, y), Ball, Ball);
     }
 
@@ -100,6 +116,6 @@ public sealed class AfSlider : Control
         double acc = _wheel + amount / SliderWheel.ClickDelta;
         int clicks = (int)Math.Truncate(acc + Math.CopySign(1e-6, acc));
         _wheel = acc - clicks;
-        if (clicks != 0) Set(Math.Round(Value) + clicks);
+        if (clicks != 0) Set(Math.Round(Value) + clicks * Step);
     }
 }

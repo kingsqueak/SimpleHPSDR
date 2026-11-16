@@ -215,6 +215,13 @@ public sealed class StationClient : IDisposable
         await ThrowIfFailed(r);
     }
 
+    /// <summary>Receive pan: -1 = RX1 left and RX2 right, 0 = both centred, +1 the other way.</summary>
+    public async Task SetRxPanAsync(double pan)
+    {
+        using var r = await _http.PutAsJsonAsync("api/rx/pan", new { pan }, Json);
+        await ThrowIfFailed(r);
+    }
+
     // ---- PureSignal ----
     public Task SetPsAsync(bool enabled, bool auto = true, bool single = false) =>
         PostAsync("api/tx/ps", new PsControlSetRequest(enabled, auto, single));

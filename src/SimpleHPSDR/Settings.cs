@@ -183,6 +183,9 @@ public sealed class Settings
     public string Layout { get; set; } = "Automatic";
     /// <summary>Desktop layout: the controls in a panel at the side of the panadapter instead of above and below it.</summary>
     public bool SidePanel { get; set; }
+    /// <summary>Two receivers on: where RX1 sits between the left ear (-100)
+    /// and the right (+100), with RX2 opposite; 0 = both in both ears.</summary>
+    public int RxPan { get; set; }
     /// <summary>The side panel's width (the bar at its left edge drags it).</summary>
     public double SideRailWidth { get; set; } = 410;
     /// <summary>SimpleHPSDR runs on an ANAN-G2's own computer (Linux arm64 only).</summary>

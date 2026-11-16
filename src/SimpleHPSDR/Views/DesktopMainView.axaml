@@ -762,7 +762,7 @@
                           ToolTip.Tip="AF: the volume" />
               <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding AfGainText}" FontSize="12" VerticalAlignment="Center" />
             </Grid>
-            <Grid ColumnDefinitions="Auto,*,44" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="2"
+            <Grid ColumnDefinitions="Auto,*,44" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="4" RowSpacing="2"
                   VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
               <TextBlock Text="{Binding AfLabelA}" FontSize="11" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
               <c:AfSlider Name="AfSliceA" Grid.Column="1" Width="150" Value="{Binding SliceAfA}" Minimum="-40" Maximum="20" Compact="True"
@@ -772,6 +772,11 @@
               <c:AfSlider Name="AfSliceB" Grid.Row="1" Grid.Column="1" Width="150" Value="{Binding SliceAfB}" Minimum="-40" Maximum="20" Compact="True"
                           BallBrush="#F5A524" ToolTip.Tip="RX2 (slice B) volume" />
               <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SliceAfBText}" FontSize="11" VerticalAlignment="Center" />
+              <!-- Pan: the two receivers left and right. -->
+              <TextBlock Grid.Row="2" Text="Pan" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+              <c:AfSlider Name="RxPanRow" Grid.Row="2" Grid.Column="1" Width="150" Value="{Binding RxPan}"
+                          Minimum="-100" Maximum="100" Step="10" Centered="True" Compact="True"
+                          ToolTip.Tip="{Binding RxPanTip}" />
             </Grid>
           </Panel>
         </DockPanel>

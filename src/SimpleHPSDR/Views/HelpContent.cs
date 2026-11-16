@@ -128,7 +128,7 @@ To change layout without opening Config, use the view button. In the touch layou
 
 ## On screen
 - Top: the drawer (☰), the view button, band, mode, the frequency, the meter, MOX and TUNE.
-- Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT.
+- Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT. Tap the DRV button for a larger drive slider. With RX2 or slice B on, the volume becomes one slider for each receiver, Pan takes the drive slider's place, and the drive is set from the DRV button.
 - ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window, the antenna analyser and Full screen. Quit is at the top of the drawer, beside ✕: tap it, then tap again within 4 seconds.
 
 ## Tuning
@@ -264,6 +264,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
         ("Receiving", """
 ## Volume
 - AF sets the overall level. With RX2 or slice B on, it becomes two sliders, one over the other, each setting that receiver's own level on top of the overall level, which stays where you left it.
+- Pan, the third slider under those two, puts the receivers in different ears on stereo speakers or headphones. In the middle both are in both ears. Slide it left and the first receiver moves to the left ear and the second to the right, all the way for a full split; slide it right for the other way round. It works on this computer's sound output, not on the radio's own speaker or headphone jack.
 - Mute silences the receiver.
 - REC and the voice keyer: see Recording and the voice keyer.
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.
