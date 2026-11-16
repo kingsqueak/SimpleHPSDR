@@ -123,8 +123,7 @@ Pi than on a desktop computer, so leave it running.
 **Windows 10 or 11 (x64), preview:** run `SimpleHPSDR-<version>-win-x64-setup.exe`.
 It installs for you alone, with no administrator password, and adds SimpleHPSDR to
 the Start menu and to Settings > Apps for uninstalling; for a new version, run its
-setup. Or unzip the `.zip` anywhere you can write to and run `SimpleHPSDR.exe`.
-The .NET and Visual C++ runtimes are included either way. Settings are kept in
+setup. The .NET and Visual C++ runtimes are included. Settings are kept in
 `%LOCALAPPDATA%\SimpleHPSDR`, so they carry over to new versions and stay if you
 uninstall. The app isn't signed, so SmartScreen warns the first time:
 choose More info, then Run anyway. If Windows Firewall asks about

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Build the Windows zip: SimpleHPSDR.exe with station-engine in engine\.
+# Build the Windows program folder: SimpleHPSDR.exe with station-engine in
+# engine\. The installer (scripts/windows-installer.iss) is made from it.
 # Usage: scripts/make-windows.sh   (Git Bash on Windows; also runs on a Mac or
 # Linux box to check the contents, but only Windows gives the .exe its icon)
-# Output: artifacts/SimpleHPSDR-<version>-win-x64.zip
+# Output: artifacts/win/SimpleHPSDR-<version>
 #
 # win-x64 only: the engine ships its ASIO and audio libraries for x64, not arm64.
 # Self-contained (no .NET install needed). Not signed, so Windows warns on first run.
@@ -42,12 +43,5 @@ fi
 
 cp LICENSE "$app/" 2>/dev/null || true
 
-zip="artifacts/SimpleHPSDR-$version-win-x64.zip"
-rm -f "$zip"
-if command -v 7z >/dev/null; then
-  (cd "$out" && 7z a -tzip -bd "../$(basename "$zip")" "SimpleHPSDR-$version" >/dev/null)
-else
-  (cd "$out" && zip -qr "../$(basename "$zip")" "SimpleHPSDR-$version")
-fi
-du -sh "$app" "$zip"
-echo "zip -> $zip"
+du -sh "$app"
+echo "folder -> $app"
