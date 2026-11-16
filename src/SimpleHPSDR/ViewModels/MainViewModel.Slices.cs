@@ -332,12 +332,17 @@ public sealed partial class MainViewModel
     {
         if (!IsConnected) return;
         SliceBOwnPanadapter = ownPanadapter;
+        // The Rx2 jack is remembered for RX2. A slice added on RX1's panadapter
+        // starts on the main antenna, or it would come up silent with nothing
+        // on that jack; the input can still be changed afterwards.
+        if (!ownPanadapter && _settings.SliceBOnRx2Jack) SetSliceBInput(false);
+        byte? adc = HasRx2Jack ? (_settings.SliceBOnRx2Jack ? (byte)1 : (byte)0) : null;
         await Try(async () =>
         {
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
                 Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
                 AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
-                ZoomLevel: ZoomLevel, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto));
+                ZoomLevel: ZoomLevel, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto, AdcSource: adc));
             // RX2 starts at RX1's zoom; from here each has its own.
             _zoomLevelB = ZoomLevel;
             _zoomFine[1] = _zoomFine[0];
