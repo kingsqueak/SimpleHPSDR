@@ -51,11 +51,32 @@ public sealed partial class SettingsViewModel
         }
     }
 
-    private ColorRow? _lineRow, _fillRow, _backRow, _fadeRow;
+    private ColorRow? _lineRow, _fillRow, _backRow, _fadeRow, _gridRow;
     private ColorRow LineRow => _lineRow ??= new(SpectrumLook.LineColors, s => s.SpecLineColor, (s, v) => s.SpecLineColor = v, "Blue");
     private ColorRow FillRow => _fillRow ??= new(SpectrumLook.FillColors, s => s.SpecFillColor, (s, v) => s.SpecFillColor = v, "Blue");
     private ColorRow BackRow => _backRow ??= new(SpectrumLook.BackgroundColors, s => s.SpecBackground, (s, v) => s.SpecBackground = v, "Black");
     private ColorRow FadeRow => _fadeRow ??= new(SpectrumLook.FadeColors, s => s.SpecBackgroundFade, (s, v) => s.SpecBackgroundFade = v, "None");
+    private ColorRow GridRow => _gridRow ??= new(SpectrumLook.GridColors, s => s.SpecGridColor, (s, v) => s.SpecGridColor = v, "Grey");
+
+    public NamedColor[] GridColors => GridRow.List;
+    public NamedColor? SpecGrid { get => GridRow.Selected(AppSettings); set => Pick(GridRow, value); }
+    public Color SpecGridCustom { get => GridRow.Current(AppSettings); set => SetCustom(GridRow, value); }
+    /// <summary>How solid the grid lines are, 0 to 100 %.</summary>
+    public double SpecGridOpacity
+    {
+        get => AppSettings?.SpecGridOpacity ?? SpectrumLook.DefaultGridOpacity;
+        set
+        {
+            int v = (int)Math.Round(Math.Clamp(value, 0, 100));
+            if (AppSettings is not { } s || s.SpecGridOpacity == v) return;
+            s.SpecGridOpacity = v;
+            s.Save();
+            SpectrumLook.Apply(s);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SpecGridOpacityText));
+        }
+    }
+    public string SpecGridOpacityText => $"{SpecGridOpacity:0} %";
 
     public NamedColor[] LineColors => LineRow.List;
     public NamedColor[] FillColors => FillRow.List;
@@ -132,6 +153,10 @@ public sealed partial class SettingsViewModel
         OnPropertyChanged(nameof(SpecFillCustom));
         OnPropertyChanged(nameof(SpecBackgroundCustom));
         OnPropertyChanged(nameof(SpecFadeCustom));
+        OnPropertyChanged(nameof(SpecGrid));
+        OnPropertyChanged(nameof(SpecGridCustom));
+        OnPropertyChanged(nameof(SpecGridOpacity));
+        OnPropertyChanged(nameof(SpecGridOpacityText));
     }
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]
@@ -140,6 +165,7 @@ public sealed partial class SettingsViewModel
         if (AppSettings is not { } s) return;
         (s.SpecLineColor, s.SpecFillColor, s.SpecBackground, s.SpecBackgroundFade, s.WaterfallPalette) =
             ("Blue", "Blue", "Black", "None", "Classic");
+        (s.SpecGridColor, s.SpecGridOpacity) = ("Grey", SpectrumLook.DefaultGridOpacity);
         s.Save();
         SpectrumLook.Apply(s);
         RaiseSelections();

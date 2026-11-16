@@ -78,8 +78,8 @@ public sealed class SpectrumView : Control
     private uint[] Palette = SpectrumLook.Current.Palette;
     private static IBrush Background => SpectrumLook.Current.Background;
     private static readonly IBrush WaterfallBase = new SolidColorBrush(Color.Parse("#0B0D11"));
-    private static readonly IPen GridPen = new Pen(new SolidColorBrush(Color.Parse("#1F2430")), 1);
-    private static readonly IBrush LabelBrush = new SolidColorBrush(Color.Parse("#7D8696"));
+    private static IPen GridPen => SpectrumLook.Current.GridPen;
+    private static IBrush LabelBrush => SpectrumLook.Current.GridLabel;
     private static IBrush TraceFill => SpectrumLook.Current.Fill;
     private static IPen TracePen => SpectrumLook.Current.LinePen;
     private static readonly IBrush PassbandBrush = new SolidColorBrush(Color.Parse("#26FFFFFF"));
@@ -781,32 +781,46 @@ public sealed class SpectrumView : Control
 
     private void DrawGrid(DrawingContext ctx, Rect r)
     {
+        int bins = _pan?.Length ?? _wfWidth;
+        double spanHz = bins > 0 && _hzPerPixel > 0 ? ViewBins(bins).Count * _hzPerPixel : 0;
+
         // Level lines every 10 dB (20 dB on a wide range), labelled at the left.
+        // Zoomed in to 30 kHz or less: lines as fine as 1 dB while they stay a
+        // few pixels apart, numbered wherever the numbers have room.
         var (lo, hi) = TraceRange();
         double range = Math.Max(1, hi - lo);
-        double dbStep = range > 80 ? 20 : 10;
-        for (double db = Math.Ceiling(lo / dbStep) * dbStep; db < hi; db += dbStep)
+        double pxPerDb = r.Height / range;
+        double labelStep = range > 80 ? 20 : 10, lineStep = labelStep;
+        if (spanHz > 0 && spanHz <= FineDbSpanHz)
         {
-            double y = r.Top + (hi - db) / range * r.Height;
+            foreach (double s in new double[] { 1, 2, 5 })
+                if (s * pxPerDb >= MinDbLineGapPx) { lineStep = s; break; }
+            foreach (double s in new double[] { 1, 2, 5, 10 })
+                if (s >= lineStep && s % lineStep == 0 && s * pxPerDb >= MinDbLabelGapPx) { labelStep = s; break; }
+        }
+        var gridPen = GridPen;
+        for (double db = Math.Ceiling(lo / lineStep) * lineStep; db < hi; db += lineStep)
+        {
+            // Whole pixels, so a 1 px line is as sharp as the AGC line.
+            double y = Math.Floor(r.Top + (hi - db) / range * r.Height) + 0.5;
             if (y <= r.Top + StripH + 14 || y >= r.Bottom - 1) continue;
-            ctx.DrawLine(GridPen, new Point(0, y), new Point(r.Width, y));
+            ctx.DrawLine(gridPen, new Point(0, y), new Point(r.Width, y));
+            if (db % labelStep != 0) continue;
             var label = new FormattedText($"{db:0}", System.Globalization.CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, LabelFace, 10, LabelBrush);
             ctx.DrawText(label, new Point(4, y - label.Height - 1));
         }
 
-        int bins = _pan?.Length ?? _wfWidth;
-        if (bins == 0 || _hzPerPixel <= 0) return;
-        double spanHz = ViewBins(bins).Count * _hzPerPixel;
+        if (spanHz <= 0) return;
         // The finest 1-2-5 step whose labels still have room (about 52 px apart):
         // 10 kHz across a normal window at the usual spans.
         long step = NiceStep(spanHz * MinMarkerGapPx / Math.Max(1.0, r.Width));
         long start = (_centerHz - (long)(spanHz / 2)) / step * step;
         for (long hz = start; hz <= _centerHz + spanHz / 2; hz += step)
         {
-            double x = HzToX(hz, r.Width);
+            double x = Math.Floor(HzToX(hz, r.Width)) + 0.5;
             if (x < 0 || x > r.Width) continue;
-            ctx.DrawLine(GridPen, new Point(x, r.Top), new Point(x, r.Bottom));
+            ctx.DrawLine(gridPen, new Point(x, r.Top), new Point(x, r.Bottom));
             var text = new FormattedText((hz / 1e6).ToString("0.000"),
                 System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, LabelFace, 11, LabelBrush);
             ctx.DrawText(text, new Point(x + 3, r.Top + StripH + 2));
@@ -814,6 +828,9 @@ public sealed class SpectrumView : Control
     }
 
     private const double MinMarkerGapPx = 52;
+    // Finer dB lines at this span or less (a little over 30 kHz, for rounding).
+    private const double FineDbSpanHz = 30_500;
+    private const double MinDbLineGapPx = 7, MinDbLabelGapPx = 14;
 
     private static long NiceStep(double raw)
     {

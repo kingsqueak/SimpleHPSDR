@@ -191,6 +191,10 @@ public sealed class Settings
     public string SpecBackground { get; set; } = "Black";
     public string SpecBackgroundFade { get; set; } = "None";
     public string WaterfallPalette { get; set; } = "Classic";
+    /// <summary>The grid lines over the spectrum (frequency and dB): colour and
+    /// how solid, 0 to 100 %. At 100 they are as plain as the AGC line.</summary>
+    public string SpecGridColor { get; set; } = "Grey";
+    public int SpecGridOpacity { get; set; } = SpectrumLook.DefaultGridOpacity;
     /// <summary>The band strip along the top of the spectrum.</summary>
     public bool BandStrip { get; set; } = true;
     /// <summary>How solid the band strip's colours are, 0.2 to 1.</summary>

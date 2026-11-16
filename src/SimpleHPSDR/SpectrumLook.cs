@@ -73,6 +73,15 @@ public sealed class SpectrumLook
         new("None", Colors.Transparent), .. BackgroundColors,
     ];
 
+    /// <summary>Grid lines and their labels.</summary>
+    public static readonly NamedColor[] GridColors =
+    [
+        new("Grey", Color.Parse("#A3ADBF")), .. LineColors,
+    ];
+    public const int DefaultGridOpacity = 12;
+    // The labels take the grid's colour but stay readable when the lines are faint.
+    private const double MinLabelOpacity = 0.75;
+
     public static readonly WaterfallPalette[] Palettes =
     [
         new("Classic", [(0.00, 0x0B, 0x0D, 0x11), (0.20, 0x0A, 0x1E, 0x5A), (0.40, 0x10, 0x6B, 0xD8),
@@ -96,6 +105,8 @@ public sealed class SpectrumLook
     public IBrush Fill { get; }
     public IBrush Background { get; }
     public uint[] Palette { get; }
+    public IPen GridPen { get; }
+    public IBrush GridLabel { get; }
 
     private SpectrumLook(Settings? s)
     {
@@ -113,6 +124,10 @@ public sealed class SpectrumLook
                 EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
                 GradientStops = [new GradientStop(back, 0), new GradientStop(fade, 1)],
             };
+        var grid = Find(GridColors, s?.SpecGridColor, "Grey").Color;
+        double solid = Math.Clamp(s?.SpecGridOpacity ?? DefaultGridOpacity, 0, 100) / 100.0;
+        GridPen = new Pen(new SolidColorBrush(grid, solid), 1);
+        GridLabel = new SolidColorBrush(grid, Math.Max(solid, MinLabelOpacity));
         Palette = Array.Find(Palettes, p => p.Name == s?.WaterfallPalette)?.Build() ?? Palettes[0].Build();
     }
 
