@@ -56,7 +56,7 @@ public partial class TouchMainView : UserControl
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB);
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
-        SpectrumB.ZoomRequested += Zoom;
+        SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
         _ = new CloseUpFeed(FilterScope, () => Vm, () => Drawer.IsPaneOpen && FilterScope.IsEffectivelyVisible
             && TopLevel.GetTopLevel(FilterScope) is not Window { WindowState: WindowState.Minimized });
@@ -70,7 +70,7 @@ public partial class TouchMainView : UserControl
             if (vm.ShowPanadapterB) _ = vm.TuneSliceByStepsAsync(0, steps);
             else vm.TuneBySteps(steps);
         };
-        Spectrum.ZoomRequested += Zoom;
+        Spectrum.ZoomRequested += dir => Vm?.ZoomStep(0, dir);
         // Ctrl+wheel (⌘+wheel on a Mac) zooms: SpectrumView raises ZoomRequested.
     }
 
@@ -207,6 +207,10 @@ public partial class TouchMainView : UserControl
     private void XitDown(object? sender, RoutedEventArgs e) => Vm?.NudgeXit(-1);
     private void XitUp(object? sender, RoutedEventArgs e) => Vm?.NudgeXit(1);
     private void XitClear(object? sender, RoutedEventArgs e) => Vm?.ClearXit();
+
+    private void SelectRx1(object? sender, RoutedEventArgs e) => _ = Vm?.SelectRxAsync(0);
+    private void SelectRx2(object? sender, RoutedEventArgs e) => _ = Vm?.SelectRxAsync(1);
+    private void Rx2Off(object? sender, RoutedEventArgs e) => _ = Vm?.RemoveSliceBAsync();
 
     // ---- zoom ----------------------------------------------------------
 
@@ -352,7 +356,7 @@ public partial class TouchMainView : UserControl
         Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
         Spectrum.Strip = SpectrumB.Strip = vm.BandStrip;
         Spectrum.StripOpacity = SpectrumB.StripOpacity = vm.BandStripOpacity;
-        Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
+        SetZoomViews(vm);
         Spectrum.HoldView = SpectrumB.HoldView = vm.CtunOn;
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
@@ -363,14 +367,25 @@ public partial class TouchMainView : UserControl
         if (f.RxId == 1)
         {
             if (!vm.ShowPanadapterB) return;
-            SpectrumB.Slices = vm.SliceMarks();
+            SpectrumB.Slices = vm.PanMarks(1);
             SpectrumB.PushFrame(f);
             (SpectrumB.SpecMinDb, SpectrumB.SpecMaxDb) = vm.SliceBRange(SpectrumB.NoiseFloorDb);
             return;
         }
-        Spectrum.Slices = vm.SliceMarks();
+        Spectrum.Slices = vm.PanMarks(0);
         Spectrum.PushFrame(f);
         vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
+    }
+
+    // Each panadapter has its receiver's own span; RX2's also places its dial
+    // by its own Centre (RX1's is placed by the engine).
+    private void SetZoomViews(MainViewModel vm)
+    {
+        Spectrum.TargetSpanHz = vm.ZoomTargetSpanFor(0);
+        Spectrum.DialRx = vm.ShowPanadapterB ? 0 : -1;
+        SpectrumB.TargetSpanHz = vm.ZoomTargetSpanFor(1);
+        SpectrumB.DialRx = 1;
+        SpectrumB.DialAt = vm.Rx2DialAt;
     }
 
     private void OnDisplayReset() { Spectrum.Clear(); SpectrumB.Clear(); FilterScope.Clear(); }
@@ -398,9 +413,9 @@ public partial class TouchMainView : UserControl
         // Zooming: redraw now with the new span instead of waiting for the next
         // frame. At each whole zoom level the engine sends no frames for about
         // 130 ms while it rebuilds its analyser, and the picture froze then leapt.
-        else if (e.PropertyName == nameof(MainViewModel.ZoomSlider) && _wired is { } vm)
+        else if (e.PropertyName is nameof(MainViewModel.ZoomSlider) or nameof(MainViewModel.DialPosition) && _wired is { } vm)
         {
-            Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
+            SetZoomViews(vm);
             Spectrum.InvalidateVisual();
             SpectrumB.InvalidateVisual();
         }

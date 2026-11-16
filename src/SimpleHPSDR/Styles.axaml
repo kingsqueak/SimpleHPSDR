@@ -260,6 +260,12 @@
   <Style Selector="Border.slicebadge.active > TextBlock, Border.slicebadge.txslice > TextBlock">
     <Setter Property="Foreground" Value="White" />
   </Style>
+  <!-- RX1 and RX2 beside the frequency: blue has the controls; RX2 outlined
+       blue is on, with the controls on RX1; grey is off. -->
+  <Style Selector="Border.slicebadge.rx"><Setter Property="Width" Value="36" /></Style>
+  <Style Selector="Border.slicebadge.rx > TextBlock"><Setter Property="FontSize" Value="11" /></Style>
+  <Style Selector="Border.slicebadge.on"><Setter Property="BorderBrush" Value="{StaticResource Accent}" /></Style>
+  <Style Selector="Border.slicebadge.on > TextBlock"><Setter Property="Foreground" Value="{StaticResource Accent}" /></Style>
   <Style Selector="Border.sliceB"><Setter Property="Background" Value="#F5A524" /></Style>
 
   <!-- CPU readout: green below 25%, yellow 25-50%, red above 50% -->

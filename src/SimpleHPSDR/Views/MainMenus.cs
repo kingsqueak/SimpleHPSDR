@@ -39,8 +39,29 @@ public static class MainMenus
         new ContextMenu { ItemsSource = items }.Open(at);
     }
 
-    // Right-click on the panadapter: add, select, move, mute, remove slices and
-    // choose which one transmits.
+    // Right-click on the RX2 button.
+    public static void ShowRx2Menu(MainViewModel? vm, Control at)
+    {
+        if (vm is not { IsConnected: true }) return;
+        var items = new List<Control>();
+        if (!vm.ShowPanadapterB) items.Add(Item("Turn RX2 on", () => vm.SelectRxAsync(1)));
+        else
+        {
+            items.Add(SideBySideItem(vm));
+            items.Add(Item("Swap RX1 and RX2", () => { vm.SwapSlicesCommand.Execute(null); return Task.CompletedTask; }));
+            items.Add(Item("Turn RX2 off", () => vm.RemoveSliceBAsync()));
+        }
+        new ContextMenu { ItemsSource = items }.Open(at);
+    }
+
+    private static MenuItem SideBySideItem(MainViewModel vm) => vm.PanadaptersSideBySide
+        ? Item("Panadapters one above the other", () => { vm.PanadaptersSideBySide = false; return Task.CompletedTask; })
+        : Item("Panadapters side by side", () => { vm.PanadaptersSideBySide = true; return Task.CompletedTask; });
+
+    // Right-click on a panadapter. With RX2 on: which receiver has the
+    // controls, which transmits, mute, the arrangement, RX2 off. With one
+    // panadapter: add, select, move, mute and remove slice B the same way.
+    // The second panadapter itself opens from the RX2 button.
     public static void ShowSliceMenu(MainViewModel? vm, long hz, Control at)
     {
         if (vm is not { IsConnected: true }) return;
@@ -50,39 +71,31 @@ public static class MainMenus
         if (!vm.SliceBEnabled)
         {
             items.Add(Item($"Add slice B at {where}", () => vm.AddSliceBAsync(hz, ownPanadapter: false)));
-            items.Add(Item($"Add slice B at {where} in a new panadapter", () => vm.AddSliceBAsync(hz, ownPanadapter: true)));
         }
         else
         {
+            bool two = vm.SliceBOwnPanadapter;
             int other = vm.ActiveRx == 0 ? 1 : 0;
-            string o = other == 0 ? "A" : "B";
-            items.Add(Item($"Make slice {o} active", () => vm.MakeActiveAsync(other)));
-            items.Add(Item($"Move slice B here ({where})", () => vm.MoveSliceBAsync(hz)));
+            items.Add(Item($"Make {vm.SliceName(other)} active", () => vm.MakeActiveAsync(other)));
+            items.Add(Item($"Move {vm.SliceName(1)} here ({where})", () => vm.MoveSliceBAsync(hz)));
             items.Add(new Separator());
             for (int rx = 0; rx <= 1; rx++)
             {
                 int r = rx;
-                string n = r == 0 ? "A" : "B";
-                if (vm.TxRx != r) items.Add(Item($"Transmit on slice {n}", () => vm.TransmitOnAsync(r)));
+                if (vm.TxRx != r && !(r == 1 && vm.Rx2ReceiveOnly)) items.Add(Item($"Transmit on {vm.SliceName(r)}", () => vm.TransmitOnAsync(r)));
             }
             items.Add(new Separator());
             for (int rx = 0; rx <= 1; rx++)
             {
                 int r = rx;
-                string n = r == 0 ? "A" : "B";
+                string n = vm.SliceName(r);
                 bool muted = vm.IsSliceMuted(r);
-                items.Add(Item(muted ? $"Unmute slice {n}" : $"Mute slice {n}", () => vm.SetSliceMuteAsync(r, !muted)));
+                items.Add(Item(muted ? $"Unmute {n}" : $"Mute {n}", () => vm.SetSliceMuteAsync(r, !muted)));
             }
             items.Add(new Separator());
-            items.Add(vm.SliceBOwnPanadapter
-                ? Item("Show slice B on this panadapter", () => { vm.SliceBOwnPanadapter = false; return Task.CompletedTask; })
-                : Item("Show slice B in its own panadapter", () => { vm.SliceBOwnPanadapter = true; return Task.CompletedTask; }));
-            if (vm.SliceBOwnPanadapter)
-                items.Add(vm.PanadaptersSideBySide
-                    ? Item("Panadapters one above the other", () => { vm.PanadaptersSideBySide = false; return Task.CompletedTask; })
-                    : Item("Panadapters side by side", () => { vm.PanadaptersSideBySide = true; return Task.CompletedTask; }));
-            items.Add(Item("Swap A and B", () => { vm.SwapSlicesCommand.Execute(null); return Task.CompletedTask; }));
-            items.Add(Item("Remove slice B", () => vm.RemoveSliceBAsync()));
+            if (two) items.Add(SideBySideItem(vm));
+            items.Add(Item(two ? "Swap RX1 and RX2" : "Swap A and B", () => { vm.SwapSlicesCommand.Execute(null); return Task.CompletedTask; }));
+            items.Add(Item(two ? "Turn RX2 off" : "Remove slice B", () => vm.RemoveSliceBAsync()));
         }
         new ContextMenu { ItemsSource = items }.Open(at);
     }

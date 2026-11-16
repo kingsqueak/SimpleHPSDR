@@ -158,6 +158,21 @@ public sealed class SpectrumView : Control
 
     /// <summary>CTUN on: a click moves only the dial, so the picture must stay put.</summary>
     public bool HoldView { get; set; }
+    /// <summary>The receiver whose dial the view is placed around; -1 = the active one.</summary>
+    public int DialRx { get; set; } = -1;
+    /// <summary>Where that dial goes across the view, 0 (left) to 1 (right),
+    /// as far as the arriving picture allows; NaN = where it is in the picture.</summary>
+    public double DialAt
+    {
+        get => _dialAt;
+        set
+        {
+            if (value.Equals(_dialAt)) return;
+            _dialAt = value;
+            _heldAt = double.NaN;   // place the view again, even while it is held (CTUN on)
+        }
+    }
+    private double _dialAt = double.NaN;
 
     // The visible part of the bins: first bin (fractional) and how many.
     // Stretched between the engine's whole zoom levels, the window is placed so
@@ -176,11 +191,13 @@ public sealed class SpectrumView : Control
         double count = bins / stretch;
         double spare = bins - count;
         if (spare <= 0) { _heldAt = double.NaN; return (0, count); }
-        var dial = Slices.FirstOrDefault(m => m.Active) ?? Slices.FirstOrDefault();
+        var dial = (DialRx >= 0 ? Slices.FirstOrDefault(m => m.Rx == DialRx) : null)
+            ?? Slices.FirstOrDefault(m => m.Active) ?? Slices.FirstOrDefault();
         if (dial is null) return (spare / 2.0, count);
         // Where the dial is across what arrives (0 left .. 1 right); kept there.
         double dialBin = (dial.Hz - _centerHz) / _hzPerPixel + bins / 2.0;
         double at = Math.Clamp(dialBin / bins, 0, 1);
+        if (!double.IsNaN(DialAt)) at = Math.Clamp((dialBin - DialAt * count) / spare, 0, 1);
         if (HoldView && !double.IsNaN(_heldAt) && bins == _heldBins && Math.Abs(stretch - _heldStretch) < 1e-9)
         {
             double first = _heldAt * spare, edge = 0.02 * count;

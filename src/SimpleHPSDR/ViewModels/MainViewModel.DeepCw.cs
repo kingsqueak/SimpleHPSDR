@@ -41,7 +41,11 @@ public sealed partial class MainViewModel
     }
 
     partial void OnIsConnectedChanged(bool value) => UpdateDeepCw();
-    partial void OnActiveRxChanged(int value) => UpdateDeepCw();
+    partial void OnActiveRxChanged(int value)
+    {
+        UpdateDeepCw();
+        ShowZoomControlsForActive();
+    }
 
     /// <summary>Start, move or stop DeepCW to match the window: on, connected, DeepCW chosen.</summary>
     private void UpdateDeepCw()

@@ -38,8 +38,9 @@ Not affiliated with or endorsed by the Zeus SDR project.
   your licence lets you transmit, red where it doesn't, grey for broadcast bands,
   CB and WWV.
 - **Filter close-up:** 0 to 6000 Hz of received audio with draggable filter edges.
-- **Two slices:** on one panadapter or each with its own, including cross-band
-  and split. With two slices on, the AF slider becomes an A and a B slider.
+- **Two receivers:** RX1 and RX2 buttons beside the frequency; RX2 opens its own
+  panadapter with a small VFO on each, cross-band and split included. Or slice B
+  on RX1's panadapter. With two on, the AF slider becomes two sliders.
 - **Band and mode memory:** each pair, such as 40 m DIGU, keeps its own
   frequency, filter, AGC, drive, mic gain and noise settings.
 - **Memories:** 16 under Mem, the same on every band, plus each band's own

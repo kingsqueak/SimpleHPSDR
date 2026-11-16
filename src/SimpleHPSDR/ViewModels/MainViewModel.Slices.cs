@@ -22,6 +22,8 @@ public sealed partial class MainViewModel
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ActiveSliceLabel))] [NotifyPropertyChangedFor(nameof(SplitText))]
     [NotifyPropertyChangedFor(nameof(RitUsable))]
     [NotifyPropertyChangedFor(nameof(SliceAActive))] [NotifyPropertyChangedFor(nameof(SliceBActive))]
+    [NotifyPropertyChangedFor(nameof(Rx1Active))] [NotifyPropertyChangedFor(nameof(Rx2Active))]
+    [NotifyPropertyChangedFor(nameof(Rx2Idle))] [NotifyPropertyChangedFor(nameof(ActiveName))]
     private int _activeRx;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SplitText))]
     [NotifyPropertyChangedFor(nameof(SliceATx))] [NotifyPropertyChangedFor(nameof(SliceBTx))]
@@ -36,6 +38,9 @@ public sealed partial class MainViewModel
     public bool SliceBTx => TxRx == 1;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))]
     [NotifyPropertyChangedFor(nameof(ShowPanadapterB))] [NotifyPropertyChangedFor(nameof(ShowSliceBInput))]
+    [NotifyPropertyChangedFor(nameof(ShowAbBadges))] [NotifyPropertyChangedFor(nameof(Rx2Active))]
+    [NotifyPropertyChangedFor(nameof(Rx1Active))]
+    [NotifyPropertyChangedFor(nameof(Rx2Idle))] [NotifyPropertyChangedFor(nameof(ActiveName))]
     private bool _sliceBEnabled;
 
     [ObservableProperty] private bool _fullDuplex;
@@ -54,9 +59,67 @@ public sealed partial class MainViewModel
             _settings.Save();
             OnPropertyChanged();
             OnPropertyChanged(nameof(ShowPanadapterB));
+            OnPropertyChanged(nameof(ShowAbBadges));
+            OnPropertyChanged(nameof(AfLabelA));
+            OnPropertyChanged(nameof(AfLabelB));
+            OnPropertyChanged(nameof(Rx1Active));
+            OnPropertyChanged(nameof(Rx2Active));
+            OnPropertyChanged(nameof(Rx2Idle));
+            OnPropertyChanged(nameof(ActiveName));
+            OnPropertyChanged(RxReadouts);
+            ShowZoomControlsForActive();
         }
     }
     public bool ShowPanadapterB => SliceBEnabled && SliceBOwnPanadapter;
+
+    // Two receivers: RX1 is the first panadapter, RX2 the second, which opens
+    // when RX2 is turned on. The RX1 and RX2 buttons beside the frequency pick
+    // the one the VFO and the controls act on. The engine's second receiver is
+    // either RX2 or slice B on RX1's panadapter, never both.
+    public bool Rx1Active => !Rx2Active;
+    public bool Rx2Active => ShowPanadapterB && ActiveRx == 1;
+    /// <summary>RX2 is on but the controls are on RX1.</summary>
+    public bool Rx2Idle => ShowPanadapterB && ActiveRx != 1;
+    /// <summary>A and B beside the frequency: only for slice B on RX1's panadapter.</summary>
+    public bool ShowAbBadges => SliceBEnabled && !SliceBOwnPanadapter;
+    /// <summary>The active one's name: RX1 or RX2 with two panadapters, A or B with one.</summary>
+    public string ActiveName => ShowPanadapterB ? (ActiveRx == 0 ? "RX1" : "RX2") : ActiveSliceLabel;
+
+    /// <summary>"RX1" / "RX2" with two panadapters, "slice A" / "slice B" with one.</summary>
+    public string SliceName(int rx) => SliceBOwnPanadapter
+        ? (rx == 0 ? "RX1" : "RX2")
+        : (rx == 0 ? "slice A" : "slice B");
+
+    /// <summary>Raised as a property name when a receiver's frequency or mode
+    /// may have changed; the small VFOs on the panadapters read them again.</summary>
+    public const string RxReadouts = nameof(RxReadouts);
+    public long RxHz(int rx) => rx == ActiveRx ? VfoHz : (rx == 0 ? _sliceA : _sliceB)?.VfoHz ?? 0;
+    public string RxModeLabel(int rx) => rx == ActiveRx ? ModeLabel : (rx == 0 ? _sliceA : _sliceB)?.Mode.ToString() ?? "";
+
+    /// <summary>The RX1 and RX2 buttons. RX1 takes the controls. RX2 turns on
+    /// on RX1's frequency, mode and filter if it's off (slice B on RX1's
+    /// panadapter moves to its own), and takes the controls.</summary>
+    public async Task SelectRxAsync(int rx)
+    {
+        if (!IsConnected) return;
+        if (rx == 0)
+        {
+            // With one panadapter the controls are already on RX1, on slice A or B.
+            if (ShowPanadapterB) await MakeActiveAsync(0);
+            return;
+        }
+        if (!SliceBEnabled) { await AddSliceBAsync(VfoHz, ownPanadapter: true); return; }
+        SliceBOwnPanadapter = true;
+        await MakeActiveAsync(1);
+    }
+
+    /// <summary>A frequency typed into a panadapter's small VFO: that receiver
+    /// takes the controls and tunes there.</summary>
+    public async Task EnterRxFrequencyAsync(int rx, string text)
+    {
+        if (!IsConnected || !TryTypedHz(text, out long hz)) return;
+        await TuneSliceAsync(rx, hz);
+    }
 
     /// <summary>The two panadapters side by side, A on the left, instead of one above the other.</summary>
     public bool PanadaptersSideBySide
@@ -66,6 +129,21 @@ public sealed partial class MainViewModel
         {
             if (_settings.PanadaptersSideBySide == value) return;
             _settings.PanadaptersSideBySide = value;
+            _settings.Save();
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>RX1's share of the room the two panadapters have; the bar
+    /// between them drags it, a double-click on the bar makes them equal.</summary>
+    public double PanSplit
+    {
+        get => Math.Clamp(_settings.PanSplit, 0.2, 0.8);
+        set
+        {
+            value = Math.Clamp(value, 0.2, 0.8);
+            if (Math.Abs(_settings.PanSplit - value) < 0.001) return;
+            _settings.PanSplit = value;
             _settings.Save();
             OnPropertyChanged();
         }
@@ -91,6 +169,9 @@ public sealed partial class MainViewModel
     private double _sliceAfA;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SliceAfBText))]
     private double _sliceAfB;
+    /// <summary>The two volume sliders' labels.</summary>
+    public string AfLabelA => SliceBOwnPanadapter ? "RX1" : "A";
+    public string AfLabelB => SliceBOwnPanadapter ? "RX2" : "B";
     public string SliceAfAText => $"{SliceAfA:0} dB";
     public string SliceAfBText => $"{SliceAfB:0} dB";
     private readonly Latest<double>[] _sliceAfSenders;
@@ -146,10 +227,29 @@ public sealed partial class MainViewModel
             : (_sliceA?.VfoHz ?? 0, (_sliceA?.FilterLowHz ?? 0) + shiftA, (_sliceA?.FilterHighHz ?? 0) + shiftA);
         var b = ActiveRx == 1 ? (VfoHz, FilterLowHz + shift, FilterHighHz + shift)
             : (_sliceB?.VfoHz ?? 0, (_sliceB?.FilterLowHz ?? 0) + shiftB, (_sliceB?.FilterHighHz ?? 0) + shiftB);
-        marks.Add(new SliceMark(0, a.Item1, a.Item2, a.Item3, "A", ActiveRx == 0, TxRx == 0, _muteA));
-        marks.Add(new SliceMark(1, b.Item1, b.Item2, b.Item3, "B", ActiveRx == 1, TxRx == 1, _muteB));
+        bool two = SliceBOwnPanadapter;
+        marks.Add(new SliceMark(0, a.Item1, a.Item2, a.Item3, two ? "RX1" : "A", ActiveRx == 0, TxRx == 0, _muteA));
+        marks.Add(new SliceMark(1, b.Item1, b.Item2, b.Item3, two ? "RX2" : "B", ActiveRx == 1, TxRx == 1, _muteB));
         return marks;
     }
+
+    /// <summary>Marks for one of the two panadapters (0 = RX1's, 1 = RX2's).
+    /// With the receivers on different bands each shows only its own: the
+    /// other's flag would just sit at the edge pointing off the display.</summary>
+    public IReadOnlyList<SliceMark> PanMarks(int panRx)
+    {
+        var marks = SliceMarks();
+        if (!ShowPanadapterB || marks.Count < 2 || SameBand(marks[0].Hz, marks[1].Hz)) return marks;
+        return [marks[panRx]];
+    }
+
+    // Outside the bands (shortwave listening, say), close together counts as the same band.
+    private static bool SameBand(long a, long b) =>
+        (SimpleHPSDR.Band.Find(a), SimpleHPSDR.Band.Find(b)) switch
+        {
+            (null, null) => Math.Abs(a - b) < 500_000,
+            var (x, y) => Equals(x, y),
+        };
 
     /// <summary>From engine state (connect and the 1 s poll).</summary>
     private void UpdateSlices(StateDto s)
@@ -159,6 +259,7 @@ public sealed partial class MainViewModel
         _muteA = _sliceA?.Muted ?? false;
         _muteB = _sliceB?.Muted ?? false;
         SliceBEnabled = _sliceB?.Enabled ?? false;
+        OnPropertyChanged(RxReadouts);
         FullDuplex = s.FullDuplexMultiRxEnabled;
         UpdateAgc(s);
         UpdateOperating(s);
@@ -169,15 +270,18 @@ public sealed partial class MainViewModel
             SetSliceAfLocal(0, s.Rx1AfGainDb);
             SetSliceAfLocal(1, _sliceB?.AfGainDb ?? 0);
         }
-        // B's display frames are labelled with the primary's zoom, so B's own
-        // zoom must match or its passband and signals land at different scales.
-        if (SliceBEnabled && _sliceB!.ZoomLevel != s.ZoomLevel && IsConnected)
+        // RX2 in its own panadapter has its own zoom. Slice B on RX1's
+        // panadapter is drawn at RX1's zoom, so its own is kept the same.
+        if (SliceBEnabled && SliceBOwnPanadapter) FollowEngineZoomB(_sliceB!.ZoomLevel);
+        else if (SliceBEnabled && _sliceB!.ZoomLevel != s.ZoomLevel && IsConnected)
             _ = Try(SyncSliceBZoomAsync);
         TxRx = SliceBEnabled ? s.TxReceiverIndex : 0;
         // A TX slice that isn't the active one is only seen here: follow its
         // band and mode. The active slice's own changes come through VfoHz and
         // Mode, and while it's being switched VfoHz can still be the other's.
         if (TxRx != ActiveRx) FollowTxSliceForPs();
+        // The Rx2 jack is a receive-only input: transmit doesn't stay on a receiver using it.
+        if (TxRx == 1 && Rx2ReceiveOnly && !IsTransmitting) _ = TransmitOnAsync(0);
         if (!SliceBEnabled && ActiveRx != 0) _ = MakeActiveAsync(0);
         SyncSliceBInput();
         CheckAttSource();
@@ -234,10 +338,13 @@ public sealed partial class MainViewModel
                 Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
                 AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
                 ZoomLevel: ZoomLevel, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto));
+            // RX2 starts at RX1's zoom; from here each has its own.
+            _zoomLevelB = ZoomLevel;
+            _zoomFine[1] = _zoomFine[0];
             SliceBEnabled = true;
             SetSliceAfLocal(1, 0);
             await MakeActiveAsync(1);
-            Status = $"Slice B on {hz / 1e6:0.000000} MHz.";
+            Status = ownPanadapter ? $"RX2 on, {hz / 1e6:0.000000} MHz." : $"Slice B on {hz / 1e6:0.000000} MHz.";
         });
     }
 
@@ -258,7 +365,7 @@ public sealed partial class MainViewModel
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(Enabled: false));
             SliceBEnabled = false;
             TxRx = 0;
-            Status = "Slice B removed.";
+            Status = SliceBOwnPanadapter ? "RX2 off." : "Slice B removed.";
         });
     }
 
@@ -268,7 +375,12 @@ public sealed partial class MainViewModel
         if (!IsConnected) return;
         if (IsTransmitting)
         {
-            Status = "Unkey before moving transmit to another slice.";
+            Status = "Unkey before moving transmit.";
+            return;
+        }
+        if (rx == 1 && Rx2ReceiveOnly)
+        {
+            Status = $"{(SliceBOwnPanadapter ? "RX2" : "Slice B")} is on the Rx2 jack, which only receives: transmit stays on {SliceName(0)}.";
             return;
         }
         await Try(async () =>
@@ -276,7 +388,7 @@ public sealed partial class MainViewModel
             await _client!.SetTxReceiverAsync(rx);
             TxRx = rx;
             await FollowRxFilterAsync();
-            Status = $"Transmit on slice {(rx == 0 ? "A" : "B")}.";
+            Status = $"Transmit on {SliceName(rx)}.";
         });
     }
 
@@ -386,11 +498,11 @@ public sealed partial class MainViewModel
     /// <summary>Bring the dial to the middle of the display: with CTUN on or
     /// after a drag it can be off centre, and a narrow span could leave it out
     /// of view. Each panadapter centres on its own slice.</summary>
-    private async Task CenterOnDialAsync()
+    private async Task CenterOnDialAsync(int rx)
     {
-        // Slice A's display keeps the dial where the centring slider puts it.
-        await _client!.SetDialPositionAsync(DialPosition / 100.0);
-        if (ShowPanadapterB) await _client.SetReceiverLoAsync(1, ActiveRx == 1 ? VfoHz : _sliceB?.VfoHz ?? VfoHz);
+        // RX1's display keeps the dial where its Centre slider puts it.
+        if (rx == 0) await _client!.SetDialPositionAsync(DialPositionOf(0) / 100.0);
+        else if (ShowPanadapterB) await _client!.SetReceiverLoAsync(1, ActiveRx == 1 ? VfoHz : _sliceB?.VfoHz ?? VfoHz);
     }
 
     /// <summary>A click or wheel on a slice's own panadapter: make that slice

@@ -29,7 +29,7 @@ public partial class DesktopMainView : UserControl
         OffsetButtons.SizeChanged += (_, _) => FitVfo();
         StepLockButtons.SizeChanged += (_, _) => FitVfo();
         SliceBadges.SizeChanged += (_, _) => FitVfo();
-        SliceBadges.PropertyChanged += (_, e) =>
+        AbBadges.PropertyChanged += (_, e) =>
         {
             if (e.Property != IsVisibleProperty) return;
             VfoGrid.InvalidateMeasure();   // the badges' column must make room for them
@@ -52,6 +52,10 @@ public partial class DesktopMainView : UserControl
         // Click the frequency to type one; Enter tunes, Esc or clicking away cancels.
         // A press on a slice badge moves transmit there and stops before it
         // reaches the frequency box (which would open typing).
+        // RX1 and RX2 give that receiver the controls; RX2's first click turns it on.
+        RxBadge1.PointerPressed += (_, e) => PressRxBadge(0, e);
+        RxBadge2.PointerPressed += (_, e) => PressRxBadge(1, e);
+        RxBadge2.ContextRequested += (_, e) => { e.Handled = true; MainMenus.ShowRx2Menu(Vm, RxBadge2); };
         SliceBadgeA.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(0); };
         SliceBadgeB.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(1); };
         FrequencyPanel.PointerPressed += (_, e) =>
@@ -73,6 +77,16 @@ public partial class DesktopMainView : UserControl
         XitButton.ContextRequested += (_, e) => { Vm?.ClearXit(); e.Handled = true; };
         WpmButton.PointerWheelChanged += (_, e) => { Vm?.NudgeCwWpm(SliderWheel.Clicks(WpmButton, e)); e.Handled = true; };
         BandButton.ContextRequested += async (_, e) => { e.Handled = true; await MainMenus.ShowBandStackAsync(Vm, BandButton); };
+        // The bar between the panadapters: keep the share it was dragged to.
+        PanSplitter.DragCompleted += (_, _) =>
+        {
+            if (Vm is not { ShowPanadapterB: true } vm) return;
+            bool beside = vm.PanadaptersSideBySide;
+            double a = beside ? PanBorderA.Bounds.Width : PanBorderA.Bounds.Height;
+            double b = beside ? PanBorderB.Bounds.Width : PanBorderB.Bounds.Height;
+            if (a + b > 0) vm.PanSplit = a / (a + b);
+        };
+        PanSplitter.DoubleTapped += (_, _) => { if (Vm is { } vm) vm.PanSplit = 0.5; };
         Spectrum.TuneRequested += TuneA;
         Spectrum.PanRequested += hz => Vm?.PanTo(0, hz);
         SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
@@ -98,11 +112,18 @@ public partial class DesktopMainView : UserControl
         SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB);
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
         // Pinch (trackpad or fingers) zooms both panadapters, as the Zoom button does.
-        Spectrum.ZoomRequested += dir => Vm?.ZoomStep(dir);
-        SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(dir);
+        Spectrum.ZoomRequested += dir => Vm?.ZoomStep(0, dir);
+        SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
+
+    // A press on RX1 or RX2 stops before it reaches the frequency box.
+    private void PressRxBadge(int rx, PointerPressedEventArgs e)
+    {
+        e.Handled = true;
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) _ = Vm?.SelectRxAsync(rx);
+    }
 
     // Mem's popup closed: put the memories in frequency order.
     private void OnMemoriesClosed(object? sender, EventArgs e) => Vm?.SortMemories();
@@ -113,11 +134,10 @@ public partial class DesktopMainView : UserControl
 
     private void FitVfo()
     {
-        // The buttons beside the frequency keep their size (their gaps are
-        // margins, so the A/B badges take no room while hidden); the frequency gets the rest.
+        // The buttons beside the frequency keep their size; the frequency gets the rest.
         // In the side panel Step, lock, RIT and XIT sit under the frequency, not beside it.
         double others = (_side ? 0 : StepLockButtons.DesiredSize.Width + OffsetButtons.DesiredSize.Width)
-                        + (SliceBadges.IsVisible ? SliceBadges.DesiredSize.Width : 0);
+                        + SliceBadges.DesiredSize.Width + SliceBadges.Margin.Right;
         VfoScale.MaxWidth = Math.Max(0, VfoArea.Bounds.Width - others);
     }
 
@@ -173,13 +193,21 @@ public partial class DesktopMainView : UserControl
         if (Vm is not { } vm) return;
         bool two = vm.ShowPanadapterB;
         bool beside = two && vm.PanadaptersSideBySide;
-        var star = new GridLength(1, GridUnitType.Star);
-        PanGrid.RowDefinitions[1].Height = two && !beside ? star : new GridLength(0);
-        PanGrid.ColumnDefinitions[1].Width = beside ? star : new GridLength(0);
-        PanGrid.RowSpacing = two && !beside ? 6 : 0;
-        PanGrid.ColumnSpacing = beside ? 6 : 0;
-        Grid.SetRow(PanBorderB, beside ? 0 : 1);
-        Grid.SetColumn(PanBorderB, beside ? 1 : 0);
+        bool stacked = two && !beside;
+        // RX1's panadapter, the bar, RX2's: down the rows or across the columns.
+        GridLength none = new(0), bar = new(6), one = new(1, GridUnitType.Star);
+        GridLength a = new(vm.PanSplit, GridUnitType.Star), b = new(1 - vm.PanSplit, GridUnitType.Star);
+        var rows = PanGrid.RowDefinitions;
+        var cols = PanGrid.ColumnDefinitions;
+        (rows[0].Height, rows[1].Height, rows[2].Height) = stacked ? (a, bar, b) : (one, none, none);
+        (cols[0].Width, cols[1].Width, cols[2].Width) = beside ? (a, bar, b) : (one, none, none);
+        rows[0].MinHeight = rows[2].MinHeight = stacked ? 90 : 0;
+        cols[0].MinWidth = cols[2].MinWidth = beside ? 220 : 0;
+        Grid.SetRow(PanSplitter, beside ? 0 : 1);
+        Grid.SetColumn(PanSplitter, beside ? 1 : 0);
+        PanSplitter.ResizeDirection = beside ? GridResizeDirection.Columns : GridResizeDirection.Rows;
+        Grid.SetRow(PanBorderB, beside ? 0 : 2);
+        Grid.SetColumn(PanBorderB, beside ? 2 : 0);
         PanBorderA.BorderBrush = two && vm.ActiveRx == 0 ? ActiveOutline[0] : Brushes.Transparent;
         PanBorderB.BorderBrush = two && vm.ActiveRx == 1 ? ActiveOutline[1] : Brushes.Transparent;
         if (!two) SpectrumB.Clear();
@@ -379,7 +407,7 @@ public partial class DesktopMainView : UserControl
         Spectrum.Notches = SpectrumB.Notches = vm.NotchMarks();
         Spectrum.Strip = SpectrumB.Strip = vm.BandStrip;
         Spectrum.StripOpacity = SpectrumB.StripOpacity = vm.BandStripOpacity;
-        Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
+        SetZoomViews(vm);
         Spectrum.HoldView = SpectrumB.HoldView = vm.CtunOn;
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
@@ -392,12 +420,12 @@ public partial class DesktopMainView : UserControl
         if (f.RxId == 1)
         {
             if (!vm.ShowPanadapterB) return;
-            SpectrumB.Slices = vm.SliceMarks();
+            SpectrumB.Slices = vm.PanMarks(1);
             SpectrumB.PushFrame(f);
             (SpectrumB.SpecMinDb, SpectrumB.SpecMaxDb) = vm.SliceBRange(SpectrumB.NoiseFloorDb);
             return;
         }
-        Spectrum.Slices = vm.SliceMarks();
+        Spectrum.Slices = vm.PanMarks(0);
         Spectrum.PushFrame(f);
         vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
     }
@@ -415,21 +443,32 @@ public partial class DesktopMainView : UserControl
         if (DeckHost.Margin != margin) DeckHost.Margin = margin;
     }
 
+    // Each panadapter has its receiver's own span; RX2's also places its dial
+    // by its own Centre (RX1's is placed by the engine).
+    private void SetZoomViews(MainViewModel vm)
+    {
+        Spectrum.TargetSpanHz = vm.ZoomTargetSpanFor(0);
+        Spectrum.DialRx = vm.ShowPanadapterB ? 0 : -1;
+        SpectrumB.TargetSpanHz = vm.ZoomTargetSpanFor(1);
+        SpectrumB.DialRx = 1;
+        SpectrumB.DialAt = vm.Rx2DialAt;
+    }
+
     private void OnDisplayReset() { Spectrum.Clear(); SpectrumB.Clear(); FilterScope.Clear(); }
 
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx)
-            or nameof(MainViewModel.PanadaptersSideBySide))
+            or nameof(MainViewModel.PanadaptersSideBySide) or nameof(MainViewModel.PanSplit))
             LayoutPanadapters();
         else if (e.PropertyName == nameof(MainViewModel.SidePanel) && _wired is { } v)
             Arrange(v.SidePanel);
         // Zooming: redraw now with the new span instead of waiting for the next
         // frame. At each whole zoom level the engine sends no frames for about
         // 130 ms while it rebuilds its analyser, and the picture froze then leapt.
-        else if (e.PropertyName == nameof(MainViewModel.ZoomSlider) && _wired is { } vm)
+        else if (e.PropertyName is nameof(MainViewModel.ZoomSlider) or nameof(MainViewModel.DialPosition) && _wired is { } vm)
         {
-            Spectrum.TargetSpanHz = SpectrumB.TargetSpanHz = vm.ZoomTargetSpanHz;
+            SetZoomViews(vm);
             Spectrum.InvalidateVisual();
             SpectrumB.InvalidateVisual();
         }

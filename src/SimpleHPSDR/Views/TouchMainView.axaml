@@ -191,7 +191,7 @@
                           Value="{Binding DialPosition}" VerticalAlignment="Center"
                           ToolTip.Tip="Where the dial sits across the spectrum, with CTUN on or off" />
                   <TextBlock Grid.Column="1" Text="{Binding DialPositionText}" VerticalAlignment="Center" MinWidth="70" />
-                  <Button Grid.Column="2" Classes="seg t" Content="Centre" Command="{Binding CentreDialCommand}" />
+                  <Button Grid.Column="2" Classes="seg t" Content="Center" Command="{Binding CentreDialCommand}" />
                 </Grid>
               </StackPanel>
             </ScrollViewer>
@@ -285,6 +285,14 @@
                   <Button Classes="seg t" Content="+ 10" Click="XitUp" />
                   <Button Classes="seg t" Content="Clear" Click="XitClear" />
                 </WrapPanel>
+                <TextBlock Text="RECEIVERS" Classes="head" />
+                <WrapPanel ItemSpacing="6" LineSpacing="6">
+                  <Button Classes="seg t" Classes.lit="{Binding Rx1Active}" Content="RX1" Click="SelectRx1" />
+                  <Button Classes="seg t" Classes.lit="{Binding Rx2Active}" Content="RX2" Click="SelectRx2" />
+                  <Button Classes="seg t" Content="RX2 off" Click="Rx2Off" IsEnabled="{Binding ShowPanadapterB}" />
+                </WrapPanel>
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="RX2 is a second receiver in its own panadapter. RX1 and RX2 pick the one the frequency and the controls act on; a tap on a panadapter does the same." />
                 <TextBlock Text="SLICES" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
                   <Button Classes="seg t" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding HasSliceB}" />
@@ -292,7 +300,7 @@
                   <Button Classes="seg t" Classes.lit="{Binding VfoLocked}" Content="Lock VFO" Command="{Binding ToggleVfoLockCommand}" />
                 </WrapPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
-                           Text="To add, move or remove slice B, right-click the spectrum (long-press on a touch screen)." />
+                           Text="With RX2 off, slice B can share RX1's panadapter: to add, move or remove it, right-click the spectrum (long-press on a touch screen)." />
               </StackPanel>
             </ScrollViewer>
           </TabItem>
@@ -383,7 +391,7 @@
               <Border CornerRadius="4" Padding="6,0" VerticalAlignment="Center" IsVisible="{Binding HasSliceB}"
                       Classes.sliceA="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=A}"
                       Classes.sliceB="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=B}">
-                <TextBlock Text="{Binding ActiveSliceLabel}" FontSize="16" FontWeight="Bold" Foreground="White" />
+                <TextBlock Text="{Binding ActiveName}" FontSize="16" FontWeight="Bold" Foreground="White" />
               </Border>
               <TextBlock FontFamily="{StaticResource MonoFont}" Classes.tx="{Binding IsTransmitting}"
                          FontSize="40" FontWeight="SemiBold" VerticalAlignment="Center">
@@ -571,6 +579,7 @@
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}" FloorLiftDb="{Binding TraceFloorLiftDb}"
                           PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" />
           <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
+            <c:MiniVfo Rx="0" Touch="True" VerticalAlignment="Center" IsVisible="{Binding ShowPanadapterB}" />
             <TextBlock Text="{Binding ZoomLabel}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
             <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel or ⌘+wheel, or pinch)" />
             <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel or ⌘+wheel, or pinch)" />
@@ -591,7 +600,11 @@
         </Panel>
       </Border>
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
-        <c:SpectrumView Name="SpectrumB" Fling="True" FloorLiftDb="{Binding TraceFloorLiftDb}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
+        <Panel>
+          <c:SpectrumView Name="SpectrumB" Fling="True" FloorLiftDb="{Binding TraceFloorLiftDb}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
+          <c:MiniVfo Rx="1" Touch="True" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
+                     IsVisible="{Binding ShowPanadapterB}" />
+        </Panel>
       </Border>
       <!-- Voice keyer: over the bottom of the waterfall, when turned on in REC's settings.
            Tap to transmit, tap again to stop; long press to set the label and recording. -->

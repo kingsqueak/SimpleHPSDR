@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SimpleHPSDR.Controls.MiniVfo">
+  <!-- A receiver's small VFO, at the top right of its panadapter while RX2 is
+       on. Dark in both themes, like the panadapter under it. -->
+  <StackPanel Orientation="Horizontal" Spacing="4">
+    <!-- RX2 only, on radios with an Rx2 jack: main antenna or the jack -->
+    <Border Name="AntChip" CornerRadius="6" Background="#E6171A21" BorderThickness="1" BorderBrush="#40FFFFFF"
+            Padding="8,3" Cursor="Hand" IsVisible="False"
+            ToolTip.Tip="What RX2 listens on: the main antenna, like RX1, or the Rx2 jack on the back of the radio. Click to switch.">
+      <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+        <TextBlock Text="ANT" FontSize="10" Foreground="#8A93A3" VerticalAlignment="Center" />
+        <TextBlock Name="AntText" FontSize="12" FontWeight="SemiBold" Foreground="#E6E8EB" VerticalAlignment="Center" />
+      </StackPanel>
+    </Border>
+    <Border Name="Box" CornerRadius="6" Background="#E6171A21" BorderThickness="1" BorderBrush="#40FFFFFF" Padding="8,3">
+      <StackPanel Orientation="Horizontal" Spacing="7">
+        <TextBlock Name="NameText" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+        <Border Name="TxChip" CornerRadius="3" BorderThickness="1" Padding="4,0" VerticalAlignment="Center" Cursor="Hand"
+                ToolTip.Tip="Red: this receiver's frequency and mode transmit. Click to transmit here.">
+          <TextBlock Name="TxText" Text="TX" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
+        </Border>
+        <Panel Name="FreqHost" VerticalAlignment="Center" Background="Transparent" Cursor="Hand"
+               ToolTip.Tip="The wheel tunes this receiver by the step. Click to type a frequency (kHz or MHz).">
+          <TextBlock Name="Freq" FontFamily="{StaticResource MonoFont}" FontSize="18" FontWeight="SemiBold"
+                     Foreground="#E6E8EB" VerticalAlignment="Center" />
+          <TextBox Name="Entry" IsVisible="False" FontFamily="{StaticResource MonoFont}" FontSize="14"
+                   MinWidth="120" MinHeight="0" Padding="4,1" VerticalAlignment="Center" PlaceholderText="MHz or kHz" />
+        </Panel>
+        <TextBlock Name="ModeText" FontSize="11" Foreground="#AEB6C2" VerticalAlignment="Center" />
+        <Border Name="CloseChip" Background="Transparent" Padding="3,0" VerticalAlignment="Center" Cursor="Hand"
+                IsVisible="False" ToolTip.Tip="Turn RX2 off">
+          <TextBlock Text="✕" FontSize="12" Foreground="#AEB6C2" VerticalAlignment="Center" />
+        </Border>
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

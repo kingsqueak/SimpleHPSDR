@@ -174,10 +174,10 @@ public sealed partial class MainViewModel
         double outer = Math.Max(Math.Abs(_twoToneF1), Math.Abs(_twoToneF2)) + 2 * spacing;
         double span = Math.Max(2.4 * outer, 10_000);
         double zoom = Math.Clamp(_sampleRateHz / span, 1, MaxZoom);
-        _zoomBeforeImd ??= _zoomFine;
+        _zoomBeforeImd ??= _zoomFine[0];
         ImdText = "IMD: measuring…";
-        if (Math.Abs(DialPosition) >= 0.5) await Try(() => _client.SetDialPositionAsync(0));
-        SetZoomFine(zoom, persist: false);
+        if (Math.Abs(DialPositionOf(0)) >= 0.5) await Try(() => _client.SetDialPositionAsync(0));
+        SetZoomFine(0, zoom, persist: false);
     }
 
     /// <summary>2-TONE stopped, however: zoom and dial position as they were.</summary>
@@ -187,7 +187,7 @@ public sealed partial class MainViewModel
         _imdRunStart = null;              // the summary stays on screen
         if (_zoomBeforeImd is not { } z) return;
         _zoomBeforeImd = null;
-        SetZoomFine(z, persist: false);
-        if (Math.Abs(DialPosition) >= 0.5) SendDialPosition();
+        SetZoomFine(0, z, persist: false);
+        if (Math.Abs(DialPositionOf(0)) >= 0.5) SendDialPosition();
     }
 }

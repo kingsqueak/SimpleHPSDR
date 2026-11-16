@@ -80,6 +80,11 @@ public sealed class Settings
     public int CloseUpDetail { get; set; } = 1;
     /// <summary>Where the dial sits across the panadapter, -90 to +90 (% of half the span).</summary>
     public double DialPosition { get; set; }
+    /// <summary>RX2's own Centre, and the span its Zoom button returns to.</summary>
+    public double DialPositionB { get; set; }
+    public double ZoomOnFineB { get; set; } = 4;
+    /// <summary>RX1's share of the room the two panadapters have, 0.2 to 0.8 (the bar between them drags it).</summary>
+    public double PanSplit { get; set; } = 0.5;
     /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
     public bool SliceBOwnPanadapter { get; set; } = true;
     /// <summary>Slice B listens on the radio's Rx2 jack (its second ADC) instead of the main antenna.</summary>

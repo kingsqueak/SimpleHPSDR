@@ -16,7 +16,11 @@ public sealed partial class MainViewModel
     public bool AntennasDiffer => TxAntLabel != RxAntLabel || SliceBOnJack;
     partial void OnTxAntLabelChanged(string value) => NotifyAntennaText();
     partial void OnRxAntLabelChanged(string value) => NotifyAntennaText();
-    partial void OnSliceBEnabledChanged(bool value) => NotifyAntennaText();
+    partial void OnSliceBEnabledChanged(bool value)
+    {
+        NotifyAntennaText();
+        ShowZoomControlsForActive();
+    }
     partial void OnHasRx2JackChanged(bool value) => NotifyAntennaText();
 
     private void NotifyAntennaText()
@@ -37,6 +41,9 @@ public sealed partial class MainViewModel
     private bool _hasRx2Jack;
     public bool ShowSliceBInput => HasRx2Jack && SliceBEnabled;
     private bool SliceBOnJack => ShowSliceBInput && _settings.SliceBOnRx2Jack;
+    /// <summary>RX2 (or slice B) listens on the Rx2 jack, a receive-only
+    /// input, so it can't be the one that transmits.</summary>
+    public bool Rx2ReceiveOnly => SliceBOnJack;
     public string SliceBInputLabel => _settings.SliceBOnRx2Jack ? "Rx2 jack" : "Main";
     public ObservableCollection<Choice> SliceBInputs { get; } = [];
     private bool _sendingSliceBInput;
@@ -57,8 +64,21 @@ public sealed partial class MainViewModel
         SyncSliceBInput();
     }
 
+    /// <summary>RX2's antenna button: the main antenna or the Rx2 jack.</summary>
+    public void ToggleSliceBInput() => SetSliceBInput(!_settings.SliceBOnRx2Jack);
+
     private void SetSliceBInput(bool jack)
     {
+        if (jack && TxRx == 1)
+        {
+            if (IsTransmitting)
+            {
+                Status = "Unkey first: transmit is on this receiver, and the Rx2 jack only receives.";
+                Mark(SliceBInputs, _settings.SliceBOnRx2Jack);
+                return;
+            }
+            _ = TransmitOnAsync(0);
+        }
         _settings.SliceBOnRx2Jack = jack;
         _settings.Save();
         Mark(SliceBInputs, jack);

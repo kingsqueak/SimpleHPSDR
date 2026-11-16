@@ -139,9 +139,22 @@
       <Panel Name="VfoArea" Grid.Column="1" Margin="8,0">
         <Grid Name="VfoGrid" ColumnDefinitions="Auto,Auto,Auto" HorizontalAlignment="Center">
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-          <!-- A over B: the active slice blue, the one that transmits red.
-               Click one to transmit on it. -->
-          <StackPanel Name="SliceBadges" VerticalAlignment="Center" IsVisible="{Binding HasSliceB}" Spacing="3" Margin="0,0,6,0">
+          <!-- RX1 over RX2: click one to give it the controls; RX2 turns on
+               (its own panadapter opens) on its first click. Beside them, only
+               for slice B on RX1's panadapter, A over B: the active slice blue,
+               the one that transmits red; click one to transmit on it. -->
+          <StackPanel Name="SliceBadges" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4" Margin="0,0,6,0">
+          <StackPanel VerticalAlignment="Center" Spacing="3">
+            <Border Name="RxBadge1" Classes="slicebadge rx" Classes.active="{Binding Rx1Active}"
+                    ToolTip.Tip="RX1, the first receiver. Blue: the VFO, band, mode and filter act on it. Click to give it the controls.">
+              <TextBlock Text="RX1" />
+            </Border>
+            <Border Name="RxBadge2" Classes="slicebadge rx" Classes.active="{Binding Rx2Active}" Classes.on="{Binding Rx2Idle}"
+                    ToolTip.Tip="RX2, the second receiver, in its own panadapter. Click to turn it on and give it the controls; click RX1 to go back. Right-click to turn RX2 off.">
+              <TextBlock Text="RX2" />
+            </Border>
+          </StackPanel>
+          <StackPanel Name="AbBadges" VerticalAlignment="Center" IsVisible="{Binding ShowAbBadges}" Spacing="3">
             <Border Name="SliceBadgeA" Classes="slicebadge" Classes.active="{Binding SliceAActive}" Classes.txslice="{Binding SliceATx}"
                     ToolTip.Tip="Slice A. Blue: the VFO, band, mode and filter act on it. Red: it transmits. Click to transmit on A.">
               <TextBlock Text="A" />
@@ -150,6 +163,7 @@
                     ToolTip.Tip="Slice B. Blue: the VFO, band, mode and filter act on it. Red: it transmits. Click to transmit on B.">
               <TextBlock Text="B" />
             </Border>
+          </StackPanel>
           </StackPanel>
           <Viewbox Name="VfoScale" Stretch="Uniform" StretchDirection="DownOnly">
           <Border Classes="panel" Name="FrequencyPanel" Background="Transparent" Padding="8,2" Cursor="Hand"
@@ -482,7 +496,7 @@
 
     <!-- Spectrum and waterfall: slice A's receiver on top, slice B's below
          while B is on (the window code sizes the second row). -->
-    <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0" ColumnDefinitions="*,0">
+    <Grid Grid.Row="2" Name="PanGrid" RowDefinitions="*,0,0" ColumnDefinitions="*,0,0">
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}" FloorLiftDb="{Binding TraceFloorLiftDb}"
@@ -515,11 +529,23 @@
                            Foreground="{Binding FreeDvMicClip, Converter={x:Static vm:FreeDvText.MicBrush}}" />
             </StackPanel>
           </Border>
+          <!-- RX1's small VFO, while RX2 is on -->
+          <c:MiniVfo Rx="0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,36,8,0"
+                     IsVisible="{Binding ShowPanadapterB}" />
         </Panel>
       </Border>
-      <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
+      <!-- The bar between the two panadapters: drag it to give one more room,
+           double-click for equal shares. -->
+      <GridSplitter Name="PanSplitter" Grid.Row="1" Background="Transparent" IsVisible="{Binding ShowPanadapterB}"
+                    MinWidth="0" MinHeight="0" Focusable="False"
+                    ToolTip.Tip="Drag to give one panadapter more room. Double-click for equal shares." />
+      <Border Grid.Row="2" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1"
               BorderBrush="Transparent" IsVisible="{Binding ShowPanadapterB}">
-        <c:SpectrumView Name="SpectrumB" Fling="True" FloorLiftDb="{Binding TraceFloorLiftDb}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
+        <Panel>
+          <c:SpectrumView Name="SpectrumB" Fling="True" FloorLiftDb="{Binding TraceFloorLiftDb}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
+          <!-- RX2's small VFO: antenna switch, frequency, ✕ to turn RX2 off -->
+          <c:MiniVfo Rx="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,36,8,0" />
+        </Panel>
       </Border>
     </Grid>
 
@@ -529,7 +555,7 @@
         <Button Classes="seg" Classes.lit="{Binding CtunOn}" Content="CTUN" Command="{Binding ToggleCtunCommand}"
                 ToolTip.Tip="CTUN: clicking the panadapter moves only the receive frequency; the display stays put (blue = on)" />
         <Button Classes="seg more" Classes.lit="{Binding ZoomOn}" Padding="8,2" Command="{Binding ToggleZoomCommand}"
-                ToolTip.Tip="Zoom: click for full span (grey) or zoomed (blue). Right-click to set the zoomed span. Ctrl+wheel (⌘+wheel on a Mac) over the spectrum zooms too.">
+                ToolTip.Tip="Zoom: click for full span (grey) or zoomed (blue). Right-click to set the zoomed span and where the dial sits. With RX2 on, it acts on the receiver that has the controls: each has its own. Ctrl+wheel (⌘+wheel on a Mac) over a spectrum zooms that one.">
           <StackPanel Spacing="-1">
             <TextBlock Text="Zoom" FontSize="12" HorizontalAlignment="Center" />
             <TextBlock Text="{Binding ZoomLabel}" Classes="val" HorizontalAlignment="Center" />
@@ -542,12 +568,12 @@
                         Value="{Binding ZoomSlider}" VerticalAlignment="Center"
                         ToolTip.Tip="Left end is the full span" />
                 <TextBlock Grid.Column="2" Text="{Binding ZoomLabel}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
-                <TextBlock Grid.Row="1" Text="Centre" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Row="1" Text="Center" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <Slider Grid.Row="1" Grid.Column="1" Minimum="-90" Maximum="90" SmallChange="1" LargeChange="10"
                         Value="{Binding DialPosition}" VerticalAlignment="Center"
                         ToolTip.Tip="Where the dial sits across the panadapter, with CTUN on or off" />
                 <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding DialPositionText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
-                <Button Grid.Row="2" Grid.Column="1" Classes="flat" Content="Back to centre" HorizontalAlignment="Left"
+                <Button Grid.Row="2" Grid.Column="1" Classes="flat" Content="Back to center" HorizontalAlignment="Left"
                         Command="{Binding CentreDialCommand}" />
               </Grid>
             </Flyout>
@@ -637,7 +663,7 @@
                   </Button.Flyout>
                 </Button>
                 <Button Classes="seg ant" IsVisible="{Binding ShowSliceBInput}"
-                        ToolTip.Tip="What slice B listens on: the main antenna, like slice A, or the Rx2 jack on the back of the radio">
+                        ToolTip.Tip="What RX2 (or slice B) listens on: the main antenna, like RX1, or the Rx2 jack on the back of the radio">
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="B" FontSize="10" Opacity="0.7" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding SliceBInputLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
@@ -721,15 +747,15 @@
                       IsVisible="{Binding !HasSliceB}" ToolTip.Tip="AF: the volume" />
           <TextBlock Text="{Binding AfGainText}" FontSize="12" Width="44" VerticalAlignment="Center"
                      IsVisible="{Binding !HasSliceB}" />
-          <Grid ColumnDefinitions="12,150,44" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="2"
+          <Grid ColumnDefinitions="Auto,150,44" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="2"
                 VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
-            <TextBlock Text="A" FontSize="11" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding AfLabelA}" FontSize="11" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
             <c:AfSlider Grid.Column="1" Value="{Binding SliceAfA}" Minimum="-40" Maximum="20" Compact="True"
-                        BallBrush="#F25F5C" ToolTip.Tip="Slice A volume" />
+                        BallBrush="#F25F5C" ToolTip.Tip="RX1 (slice A) volume" />
             <TextBlock Grid.Column="2" Text="{Binding SliceAfAText}" FontSize="11" VerticalAlignment="Center" />
-            <TextBlock Grid.Row="1" Text="B" FontSize="11" FontWeight="Bold" Foreground="#F5A524" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="1" Text="{Binding AfLabelB}" FontSize="11" FontWeight="Bold" Foreground="#F5A524" VerticalAlignment="Center" />
             <c:AfSlider Grid.Row="1" Grid.Column="1" Value="{Binding SliceAfB}" Minimum="-40" Maximum="20" Compact="True"
-                        BallBrush="#F5A524" ToolTip.Tip="Slice B volume" />
+                        BallBrush="#F5A524" ToolTip.Tip="RX2 (slice B) volume" />
             <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SliceAfBText}" FontSize="11" VerticalAlignment="Center" />
           </Grid>
           <ToggleButton Classes="seg" Content="Mute" IsChecked="{Binding Muted}" VerticalAlignment="Center" />
