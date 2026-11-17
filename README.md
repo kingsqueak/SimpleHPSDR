@@ -86,6 +86,67 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 <img src="docs/mini.png" alt="The mini window" width="485">
 
+## What's New
+
+### 0.13.0
+
+- **Two receivers:** RX1 and RX2 buttons beside the frequency pick the receiver
+  the controls act on. RX2 opens its own panadapter, with a small VFO on each
+  and a drag bar between them to share the room.
+- **Pan slider:** with two receivers on, Pan under the two volume sliders puts
+  them in different ears. It works on the computer's sound output.
+- **48 memories:** Mem has three tabs, A, B and C, of 16 each. The memories you
+  already have are in A.
+- **Side panel width:** drag the panel's left edge to make it wider or
+  narrower; double-click for the standard width.
+- **Spectrum grid:** its colour and strength are in Config > Colors, and the dB
+  lines get finer when you zoom in.
+- **Filter close-up:** a line follows the mouse, with a flag showing the audio
+  frequency.
+- **Touch layout:** a View button for the desktop layout and the mini window,
+  RX2 from the spectrum's menu, a keypad on the small VFOs, a volume slider for
+  each receiver with Pan, and a DRV button that opens a larger drive slider.
+- **A receiver on the Rx2 jack can transmit.**
+- **Windows** comes as an installer only; there is no zip.
+- **Fixed:** frequency markers went missing when a zoomed display was dragged
+  to one side; a slice added on RX1's panadapter could come up silent; Mute ran
+  past the edge of the side panel.
+
+### 0.12
+
+- **Two arrangements of the main window:** controls above and below the
+  panadapter, or in a panel at its side. The view button steps between them.
+- **Controls grouped by what they do,** and buttons show what they hide: a
+  corner mark for a right-click, ▾ for a list.
+- **Amp button:** Drive and Tune stop at the maximums you set for your
+  amplifier, and it can switch an RF2K-S or one of the radio's outputs so the
+  amplifier is in or out of line.
+- **Drive is remembered for each mode** as well as each band.
+- **Floor lift** in the Display popup raises the noise floor off the waterfall.
+- **Slice B on the Rx2 jack,** with its own attenuator.
+- **Automatic CW ID,** mixed into your voice transmissions.
+- **6 m LNA button** on an ANAN G2.
+- **A larger frequency readout at the pointer.**
+- **Fixed in 0.12.1:** a crash when dragging the display with a manual notch
+  on, a slow quit with an amplifier or logging program connected, and
+  PureSignal going back to "Internal coupler" by itself.
+
+### 0.11
+
+- **Back to receive much sooner after you unkey,** with shorter timing
+  defaults.
+- **VOX delay is its own setting.**
+- **PureSignal remembers its correction for each band,** and keeps adjusting
+  from your voice. It stands still in CW.
+- **Smoother audio while dragging the panadapter** with CTUN on.
+- **Separate A and B volume sliders** while slice B is on (0.11.1).
+- **Fixed:** mic gain changed with the mode; the Hermes-Lite 2 antenna analyser
+  refused to sweep with the IO board; with CTUN on and zoomed in, the display
+  slid when you clicked a frequency (0.11.1).
+
+Each release's full notes are on the
+[Releases](https://github.com/kingsqueak/SimpleHPSDR/releases) page.
+
 ## Install
 
 Download a package from [Releases](https://github.com/kingsqueak/SimpleHPSDR/releases).
