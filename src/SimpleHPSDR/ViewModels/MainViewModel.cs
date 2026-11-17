@@ -1563,6 +1563,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             var s = await _client.GetStateAsync();
+            // Another SimpleHPSDR took the radio over: the engine let it go
+            // (two controllers make the radio's relays chatter), so follow.
+            if (s.Status == ConnectionStatus.Disconnected
+                && await _client.GetTakenOverByAsync() is { } taker)
+            {
+                var label = _radio?.Label ?? RadioLabel;
+                ClearKeyButtons();
+                await DisconnectAsync();
+                Status = $"The computer at {taker} took over {label}. Choose a radio to connect again.";
+                return;
+            }
             // The levels too: the engine recalls its own on a band or mode
             // change. Not just after a change here, which it may not have yet.
             ApplyTxLimits(s, levelsToo: !TxEditedLately);

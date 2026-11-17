@@ -117,6 +117,23 @@ public sealed class StationClient : IDisposable
         PostAsync("api/radios/reclaim",
             new { endpoint = ip, protocol = protocol2 ? "P2" : "P1", sampleRate, boardId }, ct);
 
+    /// <summary>The computer that took the radio over from this engine in the
+    /// last half minute, or null. The engine has already disconnected.</summary>
+    public async Task<string?> GetTakenOverByAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(await _http.GetStringAsync("api/radios/yielded", ct));
+            var r = doc.RootElement;
+            if (r.TryGetProperty("at", out var at) && at.ValueKind == JsonValueKind.String
+                && DateTimeOffset.UtcNow - at.GetDateTimeOffset() < TimeSpan.FromSeconds(30)
+                && r.TryGetProperty("takenBy", out var by) && by.ValueKind == JsonValueKind.String)
+                return by.GetString();
+        }
+        catch (Exception) { }
+        return null;
+    }
+
     public Task DisconnectAsync(bool protocol2) =>
         PostAsync(protocol2 ? "api/disconnect/p2" : "api/disconnect", new { });
 
