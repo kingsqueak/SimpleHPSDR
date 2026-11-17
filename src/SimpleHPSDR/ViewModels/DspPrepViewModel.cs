@@ -34,6 +34,13 @@ public sealed partial class DspPrepViewModel(StationClient client) : ObservableO
 
     public bool Working => !Failed;
 
+    /// <summary>What quitting now costs. On a Mac and on Linux the engine keeps
+    /// what it has planned and carries on from there; on Windows WDSP plans in
+    /// one piece and starts again.</summary>
+    public string QuitNote => OperatingSystem.IsWindows()
+        ? "Please leave SimpleHPSDR open. If you quit now, this starts again next time."
+        : "Best left to finish. If you quit, it carries on from where it stopped next time.";
+
     /// <summary>The planning finished; the window can go.</summary>
     public event Action? Finished;
 
@@ -56,6 +63,7 @@ public sealed partial class DspPrepViewModel(StationClient client) : ObservableO
     {
         var clock = Stopwatch.StartNew();
         int missed = 0;
+        double? first = null;   // where the bar stood when this run began (a resumed run starts part-way)
         while (!ct.IsCancellationRequested)
         {
             var p = await client.GetDspPrepAsync(ct);
@@ -76,7 +84,8 @@ public sealed partial class DspPrepViewModel(StationClient client) : ObservableO
                 }
                 if (ParallelPercent(p.Status) is { } pct) Percent = pct;
                 else if (StepOf(p.Status) is { } s) Percent = 100 * Fraction(s);
-                Progress = Describe(Percent / 100, clock.Elapsed);
+                first ??= Percent / 100;
+                Progress = Describe(Percent / 100, first.Value, clock.Elapsed);
             }
             try { await Task.Delay(500, ct); }
             catch (OperationCanceledException) { return; }
@@ -95,11 +104,14 @@ public sealed partial class DspPrepViewModel(StationClient client) : ObservableO
         return 1;
     }
 
-    private static string Describe(double done, TimeSpan elapsed)
+    internal static string Describe(double done, double first, TimeSpan elapsed)
     {
         string time = $"{(int)elapsed.TotalMinutes}:{elapsed.Seconds:00} so far";
-        if (done < 0.05) return time;   // too early to judge this machine's speed
-        double left = elapsed.TotalMinutes * (1 - done) / done;
+        // This machine's speed shows in what this run has done, not in what an
+        // earlier, stopped run left behind.
+        double gained = done - first;
+        if (gained < 0.05) return time;   // too early to judge this machine's speed
+        double left = elapsed.TotalMinutes * (1 - done) / gained;
         return left < 1 ? $"{time}, under a minute left" : $"{time}, about {Math.Ceiling(left):0} min left";
     }
 

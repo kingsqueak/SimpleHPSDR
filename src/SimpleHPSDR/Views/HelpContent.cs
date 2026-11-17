@@ -12,7 +12,7 @@ public static class HelpContent
 SimpleHPSDR runs an OpenHPSDR radio from your computer. The radio connects over your network; the app shows the band and holds the controls, and an engine inside the app does the signal processing.
 
 ## First start
-The very first start takes around 8 minutes or more while the signal processing is tuned to your computer. A window shows progress. Leave the app open until it finishes. This only happens again after some updates.
+The very first start takes around 8 minutes or more while the signal processing is tuned to your computer. A window shows progress. Leave the app open until it finishes. This only happens again after some updates. A Raspberry Pi skips this: its package brings the tuning ready-made.
 
 ## Band plan
 Choose the plan for your region or licence class, or General Coverage for no restrictions. You can change it later in Config > Station, where you also choose whether going outside the plan warns you or blocks transmit.
@@ -672,7 +672,7 @@ Turn on the server you need and note the port. Network changes need Apply now; t
 Check the radio is on and on this network, and try its address under "Or by address". The radio picker's Network help button lists what a firewall must allow. On Windows, answer yes when asked about StationEngine. On a Mac, allow the Local Network prompt.
 
 ## "Getting ready for first use" won't finish
-It's slow, not stuck: around 8 minutes on a fast computer and longer on an older one. If you quit, it starts again next time.
+It's slow, not stuck: around 8 minutes on a fast computer and longer on an older one. If you quit, it carries on from where it stopped next time (on Windows it starts again).
 
 ## The radio engine stopped
 A window offers Restart engine, which reconnects with transmit off. It's worth keeping engine.log and engine.previous.log from the app's data folder for a bug report.

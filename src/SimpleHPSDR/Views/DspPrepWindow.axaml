@@ -11,7 +11,7 @@
     <TextBlock TextWrapping="Wrap" IsVisible="{Binding Working}"
                Text="SimpleHPSDR is measuring how this computer runs its signal processing, so it can use the fastest method. This takes a few minutes, longer on older computers, and only happens on first start and after some updates." />
     <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WarnText}" IsVisible="{Binding Working}"
-               Text="Please leave SimpleHPSDR open. If you quit now, this starts again next time." />
+               Text="{Binding QuitNote}" />
     <ProgressBar Minimum="0" Maximum="100" Value="{Binding Percent}" Height="6" IsVisible="{Binding Working}" />
     <TextBlock Text="{Binding Progress}" Classes="label" FontSize="12" IsVisible="{Binding Working}" />
 
