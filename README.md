@@ -247,6 +247,11 @@ there does the same.) The touch layout has been tried with a mouse so far, and
 the autostart steps aren't tested on a Pi yet; reports from touch-screen users
 are welcome.
 
+**Keeping the load down on a Pi.** When a Pi runs short of processor, the receive
+audio clicks. Use NR2 for noise reduction, not NNR: on a Pi 5 at 192 kHz the
+receiver's signal processing took about half of one core with NNR and about a
+seventh with NR2. Leave the close-up's High resolution off (it starts off on a Pi).
+
 **On an ANAN G2's own Pi** (CM4 or CM5, with its built-in screen and front
 panel), SimpleHPSDR runs beside the G2's p2app: see [docs/g2-pi.md](docs/g2-pi.md).
 

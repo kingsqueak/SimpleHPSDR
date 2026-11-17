@@ -684,6 +684,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _settings.CloseUpDefaultsApplied = true;
             _settings.Save();
         }
+        // One time only, on a Raspberry Pi: high resolution starts off there,
+        // new install or not. It can be turned on again and then stays on.
+        if (Settings.IsRaspberryPi && !_settings.CloseUpPiDefaultApplied)
+        {
+            _settings.CloseUpHighRes = false;
+            _settings.CloseUpPiDefaultApplied = true;
+            _settings.Save();
+        }
         _closeUpColoured = _settings.CloseUpColoured;
         _closeUpHighRes = _settings.CloseUpHighRes;
         _closeUpDetail = Math.Clamp(_settings.CloseUpDetail, 0, 2);

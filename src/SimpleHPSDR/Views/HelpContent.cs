@@ -166,7 +166,7 @@ The close-up, beside the filters, shows 6 kHz from the dial as audio frequency (
 
 Right-click it (long press on a touch screen) for its options. They're remembered.
 - Fill: Waterfall colours (the default) or Plain, a single shade under the trace.
-- High resolution (on by default): the engine works out a fine spectrum just for the close-up, instead of cutting it from the panadapter. You see the separate tones in a voice, a CW signal as a narrow spike, and carriers and hums sharply. Off, it uses the panadapter's coarser picture, the same as before.
+- High resolution (on by default; off by default on a Raspberry Pi, where it is extra work for the processor): the engine works out a fine spectrum just for the close-up, instead of cutting it from the panadapter. You see the separate tones in a voice, a CW signal as a narrow spike, and carriers and hums sharply. Off, it uses the panadapter's coarser picture, the same as before.
 - Detail (with High resolution): 4, 2 (the default) or 1 Hz. Finer detail looks back over a longer stretch, about a second at 1 Hz, so it reacts more slowly. 4 Hz follows speech best; 1 Hz is for spotting a carrier or hum exactly.
 - Averaging: 0.05 to 3 seconds. Short (the default) follows every syllable; a second or more shows where the signal's energy usually sits, which helps when setting the filter edges. Reset puts it back to the default.
 
@@ -548,6 +548,15 @@ Tools > Wideband View (touch: ☰ > Station > Wideband) opens a window showing 0
 - Band activity at a glance: busy FT8 spots, a contest, 10 m opening, or which shortwave broadcast bands are alive.
 
 Each point covers several kHz, so it shows where signals are, not the signals themselves; weak signals near the noise don't show.
+"""),
+
+        ("Keeping the load down on a Raspberry Pi", """
+A Pi has little processor to spare. When it runs short, the first sign is clicks in the receive audio. Two settings make the most difference:
+
+- Noise reduction: use NR2, not NNR. NNR runs a neural network, and that is heavy work. On a Pi 5 receiving at 192 kHz, the receiver's signal processing took about half of one processor core with NNR and about a seventh of one with NR2. NR off costs least of all. Right-click NR to choose the method.
+- Leave the close-up's High resolution off. It starts off on a Pi. With it on, the engine works out a second, fine spectrum just for the filter close-up. Right-click the close-up to change it.
+
+The figures are from one Pi 5. A Pi 4 or CM4, such as the one inside the original G2, is slower, so both settings matter more there.
 """),
 
         ("ANAN G2 on its own Pi", """

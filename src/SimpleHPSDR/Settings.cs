@@ -76,6 +76,10 @@ public sealed class Settings
     /// <summary>Set once the release that turned high resolution and the colour fill
     /// back on for everyone has done so; after that the operator's choice stands.</summary>
     public bool CloseUpDefaultsApplied { get; set; }
+    /// <summary>Set once a Raspberry Pi has had high resolution turned off (it starts
+    /// off there: the fine spectrum is extra work a Pi feels); after that the
+    /// operator's choice stands.</summary>
+    public bool CloseUpPiDefaultApplied { get; set; }
     /// <summary>High-resolution close-up detail: 0 = 4 Hz, 1 = 2 Hz, 2 = 1 Hz bins.</summary>
     public int CloseUpDetail { get; set; } = 1;
     /// <summary>Where the dial sits across the panadapter, -90 to +90 (% of half the span).</summary>
@@ -238,6 +242,16 @@ public sealed class Settings
 
     private static string FilePath => Path.Combine(EngineHost.DataDir, "settings.json");
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+
+    /// <summary>A Raspberry Pi: little processor to spare, so some defaults are lighter.</summary>
+    public static bool IsRaspberryPi { get; } = ReadIsRaspberryPi();
+
+    private static bool ReadIsRaspberryPi()
+    {
+        if (!OperatingSystem.IsLinux()) return false;
+        try { return File.ReadAllText("/proc/device-tree/model").Contains("Raspberry Pi", StringComparison.Ordinal); }
+        catch (Exception) { return false; }
+    }
 
     public static Settings Load()
     {
