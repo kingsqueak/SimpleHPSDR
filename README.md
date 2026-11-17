@@ -88,6 +88,13 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.13.1
+
+- **Raspberry Pi:** the first start no longer spends an hour or more tuning
+  the signal processing; the package brings the tuning ready-made.
+- **First start:** if you quit while it is tuning, it carries on from where it
+  stopped next time (on Windows it starts again).
+
 ### 0.13.0
 
 - **Two receivers:** RX1 and RX2 buttons beside the frequency pick the receiver
@@ -203,8 +210,10 @@ On macOS, allow SimpleHPSDR when it asks to find devices on your local network.
 The first start takes a while. The signal processing is measured and tuned for your
 computer, which takes around 8 minutes on a fast machine and longer on an older one.
 A window shows the progress. Leave the app open until it finishes; this only happens
-again after some updates. SimpleHPSDR needs nothing from Zeus; everything it uses is
-in the package.
+again after some updates. If you do quit, it carries on from where it stopped next
+time (on Windows it starts again). A Raspberry Pi skips all this: its package brings
+the tuning ready-made. SimpleHPSDR needs nothing from Zeus; everything it uses is in
+the package.
 
 Then choose your radio. Several radios report the same ID, so pick your model in
 the radio picker or in Config > Radio. It sets the S-meter calibration and the PA
