@@ -580,9 +580,21 @@ A Ulanzi Dial (model D100H) can be a tuning knob and eight buttons for SimpleHPS
 ## Setting it up
 - Pair it in the Mac's Bluetooth settings, where it appears as "Ulanzi Dial".
 - In Config > Hardware > ULANZI DIAL, tick "Use the dial".
-- The first time, macOS asks to allow SimpleHPSDR under Input Monitoring and Accessibility, in System Settings > Privacy & Security. Allow both, then quit SimpleHPSDR and open it again. macOS may ask again after an update.
+- The first time, macOS asks to allow SimpleHPSDR under Input Monitoring and Accessibility, in System Settings > Privacy & Security. Allow both, then quit SimpleHPSDR and open it again.
 
 Ulanzi's own app is not needed.
+
+## If the dial stops working after an update
+macOS gives its permission to one exact copy of SimpleHPSDR. After an update it can still list SimpleHPSDR as allowed and yet refuse it, without asking again. The dial is paired and "Use the dial" is ticked, and nothing happens. To put it right:
+- Open System Settings > Privacy & Security > Input Monitoring, select SimpleHPSDR and press the minus button under the list to remove it.
+- Do the same under Accessibility.
+- In Config > Hardware > ULANZI DIAL, untick "Use the dial" and tick it again. macOS asks again: allow both.
+- Quit SimpleHPSDR and open it again.
+
+If SimpleHPSDR can't be removed from those lists, open Terminal and enter these three lines, then carry on from the third step:
+tccutil reset ListenEvent com.kc2rgw.simplehpsdr
+tccutil reset Accessibility com.kc2rgw.simplehpsdr
+tccutil reset PostEvent com.kc2rgw.simplehpsdr
 
 ## While SimpleHPSDR runs
 As it comes, the dial changes the Mac's volume, sends media keys, types Ctrl+C, V, Y and Z, and clicks the mouse. While SimpleHPSDR runs with the dial on, none of that reaches the Mac: the dial belongs to SimpleHPSDR, whichever window is in front. Quit SimpleHPSDR and the dial is its old self again. Without the Accessibility permission, pressing the dial in and turning it still clicks the mouse.
@@ -742,6 +754,9 @@ Raise the PTT release delay in Config > TX Audio. The engine already holds trans
 
 ## PS won't go green
 Run the guided setup from the PS right-click. It starts from your radio's default HW peak, which clears a setting left over from earlier tries. If it still won't lock, the line on the PS right-click says why: the sample too strong or too weak, or the wrong feedback source.
+
+## The Ulanzi Dial stopped working after an update
+macOS has to be asked for its permissions again. See Ulanzi Dial, "If the dial stops working after an update".
 
 ## Firmware
 Click the radio's name, then Firmware. A failed flash can leave the radio needing recovery, so use only the file made for your exact radio, on a wired network, and don't turn anything off until it finishes.
