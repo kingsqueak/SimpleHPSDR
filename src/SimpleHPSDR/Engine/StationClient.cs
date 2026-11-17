@@ -558,8 +558,11 @@ public sealed class StationClient : IDisposable
     public Task SetModeAsync(RxMode mode, int rx = 0) => PostAsync("api/mode", new ModeSetRequest(mode, rx));
     public Task SetReceiverAsync(int rx, ReceiverSetRequest req) => PostAsync($"api/receivers/{rx}", req);
     public Task SetReceiverMuteAsync(int rx, bool muted) => PostAsync($"api/receivers/{rx}/mute", new MuteSetRequest(muted));
-    /// <summary>Which receiver transmits: TX uses its frequency, mode and filter.</summary>
-    public Task SetTxReceiverAsync(int rx) => PostAsync("api/tx/receiver", new TxReceiverSetRequest(rx));
+    /// <summary>Which receiver transmits: TX uses its frequency, mode and filter.
+    /// With requireIdle the engine refuses (409) while keyed or tuning, or if
+    /// that receiver isn't on.</summary>
+    public Task SetTxReceiverAsync(int rx, bool requireIdle = false) =>
+        PostAsync("api/tx/receiver", new TxReceiverSetRequest(rx, requireIdle));
     /// <summary>AGC-T: the AGC's maximum gain. The engine takes this as manual
     /// control, so it turns auto AGC off.</summary>
     public Task SetAgcGainAsync(double topDb) => PostAsync("api/agcGain", new AgcGainSetRequest(topDb));

@@ -85,7 +85,7 @@ public static class MainMenus
             for (int rx = 0; rx <= 1; rx++)
             {
                 int r = rx;
-                if (vm.TxRx != r && !(r == 1 && vm.Rx2ReceiveOnly)) items.Add(Item($"Transmit on {vm.SliceName(r)}", () => vm.TransmitOnAsync(r)));
+                if (vm.TxRx != r) items.Add(Item($"Transmit on {vm.SliceName(r)}", () => vm.TransmitOnAsync(r)));
             }
             items.Add(new Separator());
             for (int rx = 0; rx <= 1; rx++)

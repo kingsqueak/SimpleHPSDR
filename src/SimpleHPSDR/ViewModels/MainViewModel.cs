@@ -22,7 +22,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly EngineHost _engine = new();
     private StationClient? _client;
     private RadioChoice? _radio;
-    private readonly Latest<long> _vfoSender;
+    // One per receiver: a frequency still waiting after a quick switch of
+    // receiver goes to the receiver it was tuned on, and isn't replaced by
+    // the other receiver's.
+    private readonly Latest<long>[] _vfoSenders;
     private readonly Latest<double> _afSender;
     private readonly Latest<int> _attSender, _att1Sender;
     private bool _applyingState;
@@ -628,7 +631,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         SpectrumLook.Apply(_settings);
         LoadVoiceKeyer();
-        _vfoSender = new Latest<long>(hz => _client!.SetVfoAsync(hz, ActiveRx));
+        _vfoSenders = [.. Enumerable.Range(0, 2).Select(rx => new Latest<long>(hz => _client!.SetVfoAsync(hz, rx)))];
         // Main AF is the station-wide master; each slice has its own trim on top.
         _afSender = new Latest<double>(db => _client!.SetAfGainAsync(db));
         _sliceAfSenders = [.. Enumerable.Range(0, 2).Select(rx => new Latest<double>(
@@ -783,7 +786,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         WireAlerts(_client);
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
-            if (v.Receiver == ActiveRx) { if (!_vfoSender.Busy) SetVfoLocal(v.VfoHz); }
+            if (v.Receiver == ActiveRx) { if (!_vfoSenders[ActiveRx].Busy) SetVfoLocal(v.VfoHz); }
             else if (v.Receiver == 0 && _sliceA is { } a) _sliceA = a with { VfoHz = v.VfoHz };
             else if (v.Receiver == 1 && _sliceB is { } b) _sliceB = b with { VfoHz = v.VfoHz };
             // The TX slice in split: PureSignal follows its band.
@@ -1089,7 +1092,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         ? ((Band)b.Value).Transverter ? b.Label : $"{b.Label} m" : "GEN";
 
     /// <summary>Text of the blue Mode button.</summary>
-    public string ModeLabel => Mode == RxMode.FreeDv ? FreeDvLabel : Mode.ToString();
+    public string ModeLabel => LabelOf(Mode);
+    private static string LabelOf(RxMode mode) => mode == RxMode.FreeDv ? FreeDvLabel : mode.ToString();
 
     public void TuneTo(long hz)
     {
@@ -1102,7 +1106,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (!SimpleHPSDR.Band.Tunable(hz)) hz = Math.Clamp(hz, SimpleHPSDR.Band.MinHfHz, SimpleHPSDR.Band.MaxHfHz);
         SetVfoLocal(hz);
         if (SimpleHPSDR.Band.Find(hz) is { } band) _settings.BandMemory[band.Name] = hz;
-        _vfoSender.Send(hz);
+        _vfoSenders[ActiveRx].Send(hz);
     }
 
     /// <summary>Wheel tuning: snap to the step grid, then move by whole steps.</summary>

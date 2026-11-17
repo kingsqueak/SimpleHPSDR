@@ -40,11 +40,21 @@ public sealed partial class MainViewModel
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ShowSliceBInput))]
     private bool _hasRx2Jack;
     public bool ShowSliceBInput => HasRx2Jack && SliceBEnabled;
-    private bool SliceBOnJack => ShowSliceBInput && _settings.SliceBOnRx2Jack;
-    /// <summary>RX2 (or slice B) listens on the Rx2 jack, a receive-only
-    /// input, so it can't be the one that transmits.</summary>
-    public bool Rx2ReceiveOnly => SliceBOnJack;
-    public string SliceBInputLabel => _settings.SliceBOnRx2Jack ? "Rx2 jack" : "Main";
+    private bool SliceBOnJack => ShowSliceBInput && SliceBJackWanted;
+    public string SliceBInputLabel => SliceBJackWanted ? "Rx2 jack" : "Main";
+
+    // The saved choice is RX2's. Slice B added on RX1's panadapter listens on
+    // the main antenna without changing it, until the operator picks an input
+    // or the slice moves to its own panadapter as RX2. Not saved.
+    private bool _sliceBMainForNow;
+    private bool SliceBJackWanted => _settings.SliceBOnRx2Jack && !_sliceBMainForNow;
+
+    private void SetSliceBMainForNow(bool main)
+    {
+        if (_sliceBMainForNow == main) return;
+        _sliceBMainForNow = main;
+        SliceBInputChanged();
+    }
     public ObservableCollection<Choice> SliceBInputs { get; } = [];
     private bool _sendingSliceBInput;
 
@@ -60,28 +70,31 @@ public sealed partial class MainViewModel
             SliceBInputs.Add(new Choice("Main antenna", false, _ => SetSliceBInput(false)));
             SliceBInputs.Add(new Choice("Rx2 jack", true, _ => SetSliceBInput(true)));
         }
-        Mark(SliceBInputs, _settings.SliceBOnRx2Jack);
+        Mark(SliceBInputs, SliceBJackWanted);
         SyncSliceBInput();
     }
 
     /// <summary>RX2's antenna button: the main antenna or the Rx2 jack.</summary>
-    public void ToggleSliceBInput() => SetSliceBInput(!_settings.SliceBOnRx2Jack);
+    public void ToggleSliceBInput() => SetSliceBInput(!SliceBJackWanted);
 
     private void SetSliceBInput(bool jack)
     {
-        if (jack && TxRx == 1)
+        // Picking the input slice B already has changes nothing, so it can't
+        // overwrite RX2's saved choice while slice B is on main for now.
+        if (jack == SliceBJackWanted)
         {
-            if (IsTransmitting)
-            {
-                Status = "Unkey first: transmit is on this receiver, and the Rx2 jack only receives.";
-                Mark(SliceBInputs, _settings.SliceBOnRx2Jack);
-                return;
-            }
-            _ = TransmitOnAsync(0);
+            Mark(SliceBInputs, jack);
+            return;
         }
+        _sliceBMainForNow = false;
         _settings.SliceBOnRx2Jack = jack;
         _settings.Save();
-        Mark(SliceBInputs, jack);
+        SliceBInputChanged();
+    }
+
+    private void SliceBInputChanged()
+    {
+        Mark(SliceBInputs, SliceBJackWanted);
         OnPropertyChanged(nameof(SliceBInputLabel));
         NotifyAntennaText();
         SyncSliceBInput();
@@ -155,7 +168,7 @@ public sealed partial class MainViewModel
     private void SyncSliceBInput()
     {
         if (!IsConnected || !HasRx2Jack || !SliceBEnabled || _sliceB is not { } b || _sendingSliceBInput) return;
-        byte want = _settings.SliceBOnRx2Jack ? (byte)1 : (byte)0;
+        byte want = SliceBJackWanted ? (byte)1 : (byte)0;
         if (b.AdcSource == want) return;
         _ = SendSliceBInputAsync(want);
     }

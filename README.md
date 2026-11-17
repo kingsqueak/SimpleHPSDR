@@ -24,7 +24,7 @@ improving Pure Signal lock speed and function as well.
 
 Developed on an ANAN 7000DLE MkII over Protocol 2. It also supports ANAN G2s
 (including on the G2's own Pi), Hermes-Lite 2s and Brick SDRs. macOS and Linux
-packages are available, and for Windows x64 an installer or a zip, with ASIO under Config > Audio.
+packages are available, and for Windows x64 an installer, with ASIO under Config > Audio.
 
 Not affiliated with or endorsed by the Zeus SDR project.
 

@@ -106,6 +106,14 @@ public sealed class AfSlider : Control
         e.Pointer.Capture(null);
     }
 
+    // Capture can be lost without a release (focus change, window deactivated);
+    // end the drag so hover moves don't keep setting the value.
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        _drag = false;
+    }
+
     // One wheel click is 1 dB.
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {

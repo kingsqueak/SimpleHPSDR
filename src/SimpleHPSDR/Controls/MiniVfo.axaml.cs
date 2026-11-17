@@ -144,8 +144,6 @@ public partial class MiniVfo : UserControl
         long hz = vm.RxHz(rx);
         Freq.Text = hz > 0 ? hz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.') : "";
         ModeText.Text = vm.RxModeLabel(rx);
-        // On the Rx2 jack RX2 only receives, so it has no TX mark.
-        TxChip.IsVisible = !(rx == 1 && vm.Rx2ReceiveOnly);
         TxChip.Background = tx ? TxRed : Brushes.Transparent;
         TxChip.BorderBrush = tx ? TxRed : Dim;
         TxText.Foreground = tx ? Brushes.White : Dim;

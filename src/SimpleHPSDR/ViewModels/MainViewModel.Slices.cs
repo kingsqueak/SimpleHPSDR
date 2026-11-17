@@ -1,7 +1,9 @@
+using System.Net;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Controls;
+using SimpleHPSDR.Engine;
 using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
@@ -95,7 +97,8 @@ public sealed partial class MainViewModel
     /// may have changed; the small VFOs on the panadapters read them again.</summary>
     public const string RxReadouts = nameof(RxReadouts);
     public long RxHz(int rx) => rx == ActiveRx ? VfoHz : (rx == 0 ? _sliceA : _sliceB)?.VfoHz ?? 0;
-    public string RxModeLabel(int rx) => rx == ActiveRx ? ModeLabel : (rx == 0 ? _sliceA : _sliceB)?.Mode.ToString() ?? "";
+    public string RxModeLabel(int rx) => rx == ActiveRx ? ModeLabel
+        : (rx == 0 ? _sliceA : _sliceB) is { } r ? LabelOf(r.Mode) : "";
 
     /// <summary>The RX1 and RX2 buttons. RX1 takes the controls. RX2 turns on
     /// on RX1's frequency, mode and filter if it's off (slice B on RX1's
@@ -110,7 +113,9 @@ public sealed partial class MainViewModel
             return;
         }
         if (!SliceBEnabled) { await AddSliceBAsync(VfoHz, ownPanadapter: true); return; }
+        // Slice B moving to its own panadapter becomes RX2, on RX2's saved input.
         SliceBOwnPanadapter = true;
+        SetSliceBMainForNow(false);
         await MakeActiveAsync(1);
     }
 
@@ -341,8 +346,6 @@ public sealed partial class MainViewModel
         // band and mode. The active slice's own changes come through VfoHz and
         // Mode, and while it's being switched VfoHz can still be the other's.
         if (TxRx != ActiveRx) FollowTxSliceForPs();
-        // The Rx2 jack is a receive-only input: transmit doesn't stay on a receiver using it.
-        if (TxRx == 1 && Rx2ReceiveOnly && !IsTransmitting) _ = TransmitOnAsync(0);
         if (!SliceBEnabled && ActiveRx != 0) _ = MakeActiveAsync(0);
         SyncSliceBInput();
         CheckAttSource();
@@ -366,26 +369,48 @@ public sealed partial class MainViewModel
     public async Task MakeActiveAsync(int rx)
     {
         if (!IsConnected || (rx == 1 && !SliceBEnabled)) return;
-        ActiveRx = rx;
-        await Try(async () =>
+        // Until the engine's state arrives, mode and filter are still the other
+        // receiver's: wheel tuning on a panadapter waits for this to finish.
+        _switchingRx++;
+        try
         {
-            var s = await _client!.GetStateAsync();
-            UpdateSlices(s);
-            var a = ActiveOf(s);
-            _applyingState = true;
-            try
+            bool changing = rx != ActiveRx;
+            ActiveRx = rx;
+            // Show the new receiver's last known frequency straight away, so
+            // nothing reads the other one's under the new receiver's name.
+            if (changing && (rx == 0 ? _sliceA : _sliceB) is { } known)
             {
-                SetVfoLocal(a.Hz);
-                FilterLowHz = a.Low;
-                FilterHighHz = a.High;
-                await SetModeLocalAsync(a.Mode, a.Preset);
+                _applyingState = true;
+                try { SetVfoLocal(known.VfoHz); }
+                finally { _applyingState = false; }
             }
-            finally
+            await Try(async () =>
             {
-                _applyingState = false;
-            }
-        });
+                var s = await _client!.GetStateAsync();
+                UpdateSlices(s);
+                var a = ActiveOf(s);
+                _applyingState = true;
+                try
+                {
+                    SetVfoLocal(a.Hz);
+                    FilterLowHz = a.Low;
+                    FilterHighHz = a.High;
+                    await SetModeLocalAsync(a.Mode, a.Preset);
+                }
+                finally
+                {
+                    _applyingState = false;
+                }
+            });
+        }
+        finally
+        {
+            _switchingRx--;
+        }
     }
+
+    /// <summary>More than 0 while MakeActiveAsync is fetching the new active receiver's state.</summary>
+    private int _switchingRx;
 
     /// <summary>Turn on slice B at a frequency, in the active slice's mode and
     /// filter, and make it active: on A's panadapter, or in its own.</summary>
@@ -395,9 +420,10 @@ public sealed partial class MainViewModel
         SliceBOwnPanadapter = ownPanadapter;
         // The Rx2 jack is remembered for RX2. A slice added on RX1's panadapter
         // starts on the main antenna, or it would come up silent with nothing
-        // on that jack; the input can still be changed afterwards.
-        if (!ownPanadapter && _settings.SliceBOnRx2Jack) SetSliceBInput(false);
-        byte? adc = HasRx2Jack ? (_settings.SliceBOnRx2Jack ? (byte)1 : (byte)0) : null;
+        // on that jack; RX2's saved choice is kept, and the input can still be
+        // changed afterwards.
+        SetSliceBMainForNow(!ownPanadapter);
+        byte? adc = HasRx2Jack ? (SliceBJackWanted ? (byte)1 : (byte)0) : null;
         await Try(async () =>
         {
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
@@ -424,9 +450,17 @@ public sealed partial class MainViewModel
     public async Task RemoveSliceBAsync()
     {
         if (!IsConnected || !SliceBEnabled) return;
+        // Turning receiver 1 off makes the engine move transmit to RX1 at once,
+        // even mid-transmission, so this has to be checked first.
+        if (IsTransmitting && TxRx == 1)
+        {
+            Status = SliceBOwnPanadapter ? "Unkey before turning RX2 off." : "Unkey before removing slice B.";
+            return;
+        }
         await Try(async () =>
         {
-            if (TxRx == 1) await _client!.SetTxReceiverAsync(0);   // TX back to A first
+            // TX back to A first; if the engine refuses, B stays on.
+            if (TxRx == 1 && !await MoveTxAsync(0)) return;
             if (ActiveRx == 1) await MakeActiveAsync(0);
             await _client!.SetReceiverAsync(1, new ReceiverSetRequest(Enabled: false));
             SliceBEnabled = false;
@@ -444,18 +478,32 @@ public sealed partial class MainViewModel
             Status = "Unkey before moving transmit.";
             return;
         }
-        if (rx == 1 && Rx2ReceiveOnly)
-        {
-            Status = $"{(SliceBOwnPanadapter ? "RX2" : "Slice B")} is on the Rx2 jack, which only receives: transmit stays on {SliceName(0)}.";
-            return;
-        }
         await Try(async () =>
         {
-            await _client!.SetTxReceiverAsync(rx);
+            if (!await MoveTxAsync(rx)) return;
             TxRx = rx;
             await FollowRxFilterAsync();
             Status = $"Transmit on {SliceName(rx)}.";
         });
+    }
+
+    /// <summary>Move transmit to a receiver unless the radio is keyed: the
+    /// engine checks too, in case it was keyed after the app last looked.
+    /// False, with the reason on the status line, if it refused.</summary>
+    private async Task<bool> MoveTxAsync(int rx)
+    {
+        try
+        {
+            await _client!.SetTxReceiverAsync(rx, requireIdle: true);
+            return true;
+        }
+        catch (StationException ex) when (ex.Status == HttpStatusCode.Conflict)
+        {
+            Status = ex.Message == "tx-receiver-unavailable"
+                ? $"Transmit stays where it is: {SliceName(rx)} isn't on."
+                : "Unkey before moving transmit.";
+            return false;
+        }
     }
 
     public async Task SetSliceMuteAsync(int rx, bool muted)
@@ -572,17 +620,21 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>A click or wheel on a slice's own panadapter: make that slice
-    /// active first, then tune it.</summary>
+    /// active first, then tune it. One arriving while the active receiver is
+    /// still being switched is dropped: the VFO may still hold the other
+    /// receiver's frequency, and steps from it would land on the wrong band.</summary>
     public async Task TuneSliceAsync(int rx, long hz)
     {
+        if (_switchingRx > 0) return;
         if (rx != ActiveRx) await MakeActiveAsync(rx);
-        if (rx == ActiveRx) TuneTo(hz);
+        if (rx == ActiveRx && _switchingRx == 0) TuneTo(hz);
     }
 
     public async Task TuneSliceByStepsAsync(int rx, int steps)
     {
+        if (_switchingRx > 0) return;
         if (rx != ActiveRx) await MakeActiveAsync(rx);
-        if (rx == ActiveRx) TuneBySteps(steps);
+        if (rx == ActiveRx && _switchingRx == 0) TuneBySteps(steps);
     }
 
     /// <summary>DUP: hear the receivers while transmitting. Off by default:

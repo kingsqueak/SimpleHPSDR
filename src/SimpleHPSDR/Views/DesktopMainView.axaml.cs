@@ -23,7 +23,7 @@ public partial class DesktopMainView : UserControl
     public DesktopMainView()
     {
         InitializeComponent();
-        SizeChanged += (_, e) => FitTopBar(e.NewSize.Width);
+        SizeChanged += (_, e) => { FitTopBar(e.NewSize.Width); FitSideRail(); };
         // RIT and XIT stay full size beside the VFO, which takes what's left.
         VfoArea.SizeChanged += (_, _) => FitVfo();
         OffsetButtons.SizeChanged += (_, _) => FitVfo();
@@ -272,8 +272,7 @@ public partial class DesktopMainView : UserControl
         SideGrip.PointerMoved += (_, e) =>
         {
             if (_gripFrom is not double from) return;
-            double most = Math.Max(MainViewModel.SideRailMin, Math.Min(MainViewModel.SideRailMax, Bounds.Width - 420));
-            SideRail.Width = Math.Clamp(_gripWidth + from - e.GetPosition(this).X, MainViewModel.SideRailMin, most);
+            SideRail.Width = Math.Clamp(_gripWidth + from - e.GetPosition(this).X, MainViewModel.SideRailMin, SideRailMost());
         };
         SideGrip.PointerReleased += (_, e) => { e.Pointer.Capture(null); EndGrip(); };
         SideGrip.PointerCaptureLost += (_, _) => EndGrip();
@@ -281,9 +280,23 @@ public partial class DesktopMainView : UserControl
         {
             if (Vm is not { } vm) return;
             vm.SideRailWidth = MainViewModel.SideRailDefault;
-            SideRail.Width = vm.SideRailWidth;
+            FitSideRail();
             e.Handled = true;
         };
+    }
+
+    // The widest the panel may be while leaving the panadapter 420 px. Before
+    // the first layout pass Bounds.Width is 0, so only the fixed limits apply.
+    private double SideRailMost() => Bounds.Width <= 0
+        ? MainViewModel.SideRailMax
+        : Math.Max(MainViewModel.SideRailMin, Math.Min(MainViewModel.SideRailMax, Bounds.Width - 420));
+
+    // Shows the saved width, cut down to fit the window. Never writes it back,
+    // so widening the window again restores the saved width.
+    private void FitSideRail()
+    {
+        if (_gripFrom is not null || Vm is not { } vm) return;
+        SideRail.Width = Math.Clamp(vm.SideRailWidth, MainViewModel.SideRailMin, SideRailMost());
     }
 
     private void EndGrip()
@@ -439,7 +452,7 @@ public partial class DesktopMainView : UserControl
         vm.DisplayReset += OnDisplayReset;
         vm.PropertyChanged += OnVmPropertyChanged;
         Arrange(vm.SidePanel);
-        SideRail.Width = vm.SideRailWidth;
+        FitSideRail();
         LayoutPanadapters();
     }
 
