@@ -45,6 +45,7 @@ public sealed partial class SettingsViewModel
     /// the window opens and when Radio model changes.</summary>
     private async Task LoadHardwareAsync()
     {
+        FillDialMap();   // needs no radio
         var board = await _client.GetBoardFlagsAsync();
         var g2 = await _client.GetG2OptionsAsync();
         var hl2 = await _client.GetHl2OptionsAsync();

@@ -8,12 +8,16 @@ public enum PanelButtonAction
     AToB, BToA, SwapAB, Split, Rit, Xit, RitXitClear, Nb, Nr, Anf,
     Band160, Band80, Band60, Band40, Band30, Band20, Band17, Band15, Band12, Band10, Band6,
     Quit,
+    // The Ulanzi Dial's top buttons: which of its three jobs the dial does when turned.
+    Dial1, Dial2, Dial3,
 }
 
 /// <summary>What a G2 front panel knob does.</summary>
 public enum PanelKnobAction
 {
     None, AfGain, AfA, AfB, AgcTop, Drive, MicGain, Rit, Xit, FilterHigh, FilterLow, Attenuation, TuneB,
+    // Added for the Ulanzi Dial, whose one knob also has to tune.
+    Tune, TuneFast, Zoom,
 }
 
 /// <summary>One control on a panel: its code in p2app's messages, the words
@@ -28,11 +32,14 @@ public sealed record PanelControl(int Code, string Label, string DefaultAction);
 public static class G2Panels
 {
     public const int Original = 4, Ultra = 5;
+    /// <summary>Not a G2 panel: the Ulanzi Dial (DialLink). Same mapping, own number.</summary>
+    public const int Dial = 100;
 
     public static string Name(int product) => product switch
     {
         Original => "original G2 panel",
         Ultra => "G2V2 / G2 Ultra panel",
+        Dial => "Ulanzi Dial",
         _ => $"panel type {product}",
     };
 
@@ -101,6 +108,18 @@ public static class G2Panels
             new(13, "MULTI 2 knob push", nameof(PanelButtonAction.FilterDefault)),
             new(41, "MULTI 2 knob push (shift)", nameof(PanelButtonAction.None)),
         ],
+        // Codes are DialLink's: L1 L2 R1 R2 T1 T2 T3 and the dial's press.
+        Dial =>
+        [
+            new(5, "Top left", nameof(PanelButtonAction.Dial1)),
+            new(6, "Top centre", nameof(PanelButtonAction.Dial2)),
+            new(7, "Top right", nameof(PanelButtonAction.Dial3)),
+            new(8, "Dial press", nameof(PanelButtonAction.Mute)),
+            new(1, "Left side, top", nameof(PanelButtonAction.BandUp)),
+            new(2, "Left side, rear", nameof(PanelButtonAction.BandDown)),
+            new(3, "Right side, top", nameof(PanelButtonAction.ModeUp)),
+            new(4, "Right side, rear", nameof(PanelButtonAction.ModeDown)),
+        ],
         _ => [],
     };
 
@@ -131,6 +150,14 @@ public static class G2Panels
             new(10, "MULTI 2 outer", nameof(PanelKnobAction.FilterLow)),
             new(11, "MULTI 2 inner (shift)", nameof(PanelKnobAction.None)),
             new(12, "MULTI 2 outer (shift)", nameof(PanelKnobAction.None)),
+        ],
+        // The dial's three jobs (chosen with the top buttons), and pressed-and-turned.
+        Dial =>
+        [
+            new(1, "Dial, job 1", nameof(PanelKnobAction.Tune)),
+            new(2, "Dial, job 2", nameof(PanelKnobAction.AfGain)),
+            new(3, "Dial, job 3", nameof(PanelKnobAction.Zoom)),
+            new(4, "Dial pressed and turned", nameof(PanelKnobAction.TuneFast)),
         ],
         _ => [],
     };
@@ -165,6 +192,9 @@ public static class G2Panels
         PanelButtonAction.Nr => "Noise reduction",
         PanelButtonAction.Anf => "Auto notch (ANF)",
         PanelButtonAction.Quit => "Quit SimpleHPSDR (hold)",
+        PanelButtonAction.Dial1 => "Dial does job 1",
+        PanelButtonAction.Dial2 => "Dial does job 2",
+        PanelButtonAction.Dial3 => "Dial does job 3",
         _ => a.ToString().Replace("Band", "") + " m",
     };
 
@@ -183,6 +213,9 @@ public static class G2Panels
         PanelKnobAction.FilterLow => "Filter low edge",
         PanelKnobAction.Attenuation => "Attenuator",
         PanelKnobAction.TuneB => "Tune slice B",
+        PanelKnobAction.Tune => "Tune",
+        PanelKnobAction.TuneFast => "Tune, ten steps at a time",
+        PanelKnobAction.Zoom => "Zoom",
         _ => a.ToString(),
     };
 }

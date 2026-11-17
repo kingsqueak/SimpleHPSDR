@@ -157,6 +157,8 @@ public sealed class Settings
     public bool VoiceKeyerOnTouch { get; set; }
     /// <summary>The ANAN G2's front panel through p2app (only on a G2 / G2-1K).</summary>
     public bool G2PanelOn { get; set; } = true;
+    /// <summary>A Ulanzi Dial (Bluetooth) as a tuning knob and buttons. Mac only so far.</summary>
+    public bool DialOn { get; set; }
     /// <summary>FreeDV RADE: shaping of the mic before the encoder (engine defaults).</summary>
     public bool RadeMicAgc { get; set; }
     public double RadeMicAgcTargetDb { get; set; } = -18;

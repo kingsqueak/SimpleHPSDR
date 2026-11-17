@@ -123,6 +123,59 @@ public sealed partial class SettingsViewModel
         AppSettings.Save();
     }
 
+    // ---- the Ulanzi Dial: the same mapping, its own rows ----
+
+    public ObservableCollection<PanelMapRow> DialButtons { get; } = [];
+    public ObservableCollection<PanelMapRow> DialKnobs { get; } = [];
+    /// <summary>The helper that reads the dial is a Mac program so far.</summary>
+    public bool HasDial { get; } = OperatingSystem.IsMacOS();
+    /// <summary>From the main window: restart the dial link after a change, and what it is doing.</summary>
+    public Action? RestartDial { get; init; }
+    public string DialStatusText { get; init; } = "";
+
+    public bool DialOn
+    {
+        get => AppSettings?.DialOn ?? false;
+        set
+        {
+            if (AppSettings is null || AppSettings.DialOn == value) return;
+            AppSettings.DialOn = value;
+            AppSettings.Save();
+            OnPropertyChanged();
+            RestartDial?.Invoke();
+        }
+    }
+
+    private void FillDialMap()
+    {
+        var map = AppSettings?.G2PanelMap ?? [];
+        DialButtons.Clear();
+        foreach (var c in G2Panels.Buttons(G2Panels.Dial))
+        {
+            string key = $"B{G2Panels.Dial}:{c.Code}";
+            DialButtons.Add(new PanelMapRow(key, c.Label, ButtonNames, ButtonWords,
+                map.GetValueOrDefault(key, c.DefaultAction), c.DefaultAction, SavePanelRow));
+        }
+        DialKnobs.Clear();
+        foreach (var c in G2Panels.Knobs(G2Panels.Dial))
+        {
+            string key = $"E{G2Panels.Dial}:{c.Code}";
+            DialKnobs.Add(new PanelMapRow(key, c.Label, KnobNames, KnobWords,
+                map.GetValueOrDefault(key, c.DefaultAction), c.DefaultAction, SavePanelRow));
+        }
+    }
+
+    [CommunityToolkit.Mvvm.Input.RelayCommand]
+    private void ResetDialMap()
+    {
+        if (AppSettings is null) return;
+        string prefix = $"{G2Panels.Dial}:";
+        foreach (var key in AppSettings.G2PanelMap.Keys.Where(k => k[1..].StartsWith(prefix)).ToList())
+            AppSettings.G2PanelMap.Remove(key);
+        AppSettings.Save();
+        FillDialMap();
+    }
+
     [CommunityToolkit.Mvvm.Input.RelayCommand]
     private void ResetPanelMap()
     {

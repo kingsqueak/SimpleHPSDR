@@ -34,8 +34,8 @@ public sealed partial class MainViewModel
             G2PanelStatus = on ? (G2PanelProduct > 0 ? $"Connected: {G2Panels.Name(G2PanelProduct)}." : "p2app connected.")
                 : _panel.IsListening ? "Waiting for p2app to connect." : "Off.");
         _panel.VfoSteps += n => Dispatcher.UIThread.Post(() => PanelVfo(n));
-        _panel.Encoder += (e, n) => Dispatcher.UIThread.Post(() => PanelKnob(e, n));
-        _panel.Button += (b, ev) => Dispatcher.UIThread.Post(() => PanelButton(b, ev));
+        _panel.Encoder += (e, n) => Dispatcher.UIThread.Post(() => PanelKnob(G2PanelProduct, e, n));
+        _panel.Button += (b, ev) => Dispatcher.UIThread.Post(() => PanelButton(G2PanelProduct, b, ev));
         _panel.Answer = PanelAnswer;
     }
 
@@ -142,10 +142,10 @@ public sealed partial class MainViewModel
         TuneBySteps(Math.Sign(ticks) * steps);
     }
 
-    private void PanelKnob(int code, int steps)
+    private void PanelKnob(int product, int code, int steps)
     {
         if (!IsConnected) return;
-        switch (KnobAction(G2PanelProduct, code))
+        switch (KnobAction(product, code))
         {
             case PanelKnobAction.AfGain: AfGainDb = Math.Clamp(AfGainDb + steps, -50, 20); break;
             case PanelKnobAction.AfA: SliceAfA = Math.Clamp(SliceAfA + steps, -40, 20); break;
@@ -159,19 +159,27 @@ public sealed partial class MainViewModel
             case PanelKnobAction.FilterLow: DragFilter(FilterLowHz + steps * 50, FilterHighHz); break;
             case PanelKnobAction.Attenuation: if (AttOnRx2Jack || !PreampOn) AttenDb = Math.Clamp(AttenDb + steps, 0, 31); break;
             case PanelKnobAction.TuneB: if (SliceBEnabled) _ = TuneSliceByStepsAsync(1, steps); break;
+            case PanelKnobAction.Tune: if (!VfoLocked) TuneBySteps(steps); break;
+            case PanelKnobAction.TuneFast: if (!VfoLocked) TuneBySteps(steps * 10); break;
+            case PanelKnobAction.Zoom: ZoomStep(steps); break;
         }
     }
 
     /// <summary>A panel button asked to close SimpleHPSDR (the main window does it).</summary>
     public event Action? QuitRequested;
 
-    private void PanelButton(int code, int ev)
+    private void PanelButton(int product, int code, int ev)
     {
-        var action = ButtonAction(G2PanelProduct, code);
+        var action = ButtonAction(product, code);
         // Quit only on a long press, so a stray tap can't close the radio.
         if (action == PanelButtonAction.Quit)
         {
             if (ev == 2) QuitRequested?.Invoke();
+            return;
+        }
+        if (action is >= PanelButtonAction.Dial1 and <= PanelButtonAction.Dial3)
+        {
+            if (ev == 1) SetDialJob(action - PanelButtonAction.Dial1);
             return;
         }
         if (!IsConnected || ev != 1) return;   // act on the press

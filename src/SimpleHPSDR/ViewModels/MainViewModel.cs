@@ -594,6 +594,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             RestartG2Panel = RestartG2PanelAsync,
             G2PanelStatusText = G2PanelStatus,
             G2PanelFound = G2PanelProduct,
+            RestartDial = RestartDial,
+            DialStatusText = DialStatus,
             RadioName = _radio is { } r && r.Label.EndsWith(" " + r.Ip) ? r.Label[..^(r.Ip.Length + 1)] : null,
         };
         settings.PaMaxPowerSaved += SetPowerScale;
@@ -704,6 +706,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public async Task StartAsync()
     {
         StartClock();
+        StartDial();
         _engine.ComputerAudio = !_settings.AudioToRadio;
         _engine.NativeG2 = _settings.G2Computer;
         _engine.Stopped += code => Dispatcher.UIThread.Post(() => _ = OnEngineStoppedAsync(code));
@@ -1657,6 +1660,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         try { _clockTimer.Stop(); _cpuTimer.Stop(); } catch (InvalidOperationException) { }
         UnkeyForShutdown();
         StopG2PanelForShutdown();
+        _dial.Stop();   // gives the dial its own keys and volume back
         if (_client is not null && _radio is not null)
         {
             var (client, p2) = (_client, _radio.Protocol2);

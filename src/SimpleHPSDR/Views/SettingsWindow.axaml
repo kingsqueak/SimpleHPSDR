@@ -1298,6 +1298,49 @@
               </StackPanel>
             </Border>
 
+            <!-- A Ulanzi Dial (Bluetooth) as a knob and buttons; mapped like the G2 panel -->
+            <TextBlock Text="ULANZI DIAL" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasDial}" />
+            <Border Classes="panel" IsVisible="{Binding HasDial}">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
+                           Text="A Ulanzi Dial (D100H), paired to this Mac over Bluetooth, as a tuning knob and buttons. While SimpleHPSDR runs, the dial stops changing the Mac's volume, sending media keys, typing and clicking; it works whichever window is in front. The first time, macOS asks to allow SimpleHPSDR under Input Monitoring and Accessibility." />
+                <CheckBox Content="Use the dial" IsChecked="{Binding DialOn}" />
+                <TextBlock Text="{Binding DialStatusText}" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding DialStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="Buttons" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+                  <Button Classes="flat" Content="Back to defaults" Command="{Binding ResetDialMapCommand}" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding DialButtons}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PanelMapRow">
+                      <Grid ColumnDefinitions="150,*" Margin="0,2,16,2">
+                        <TextBlock Text="{Binding Label}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Words}" SelectedIndex="{Binding SelectedIndex}"
+                                  HorizontalAlignment="Stretch" FontSize="12" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="The dial" FontWeight="SemiBold" FontSize="13" />
+                <ItemsControl ItemsSource="{Binding DialKnobs}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PanelMapRow">
+                      <Grid ColumnDefinitions="150,*" Margin="0,2,16,2">
+                        <TextBlock Text="{Binding Label}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding Words}" SelectedIndex="{Binding SelectedIndex}"
+                                  HorizontalAlignment="Stretch" FontSize="12" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Classes="label" FontSize="11" TextWrapping="Wrap"
+                           Text="The dial has three jobs. A button set to &quot;Dial does job 1&quot; (2, 3) chooses which one a turn does; pressing the dial in while turning does the fourth." />
+              </StackPanel>
+            </Border>
+
             <TextBlock Text="ANVELINA-PRO3" Classes="label" Margin="2,4,0,0" IsVisible="{Binding HasAnvelinaDx}" />
             <Border Classes="panel" IsVisible="{Binding HasAnvelinaDx}">
               <StackPanel Spacing="4">
