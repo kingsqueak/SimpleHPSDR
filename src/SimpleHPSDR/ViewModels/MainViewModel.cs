@@ -968,6 +968,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 Status = DspPrepViewModel.StatusLine(prep?.Status ?? "");
                 await Task.Delay(1000);
             }
+            catch (StationException ex) when (radio.TakeOver && ex.Status == HttpStatusCode.Conflict)
+            {
+                // The engine would not share the radio with a controller that is
+                // still running. The status line is too short for what to do
+                // about it, so it goes in the banner as well.
+                Status = $"Take-over of {radio.Label} refused.";
+                AlertIsWarning = false;
+                AlertText = $"Take-over refused. {ex.Message}";
+                return false;
+            }
             catch (Exception ex)
             {
                 Status = $"Could not connect to {radio.Label}: {ex.Message}";
