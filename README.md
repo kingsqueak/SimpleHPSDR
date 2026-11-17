@@ -40,10 +40,11 @@ Not affiliated with or endorsed by the Zeus SDR project.
 - **Filter close-up:** 0 to 6000 Hz of received audio with draggable filter edges.
 - **Two receivers:** RX1 and RX2 buttons beside the frequency; RX2 opens its own
   panadapter with a small VFO on each, cross-band and split included. Or slice B
-  on RX1's panadapter. With two on, the AF slider becomes two sliders.
+  on RX1's panadapter. With two on, the AF slider becomes two sliders, and Pan
+  puts the receivers in different ears.
 - **Band and mode memory:** each pair, such as 40 m DIGU, keeps its own
   frequency, filter, AGC, drive, mic gain and noise settings.
-- **Memories:** 16 under Mem, the same on every band, plus each band's own
+- **Memories:** 48 under Mem in three tabs, the same on every band, plus each band's own
   saved frequencies on a right-click of the band button.
 - **Noise control:** NB1 and NB2, NR1 to NR4 and neural NNR, with their settings
   on right-click.
@@ -202,7 +203,7 @@ so anything wanted from later Zeus releases, such as a new radio, is ported by
 hand. Everything SimpleHPSDR doesn't use that served Zeus's web app, Zeus Link or
 online services has been taken out (see `docs/engine-capabilities.md`). The
 fork's own `Native libraries` workflow builds its miniaudio, RADE and ASIO
-libraries for Linux and Windows. Its changes also add
+libraries for Linux and Windows, and WDSP for every packaged platform. Its changes also add
 ADC dither and randomizer for the ANAN-7000DLE and 8000DLE
 ([#15](https://github.com/Zeus-SDR/station-engine/pull/15)), the G2 front-panel
 CAT port ([#16](https://github.com/Zeus-SDR/station-engine/pull/16)), transverters

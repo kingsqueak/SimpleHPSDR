@@ -32,7 +32,7 @@ If no radio appears, check that it's on and on the same network, or type its add
 - Middle: the band strip, the panadapter and the waterfall.
 - Under the panadapter: its display controls on the left; the antenna, the radio's name, Config and the view button on the right.
 - Bottom row: volume, transmit, the voice keyer and the clock.
-- The view button, at the right end of the line under the panadapter, changes the arrangement: controls above and below the panadapter, then all the controls in a panel at its side (the panadapter gets the window's full height), then the small window. Right-click it to pick one; the menu also has the touch layout, with large buttons, whose own view button (beside ☰) brings this one back. Your choice is remembered.
+- The view button, at the right end of the line under the panadapter, changes the arrangement: controls above and below the panadapter, then all the controls in a panel at its side (the panadapter gets the window's full height), then the small window. Right-click it to pick one; the menu also has the touch layout, with large buttons, whose own view button (beside ☰) brings this one back. Your choice is remembered. With the panel at the side, drag the bar between it and the panadapter to set the panel's width, or double-click the bar for the usual width. In a window too narrow for that width the panel gives way, and comes back when the window is wide again.
 - The Tools menu has the antenna analyser and the wideband view; the Help menu has this window and update checks.
 
 ## The most useful tip
@@ -302,7 +302,7 @@ RX1 and RX2 beside the frequency show which receiver the frequency, band, mode a
 
 In the touch layout, RX1 and RX2 are in the drawer (☰) under Slices, and a long press or right-click on the spectrum offers "Turn RX2 on".
 
-To turn RX2 off, click the ✕ on its small frequency display, or right-click RX2. The right-click menu also puts the two panadapters side by side or one above the other, and swaps the two receivers' frequencies.
+To turn RX2 off, click the ✕ on its small frequency display, or right-click RX2. It stays on while you're transmitting on it: unkey first. The right-click menu also puts the two panadapters side by side or one above the other, and swaps the two receivers' frequencies.
 
 ## The small frequency display on each panadapter
 While RX2 is on, each panadapter shows its receiver's frequency and mode at the top right. The wheel over it tunes that receiver, and a click lets you type a frequency. The TX mark is red on the receiver that transmits: click the other one's TX mark to transmit there. When both receivers are on the same band, each panadapter also flags where the other one is. RX2's has an antenna button on its left on radios with an Rx2 jack (see below).
@@ -323,7 +323,7 @@ A and B then appear beside RX1 and RX2: blue is the active slice, red is the one
 These move receive (RIT) or transmit (XIT) a little without moving the dial. Click to turn on or off, use the wheel for 10 Hz a click, and right-click to clear. RIT works on slice A only.
 
 ## RX2 on the Rx2 jack
-Both receivers normally hear the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have RX2 listen on an antenna plugged in there, such as a receive-only antenna, click ANT left of RX2's small frequency display, or open Ant and set B to Rx2 jack (that also works for slice B). The Ant button then lights and shows B:Rx2 jack. With nothing in the jack, RX2 goes quiet. The jack is a receive-only input, which the radio grounds while transmitting; either receiver can still be the transmitting one, and transmit always leaves by the TX antenna. While RX2 has the controls, ATT and Pre set the Rx2 jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
+Both receivers normally hear the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have RX2 listen on an antenna plugged in there, such as a receive-only antenna, click ANT left of RX2's small frequency display, or open Ant and set B to Rx2 jack (that also works for slice B). The choice is remembered for RX2; a slice B added on RX1's panadapter starts on the main antenna. The Ant button then lights and shows B:Rx2 jack. With nothing in the jack, RX2 goes quiet. The jack is a receive-only input, which the radio grounds while transmitting; either receiver can still be the transmitting one, and transmit always leaves by the TX antenna. While RX2 has the controls, ATT and Pre set the Rx2 jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
 
 ## Amp
 The Amp button, with the transmit controls, tells SimpleHPSDR whether your amplifier is in line.
