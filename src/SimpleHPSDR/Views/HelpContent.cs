@@ -574,6 +574,34 @@ The G2's knobs and buttons work through p2app: the original G2 panel (on GPIO v1
 Tap Quit at the top of the ☰ drawer, then tap it again within 4 seconds. On the original G2 panel, holding FCN quits too; on any panel, "Quit SimpleHPSDR (hold)" can be given to a button in Config.
 """),
 
+        ("Ulanzi Dial", """
+A Ulanzi Dial (model D100H) can be a tuning knob and eight buttons for SimpleHPSDR. It connects over Bluetooth; its cable only charges it. On a Mac only, for now.
+
+## Setting it up
+- Pair it in the Mac's Bluetooth settings, where it appears as "Ulanzi Dial".
+- In Config > Hardware > ULANZI DIAL, tick "Use the dial".
+- The first time, macOS asks to allow SimpleHPSDR under Input Monitoring and Accessibility, in System Settings > Privacy & Security. Allow both, then quit SimpleHPSDR and open it again. macOS may ask again after an update.
+
+Ulanzi's own app is not needed.
+
+## While SimpleHPSDR runs
+As it comes, the dial changes the Mac's volume, sends media keys, types Ctrl+C, V, Y and Z, and clicks the mouse. While SimpleHPSDR runs with the dial on, none of that reaches the Mac: the dial belongs to SimpleHPSDR, whichever window is in front. Quit SimpleHPSDR and the dial is its old self again. Without the Accessibility permission, pressing the dial in and turning it still clicks the mouse.
+
+## What the controls do
+The dial has three jobs, and the three buttons on top choose between them. The status line says which is chosen.
+- Top left, then turn: tune.
+- Top centre, then turn: volume.
+- Top right, then turn: zoom.
+- Press the dial in and turn: tune ten steps at a time.
+- Press the dial: mute.
+- Left side buttons: band up (top) and down (rear).
+- Right side buttons: mode up (top) and down (rear).
+
+Tuning follows your hand. A careful turn moves one tuning step for each click of the dial. Turn faster and each click moves several steps, up to twenty. Spin it and let go, and the frequency glides on and settles, like a flick of the panadapter; turn the dial again or press any of its buttons to stop it. A locked frequency doesn't move.
+
+Every button and each of the dial's jobs can be given something else in Config > Hardware > ULANZI DIAL, from the same list as the ANAN G2's front panel: filters, slices, RIT, noise reduction, bands and more. MOX and TUNE are in that list; nothing is set to transmit unless you choose it.
+"""),
+
         ("Clock and ID timer", """
 The clock at the bottom right shows your local time and UTC.
 
@@ -651,6 +679,7 @@ Config > Hardware shows only the options your radio has. On other pages, a jack,
 - Hermes-Lite 2: band volts for an amp, the HL2+ codec, and the four user outputs.
 - HL2 IO board (N2ADR): when one is found, its inputs and any fault, an RX and TX antenna for each band (1 is the board's usual antenna; 2 and up only where your board has more wired), and its antenna tuner: Tune (sends a carrier while the tuner asks for it, 15 seconds at most), Bypass and Stop.
 - ANAN G2 front panel: see ANAN G2 on its own Pi.
+- Ulanzi Dial (on a Mac): see Ulanzi Dial.
 - Anvelina-PRO3: the extra outputs 7 to 10 for each band.
 
 ## Palstar HF-AUTO tuner

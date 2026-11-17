@@ -255,6 +255,20 @@ seventh with NR2. Leave the close-up's High resolution off (it starts off on a P
 **On an ANAN G2's own Pi** (CM4 or CM5, with its built-in screen and front
 panel), SimpleHPSDR runs beside the G2's p2app: see [docs/g2-pi.md](docs/g2-pi.md).
 
+## Ulanzi Dial (Mac)
+
+A Ulanzi Dial (D100H, Bluetooth) works as a tuning knob and eight buttons, whichever
+window is in front. Pair it with the Mac, tick "Use the dial" in Config > Hardware,
+and allow SimpleHPSDR under Input Monitoring and Accessibility when macOS asks.
+Ulanzi's own app is not needed. While SimpleHPSDR runs, the dial stops changing the
+Mac's volume, sending media keys, typing and clicking; quit and it is its old self.
+
+The three top buttons choose what a turn does: tune, volume or zoom. Pressing the
+dial in while turning tunes ten steps at a time, a press mutes, and the side buttons
+step the band and the mode. A careful turn tunes one step a click; a faster one
+several; a spin glides on like a flick of the panadapter. Every control can be given
+another job in Config, from the same list as the ANAN G2's front panel.
+
 ## Build
 
 Requires the .NET 10 SDK.
@@ -285,6 +299,11 @@ CAT port ([#16](https://github.com/Zeus-SDR/station-engine/pull/16)), transverte
 that work without Zeus's web app, and a data folder and firewall rule of the
 engine's own (`STATION_ENGINE_DATA_DIR`, `STATION_ENGINE_FIREWALL_RULE`), so it
 shares nothing with an installed Zeus.
+
+Building the Mac app (`scripts/make-dmg.sh`) also compiles the dial's helper,
+`tools/dial-helper/dial-helper.swift`, which needs Xcode's command line tools. For
+a development run, build it once:
+`swiftc -O tools/dial-helper/dial-helper.swift -o tools/dial-helper/dial-helper`.
 
 ## Firewalls
 

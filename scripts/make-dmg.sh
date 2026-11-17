@@ -5,7 +5,8 @@
 #
 # Both the app and the engine are self-contained (no .NET install needed).
 # The engine goes in Contents/Resources/engine, where EngineHost looks for it;
-# only this runtime's native libraries are kept. Ad-hoc signed (not notarized).
+# only this runtime's native libraries are kept. The Ulanzi Dial's helper is built
+# here too and goes beside the app. Ad-hoc signed (not notarized).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # Homebrew's dotnet bundles its own runtime, linked to Homebrew's brotli, which
@@ -46,6 +47,13 @@ if [ -n "${DRM_LIB:-}" ]; then
 else
   scripts/build-drm.sh "$rid" "$app/Contents/MacOS"
 fi
+
+# The Ulanzi Dial's helper (tools/dial-helper), beside the app where DialLink
+# looks for it. Swift's runtime is part of macOS, so nothing else comes with it.
+echo "== dial helper ($rid)"
+case "$arch" in x64) swift_arch=x86_64 ;; *) swift_arch="$arch" ;; esac
+xcrun swiftc -O -target "$swift_arch-apple-macos14.0" tools/dial-helper/dial-helper.swift \
+  -o "$app/Contents/MacOS/dial-helper"
 
 cp src/SimpleHPSDR/Assets/AppIcon.icns "$app/Contents/Resources/"
 cp LICENSE "$app/Contents/Resources/"
