@@ -88,6 +88,22 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.14.0
+
+- **Ulanzi Dial (Mac):** a Ulanzi Dial (D100H, Bluetooth) works as a tuning knob
+  and eight buttons, whichever window is in front. Turn it on in Config >
+  Hardware. See Ulanzi Dial below.
+- **Take over:** taking a radio over from another computer running SimpleHPSDR
+  now makes that one let go. Before, both kept controlling the radio and its
+  relays chattered. If the other program keeps running, the take-over is refused.
+- **NNR noise reduction is faster,** by about a fifth on a Raspberry Pi and more
+  than a third on Apple silicon, with the same sound.
+- **Raspberry Pi:** the close-up's High resolution starts off, and Help has a
+  section on keeping the load down (use NR2, not NNR).
+- **Fixed:** with RX2 on and CTUN off, RX2's panadapter could not be dragged.
+- **Updating tunes the signal processing once more** on the first start (a
+  minute or two on a fast computer), except on a Raspberry Pi.
+
 ### 0.13.1
 
 - **Raspberry Pi:** the first start no longer spends an hour or more tuning
