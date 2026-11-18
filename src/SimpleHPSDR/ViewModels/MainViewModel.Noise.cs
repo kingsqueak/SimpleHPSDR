@@ -3,8 +3,8 @@ using SimpleHPSDR.Contracts;
 namespace SimpleHPSDR.ViewModels;
 
 /// <summary>Right-click settings for the NB and NR buttons. The engine takes
-/// the whole NrConfig, so a change reads the current one, applies the fields
-/// the operator touched, and sends it back; slice B gets the same. Defaults
+/// the whole NrConfig, so a change reads the active receiver's current one,
+/// applies the fields the operator touched, and sends it back. Defaults
 /// and ranges are the engine's (Thetis's). NR1 and NR3 have nothing to adjust:
 /// NR1's values are fixed in the engine and NR3 only takes a model file.</summary>
 public sealed partial class MainViewModel
@@ -199,29 +199,52 @@ public sealed partial class MainViewModel
         return panel;
     }
 
-    /// <summary>A popup is opening: show what the engine has now.</summary>
+    /// <summary>A popup is opening: show what the engine has for the active receiver.</summary>
     public async Task LoadNoisePanelAsync(NoisePanel panel)
     {
         if (!IsConnected) return;
         await Try(async () =>
         {
-            var nr = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
+            var s = await _client!.GetStateAsync();
+            var nr = RxSettingsOf(s, ActiveRx).Nr ?? new NrConfig();
             foreach (var row in panel.Rows) row.Load(nr);
         });
     }
 
     private async Task SendNoiseParamsAsync()
     {
-        var nr = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
+        var s = await _client!.GetStateAsync();
+        var nr = RxSettingsOf(s, ActiveRx).Nr ?? new NrConfig();
         foreach (var row in _noisePanels.SelectMany(p => p.Rows).Where(r => r.Touched))
             nr = row.Write(nr, row.Value);
         await SendNrAsync(nr);
     }
 
-    /// <summary>NR1's whole config, and the same for slice B.</summary>
+    /// <summary>Light the NB/NR buttons and ANF from a receiver's noise block
+    /// (connect, the 1 s poll and a receiver switch).</summary>
+    private void UpdateNoise(RxSettings view)
+    {
+        var nr = view.Nr;
+        Mark(NoiseBlankers, nr?.NbMode ?? NbMode.Off);
+        Mark(NoiseReductions, nr?.NrMode ?? NrMode.Off);
+        AnfOn = nr?.AnfEnabled ?? false;
+    }
+
+    /// <summary>Remember a noise-block change this side just sent, so the
+    /// panadapter chips show it before the next poll.</summary>
+    private void NoteNrSent(int rx, NrConfig nr)
+    {
+        if (rx == 0) { if (_sliceA is { } a) _sliceA = a with { Nr = nr, NrMode = nr.NrMode }; }
+        else if (_sliceB is { } b) _sliceB = b with { Nr = nr, NrMode = nr.NrMode };
+        OnPropertyChanged(RxReadouts);
+    }
+
+    /// <summary>The active receiver's whole noise block: the flat endpoint
+    /// for RX1, receiver 1's own for RX2.</summary>
     private async Task SendNrAsync(NrConfig nr)
     {
-        await _client!.SetNrAsync(nr);
-        if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(NrMode: nr.NrMode, Nr: nr));
+        if (ActiveRx == 0) await _client!.SetNrAsync(nr);
+        else await _client!.SetReceiverAsync(1, new ReceiverSetRequest(NrMode: nr.NrMode, Nr: nr));
+        NoteNrSent(ActiveRx, nr);
     }
 }

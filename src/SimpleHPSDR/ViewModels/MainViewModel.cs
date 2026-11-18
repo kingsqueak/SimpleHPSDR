@@ -1079,9 +1079,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AttenDb = s.AttenDb;
             PreampOn = s.PreampOn;
             AutoAtt = s.AutoAttEnabled;
-            Mark(NoiseBlankers, s.Nr?.NbMode ?? NbMode.Off);
-            Mark(NoiseReductions, s.Nr?.NrMode ?? NrMode.Off);
-            AnfOn = s.Nr?.AnfEnabled ?? false;
+            var activeNr = RxSettingsOf(s, ActiveRx).Nr;
+            Mark(NoiseBlankers, activeNr?.NbMode ?? NbMode.Off);
+            Mark(NoiseReductions, activeNr?.NrMode ?? NrMode.Off);
+            AnfOn = activeNr?.AnfEnabled ?? false;
             AttOffsetDb = s.AttOffsetDb;
             AdcOverload = s.AdcOverloadWarning;
             if (!DrmActive) Muted = s.Rx1Muted;
@@ -1289,7 +1290,6 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FilterLowHz = a.Low;
         FilterHighHz = a.High;
         await SetModeLocalAsync(a.Mode, a.Preset);
-        await Try(() => MirrorFilterAsync(a.Low, a.High, a.Preset));
         await Try(() => FollowRxFilterAsync());
     }
 
@@ -1314,6 +1314,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         FilterPreset[] presets = [];
         try { presets = await _client!.GetFilterPresetsAsync(mode); } catch (Exception) { }
+        _filterLabels[mode] = presets.Where(p => FilterSlotNames.Contains(p.SlotName))
+            .ToDictionary(p => p.SlotName, p => p.Label);
         Filters.Clear();
         foreach (var p in presets.Where(p => FilterSlotNames.Contains(p.SlotName)))
             Filters.Add(new FilterSlot(mode, p, SelectFilterAsync, SaveFilterAsync, ResetFilterAsync)
@@ -1331,7 +1333,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await Try(async () =>
         {
             await _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName, ActiveRx);
-            await MirrorFilterAsync(p.LowHz, p.HighHz, p.SlotName);
+            NoteFilterSent(ActiveRx, p.LowHz, p.HighHz, p.SlotName);
             await FollowRxFilterAsync();
         });
     }
@@ -1339,7 +1341,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private Latest<(int Low, int High)>? _filterDragSender;
 
     /// <summary>A passband edge dragged on the filter scope: a custom filter
-    /// for the active slice (no slot lit), shared and followed as usual.</summary>
+    /// for the active receiver (no slot lit).</summary>
     public void DragFilter(int low, int high)
     {
         if (!IsConnected) return;
@@ -1349,7 +1351,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _filterDragSender ??= new Latest<(int Low, int High)>(async e =>
         {
             await _client!.SetFilterAsync(e.Low, e.High, null, ActiveRx);
-            await MirrorFilterAsync(e.Low, e.High, null);
+            NoteFilterSent(ActiveRx, e.Low, e.High, null);
             await FollowRxFilterAsync();
         });
         _filterDragSender.Send((low, high));
@@ -1511,23 +1513,26 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         return UpdateNrAsync(nr => nr with { NrMode = mode });
     }
 
-    // The engine takes the whole NR/NB config, so read it, change one field,
-    // and send it back. If the engine refuses (e.g. NR3 without a model), show
-    // what it actually applied.
+    // The engine takes the whole NR/NB config, so read the active receiver's,
+    // change one field, and send it back. If the engine refuses (e.g. NR3
+    // without a model), show what it actually applied.
     private async Task UpdateNrAsync(Func<NrConfig, NrConfig> change)
     {
         if (!IsConnected) return;
         await Try(async () =>
         {
-            var nr = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
+            var s = await _client!.GetStateAsync();
+            var nr = RxSettingsOf(s, ActiveRx).Nr ?? new NrConfig();
             await SendNrAsync(change(nr));
         });
         await Try(async () =>
         {
-            var applied = (await _client!.GetStateAsync()).Nr ?? new NrConfig();
+            var s = await _client!.GetStateAsync();
+            var applied = RxSettingsOf(s, ActiveRx).Nr ?? new NrConfig();
             Mark(NoiseBlankers, applied.NbMode);
             Mark(NoiseReductions, applied.NrMode);
             AnfOn = applied.AnfEnabled;
+            NoteNrSent(ActiveRx, applied);
         });
     }
 

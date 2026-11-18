@@ -15,7 +15,8 @@
     </Border>
     <Border Name="Box" CornerRadius="6" Background="#E6171A21" BorderThickness="1" BorderBrush="#40FFFFFF" Padding="8,3">
       <StackPanel Orientation="Horizontal" Spacing="7">
-        <TextBlock Name="NameText" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+        <TextBlock Name="NameText" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"
+                   ToolTip.Tip="Click to give this receiver the controls." />
         <Border Name="TxChip" CornerRadius="3" BorderThickness="1" Padding="4,0" VerticalAlignment="Center" Cursor="Hand"
                 ToolTip.Tip="Red: this receiver's frequency and mode transmit. Click to transmit here.">
           <TextBlock Name="TxText" Text="TX" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" />
@@ -28,6 +29,8 @@
                    MinWidth="120" MinHeight="0" Padding="4,1" VerticalAlignment="Center" PlaceholderText="MHz or kHz" />
         </Panel>
         <TextBlock Name="ModeText" FontSize="11" Foreground="#AEB6C2" VerticalAlignment="Center" />
+        <TextBlock Name="SettingsText" FontSize="11" Foreground="#8A93A3" VerticalAlignment="Center"
+                   IsVisible="False" ToolTip.Tip="This receiver's filter, noise blanker/reduction and AGC. Take the controls (click its panadapter) to change them." />
         <Border Name="CloseChip" Background="Transparent" Padding="3,0" VerticalAlignment="Center" Cursor="Hand"
                 IsVisible="False" ToolTip.Tip="Turn RX2 off">
           <TextBlock Text="✕" FontSize="12" Foreground="#AEB6C2" VerticalAlignment="Center" />

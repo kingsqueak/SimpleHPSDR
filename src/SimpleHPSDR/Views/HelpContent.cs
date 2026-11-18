@@ -300,12 +300,14 @@ Click RX2, left of the frequency. A second panadapter opens on RX1's frequency a
 
 RX1 and RX2 beside the frequency show which receiver the frequency, band, mode and filter controls act on: blue has the controls. Click the other one to switch; RX2 outlined in blue is on and waiting. A click or the wheel on a panadapter gives that receiver the controls too.
 
+Mode, filter, the noise blanker and reduction (NB, NR), ANF and AGC are independent per receiver: switching the controls to the other one brings its own settings back, and changing one never disturbs the other. Squelch, RX Lev and RX EQ are one setting each, shared by both receivers. Each panadapter's small display shows its receiver's filter, NB/NR and AGC at a glance.
+
 In the touch layout, RX1 and RX2 are in the drawer (☰) under Slices, and a long press or right-click on the spectrum offers "Turn RX2 on".
 
 To turn RX2 off, click the ✕ on its small frequency display, or right-click RX2. It stays on while you're transmitting on it: unkey first. The right-click menu also puts the two panadapters side by side or one above the other, and swaps the two receivers' frequencies.
 
 ## The small frequency display on each panadapter
-While RX2 is on, each panadapter shows its receiver's frequency and mode at the top right. The wheel over it tunes that receiver, and a click lets you type a frequency. The TX mark is red on the receiver that transmits: click the other one's TX mark to transmit there. When both receivers are on the same band, each panadapter also flags where the other one is. RX2's has an antenna button on its left on radios with an Rx2 jack (see below).
+While RX2 is on, each panadapter shows its receiver's frequency, mode and (in grey) its filter, NB/NR and AGC at the top right. The wheel over it tunes that receiver, and a click lets you type a frequency. The TX mark is red on the receiver that transmits: click the other one's TX mark to transmit there. When both receivers are on the same band, each panadapter also flags where the other one is. RX2's has an antenna button on its left on radios with an Rx2 jack (see below).
 
 ## Working split with two receivers
 1. Tune RX1 to the DX station.

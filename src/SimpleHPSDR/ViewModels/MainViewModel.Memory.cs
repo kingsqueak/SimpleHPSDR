@@ -85,12 +85,20 @@ public sealed partial class MainViewModel
             var mode = (AgcMode)m.AgcMode;
             var agc = new AgcConfig(mode, FixedGainDb: m.AgcFixedDb);
             // Setting AGC-T turns auto AGC off, so it goes first.
-            if (mode != AgcMode.Fixed) await _client!.SetAgcGainAsync(m.AgcTopDb);
-            await _client!.SetAgcAsync(agc);
-            await _client.SetAutoAgcAsync(m.AgcAuto);
-            if (SliceBEnabled)
-                await _client.SetReceiverAsync(1, new ReceiverSetRequest(Agc: agc, AutoAgcEnabled: m.AgcAuto));
-            UpdateAgc(await _client.GetStateAsync());
+            if (ActiveRx == 0)
+            {
+                if (mode != AgcMode.Fixed) await _client!.SetAgcGainAsync(m.AgcTopDb);
+                await _client!.SetAgcAsync(agc);
+                await _client!.SetAutoAgcAsync(m.AgcAuto);
+            }
+            else
+            {
+                await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
+                    Agc: agc, AgcTopDb: mode != AgcMode.Fixed ? m.AgcTopDb : null, AutoAgcEnabled: m.AgcAuto));
+            }
+            NoteAgcSent(ActiveRx, agc: agc, topDb: mode != AgcMode.Fixed ? m.AgcTopDb : null, auto: m.AgcAuto);
+            var s = await _client.GetStateAsync();
+            UpdateAgc(RxSettingsOf(s, ActiveRx));
         });
     }
 }

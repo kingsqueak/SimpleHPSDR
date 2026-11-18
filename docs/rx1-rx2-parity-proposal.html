@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RX1/RX2 parity &amp; multi-slice proposal — SimpleHPSDR</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1d212b; --line: #2a2f3a;
+    --text: #e6e8eb; --muted: #8a93a3; --faint: #5b6370;
+    --blue: #3b82f6; --blue-dim: #1e3a5f; --red: #e5484d; --green: #46a758;
+    --amber: #ffb224; --seg: #232834;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; }
+  main { max-width: 1080px; margin: 0 auto; padding: 40px 28px 80px; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  h2 { font-size: 20px; margin: 48px 0 4px; padding-top: 20px; border-top: 1px solid var(--line); }
+  h3 { font-size: 16px; margin: 28px 0 8px; }
+  p.sub { color: var(--muted); margin-top: 0; }
+  p, li { color: #c4cad4; }
+  strong { color: var(--text); }
+  code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; font-size: 13px; color: #9ecbff; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 16px 0; }
+  .warn { border-left-color: var(--amber); }
+  .good { border-left-color: var(--green); }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel2); color: var(--text); font-weight: 600; }
+  td { color: #c4cad4; }
+  .yes { color: var(--green); font-weight: 600; }
+  .no { color: var(--red); font-weight: 600; }
+  .mid { color: var(--amber); font-weight: 600; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11.5px; font-weight: 700; }
+  .pill.g { background: #14301c; color: var(--green); }
+  .pill.a { background: #33270d; color: var(--amber); }
+  .pill.r { background: #3a1517; color: var(--red); }
+  .pill.b { background: var(--blue-dim); color: #9ecbff; }
+
+  /* ---- mockup chrome ---- */
+  .mock { background: #0b0d11; border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin: 18px 0; overflow-x: auto; }
+  .mock-title { font-size: 12px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 10px; }
+  .app { display: flex; gap: 10px; min-width: 860px; }
+  .app.col { flex-direction: column; }
+  .panstack { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .pan { position: relative; height: 150px; border-radius: 8px; overflow: hidden;
+         background: linear-gradient(180deg, #101826 0%, #101826 44%, #241a10 46%, #3a2413 78%, #241a10 100%); }
+  .pan.tall { height: 190px; }
+  .pantop { position: absolute; inset: 0 0 46% 0; }
+  .wf { position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+        background: repeating-linear-gradient(180deg, rgba(255,140,60,.16) 0 2px, rgba(30,20,12,.4) 2px 5px); }
+  .pb { position: absolute; top: 6px; bottom: 52%; border: 1px solid; border-radius: 3px; opacity: .85; }
+  .pb.a { left: 30%; width: 14%; border-color: var(--blue); background: rgba(59,130,246,.18); }
+  .pb.b { left: 62%; width: 8%; border-color: #c084fc; background: rgba(192,132,252,.16); }
+  .pb.c { left: 44%; width: 10%; border-color: var(--green); background: rgba(70,167,88,.16); }
+  .pb.d { left: 80%; width: 6%; border-color: var(--amber); background: rgba(255,178,36,.14); }
+  .pb.tx::after { content: "TX"; position: absolute; top: -1px; right: -1px; background: var(--red); color: #fff;
+                  font-size: 8px; font-weight: 800; padding: 0 3px; border-radius: 0 3px 0 3px; }
+  .flag { position: absolute; top: 4px; transform: translateX(-50%); font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 3px; }
+  .flag.rx1 { background: var(--blue); color: #fff; }
+  .flag.rx2 { background: #c084fc; color: #1a1030; }
+  .flag.s1 { background: var(--green); color: #06130a; }
+  .flag.s2 { background: var(--amber); color: #241a02; }
+  .minivfo { position: absolute; top: 22px; right: 8px; background: rgba(23,26,33,.92); border: 1px solid #ffffff22;
+             border-radius: 6px; padding: 4px 8px; font-size: 10.5px; display: flex; gap: 8px; align-items: center; }
+  .minivfo .nm { font-weight: 800; }
+  .minivfo .fq { font-family: ui-monospace, monospace; font-weight: 600; }
+  .minivfo .md { color: var(--muted); }
+  .minivfo .tx { color: var(--red); font-weight: 800; font-size: 9px; border: 1px solid var(--red); border-radius: 3px; padding: 0 3px; }
+  .minivfo .x { color: var(--muted); cursor: pointer; }
+
+  .side { width: 300px; flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .side.wide { width: 430px; }
+  .rowlabel { font-size: 9.5px; color: var(--faint); letter-spacing: .1em; margin: 4px 0 2px; }
+  .segs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .seg { background: var(--seg); border: 1px solid var(--line); color: #c4cad4; border-radius: 5px;
+         padding: 4px 9px; font-size: 11px; font-weight: 600; }
+  .seg.lit { background: var(--blue-dim); border-color: var(--blue); color: #cfe3ff; }
+  .seg.tx { background: #3a1517; border-color: var(--red); color: #ffb3b5; }
+  .seg.dim { opacity: .45; }
+  .vfo { display: flex; align-items: center; gap: 10px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .badges { display: flex; flex-direction: column; gap: 3px; }
+  .badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: var(--seg); color: var(--muted); text-align: center; }
+  .badge.on { background: var(--blue); color: #fff; }
+  .badge.idle { border: 1px solid var(--blue); color: #9ecbff; background: transparent; }
+  .freq { font-family: ui-monospace, monospace; font-size: 24px; font-weight: 700; }
+  .freq .st { color: var(--amber); }
+  .caption { font-size: 11.5px; color: var(--muted); margin: 2px 0 0; }
+  .arrow { color: var(--blue); font-weight: 700; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+  .legend span::before { content: "■ "; }
+  footer { color: var(--faint); font-size: 12px; margin-top: 60px; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>RX1/RX2 parity &amp; two-slices-per-RX proposal</h1>
+<p class="sub">Recommendations only — no project changes made. Based on the current app code (<code>MainViewModel.Slices.cs</code>, <code>MainViewModel.Noise.cs</code>, <code>MainViewModel.Agc.cs</code>) and the engine fork (<code>external/station-engine</code>, contract <code>Dtos.cs</code>).</p>
+
+<h2>1. How it works today</h2>
+<p>The app has <strong>one bank of receive controls</strong> (mode, filter, AGC, NB/NR/ANF, squelch, RX leveler, mode options, RX EQ) that always acts on the <strong>active receiver</strong>. The RX1/RX2 badges beside the frequency move that focus. When the second receiver is on, several of its settings are <strong>mirrored</strong> — forced to a copy of the active receiver's values rather than kept independently:</p>
+<ul>
+  <li><strong>Filter</strong> — <code>MirrorFilterAsync</code> copies every filter change to the other slice (sideband-flipped). You cannot run a 2.7 kHz USB filter on RX1 and a 500 Hz CW filter on RX2; the last change wins on both.</li>
+  <li><strong>NB/NR/ANF/SNB + all their parameters</strong> — <code>SendNrAsync</code> pushes the whole <code>NrConfig</code> to both receivers.</li>
+  <li><strong>AGC</strong> — auto/manual, speed, fixed gain and AGC-T are each sent to both receivers (<code>ToggleAgcAutoAsync</code>, <code>SelectAgcSpeedAsync</code>, <code>OnAgcTopDbChanged</code>, <code>OnAgcFixedGainDbChanged</code>).</li>
+</ul>
+<p>Mode and filter <em>can</em> differ between slices (slice B starts as a copy, then keeps its own), but only because switching the active receiver reloads them — there is no UI showing or editing the inactive receiver's settings without taking focus away from the other one.</p>
+
+<div class="mock">
+  <p class="mock-title">Today — one control bank, values mirrored to the other receiver</p>
+  <div class="app">
+    <div class="panstack">
+      <div class="pan">
+        <div class="pb a"></div><span class="flag rx1" style="left:37%">RX1</span>
+        <div class="pb b"></div><span class="flag rx2" style="left:66%">RX2</span>
+        <div class="wf"></div>
+        <div class="minivfo"><span class="nm" style="color:var(--blue)">RX1</span><span class="fq">14.074.000</span><span class="md">USB · 2.7k</span></div>
+      </div>
+      <p class="caption">Both passbands always show the <strong>same filter shape</strong> — filter, NB/NR, AGC changes are copied to whichever receiver doesn't have the controls.</p>
+    </div>
+    <div class="side">
+      <div class="vfo">
+        <div class="badges"><span class="badge">RX1</span><span class="badge on">RX2</span></div>
+        <span class="freq">7.055<span class="st">0</span>00</span>
+      </div>
+      <div class="rowlabel">MODE / FILTER — ACT ON RX2 (ACTIVE)</div>
+      <div class="segs"><span class="seg">LSB</span><span class="seg lit">CWU</span><span class="seg">AM</span><span class="seg">FM</span><span class="seg">DIGU</span></div>
+      <div class="segs"><span class="seg">1.8k</span><span class="seg">2.1k</span><span class="seg">2.7k</span><span class="seg lit">500</span><span class="seg">VAR1</span></div>
+      <div class="rowlabel">RECEIVE — ACT ON RX2 (ACTIVE)</div>
+      <div class="segs"><span class="seg lit">NB</span><span class="seg lit">NR2</span><span class="seg">ANF</span><span class="seg">SQL</span><span class="seg">AGC auto</span></div>
+      <p class="caption">RX1's CW 500 Hz filter was just overwritten by this USB 2.7 k selection — <span class="arrow">⟵ the pain point</span></p>
+    </div>
+  </div>
+</div>
+
+<h2>2. Gap analysis — what the engine actually supports</h2>
+<p>The key finding: <strong>the engine already supports independent per-receiver mode, filter, filter presets, AGC and the entire noise block</strong> (<code>ReceiverSetRequest</code> takes <code>Mode</code>, <code>FilterLowHz/HighHz</code>, <code>FilterPresetName</code>, <code>NrMode</code>, <code>Nr</code>, <code>Agc</code>, <code>AgcTopDb</code>, <code>AutoAgcEnabled</code> per index; <code>ReceiverDto</code> returns them per index). RX2 parity for those is <strong>an app-side change only — no engine patch needed</strong>. A handful of features are engine-global and cannot be per-RX without engine work:</p>
+
+<table>
+  <tr><th>Adjustment</th><th>Engine support</th><th>App today</th><th>For full parity</th></tr>
+  <tr><td>Mode</td><td class="yes">Per receiver</td><td class="mid">Independent but only editable on the active RX</td><td>Keep per-RX; reload on switch (already does)</td></tr>
+  <tr><td>Filter low/high + presets</td><td class="yes">Per receiver</td><td class="no">Mirrored (<code>MirrorFilterAsync</code>)</td><td><span class="pill g">App-only fix</span> drop the mirror, cache per RX</td></tr>
+  <tr><td>NB / NR (all 5 NR kinds) + params, SNB, ANF, NBP notches</td><td class="yes">Per receiver (<code>NrConfig</code>)</td><td class="no">Whole config mirrored (<code>SendNrAsync</code>)</td><td><span class="pill g">App-only fix</span> per-RX <code>NrConfig</code>, index-aware send</td></tr>
+  <tr><td>AGC auto/manual, speed, fixed gain, AGC-T</td><td class="yes">Per receiver</td><td class="no">Mirrored to slice B</td><td><span class="pill g">App-only fix</span> index-aware sends (endpoint exists)</td></tr>
+  <tr><td>AF gain, mute, RX pan, zoom, antenna (ADC source)</td><td class="yes">Per receiver</td><td class="yes">Already independent</td><td>—</td></tr>
+  <tr><td>RIT / split dial</td><td class="yes">Per receiver (<code>SplitEnabled</code>/<code>TxVfoHz</code>)</td><td class="no">Slice A only (tooltip says so)</td><td><span class="pill g">App-only fix</span> expose per active RX</td></tr>
+  <tr><td>Squelch</td><td class="no">Global (<code>StateDto.Squelch</code>, <code>api/rx/squelch</code>)</td><td class="no">One setting</td><td><span class="pill a">Engine work</span> or label "shared" honestly</td></tr>
+  <tr><td>RX leveler</td><td class="no">Global (<code>api/rx/leveler</code>)</td><td class="no">One setting</td><td><span class="pill a">Engine work</span> or label "shared"</td></tr>
+  <tr><td>RX EQ</td><td class="no">Global (<code>SetRxEqAsync</code>, no index)</td><td class="no">Same curve on both</td><td><span class="pill a">Engine work</span> or label "shared"</td></tr>
+  <tr><td>Mode options (AM broadcast, FM CTCSS/shift/deviation)</td><td class="no">Global (<code>SetAmBroadcastAsync</code>, <code>SetFmAsync</code>)</td><td class="no">One setting</td><td><span class="pill a">Acceptable shared</span> — mostly TX-side anyway</td></tr>
+  <tr><td>CW keyer settings, ATT/LNA/preamp, diversity</td><td class="no">Global / hardware</td><td class="no">One setting</td><td><span class="pill b">Correctly shared</span> — hardware, not a gap</td></tr>
+</table>
+
+<div class="note good">
+<strong>Bottom line:</strong> everything the user listed — <em>Mode, filters, the receive options (NB/NR/ANF/AGC)</em> — is per-receiver in the engine <em>today</em>. Parity is achievable with an app-only change. Squelch, RX leveler and RX EQ are the only receive-side items that are truly global, and they are minor.
+</div>
+
+<h2>3. Recommendation 1 — RX parity with minimal CPU/performance impact</h2>
+
+<h3>Keep the "active receiver" control model — don't duplicate the control bank</h3>
+<p>The current focus-follows design is the right one for CPU and screen real estate: there is still exactly <strong>one DSP chain per enabled receiver</strong> (that cost lives in the engine and doesn't change), and the app adds no widgets, no extra bindings and no extra timers. All that changes is <em>whose</em> values the single control bank holds at any moment. Two layout alternatives are mocked up in section 4, but the data model below is the same for both.</p>
+
+<h3>What changes (conceptually)</h3>
+<ol>
+  <li><strong>Stop mirroring.</strong> Remove the slice-B copies in <code>SendNrAsync</code>, the AGC send paths and <code>MirrorFilterAsync</code>. Sends become index-aware: use the existing per-receiver route (<code>SetReceiverAsync(1, …)</code>) for RX2 and the flat endpoints (or index 0) for RX1.</li>
+  <li><strong>Cache per-receiver state.</strong> Keep a small record per receiver — mode, filter cuts + preset, <code>NrConfig</code>, AGC mode/top/fixed/auto — refreshed from <code>ReceiverDto</code> on the existing 1 s poll (it already carries all of these fields). <code>MakeActiveAsync</code> already reloads frequency/mode/filter on a switch; extend it to restore that receiver's AGC and noise settings into the controls, exactly the way it does today for the active slice.</li>
+  <li><strong>Surface the inactive receiver's state where the eyes already are.</strong> The MiniVFO chips on each panadapter already show frequency, mode and TX state. Add the filter preset name and lit-state dots for NB/NR/AGC (small, passive readouts — no new controls). The operator then sees "RX2: 7.055 CWU 500 · NR2" at a glance and only takes focus to change it.</li>
+  <li><strong>Label the genuinely shared items.</strong> Squelch, RX Lev, RX EQ and the AM/FM option panels get "(both RX)" in their tooltips. Attempting per-RX there would need engine changes for very little gain — and being explicit beats silent coupling.</li>
+</ol>
+
+<div class="note">
+<strong>CPU/performance impact: effectively zero.</strong> No new receivers are created, no new streams, no new polls. The only behavioural difference is that filter/NR/AGC parameters may now differ between two receivers — but both receivers already run those DSP blocks; only their coefficients change. Memory cost is a few cached structs per receiver. The 1 s poll and <code>Latest&lt;T&gt;</code> throttled senders are unchanged.
+</div>
+
+<h2>4. Layout options for the control surface</h2>
+
+<h3>Option A — Status chips only (recommended)</h3>
+<p>One control bank, acting on the active RX, plus richer read-only chips on each panadapter. Smallest change, least clutter, matches the existing focus-follows model.</p>
+<div class="mock">
+  <p class="mock-title">Option A — RX2 active; RX1's state visible on its chip without taking focus</p>
+  <div class="app">
+    <div class="panstack">
+      <div class="pan">
+        <div class="pb a"></div><span class="flag rx1" style="left:37%">RX1</span>
+        <div class="wf"></div>
+        <div class="minivfo"><span class="nm" style="color:var(--blue)">RX1</span><span class="fq">14.230.000</span><span class="md">USB · 2.7k · NB·NR2 · AGC auto</span></div>
+      </div>
+      <div class="pan">
+        <div class="pb b"></div><span class="flag rx2" style="left:66%">RX2</span>
+        <div class="wf"></div>
+        <div class="minivfo"><span class="nm" style="color:#c084fc">RX2</span><span class="fq">7.055.000</span><span class="md">CWU · 500 · NR2 · AGC med</span><span class="tx">TX</span><span class="x">✕</span></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="vfo">
+        <div class="badges"><span class="badge">RX1</span><span class="badge on">RX2</span></div>
+        <span class="freq">7.055<span class="st">0</span>00</span>
+      </div>
+      <div class="rowlabel">MODE / FILTER — RX2</div>
+      <div class="segs"><span class="seg">LSB</span><span class="seg lit">CWU</span><span class="seg">AM</span><span class="seg">FM</span><span class="seg">DIGU</span></div>
+      <div class="segs"><span class="seg">1.8k</span><span class="seg">2.1k</span><span class="seg">2.7k</span><span class="seg lit">500</span><span class="seg">VAR1</span></div>
+      <div class="rowlabel">RECEIVE — RX2</div>
+      <div class="segs"><span class="seg lit">NB</span><span class="seg lit">NR2</span><span class="seg">ANF</span><span class="seg">SQL ⧉</span><span class="seg lit">AGC auto</span></div>
+      <p class="caption">⧉ = shared by both receivers. RX1 keeps its own USB/2.7k/NB+NR2 untouched while the controls sit on RX2.</p>
+    </div>
+  </div>
+</div>
+
+<h3>Option B — Two compact receive strips</h3>
+<p>A slim, fixed strip per panadapter (mode, filter, NB/NR, AGC quick controls) that always edits <em>its</em> receiver, with the full options remaining on the active one. More discoverable, at the cost of duplicated bindings and vertical space; still no extra DSP cost.</p>
+<div class="mock">
+  <p class="mock-title">Option B — per-panadapter strips; deep options stay in the shared panel</p>
+  <div class="app">
+    <div class="panstack">
+      <div class="pan">
+        <div class="pb a"></div><span class="flag rx1" style="left:37%">RX1</span>
+        <div class="wf"></div>
+        <div class="minivfo"><span class="fq">14.230.000</span></div>
+        <div class="segs" style="position:absolute; left:8px; bottom:6px;">
+          <span class="seg">USB</span><span class="seg">2.7k</span><span class="seg lit">NB</span><span class="seg lit">NR2</span><span class="seg">AGC auto</span>
+        </div>
+      </div>
+      <div class="pan">
+        <div class="pb b"></div><span class="flag rx2" style="left:66%">RX2</span>
+        <div class="wf"></div>
+        <div class="minivfo"><span class="fq">7.055.000</span><span class="tx">TX</span></div>
+        <div class="segs" style="position:absolute; left:8px; bottom:6px;">
+          <span class="seg">CWU</span><span class="seg">500</span><span class="seg">NB</span><span class="seg lit">NR2</span><span class="seg lit">AGC med</span>
+        </div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="vfo">
+        <div class="badges"><span class="badge">RX1</span><span class="badge on">RX2</span></div>
+        <span class="freq">7.055<span class="st">0</span>00</span>
+      </div>
+      <div class="rowlabel">ACTIVE RECEIVER — RX2 (DEEP OPTIONS)</div>
+      <div class="segs"><span class="seg">ANF</span><span class="seg">SQL ⧉</span><span class="seg">RX Lev ⧉</span><span class="seg">RX EQ ⧉</span><span class="seg">RIT</span></div>
+      <div class="rowlabel">FILTER</div>
+      <div class="segs"><span class="seg">1.8k</span><span class="seg">2.1k</span><span class="seg">2.7k</span><span class="seg lit">500</span><span class="seg">VAR1</span></div>
+      <p class="caption">Quick per-RX controls live on the panadapter; the heavy panels (NR params, mode options, EQ) stay single-instance on the active RX.</p>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+<strong>Recommendation: Option A first.</strong> It delivers full functional parity (the actual request) with the least UI churn. Option B can be added later as a discoverability layer on top of the same per-RX state model — it's a presentation choice, not a data-model choice, so deciding it later costs nothing.
+</div>
+
+<h2>5. Recommendation 2 — two slices on each RX (up to 4 slices)</h2>
+
+<h3>The engine can already do it</h3>
+<p>The engine is built for a uniform receiver-index model and supports <strong>up to 10 receivers</strong> (<code>WireContract.MaxReceivers</code>). Practical ceilings depend on the radio: Protocol-2 boards offer <strong>8 user receivers on Hermes-class/Saturn and 6 on other Orion-family boards</strong> (the first DDCs are reserved for the PureSignal feedback pair); plain Protocol-1 is capped at 2. Extra receivers must be contiguous — enabling receiver <em>n</em> implicitly enables everything below it. Each receiver already carries its own VFO, mode, filter, presets, AGC, noise block, AF, mute, zoom and ADC source.</p>
+
+<h3>What changes in the app</h3>
+<ul>
+  <li><strong>Data model:</strong> the current "receiver 1 is either slice B on RX1's panadapter <em>or</em> RX2, never both" rule (<code>MainViewModel.Slices.cs</code>) becomes a slice list — e.g. slices 0–1 on panadapter A, slices 2–3 on panadapter B, each panadapter rendering two passbands and two flags (the rendering already exists for the A/B-on-one-panadapter case).</li>
+  <li><strong>Controls:</strong> the focus-follows model from Recommendation 1 extends naturally: the RX1/RX2 badges choose the panadapter, and a second badge pair (A/B per panadapter, exactly like today's <code>AbBadges</code>) chooses the slice within it. No new control categories.</li>
+  <li><strong>TX:</strong> the single TX receiver is engine-global; transmitting slice becomes any of the four.</li>
+</ul>
+
+<div class="note warn">
+<strong>The real cost is DSP, not UI.</strong> Every slice is a full WDSP chain plus a DDC stream — on a Raspberry Pi 5 two slices is comfortable, four is the ceiling worth supporting, and only P2 radios can even reach four. Mitigations: (1) default new slices to <em>off</em>; (2) show per-engine CPU near the slice add control (the CPU readout already exists in the status row); (3) cap slices at <code>EffectiveMaxReceivers</code> from engine state and say why; (4) reuse the existing "one panadapter pair" rendering — two slices per pan draw as two passbands, not two more spectrum views, so display CPU is unchanged.
+</div>
+
+<div class="mock">
+  <p class="mock-title">Four slices — two passbands per panadapter, focus model unchanged</p>
+  <div class="app">
+    <div class="panstack">
+      <div class="pan tall">
+        <div class="pb a"></div><span class="flag s1" style="left:37%">A1</span>
+        <div class="pb c"></div><span class="flag s2" style="left:49%">A2</span>
+        <div class="wf"></div>
+        <div class="minivfo"><span class="nm" style="color:var(--green)">A1</span><span class="fq">14.230.000</span><span class="md">USB · 2.7k</span></div>
+        <div class="minivfo" style="top:56px;"><span class="nm" style="color:var(--amber)">A2</span><span class="fq">14.195.500</span><span class="md">CWU · 500 · NR2</span></div>
+      </div>
+      <div class="pan tall">
+        <div class="pb b"></div><span class="flag rx2" style="left:30%">B1</span>
+        <div class="pb d"></div><span class="flag s2" style="left:58%">B2</span>
+        <div class="wf"></div>
+        <div class="minivfo"><span class="nm" style="color:#c084fc">B1</span><span class="fq">7.055.000</span><span class="md">CWU · 500</span><span class="tx">TX</span></div>
+        <div class="minivfo" style="top:56px;"><span class="nm" style="color:var(--amber)">B2</span><span class="fq">7.038.000</span><span class="md">CWU · 300 · NB</span></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="vfo">
+        <div class="badges"><span class="badge">RX1</span><span class="badge on">RX2</span></div>
+        <div class="badges"><span class="badge">A1</span><span class="badge idle">A2</span></div>
+        <div class="badges"><span class="badge on">B1</span><span class="badge">B2</span></div>
+        <span class="freq">7.055<span class="st">0</span>00</span>
+      </div>
+      <div class="rowlabel">MODE / FILTER — B1 (RX2 · ACTIVE SLICE)</div>
+      <div class="segs"><span class="seg">LSB</span><span class="seg lit">CWU</span><span class="seg">AM</span><span class="seg">FM</span><span class="seg">DIGU</span></div>
+      <div class="segs"><span class="seg">300</span><span class="seg lit">500</span><span class="seg">1.8k</span><span class="seg">2.7k</span><span class="seg">VAR1</span></div>
+      <div class="rowlabel">RECEIVE — B1</div>
+      <div class="segs"><span class="seg">NB</span><span class="seg lit">NR2</span><span class="seg">ANF</span><span class="seg">SQL ⧉</span><span class="seg lit">AGC auto</span></div>
+      <p class="caption">Badges: pick the panadapter (RX1/RX2), then the slice within it (A1/A2 or B1/B2). Each slice keeps its own mode, filter, noise and AGC — none of it mirrored.</p>
+    </div>
+  </div>
+  <div class="legend"><span style="color:var(--green)">Slice A1 · RX1</span><span style="color:var(--amber)">second slice per pan</span><span style="color:#c084fc">Slice B1 · RX2</span><span style="color:var(--red)">TX slice</span></div>
+</div>
+
+<p>On the <strong>touch layout</strong> the same model maps cleanly: the existing RX page becomes per-slice — the slice selector along the top (RX1 ▸ A1/A2, RX2 ▸ B1/B2) and the mode/filter/receive pages then operate on the selected slice, with no additional page types needed.</p>
+
+<h2>6. Suggested phasing</h2>
+<table>
+  <tr><th>Phase</th><th>Scope</th><th>Engine change?</th><th>Risk</th></tr>
+  <tr><td><strong>1 — Parity</strong></td><td>Per-RX caches; index-aware sends; drop mirroring; restore-on-switch; MiniVFO status chips; "shared" labels</td><td class="yes">None</td><td>Low — UI/VM only, all endpoints exist</td></tr>
+  <tr><td><strong>2 — Optional shared items</strong></td><td>Per-RX squelch / RX leveler / RX EQ (only if users ask)</td><td class="no">Yes — extend engine routes with receiver index</td><td>Medium — engine patch carried across Zeus rebases</td></tr>
+  <tr><td><strong>3 — Two slices per RX</strong></td><td>Slice list model, per-panadapter slice pairs, add/remove slice UI, CPU guard</td><td class="yes">None (P2) / blocked at 2 receivers (P1)</td><td>Medium — touches slices, panadapter marks, TX slice logic</td></tr>
+</table>
+
+<p>Doing phase 1 first also <em>de-risks</em> phase 3: once per-receiver state is cached and index-aware sends exist, adding two more indexes is an extension rather than a redesign.</p>
+
+<footer>Prepared 2026-11-18 · Recommendations only; no source files were modified. Mockups are illustrative HTML/CSS, not screenshots.</footer>
+
+</main>
+</body>
+</html>

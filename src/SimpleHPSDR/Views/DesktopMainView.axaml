@@ -455,7 +455,7 @@
               </Button.ContextFlyout>
             </Button>
             <Button Classes="seg more" Classes.lit="{Binding SquelchOn}" Padding="8,2" MinWidth="40" VerticalAlignment="Center"
-                    Command="{Binding ToggleSquelchCommand}" ToolTip.Tip="Squelch: click on or off, right-click for the level (blue = on)">
+                    Command="{Binding ToggleSquelchCommand}" ToolTip.Tip="Squelch: click on or off, right-click for the level (blue = on). One setting, shared by both receivers.">
               <StackPanel Spacing="-1">
                 <TextBlock Text="SQL" FontSize="12" HorizontalAlignment="Center" />
                 <TextBlock Text="{Binding SquelchText}" Classes="val" HorizontalAlignment="Center" />
@@ -478,7 +478,7 @@
             </Button>
             <Button Name="RxLevButton" Classes="seg more" Classes.lit="{Binding RxLevelerOn}" Content="RX Lev" Command="{Binding ToggleRxLevelerCommand}"
                     VerticalAlignment="Center"
-                    ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on). Right-click for its settings.">
+                    ToolTip.Tip="RX leveler: brings weak stations up to a steady listening level (blue = on). Right-click for its settings. One setting, shared by both receivers.">
               <Button.ContextFlyout>
                 <Flyout Placement="BottomEdgeAlignedLeft" Opening="OnRxLevelerOpening">
                   <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RxLevelerPanel}" />

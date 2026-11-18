@@ -84,6 +84,7 @@ public sealed partial class MainViewModel
         if (_xitSender is not { Busy: true }) XitHz = s.XitHz;
         VfoLocked = s.VfoLocked;
         RxLevelerOn = s.RxLevelerEnabled;
+        _agcOffsetDb = s.AgcOffsetDb;
         _squelch = s.Squelch ?? new SquelchConfig();
         SquelchOn = _squelch.Enabled;
         SquelchAdaptive = _squelch.Adaptive;

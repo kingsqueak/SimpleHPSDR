@@ -10,9 +10,10 @@ namespace SimpleHPSDR.Controls;
 /// <summary>
 /// A receiver's small VFO on its panadapter, shown while RX2 is on: the
 /// receiver's name, a TX mark (click to transmit there), its frequency (wheel
-/// to tune, click to type one) and mode. RX2's also has the antenna switch on
-/// its left and a ✕ that turns RX2 off. Tuning here gives that receiver the
-/// controls first, as a click on its panadapter does.
+/// to tune, click to type one), its mode, and a readout of its filter, noise
+/// blanker/reduction and AGC. RX2's also has the antenna switch on
+/// its left and a ✕ that turns RX2 off. A click anywhere else on the chip
+/// gives that receiver the controls; tuning the frequency does too.
 /// </summary>
 public partial class MiniVfo : UserControl
 {
@@ -46,7 +47,13 @@ public partial class MiniVfo : UserControl
             if (clicks != 0) _ = Vm?.TuneSliceByStepsAsync(Rx, clicks);
         };
         // Presses stop here, so they don't tune the panadapter underneath.
-        Box.PointerPressed += (_, e) => e.Handled = true;
+        // A press on the chip itself (not one of its own controls) gives
+        // this receiver the controls, like a click on its panadapter.
+        Box.PointerPressed += (_, e) =>
+        {
+            e.Handled = true;
+            if (Vm is { IsConnected: true } vm && vm.ActiveRx != Rx) _ = vm.MakeActiveAsync(Rx);
+        };
         FreqHost.PointerPressed += (_, e) =>
         {
             e.Handled = true;
@@ -144,6 +151,8 @@ public partial class MiniVfo : UserControl
         long hz = vm.RxHz(rx);
         Freq.Text = hz > 0 ? hz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.') : "";
         ModeText.Text = vm.RxModeLabel(rx);
+        SettingsText.Text = vm.RxSettingsLabel(rx);
+        SettingsText.IsVisible = SettingsText.Text.Length > 0;
         TxChip.Background = tx ? TxRed : Brushes.Transparent;
         TxChip.BorderBrush = tx ? TxRed : Dim;
         TxText.Foreground = tx ? Brushes.White : Dim;
@@ -152,7 +161,7 @@ public partial class MiniVfo : UserControl
         AntText.Text = vm.SliceBInputLabel;
 
         Freq.FontSize = Touch ? 24 : 18;
-        NameText.FontSize = ModeText.FontSize = Touch ? 14 : 11;
+        NameText.FontSize = ModeText.FontSize = SettingsText.FontSize = Touch ? 14 : 11;
         TxText.FontSize = Touch ? 14 : 10;
         TxChip.Padding = Touch ? new Thickness(8, 4) : new Thickness(4, 0);
         CloseChip.Padding = Touch ? new Thickness(10, 4) : new Thickness(3, 0);

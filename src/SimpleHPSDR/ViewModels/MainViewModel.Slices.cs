@@ -15,9 +15,10 @@ namespace SimpleHPSDR.ViewModels;
 /// frequency, mode and filter transmit (TX on B while listening on A is split).
 /// Both play mixed, each can be muted. Slice B gets its own panadapter, so
 /// it can sit on another band. DUP keeps the receivers audible while keyed.
-/// The slices share one receive filter (mirrored for the other sideband) and
-/// one display zoom; the engine has a single TX filter, signed for whichever
-/// slice transmits.
+/// Mode, filter, the noise block (NB/NR/ANF) and AGC are independent per
+/// receiver: the single control bank acts on the active one and a switch
+/// restores that receiver's settings. The engine has a single TX filter,
+/// signed for whichever slice transmits.
 /// </summary>
 public sealed partial class MainViewModel
 {
@@ -99,6 +100,39 @@ public sealed partial class MainViewModel
     public long RxHz(int rx) => rx == ActiveRx ? VfoHz : (rx == 0 ? _sliceA : _sliceB)?.VfoHz ?? 0;
     public string RxModeLabel(int rx) => rx == ActiveRx ? ModeLabel
         : (rx == 0 ? _sliceA : _sliceB) is { } r ? LabelOf(r.Mode) : "";
+
+    /// <summary>The panadapter chip's settings column for one receiver: its
+    /// filter (preset label, or the width when the label isn't known yet),
+    /// then the lit noise blanker/reduction and AGC. Empty when that
+    /// receiver isn't on or its state hasn't arrived.</summary>
+    public string RxSettingsLabel(int rx)
+    {
+        if (rx == 1 && !SliceBEnabled) return "";
+        if ((rx == 0 ? _sliceA : _sliceB) is not { } r) return "";
+        var parts = new List<string>(4);
+        if (r.FilterPresetName is { } slot && _filterLabels.TryGetValue(r.Mode, out var labels)
+            && labels.TryGetValue(slot, out string? label))
+            parts.Add(label);
+        else
+            parts.Add(FilterWidthLabel(r.FilterLowHz, r.FilterHighHz));
+        if (r.Nr?.NbMode is NbMode nb and not NbMode.Off) parts.Add("NB");
+        if (r.NrMode is NrMode nr and not NrMode.Off) parts.Add(NrShortLabel(nr));
+        parts.Add(r.AutoAgcEnabled ? "AGC auto" : $"AGC {SpeedName(r.Agc?.Mode ?? AgcMode.Med).ToLowerInvariant()}");
+        return string.Join(" · ", parts);
+    }
+
+    /// <summary>A filter's width the way the preset buttons label it: 2.7k, 500…</summary>
+    private static string FilterWidthLabel(int low, int high)
+    {
+        int width = Math.Abs(high - low);
+        return width >= 1000 ? $"{width / 1000.0:0.#}k" : $"{width}";
+    }
+
+    private static string NrShortLabel(NrMode mode) => mode switch
+    {
+        NrMode.Anr => "NR1", NrMode.Emnr => "NR2", NrMode.Rnnr => "NR3",
+        NrMode.Sbnr => "NR4", NrMode.Nnr => "NNR", _ => mode.ToString(),
+    };
 
     /// <summary>The RX1 and RX2 buttons. RX1 takes the controls. RX2 turns on
     /// on RX1's frequency, mode and filter if it's off (slice B on RX1's
@@ -327,8 +361,17 @@ public sealed partial class MainViewModel
         SliceBEnabled = _sliceB?.Enabled ?? false;
         OnPropertyChanged(RxReadouts);
         FullDuplex = s.FullDuplexMultiRxEnabled;
-        UpdateAgc(s);
+        // The control bank shows the active receiver's AGC and noise block;
+        // the other receiver's live on its panadapter chip.
+        var view = RxSettingsOf(s, ActiveRx);
+        UpdateAgc(view);
+        UpdateNoise(view);
         UpdateOperating(s);
+        if (SliceBEnabled)
+        {
+            if (_sliceA is { } a) EnsureFilterLabels(a.Mode);
+            if (_sliceB is { } b) EnsureFilterLabels(b.Mode);
+        }
         _ = FollowRxFilterAsync(s);
         // Follow the engine's slice AF unless the operator just moved a slider.
         if (DateTime.UtcNow - _sliceAfMovedAt > TimeSpan.FromSeconds(2))
@@ -352,6 +395,24 @@ public sealed partial class MainViewModel
     }
 
     partial void OnTxRxChanged(int value) => FollowTxSliceForPs();
+
+    /// <summary>One receiver's mode, filter, noise and AGC settings as the
+    /// engine reports them. The engine's receiver entries carry everything;
+    /// an engine without them (RX1 only) mirrors the same values in the
+    /// global state fields, which are the fallback.</summary>
+    private sealed record RxSettings(
+        RxMode Mode, int FilterLowHz, int FilterHighHz, string? FilterPresetName,
+        NrConfig? Nr, AgcConfig? Agc, double AgcTopDb, bool AutoAgcEnabled);
+
+    /// <summary>Receiver rx's settings from an engine state snapshot.</summary>
+    private RxSettings RxSettingsOf(StateDto s, int rx)
+    {
+        if (s.Receivers?.FirstOrDefault(r => r.Index == rx) is { } r)
+            return new(r.Mode, r.FilterLowHz, r.FilterHighHz, r.FilterPresetName,
+                r.Nr ?? s.Nr, r.Agc ?? s.Agc, r.AgcTopDb, r.AutoAgcEnabled);
+        return new(s.Mode, s.FilterLowHz, s.FilterHighHz, s.FilterPresetName,
+            s.Nr, s.Agc, s.AgcTopDb, s.AutoAgcEnabled);
+    }
 
     /// <summary>The engine's view of the active slice.</summary>
     private (long Hz, RxMode Mode, int Low, int High, string? Preset) ActiveOf(StateDto s)
@@ -520,31 +581,38 @@ public sealed partial class MainViewModel
     private Task SyncSliceBZoomAsync() =>
         SliceBEnabled ? _client!.SetReceiverAsync(1, new ReceiverSetRequest(ZoomLevel: ZoomLevel)) : Task.CompletedTask;
 
-    /// <summary>Give the other slice the same receive filter as the active one,
-    /// mirrored when one is lower and the other upper sideband. Slices in
-    /// different kinds of mode (SSB and CW, say) keep their own.</summary>
-    private async Task MirrorFilterAsync(int low, int high, string? preset)
+    /// <summary>Remember a filter this side just sent, so the panadapter
+    /// chips show it before the next poll refreshes the cached copies.</summary>
+    private void NoteFilterSent(int rx, int low, int high, string? preset)
     {
-        if (!SliceBEnabled) return;
-        int other = ActiveRx == 0 ? 1 : 0;
-        if ((other == 0 ? _sliceA : _sliceB) is not { } o) return;
-        if (Kind(o.Mode) != Kind(Mode)) return;
-        var (lo, hi) = Lower(o.Mode) == Lower(Mode) ? (low, high) : (-high, -low);
-        if (o.FilterLowHz == lo && o.FilterHighHz == hi) return;
-        await _client!.SetFilterAsync(lo, hi, preset, other);
-        if (other == 0) _sliceA = o with { FilterLowHz = lo, FilterHighHz = hi };
-        else _sliceB = o with { FilterLowHz = lo, FilterHighHz = hi };
+        if (rx == 0) { if (_sliceA is { } a) _sliceA = a with { FilterLowHz = low, FilterHighHz = high, FilterPresetName = preset }; }
+        else if (_sliceB is { } b) _sliceB = b with { FilterLowHz = low, FilterHighHz = high, FilterPresetName = preset };
+        OnPropertyChanged(RxReadouts);
     }
 
-    private static string Kind(RxMode m) => m switch
-    {
-        RxMode.LSB or RxMode.USB => "SSB",
-        RxMode.CWL or RxMode.CWU => "CW",
-        RxMode.DIGL or RxMode.DIGU => "DIG",
-        _ => m.ToString(),
-    };
+    /// <summary>Preset label per mode for the panadapter chips, filled from
+    /// the engine as each mode's presets are fetched.</summary>
+    private readonly Dictionary<RxMode, IReadOnlyDictionary<string, string>> _filterLabels = [];
+    private readonly HashSet<RxMode> _fetchingLabels = [];
 
-    private static bool Lower(RxMode m) => m is RxMode.LSB or RxMode.CWL or RxMode.DIGL;
+    private void EnsureFilterLabels(RxMode mode)
+    {
+        if (_filterLabels.ContainsKey(mode) || !_fetchingLabels.Add(mode)) return;
+        _ = FetchFilterLabelsAsync(mode);
+    }
+
+    private async Task FetchFilterLabelsAsync(RxMode mode)
+    {
+        try
+        {
+            var presets = await _client!.GetFilterPresetsAsync(mode);
+            _filterLabels[mode] = presets.Where(p => FilterSlotNames.Contains(p.SlotName))
+                .ToDictionary(p => p.SlotName, p => p.Label);
+            OnPropertyChanged(RxReadouts);
+        }
+        catch (Exception) { }
+        finally { _fetchingLabels.Remove(mode); }
+    }
 
     private int _sampleRateHz;
     private readonly Latest<long>?[] _panSenders = new Latest<long>?[2];
