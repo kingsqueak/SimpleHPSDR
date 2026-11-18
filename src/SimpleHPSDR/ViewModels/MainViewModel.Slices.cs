@@ -764,11 +764,17 @@ public sealed partial class MainViewModel
     /// of view. Each panadapter centres on its first slice.</summary>
     private async Task CenterOnDialAsync(int pan)
     {
-        // RX1's display keeps the dial where its Centre slider puts it.
-        if (pan == 0) await _client!.SetDialPositionAsync(DialPositionOf(0) / 100.0);
+        // RX1's display keeps the dial where its Centre slider puts it (centred
+        // with CTUN off — the offset only means something with CTUN on).
+        if (pan == 0) await _client!.SetDialPositionAsync(EffectiveDialPositionOf(0) / 100.0);
         else if (ShowPanadapterB)
             await _client!.SetReceiverLoAsync(PanPrimary(1), ActiveRx == PanPrimary(1) ? VfoHz : _slices[PanPrimary(1)]?.VfoHz ?? VfoHz);
     }
+
+    /// <summary>A click or wheel on a panadapter tunes the slice already
+    /// active on that pan, else the pan's first slice: the pan shouldn't
+    /// steal the focus from its second slice.</summary>
+    public int TuneTargetFor(int pan) => ActivePan == pan && SliceOn(ActiveRx) ? ActiveRx : PanPrimary(pan);
 
     /// <summary>A click or wheel on a slice's own panadapter: make that slice
     /// active first, then tune it. One arriving while the active slice is

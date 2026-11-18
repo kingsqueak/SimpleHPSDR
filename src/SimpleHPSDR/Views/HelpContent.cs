@@ -107,7 +107,7 @@ CTUN changes what a click does. With it on, the display stays still and only the
 
 ## Seeing more or less of the band
 - Span sets the full width the radio takes in, from its sample rate. A wider span shows more of the band and uses more computer power.
-- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the span, from full at the left end of the slider, and Center, which sets where the dial sits across the display (left, center or right). Center works with CTUN on or off. Ctrl+wheel over the spectrum (⌘+wheel on a Mac) or a trackpad pinch zooms too; the dial stays where it is while you zoom. With RX2's pan on, each panadapter has its own span and Center: the Zoom button and its sliders show and set those of the panadapter the controls are on, and Ctrl+wheel zooms the panadapter the pointer is over. RX2's Center takes effect once RX2 is zoomed in.
+- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the span, from full at the left end of the slider, and Center, which sets where the dial sits across the display (left, center or right). Center applies with CTUN on — it gives the dial room to roam inside the frozen window — and the dial stays centred with CTUN off. Ctrl+wheel over the spectrum (⌘+wheel on a Mac) or a trackpad pinch zooms too; the dial stays where it is while you zoom. With RX2's pan on, each panadapter has its own span and Center: the Zoom button and its sliders show and set those of the panadapter the controls are on, and Ctrl+wheel zooms the panadapter the pointer is over. RX2's Center takes effect once RX2 is zoomed in.
 """),
 
         ("Mini window", """

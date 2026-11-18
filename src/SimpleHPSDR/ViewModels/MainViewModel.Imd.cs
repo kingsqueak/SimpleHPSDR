@@ -176,7 +176,7 @@ public sealed partial class MainViewModel
         double zoom = Math.Clamp(_sampleRateHz / span, 1, MaxZoom);
         _zoomBeforeImd ??= _zoomFine[0];
         ImdText = "IMD: measuring…";
-        if (Math.Abs(DialPositionOf(0)) >= 0.5) await Try(() => _client.SetDialPositionAsync(0));
+        if (Math.Abs(EffectiveDialPositionOf(0)) >= 0.5) await Try(() => _client.SetDialPositionAsync(0));
         SetZoomFine(0, zoom, persist: false);
     }
 
@@ -188,6 +188,6 @@ public sealed partial class MainViewModel
         if (_zoomBeforeImd is not { } z) return;
         _zoomBeforeImd = null;
         SetZoomFine(0, z, persist: false);
-        if (Math.Abs(DialPositionOf(0)) >= 0.5) SendDialPosition();
+        if (Math.Abs(EffectiveDialPositionOf(0)) >= 0.5) SendDialPosition();
     }
 }

@@ -591,8 +591,8 @@
                 <TextBlock Grid.Column="2" Text="{Binding ZoomLabel}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
                 <TextBlock Grid.Row="1" Text="Center" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <Slider Grid.Row="1" Grid.Column="1" Minimum="-90" Maximum="90" SmallChange="1" LargeChange="10"
-                        Value="{Binding DialPosition}" VerticalAlignment="Center"
-                        ToolTip.Tip="Where the dial sits across the panadapter, with CTUN on or off" />
+                        Value="{Binding DialPosition}" VerticalAlignment="Center" IsEnabled="{Binding CtunOn}"
+                        ToolTip.Tip="Where the dial sits across the panadapter with CTUN on (room to roam in the frozen window); centred with CTUN off" />
                 <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding DialPositionText}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" />
                 <Button Grid.Row="2" Grid.Column="1" Classes="flat" Content="Back to center" HorizontalAlignment="Left"
                         Command="{Binding CentreDialCommand}" />

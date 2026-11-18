@@ -183,8 +183,8 @@
                 <TextBlock Text="DIAL POSITION" Classes="head" />
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                   <Slider Minimum="-90" Maximum="90" SmallChange="1" LargeChange="10"
-                          Value="{Binding DialPosition}" VerticalAlignment="Center"
-                          ToolTip.Tip="Where the dial sits across the spectrum, with CTUN on or off" />
+                          Value="{Binding DialPosition}" VerticalAlignment="Center" IsEnabled="{Binding CtunOn}"
+                          ToolTip.Tip="Where the dial sits across the spectrum with CTUN on; centred with CTUN off" />
                   <TextBlock Grid.Column="1" Text="{Binding DialPositionText}" VerticalAlignment="Center" MinWidth="70" />
                   <Button Grid.Column="2" Classes="seg t" Content="Center" Command="{Binding CentreDialCommand}" />
                 </Grid>

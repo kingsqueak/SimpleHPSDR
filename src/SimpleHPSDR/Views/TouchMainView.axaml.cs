@@ -49,17 +49,17 @@ public partial class TouchMainView : UserControl
         Spectrum.TuneRequested += hz =>
         {
             if (Vm is not { } vm || vm.TryPlaceNotch(hz)) return;
-            _ = vm.TuneSliceAsync(0, vm.ClickFrequency(hz));
+            _ = vm.TuneSliceAsync(vm.TuneTargetFor(0), vm.ClickFrequency(hz));
         };
         SpectrumB.TuneRequested += hz =>
         {
-            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(2, vm.ClickFrequency(hz));
+            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(vm.TuneTargetFor(1), vm.ClickFrequency(hz));
         };
         SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
         SpectrumB.PanEnded += () => Vm?.PanEnded();
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB, offerRx2: true);
-        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(2, steps);
+        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(Vm.TuneTargetFor(1), steps);
         SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
         _ = new CloseUpFeed(FilterScope, () => Vm, () => Drawer.IsPaneOpen && FilterScope.IsEffectivelyVisible
@@ -68,7 +68,7 @@ public partial class TouchMainView : UserControl
         Spectrum.PanEnded += () => Vm?.PanEnded();
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, Spectrum, offerRx2: true);
-        Spectrum.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(0, steps);
+        Spectrum.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(Vm.TuneTargetFor(0), steps);
         Spectrum.ZoomRequested += dir => Vm?.ZoomStep(0, dir);
         // Ctrl+wheel (⌘+wheel on a Mac) zooms: SpectrumView raises ZoomRequested.
     }

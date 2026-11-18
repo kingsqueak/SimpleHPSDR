@@ -221,7 +221,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // for a wider picture than the chosen span and shows the part of it that
     // puts the dial where Centre says. This is how much wider: 1 = dial centred.
     private const double MaxZoomNeed = 1.9;   // Center at its limit, 90%
-    private double ZoomNeed(int rx) => rx == 1 ? 1 + Math.Abs(DialPositionOf(1)) / 100.0 : 1;
+    private double ZoomNeed(int rx) => rx == 1 ? 1 + Math.Abs(EffectiveDialPositionOf(1)) / 100.0 : 1;
     private int BestEngineZoom(int rx, double zoom) =>
         Math.Clamp((int)Math.Floor(zoom / ZoomNeed(rx) + 1e-9), 1, (int)MaxZoom);
 
@@ -312,9 +312,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private double DialPositionOf(int rx) =>
         Math.Clamp(rx == 0 ? _settings.DialPosition : _settings.DialPositionB, -90, 90);
 
+    /// <summary>The dial placement that actually applies: the Centre slider's
+    /// value with CTUN on (room to roam inside the frozen window), centred
+    /// with CTUN off, where an off-centre dial would only push the tuned
+    /// signal off to one side.</summary>
+    private double EffectiveDialPositionOf(int rx) => CtunOn ? DialPositionOf(rx) : 0;
+
     /// <summary>For RX2's panadapter: where its dial goes across the display,
     /// 0 (left) to 1 (right). RX1's is placed by the engine.</summary>
-    public double Rx2DialAt => (1 + DialPositionOf(1) / 100.0) / 2;
+    public double Rx2DialAt => (1 + EffectiveDialPositionOf(1) / 100.0) / 2;
 
     /// <summary>The Zoom button and sliders now show another receiver's values.</summary>
     private void ShowZoomControlsForActive()
@@ -354,7 +360,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private void SendDialPosition()
     {
         if (!IsConnected) return;
-        (_dialSender ??= new Latest<double>(p => Try(() => _client!.SetDialPositionAsync(p / 100.0)))).Send(DialPositionOf(0));
+        (_dialSender ??= new Latest<double>(p => Try(() => _client!.SetDialPositionAsync(p / 100.0)))).Send(EffectiveDialPositionOf(0));
     }
     private Latest<int>? _zoomSender, _zoomSenderB;
 
@@ -1010,7 +1016,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             UpdateSlices(state);
             LoadSpanRates(radio.Protocol2, state.SampleRate);
             await LoadDisplayTuningAsync();
-            await Try(() => client.SetDialPositionAsync(DialPositionOf(0) / 100.0));
+            await Try(() => client.SetDialPositionAsync(EffectiveDialPositionOf(0) / 100.0));
             await Try(() => client.SetAutoAgcOffsetAsync(AutoAgcOffsetDb));
             await LoadAntennasAsync();
             await LoadTransmitAsync(state);
@@ -1274,7 +1280,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnCtunOnChanged(bool value)
     {
-        if (!_applyingState && IsConnected) _ = Try(() => _client!.SetCtunAsync(value));
+        if (_applyingState || !IsConnected) return;
+        _ = Try(async () =>
+        {
+            await _client!.SetCtunAsync(value);
+            // The offset only applies with CTUN on: recentre for the new state.
+            SendDialPosition();
+        });
     }
 
     // ---- mode and filter ------------------------------------------------

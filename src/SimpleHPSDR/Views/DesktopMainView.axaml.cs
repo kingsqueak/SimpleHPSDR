@@ -103,17 +103,18 @@ public partial class DesktopMainView : UserControl
         Spectrum.WheelTune += steps =>
         {
             if (Vm is not { } vm) return;
-            if (vm.ShowPanadapterB) _ = vm.TuneSliceByStepsAsync(0, steps);
+            if (vm.ShowPanadapterB) _ = vm.TuneSliceByStepsAsync(vm.TuneTargetFor(0), steps);
             else vm.TuneBySteps(steps);   // one panadapter: tune the active slice
         };
-        // Slice B1's own panadapter tunes slice B1, making it active first.
+        // Slice B1's/B2's own panadapter tunes the slice active on it, making
+        // it active first.
         SpectrumB.TuneRequested += hz =>
         {
-            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(2, vm.ClickFrequency(hz));
+            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(vm.TuneTargetFor(1), vm.ClickFrequency(hz));
         };
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB);
-        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(2, steps);
+        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(Vm.TuneTargetFor(1), steps);
         // Pinch (trackpad or fingers) zooms both panadapters, as the Zoom button does.
         Spectrum.ZoomRequested += dir => Vm?.ZoomStep(0, dir);
         SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
@@ -211,13 +212,13 @@ public partial class DesktopMainView : UserControl
         menu.Items.Add(snap);
     }
 
-    // With two panadapters the top one is slice A1's; with one, a click tunes
-    // whichever slice is active (click a tag to switch).
+    // With two panadapters the top one holds slices A1/A2; with one, a click
+    // tunes whichever slice is active (click a tag to switch).
     private void TuneA(long hz)
     {
         if (Vm is not { } vm || vm.TryPlaceNotch(hz)) return;
         hz = vm.ClickFrequency(hz);
-        if (vm.ShowPanadapterB) _ = vm.TuneSliceAsync(0, hz);
+        if (vm.ShowPanadapterB) _ = vm.TuneSliceAsync(vm.TuneTargetFor(0), hz);
         else vm.TuneTo(hz);
     }
 
