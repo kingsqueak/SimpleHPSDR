@@ -89,14 +89,12 @@ public sealed class Settings
     public double ZoomOnFineB { get; set; } = 4;
     /// <summary>RX1's share of the room the two panadapters have, 0.2 to 0.8 (the bar between them drags it).</summary>
     public double PanSplit { get; set; } = 0.5;
-    /// <summary>Slice B in its own panadapter (true) or on slice A's.</summary>
-    public bool SliceBOwnPanadapter { get; set; } = true;
-    /// <summary>Slice B listens on the radio's Rx2 jack (its second ADC) instead of the main antenna.</summary>
+    /// <summary>B1 listens on the radio's Rx2 jack (its second ADC) instead of the main antenna.</summary>
     public bool SliceBOnRx2Jack { get; set; }
     /// <summary>Send the callsign in CW, mixed into voice transmissions, at least every interval.</summary>
     public bool CwIdAuto { get; set; }
 
-    /// <summary>Slice B's own panadapter beside A's rather than below it.</summary>
+    /// <summary>RX2's panadapter beside RX1's rather than below it.</summary>
     public bool PanadaptersSideBySide { get; set; }
     /// <summary>The band plan has been chosen at first start; the engine keeps it after that.</summary>
     public bool BandPlanDefaulted { get; set; }

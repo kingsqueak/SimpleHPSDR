@@ -137,8 +137,9 @@ public sealed partial class MainViewModel
     /// chips show it before the next poll.</summary>
     private void NoteAgcSent(int rx, AgcConfig? agc = null, double? topDb = null, bool? auto = null)
     {
-        if (rx == 0) { if (_sliceA is { } a) _sliceA = a with { Agc = agc ?? a.Agc, AgcTopDb = topDb ?? a.AgcTopDb, AutoAgcEnabled = auto ?? a.AutoAgcEnabled }; }
-        else if (_sliceB is { } b) _sliceB = b with { Agc = agc ?? b.Agc, AgcTopDb = topDb ?? b.AgcTopDb, AutoAgcEnabled = auto ?? b.AutoAgcEnabled };
+        int i = Math.Clamp(rx, 0, MaxSlices - 1);
+        if (_slices[i] is { } r)
+            _slices[i] = r with { Agc = agc ?? r.Agc, AgcTopDb = topDb ?? r.AgcTopDb, AutoAgcEnabled = auto ?? r.AutoAgcEnabled };
         OnPropertyChanged(RxReadouts);
     }
 
@@ -146,7 +147,7 @@ public sealed partial class MainViewModel
     private async Task SendAgcAsync(AgcConfig agc)
     {
         if (ActiveRx == 0) await _client!.SetAgcAsync(agc);
-        else await _client!.SetReceiverAsync(1, new ReceiverSetRequest(Agc: agc));
+        else await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(Agc: agc));
         NoteAgcSent(ActiveRx, agc: agc);
     }
 
@@ -158,7 +159,7 @@ public sealed partial class MainViewModel
         await Try(async () =>
         {
             if (ActiveRx == 0) await _client!.SetAutoAgcAsync(on);
-            else await _client!.SetReceiverAsync(1, new ReceiverSetRequest(AutoAgcEnabled: on));
+            else await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(AutoAgcEnabled: on));
             NoteAgcSent(ActiveRx, auto: on);
             AgcAuto = on;
             Status = on ? "AGC auto: the engine sets the AGC gain." : $"AGC manual, speed {SpeedName(_agcMode)}.";
@@ -185,7 +186,7 @@ public sealed partial class MainViewModel
         _agcTopSender ??= new Latest<double>(async db =>
         {
             if (ActiveRx == 0) await _client!.SetAgcGainAsync(db);
-            else await _client!.SetReceiverAsync(1, new ReceiverSetRequest(AgcTopDb: db));
+            else await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(AgcTopDb: db));
             NoteAgcSent(ActiveRx, topDb: db);
         });
         _agcTopSender.Send(Math.Round(value));

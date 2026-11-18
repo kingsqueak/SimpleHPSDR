@@ -168,18 +168,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // Panadapter zoom. The engine zooms by whole levels (span = sample rate /
     // level); the slider is smooth: the engine gets the whole level at or below
     // the chosen zoom and the display stretches the rest (the views' TargetSpanHz).
-    // RX1 and RX2 each have their own zoom and Centre: the Zoom button and its
-    // two sliders act on the receiver that has the controls (ZoomRx). ZoomLevel
-    // is RX1's engine level, _zoomLevelB RX2's.
+    // Each panadapter has its own zoom and Centre: the Zoom button and its
+    // two sliders act on the pan the active slice sits on (ZoomRx).
+    // ZoomLevel is pan A's engine level (the flat endpoint), _zoomLevelB pan B's
+    // (receiver B1's).
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ZoomLabel))] [NotifyPropertyChangedFor(nameof(ZoomOn))]
     [NotifyPropertyChangedFor(nameof(ZoomSpanText))] [NotifyPropertyChangedFor(nameof(ZoomSlider))]
     private int _zoomLevel = 1;
     private int _zoomLevelB = 1;
-    private readonly double[] _zoomFine = [1, 1];   // each receiver's chosen zoom, 1 = full span
-    /// <summary>The receiver the Zoom button and its sliders act on: the one
-    /// with the controls while RX2 has its own panadapter, RX1 otherwise.</summary>
-    private int ZoomRx => ShowPanadapterB ? ActiveRx : 0;
+    private readonly double[] _zoomFine = [1, 1];   // each pan's chosen zoom, 1 = full span
+    /// <summary>The pan the Zoom button and its sliders act on: the active
+    /// slice's. RX2's pan exists only while B1 is on.</summary>
+    private int ZoomRx => ActivePan;
     private int EngineZoom(int rx) => Math.Max(1, rx == 0 ? ZoomLevel : _zoomLevelB);
     private double LastZoomedFine(int rx) => rx == 0 ? _settings.ZoomOnFine : _settings.ZoomOnFineB;
     public string ZoomLabel => ZoomOn ? ZoomSpanText : "full";
@@ -192,9 +193,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         return hz >= 1000 ? $"{hz / 1000:0} kHz" : $"{hz:0} Hz";
     }
     /// <summary>For a panadapter (0 = RX1's, 1 = RX2's): the span to show, 0 when it is what the engine sends.</summary>
-    public double ZoomTargetSpanFor(int rx)
+    public double ZoomTargetSpanFor(int pan)
     {
-        double fine = _zoomFine[ShowPanadapterB ? rx : 0];
+        double fine = _zoomFine[Math.Clamp(pan, 0, 1)];
         return _sampleRateHz > 0 && fine > 1.001 ? _sampleRateHz / fine : 0;
     }
 
@@ -460,7 +461,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private DateTime _lastAutoRangeB;
     private (double Min, double Max) _rangeB = (-130, -80);
 
-    /// <summary>Slice B's panadapter range: with Auto it follows its own noise
+    /// <summary>Pan B's range: with Auto it follows its own noise
     /// floor (another band can sit far lower or higher), otherwise the sliders.</summary>
     public (double Min, double Max) SliceBRange(double floorDb)
     {
@@ -633,11 +634,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         SpectrumLook.Apply(_settings);
         LoadVoiceKeyer();
-        _vfoSenders = [.. Enumerable.Range(0, 2).Select(rx => new Latest<long>(hz => _client!.SetVfoAsync(hz, rx)))];
+        _vfoSenders = [.. Enumerable.Range(0, MaxSlices).Select(rx => new Latest<long>(hz => _client!.SetVfoAsync(hz, rx)))];
         // Main AF is the station-wide master; each slice has its own trim on top.
         _afSender = new Latest<double>(db => _client!.SetAfGainAsync(db));
-        _sliceAfSenders = [.. Enumerable.Range(0, 2).Select(rx => new Latest<double>(
-            db => _client!.SetReceiverAsync(rx, new ReceiverSetRequest(AfGainDb: db))))];
         _attSender = new Latest<int>(db => _client!.SetAttenuatorAsync(db));
         _att1Sender = new Latest<int>(db => _client!.SetG2OptionsAsync(adc1AttenDb: db));
 
@@ -798,8 +797,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
             if (v.Receiver == ActiveRx) { if (!_vfoSenders[ActiveRx].Busy) SetVfoLocal(v.VfoHz); }
-            else if (v.Receiver == 0 && _sliceA is { } a) _sliceA = a with { VfoHz = v.VfoHz };
-            else if (v.Receiver == 1 && _sliceB is { } b) _sliceB = b with { VfoHz = v.VfoHz };
+            else if ((uint)v.Receiver < MaxSlices && _slices[v.Receiver] is { } r)
+                _slices[v.Receiver] = r with { VfoHz = v.VfoHz };
             // The TX slice in split: PureSignal follows its band.
             if (v.Receiver != ActiveRx && v.Receiver == TxRx) LoadPsCorrectionForBand();
         });
@@ -874,8 +873,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         var radio = _radio;
         // A new engine starts from what it last saved, so carry these across.
-        // Connecting makes slice A active, so it's slice A's dial that's kept.
-        long hz = ActiveRx == 0 ? VfoHz : _sliceA?.VfoHz ?? VfoHz;
+        // Connecting makes slice A1 active, so it's A1's dial that's kept.
+        long hz = _slices[0]?.VfoHz ?? VfoHz;
         var (nb, anf) = (NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Value as NbMode?, AnfOn);
         Status = "Restarting the engine…";
         if (!await StartEngineAgainAsync()) return;
@@ -1253,7 +1252,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _zoomLevelB = level;
             (_zoomSenderB ??= new Latest<int>(async z =>
             {
-                await _client!.SetReceiverAsync(1, new ReceiverSetRequest(ZoomLevel: z));
+                await _client!.SetReceiverAsync(PanPrimary(1), new ReceiverSetRequest(ZoomLevel: z));
                 await CenterOnDialAsync(1);
             })).Send(level);
             return;
@@ -1264,8 +1263,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         (_zoomSender ??= new Latest<int>(async z =>
         {
             await _client!.SetZoomAsync(z);
-            // Slice B on RX1's panadapter is drawn at RX1's zoom.
-            if (!ShowPanadapterB) await SyncSliceBZoomAsync();
+            // A2 is drawn at pan A's zoom, so its engine zoom is kept in step.
+            await SyncSecondaryZoom(0);
             await CenterOnDialAsync(0);
         })).Send(level);
     }
@@ -1561,9 +1560,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     // oldest frame goes.
     private void QueueFrame(DisplayFrame f)
     {
-        // RX1 feeds the main panadapter, RX2 slice B's own one; further
-        // receivers aren't shown.
-        if (f.RxId > 1) return;
+        // The pans draw their first slices' streams (A1, B1); the other
+        // receivers' frames only feed the filter close-up when they're active.
+        if (f.RxId >= MaxSlices) return;
         _frames.Enqueue(f);
         while (_frames.Count > 8 && _frames.TryDequeue(out _)) UiStats.FrameDropped();
         if (Interlocked.Exchange(ref _framesScheduled, 1) == 0)

@@ -234,17 +234,17 @@ public sealed partial class MainViewModel
     /// panadapter chips show it before the next poll.</summary>
     private void NoteNrSent(int rx, NrConfig nr)
     {
-        if (rx == 0) { if (_sliceA is { } a) _sliceA = a with { Nr = nr, NrMode = nr.NrMode }; }
-        else if (_sliceB is { } b) _sliceB = b with { Nr = nr, NrMode = nr.NrMode };
+        int i = Math.Clamp(rx, 0, MaxSlices - 1);
+        if (_slices[i] is { } r) _slices[i] = r with { Nr = nr, NrMode = nr.NrMode };
         OnPropertyChanged(RxReadouts);
     }
 
     /// <summary>The active receiver's whole noise block: the flat endpoint
-    /// for RX1, receiver 1's own for RX2.</summary>
+    /// for RX1, receiver ActiveRx's own for slices 1..3.</summary>
     private async Task SendNrAsync(NrConfig nr)
     {
         if (ActiveRx == 0) await _client!.SetNrAsync(nr);
-        else await _client!.SetReceiverAsync(1, new ReceiverSetRequest(NrMode: nr.NrMode, Nr: nr));
+        else await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(NrMode: nr.NrMode, Nr: nr));
         NoteNrSent(ActiveRx, nr);
     }
 }

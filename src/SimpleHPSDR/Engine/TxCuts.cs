@@ -13,10 +13,10 @@ namespace SimpleHPSDR.Engine;
 public static class TxCuts
 {
     public static RxMode TxMode(StateDto s) =>
-        s.TxReceiverIndex == 1 && s.Receivers?.FirstOrDefault(r => r.Index == 1) is { } b ? b.Mode : s.Mode;
+        s.TxReceiverIndex >= 1 && s.Receivers?.FirstOrDefault(r => r.Index == s.TxReceiverIndex) is { } b ? b.Mode : s.Mode;
 
-    /// <summary>Send operator cuts for the transmitting slice's mode (slice B's
-    /// when B transmits), with DSB's passband on both sides of the carrier.</summary>
+    /// <summary>Send operator cuts for the transmitting slice's mode (another
+    /// slice's when it transmits), with DSB's passband on both sides of the carrier.</summary>
     public static async Task SendAsync(StationClient client, int low, int high)
     {
         var mode = TxMode(await client.GetStateAsync());

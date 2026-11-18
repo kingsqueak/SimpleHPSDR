@@ -44,61 +44,72 @@ public static class MainMenus
     {
         if (vm is not { IsConnected: true }) return;
         var items = new List<Control>();
-        if (!vm.ShowPanadapterB) items.Add(Item("Turn RX2 on", () => vm.SelectRxAsync(1)));
+        if (!vm.ShowPanadapterB) items.Add(Item("Turn RX2 on (second panadapter, slices B1/B2)", () => vm.SelectRxAsync(1)));
         else
         {
             items.Add(SideBySideItem(vm));
-            items.Add(Item("Swap RX1 and RX2", () => { vm.SwapSlicesCommand.Execute(null); return Task.CompletedTask; }));
-            items.Add(Item("Turn RX2 off", () => vm.RemoveSliceBAsync()));
+            items.Add(Item("Swap RX1 ⇄ RX2 pans", SwapPansAsync));
+            items.Add(Item("Turn RX2 off", () => vm.RemovePanBAsync()));
         }
         new ContextMenu { ItemsSource = items }.Open(at);
+
+        // Exchange the pans' primary slices' frequencies: tuning each makes
+        // it active as it goes, which is acceptable for a menu action.
+        async Task SwapPansAsync()
+        {
+            long a = vm.RxHz(0), b = vm.RxHz(2);
+            await vm.TuneSliceAsync(0, b);
+            await vm.TuneSliceAsync(2, a);
+        }
     }
 
     private static MenuItem SideBySideItem(MainViewModel vm) => vm.PanadaptersSideBySide
         ? Item("Panadapters one above the other", () => { vm.PanadaptersSideBySide = false; return Task.CompletedTask; })
         : Item("Panadapters side by side", () => { vm.PanadaptersSideBySide = true; return Task.CompletedTask; });
 
-    // Right-click on a panadapter. With RX2 on: which receiver has the
-    // controls, which transmits, mute, the arrangement, RX2 off. With one
-    // panadapter: add, select, move, mute and remove slice B the same way.
-    // The second panadapter itself opens from the RX2 button; the touch layout
-    // has that button in its drawer, so there the menu offers RX2 as well.
+    // Right-click on a panadapter. With one slice: add the next one (A2) here,
+    // or turn RX2's panadapter on. With more: make a slice active, move
+    // transmit, mute, add the next slice, and turn the top slice — or RX2
+    // itself — off. The second panadapter opens from the RX2 button; the touch
+    // layout has that button in its drawer, so there the menu offers RX2 as well.
     public static void ShowSliceMenu(MainViewModel? vm, long hz, Control at, bool offerRx2 = false)
     {
         if (vm is not { IsConnected: true }) return;
         string where = $"{hz / 1e6:0.000000} MHz";
         var items = new List<Control>();
 
-        if (!vm.SliceBEnabled)
+        if (vm.SliceCount < 2)
         {
-            if (offerRx2) items.Add(Item("Turn RX2 on (second receiver, own panadapter)", () => vm.SelectRxAsync(1)));
-            items.Add(Item($"Add slice B at {where}", () => vm.AddSliceBAsync(hz, ownPanadapter: false)));
+            items.Add(Item($"Add slice A2 at {where}", () => vm.AddSliceAsync(hz)));
+            if (offerRx2 && !vm.ShowPanadapterB)
+                items.Add(Item("Turn RX2 on (second panadapter)", () => vm.SelectRxAsync(1)));
         }
         else
         {
-            bool two = vm.SliceBOwnPanadapter;
-            int other = vm.ActiveRx == 0 ? 1 : 0;
-            if (offerRx2 && !two) items.Add(Item("Move slice B to its own panadapter as RX2", () => vm.SelectRxAsync(1)));
-            items.Add(Item($"Make {vm.SliceName(other)} active", () => vm.MakeActiveAsync(other)));
-            items.Add(Item($"Move {vm.SliceName(1)} here ({where})", () => vm.MoveSliceBAsync(hz)));
-            items.Add(new Separator());
-            for (int rx = 0; rx <= 1; rx++)
+            for (int i = 0; i < vm.SliceCount; i++)
             {
-                int r = rx;
-                if (vm.TxRx != r) items.Add(Item($"Transmit on {vm.SliceName(r)}", () => vm.TransmitOnAsync(r)));
+                int s = i;
+                string label = MainViewModel.SliceLabel(s);
+                if (s != vm.ActiveRx) items.Add(Item($"Make {label} active", () => vm.MakeActiveAsync(s)));
+                if (vm.TxRx != s) items.Add(Item($"Transmit on {label}", () => vm.TransmitOnAsync(s)));
             }
             items.Add(new Separator());
-            for (int rx = 0; rx <= 1; rx++)
+            for (int i = 0; i < vm.SliceCount; i++)
             {
-                int r = rx;
-                string n = vm.SliceName(r);
-                bool muted = vm.IsSliceMuted(r);
-                items.Add(Item(muted ? $"Unmute {n}" : $"Mute {n}", () => vm.SetSliceMuteAsync(r, !muted)));
+                int s = i;
+                string label = MainViewModel.SliceLabel(s);
+                bool muted = vm.IsSliceMuted(s);
+                items.Add(Item(muted ? $"Unmute {label}" : $"Mute {label}", () => vm.SetSliceMuteAsync(s, !muted)));
             }
             items.Add(new Separator());
-            if (two) items.Add(SideBySideItem(vm));
-            items.Add(Item(two ? "Swap RX1 and RX2" : "Swap A and B", () => { vm.SwapSlicesCommand.Execute(null); return Task.CompletedTask; }));
-            items.Add(Item(two ? "Turn RX2 off" : "Remove slice B", () => vm.RemoveSliceBAsync()));
+            if (vm.CanAddSlice) items.Add(Item($"Add slice {vm.NextSliceLabel} at {where}", () => vm.AddSliceAsync(hz)));
+            int top = vm.SliceCount - 1;
+            if (top > 0) items.Add(Item($"Turn {MainViewModel.SliceLabel(top)} off", () => vm.RemoveSliceAsync(top)));
+            if (vm.ShowPanadapterB || offerRx2)
+            {
+                items.Add(SideBySideItem(vm));
+                items.Add(Item("Turn RX2 off", () => vm.RemovePanBAsync()));
+            }
         }
         new ContextMenu { ItemsSource = items }.Open(at);
     }

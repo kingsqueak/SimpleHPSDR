@@ -8,7 +8,7 @@ namespace SimpleHPSDR.ViewModels;
 /// has a low-noise preamp with its own filter; turning it off sends 6 m
 /// through the bypass path instead (no preamp, no 6 m filter). The engine
 /// keeps one setting per ADC; the button sets the one the active slice
-/// hears, like ATT: the Rx2 jack's while slice B is active on it.</summary>
+/// hears, like ATT: the Rx2 jack's while a slice listening on it is active.</summary>
 public sealed partial class MainViewModel
 {
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ShowLna))]

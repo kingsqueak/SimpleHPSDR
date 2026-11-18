@@ -93,7 +93,7 @@ public sealed partial class MainViewModel
             }
             else
             {
-                await _client!.SetReceiverAsync(1, new ReceiverSetRequest(
+                await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(
                     Agc: agc, AgcTopDb: mode != AgcMode.Fixed ? m.AgcTopDb : null, AutoAgcEnabled: m.AgcAuto));
             }
             NoteAgcSent(ActiveRx, agc: agc, topDb: mode != AgcMode.Fixed ? m.AgcTopDb : null, auto: m.AgcAuto);

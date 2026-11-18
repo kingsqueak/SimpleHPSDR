@@ -9,54 +9,64 @@ namespace SimpleHPSDR.ViewModels;
 public sealed partial class MainViewModel
 {
     /// <summary>One button for both: "ANT1", or "TX1 RX2" when they differ,
-    /// plus "B:Rx2 jack" while slice B listens on the Rx2 jack.</summary>
-    public string AntennaText => (TxAntLabel == RxAntLabel ? TxAntLabel
-        : $"TX{TxAntLabel.Replace("ANT", "")} RX{RxAntLabel.Replace("ANT", "")}")
-        + (SliceBOnJack ? " B:Rx2 jack" : "");
-    public bool AntennasDiffer => TxAntLabel != RxAntLabel || SliceBOnJack;
+    /// plus "A2:Rx2 jack" beside each on-slice listening on the Rx2 jack.</summary>
+    public string AntennaText
+    {
+        get
+        {
+            string text = TxAntLabel == RxAntLabel ? TxAntLabel
+                : $"TX{TxAntLabel.Replace("ANT", "")} RX{RxAntLabel.Replace("ANT", "")}";
+            var jack = JackSlices();
+            return jack.Count == 0 ? text
+                : text + " " + string.Join(" ", jack.Select(SliceLabel)) + ":Rx2 jack";
+        }
+    }
+    public bool AntennasDiffer => TxAntLabel != RxAntLabel || JackSlices().Count > 0;
     partial void OnTxAntLabelChanged(string value) => NotifyAntennaText();
     partial void OnRxAntLabelChanged(string value) => NotifyAntennaText();
-    partial void OnSliceBEnabledChanged(bool value)
-    {
-        NotifyAntennaText();
-        ShowZoomControlsForActive();
-    }
     partial void OnHasRx2JackChanged(bool value) => NotifyAntennaText();
+
+    /// <summary>The on-slices (past A1) listening on the Rx2 jack.</summary>
+    private List<int> JackSlices() =>
+        [.. Enumerable.Range(1, MaxSlices - 1).Where(i => ShowSliceInput(i) && WantsJack(i))];
 
     private void NotifyAntennaText()
     {
         OnPropertyChanged(nameof(AntennaText));
         OnPropertyChanged(nameof(AntennasDiffer));
+        OnPropertyChanged(nameof(ShowB1Input));
+        OnPropertyChanged(nameof(B1InputLabel));
     }
 
-    // ---- Slice B's input: the main antenna (ADC0) or the Rx2 jack (ADC1) ----
-    // Both slices hear the main antenna by default. On a Protocol 2 radio with
-    // two ADCs the second one has its own jack (Rx2 on the back panel), and
-    // slice B can listen there instead, e.g. on a receive-only antenna. The
-    // engine forgets the choice on reconnect, so the app keeps it and puts it
-    // back whenever the engine's slice B differs.
+    // ---- Slice inputs: the main antenna (ADC0) or the Rx2 jack (ADC1) ----
+    // Every slice hears the main antenna by default. On a Protocol 2 radio with
+    // two ADCs the second one has its own jack (Rx2 on the back panel), and any
+    // slice past A1 can listen there instead, e.g. on a receive-only antenna.
+    // The engine forgets the choice on reconnect, so the app keeps it and puts
+    // it back whenever the engine's slice differs. Only B1's choice is saved:
+    // it is RX2's, the setting that predates per-slice inputs.
 
-    /// <summary>The connected radio has an Rx2 jack slice B can use.</summary>
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(ShowSliceBInput))]
+    /// <summary>The connected radio has an Rx2 jack the slices can use.</summary>
+    [ObservableProperty]
     private bool _hasRx2Jack;
-    public bool ShowSliceBInput => HasRx2Jack && SliceBEnabled;
-    private bool SliceBOnJack => ShowSliceBInput && SliceBJackWanted;
-    public string SliceBInputLabel => SliceBJackWanted ? "Rx2 jack" : "Main";
 
-    // The saved choice is RX2's. Slice B added on RX1's panadapter listens on
-    // the main antenna without changing it, until the operator picks an input
-    // or the slice moves to its own panadapter as RX2. Not saved.
-    private bool _sliceBMainForNow;
-    private bool SliceBJackWanted => _settings.SliceBOnRx2Jack && !_sliceBMainForNow;
+    /// <summary>Each slice's wanted input: false = main antenna, true = Rx2
+    /// jack. Slice 0 (A1) is always the main antenna.</summary>
+    private readonly bool[] _wantsJack = new bool[MaxSlices];
 
-    private void SetSliceBMainForNow(bool main)
-    {
-        if (_sliceBMainForNow == main) return;
-        _sliceBMainForNow = main;
-        SliceBInputChanged();
-    }
-    public ObservableCollection<Choice> SliceBInputs { get; } = [];
-    private bool _sendingSliceBInput;
+    /// <summary>Slice i listens on the Rx2 jack (ADC1) rather than the main
+    /// antenna.</summary>
+    internal bool WantsJack(int i) => i > 0 && i < MaxSlices && _wantsJack[i];
+
+    /// <summary>Slice i's input button shows: the radio has the jack and the
+    /// slice is on. A1 has no button; it is always the main antenna.</summary>
+    public bool ShowSliceInput(int i) => HasRx2Jack && SliceOn(i) && i > 0;
+    public string SliceInputLabel(int i) => WantsJack(i) ? "Rx2 jack" : "Main";
+
+    /// <summary>The desktop view's B1 button.</summary>
+    public bool ShowB1Input => ShowSliceInput(2);
+    public string B1InputLabel => SliceInputLabel(2);
+    private bool _sendingSliceInput;
 
     private async Task LoadRx2JackAsync()
     {
@@ -65,49 +75,34 @@ public sealed partial class MainViewModel
             try { has = (await _client!.GetCapabilitiesAsync()).RxAdcCount > 1; }
             catch (Exception) { }
         HasRx2Jack = has;
-        if (SliceBInputs.Count == 0)
-        {
-            SliceBInputs.Add(new Choice("Main antenna", false, _ => SetSliceBInput(false)));
-            SliceBInputs.Add(new Choice("Rx2 jack", true, _ => SetSliceBInput(true)));
-        }
-        Mark(SliceBInputs, SliceBJackWanted);
-        SyncSliceBInput();
-    }
-
-    /// <summary>RX2's antenna button: the main antenna or the Rx2 jack.</summary>
-    public void ToggleSliceBInput() => SetSliceBInput(!SliceBJackWanted);
-
-    private void SetSliceBInput(bool jack)
-    {
-        // Picking the input slice B already has changes nothing, so it can't
-        // overwrite RX2's saved choice while slice B is on main for now.
-        if (jack == SliceBJackWanted)
-        {
-            Mark(SliceBInputs, jack);
-            return;
-        }
-        _sliceBMainForNow = false;
-        _settings.SliceBOnRx2Jack = jack;
-        _settings.Save();
-        SliceBInputChanged();
-    }
-
-    private void SliceBInputChanged()
-    {
-        Mark(SliceBInputs, SliceBJackWanted);
-        OnPropertyChanged(nameof(SliceBInputLabel));
+        // B1 is RX2's slice: its wanted input is the saved choice.
+        _wantsJack[2] = _settings.SliceBOnRx2Jack;
         NotifyAntennaText();
-        SyncSliceBInput();
+        SyncSliceInputs();
+    }
+
+    /// <summary>Flip a slice's input between the main antenna and the Rx2 jack.</summary>
+    public void ToggleSliceInput(int i)
+    {
+        if (i <= 0 || i >= MaxSlices) return;
+        _wantsJack[i] = !_wantsJack[i];
+        if (i == 2)
+        {
+            _settings.SliceBOnRx2Jack = _wantsJack[i];
+            _settings.Save();
+        }
+        if (SliceOn(i)) _ = SendSliceInputAsync(i, WantsJack(i) ? (byte)1 : (byte)0);
         CheckAttSource();
+        NotifyAntennaText();
     }
 
     // ---- ATT follows the active slice's input ----
-    // While slice B is the active slice and listens on the Rx2 jack, the ATT
-    // and Pre controls set the second ADC's attenuator; otherwise the main
-    // input's, as before. The engine's auto ATT already protects each ADC.
+    // While the active slice listens on the Rx2 jack, the ATT and Pre controls
+    // set the second ADC's attenuator; otherwise the main input's, as before.
+    // The engine's auto ATT already protects each ADC.
 
     /// <summary>ATT is acting on the Rx2 jack (ADC1).</summary>
-    public bool AttOnRx2Jack => ActiveRx == 1 && SliceBOnJack;
+    public bool AttOnRx2Jack => ActiveRx > 0 && WantsJack(ActiveRx);
     private bool _attWasRx2;
 
     private void CheckAttSource()
@@ -164,20 +159,25 @@ public sealed partial class MainViewModel
         OnPropertyChanged(nameof(RfText));
     }
 
-    /// <summary>Tell the engine slice B's input if it has a different one.</summary>
-    private void SyncSliceBInput()
+    /// <summary>Give each on-slice the input it wants when the engine has a
+    /// different one.</summary>
+    private void SyncSliceInputs()
     {
-        if (!IsConnected || !HasRx2Jack || !SliceBEnabled || _sliceB is not { } b || _sendingSliceBInput) return;
-        byte want = SliceBJackWanted ? (byte)1 : (byte)0;
-        if (b.AdcSource == want) return;
-        _ = SendSliceBInputAsync(want);
+        if (!IsConnected || !HasRx2Jack || _sendingSliceInput) return;
+        for (int i = 1; i < MaxSlices; i++)
+        {
+            if (!SliceOn(i) || _slices[i] is not { } r) continue;
+            byte want = WantsJack(i) ? (byte)1 : (byte)0;
+            if (r.AdcSource == want) continue;
+            _ = SendSliceInputAsync(i, want);
+        }
     }
 
-    private async Task SendSliceBInputAsync(byte adc)
+    private async Task SendSliceInputAsync(int rx, byte adc)
     {
-        _sendingSliceBInput = true;
-        try { await Try(() => _client!.SetReceiverAsync(1, new ReceiverSetRequest(AdcSource: adc))); }
-        finally { _sendingSliceBInput = false; }
+        _sendingSliceInput = true;
+        try { await Try(() => _client!.SetReceiverAsync(rx, new ReceiverSetRequest(AdcSource: adc))); }
+        finally { _sendingSliceInput = false; }
     }
 
     private static readonly string[] AntennaPorts = ["Ant1", "Ant2", "Ant3"];

@@ -10,8 +10,9 @@ using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.Controls;
 
-/// <summary>One slice to draw: its receiver, dial, passband edges (offsets
-/// from the dial), tag, and whether it's the active, transmitting or muted one.</summary>
+/// <summary>One slice to draw: its slice index (0..3), dial, passband edges
+/// (offsets from the dial), tag, and whether it's the active, transmitting or
+/// muted one.</summary>
 public sealed record SliceMark(int Rx, long Hz, int LowHz, int HighHz, string Tag,
     bool Active, bool Transmit, bool Muted);
 
@@ -84,8 +85,8 @@ public sealed class SpectrumView : Control
     private static IPen TracePen => SpectrumLook.Current.LinePen;
     private static readonly IBrush PassbandBrush = new SolidColorBrush(Color.Parse("#26FFFFFF"));
     private static readonly IBrush PassbandInactive = new SolidColorBrush(Color.Parse("#14FFFFFF"));
-    // Slice colours: A red, B amber.
-    private static readonly Color[] SliceColors = [Color.Parse("#F25F5C"), Color.Parse("#F5A524")];
+    // Slice colours: A1 red, A2 amber, B1 purple, B2 sky blue.
+    private static readonly Color[] SliceColors = [Color.Parse("#F25F5C"), Color.Parse("#F5A524"), Color.Parse("#C084FC"), Color.Parse("#38BDF8")];
     private static readonly IBrush TxBrush = new SolidColorBrush(Color.Parse("#E5484D"));
     private static readonly Typeface TagFace = new("Inter", FontStyle.Normal, FontWeight.SemiBold);
     private readonly List<(Rect Box, int Rx)> _tagBoxes = [];
@@ -934,7 +935,7 @@ public sealed class SpectrumView : Control
         }
     }
 
-    // A tag at the top of the slice's line: "A" / "B", "TX" on the
+    // A tag at the top of the slice's line: "A1".."B2", "TX" on the
     // transmitting slice, filled when active, "M" when muted. Off-screen
     // slices get their tag at the edge with an arrow.
     private void DrawTag(DrawingContext ctx, Rect b, SliceMark s, Color color, double vx)

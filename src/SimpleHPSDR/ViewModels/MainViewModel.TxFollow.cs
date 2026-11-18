@@ -24,7 +24,7 @@ public sealed partial class MainViewModel
         try
         {
             var s = state ?? await _client!.GetStateAsync();
-            var (mode, low, high) = s.TxReceiverIndex == 1 && s.Receivers?.FirstOrDefault(r => r.Index == 1) is { } b
+            var (mode, low, high) = s.TxReceiverIndex >= 1 && s.Receivers?.FirstOrDefault(r => r.Index == s.TxReceiverIndex) is { } b
                 ? (b.Mode, b.FilterLowHz, b.FilterHighHz)
                 : (s.Mode, s.FilterLowHz, s.FilterHighHz);
             bool sideband = mode is RxMode.LSB or RxMode.USB or RxMode.DIGL or RxMode.DIGU;

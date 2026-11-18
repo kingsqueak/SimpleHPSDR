@@ -50,14 +50,16 @@ public partial class DesktopMainView : UserControl
             e.Handled = true;
         };
         // Click the frequency to type one; Enter tunes, Esc or clicking away cancels.
-        // A press on a slice badge moves transmit there and stops before it
-        // reaches the frequency box (which would open typing).
-        // RX1 and RX2 give that receiver the controls; RX2's first click turns it on.
+        // A press on a slice badge gives that slice the controls and stops before
+        // it reaches the frequency box (which would open typing).
+        // RX1 and RX2 give that panadapter the controls; RX2's first click turns it on.
         RxBadge1.PointerPressed += (_, e) => PressRxBadge(0, e);
         RxBadge2.PointerPressed += (_, e) => PressRxBadge(1, e);
         RxBadge2.ContextRequested += (_, e) => { e.Handled = true; MainMenus.ShowRx2Menu(Vm, RxBadge2); };
-        SliceBadgeA.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(0); };
-        SliceBadgeB.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(1); };
+        SliceBadgeA.PointerPressed += (_, e) => PressSliceBadge(0, e);
+        SliceBadgeB.PointerPressed += (_, e) => PressSliceBadge(1, e);
+        SliceBadgeA.ContextRequested += (_, e) => { e.Handled = true; ShowSliceBadgeMenu(0, SliceBadgeA); };
+        SliceBadgeB.ContextRequested += (_, e) => { e.Handled = true; ShowSliceBadgeMenu(1, SliceBadgeB); };
         FrequencyPanel.PointerPressed += (_, e) =>
         {
             if (Vm is not { EditingFrequency: false } vm || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
@@ -104,14 +106,14 @@ public partial class DesktopMainView : UserControl
             if (vm.ShowPanadapterB) _ = vm.TuneSliceByStepsAsync(0, steps);
             else vm.TuneBySteps(steps);   // one panadapter: tune the active slice
         };
-        // Slice B's own panadapter tunes slice B, making it active first.
+        // Slice B1's own panadapter tunes slice B1, making it active first.
         SpectrumB.TuneRequested += hz =>
         {
-            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(1, vm.ClickFrequency(hz));
+            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(2, vm.ClickFrequency(hz));
         };
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB);
-        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
+        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(2, steps);
         // Pinch (trackpad or fingers) zooms both panadapters, as the Zoom button does.
         Spectrum.ZoomRequested += dir => Vm?.ZoomStep(0, dir);
         SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
@@ -125,6 +127,41 @@ public partial class DesktopMainView : UserControl
         e.Handled = true;
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) _ = Vm?.SelectRxAsync(rx);
     }
+
+    // The A1/A2 (or B1/B2) badges beside the frequency: the active pan's two
+    // slices. A left press gives that slice the controls; the right-click menu
+    // transmits on it, mutes it, or removes it when it's the top slice.
+    private void PressSliceBadge(int n, PointerPressedEventArgs e)
+    {
+        e.Handled = true;
+        if (Vm is { } vm && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            _ = vm.MakeActiveAsync(vm.BadgeSlice(n));
+    }
+
+    private void ShowSliceBadgeMenu(int n, Control at)
+    {
+        if (Vm is not { IsConnected: true } vm) return;
+        int slice = vm.BadgeSlice(n);
+        string label = MainViewModel.SliceLabel(slice);
+        var items = new List<Control>
+        {
+            MenuItem($"Transmit on {label}", () => vm.TransmitOnAsync(slice)),
+            MenuItem(vm.IsSliceMuted(slice) ? $"Unmute {label}" : $"Mute {label}",
+                () => vm.SetSliceMuteAsync(slice, !vm.IsSliceMuted(slice))),
+            new Separator(),
+        };
+        // Slices come off in reverse, so only the top one can be removed.
+        var remove = MenuItem($"Remove {label}", () => vm.RemoveSliceAsync(slice));
+        remove.IsEnabled = slice == vm.SliceCount - 1 && slice > 0;
+        items.Add(remove);
+        new ContextMenu { ItemsSource = items }.Open(at);
+    }
+
+    private static MenuItem MenuItem(string header, Func<Task> act) =>
+        new() { Header = header, Command = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(act) };
+
+    // The B1 antenna button toggles B1 between the main antenna and the Rx2 jack.
+    private void ToggleB1Input(object? sender, RoutedEventArgs e) => Vm?.ToggleSliceInput(2);
 
     // Mem's popup closed: put the memories in frequency order.
     private void OnMemoriesClosed(object? sender, EventArgs e) => Vm?.SortMemories();
@@ -174,7 +211,7 @@ public partial class DesktopMainView : UserControl
         menu.Items.Add(snap);
     }
 
-    // With two panadapters the top one is slice A's; with one, a click tunes
+    // With two panadapters the top one is slice A1's; with one, a click tunes
     // whichever slice is active (click a tag to switch).
     private void TuneA(long hz)
     {
@@ -187,7 +224,7 @@ public partial class DesktopMainView : UserControl
     private static readonly IBrush[] ActiveOutline =
         [new SolidColorBrush(Color.Parse("#80F25F5C")), new SolidColorBrush(Color.Parse("#80F5A524"))];
 
-    // Two panadapters while slice B is on, the active one outlined in its
+    // Two panadapters while B1 is on, the active one outlined in its pan's
     // slice colour; one, unoutlined, otherwise.
     private void LayoutPanadapters()
     {
@@ -209,8 +246,8 @@ public partial class DesktopMainView : UserControl
         PanSplitter.ResizeDirection = beside ? GridResizeDirection.Columns : GridResizeDirection.Rows;
         Grid.SetRow(PanBorderB, beside ? 0 : 2);
         Grid.SetColumn(PanBorderB, beside ? 2 : 0);
-        PanBorderA.BorderBrush = two && vm.ActiveRx == 0 ? ActiveOutline[0] : Brushes.Transparent;
-        PanBorderB.BorderBrush = two && vm.ActiveRx == 1 ? ActiveOutline[1] : Brushes.Transparent;
+        PanBorderA.BorderBrush = two && vm.ActivePan == 0 ? ActiveOutline[0] : Brushes.Transparent;
+        PanBorderB.BorderBrush = two && vm.ActivePan == 1 ? ActiveOutline[1] : Brushes.Transparent;
         if (!two) SpectrumB.Clear();
     }
 
@@ -353,7 +390,7 @@ public partial class DesktopMainView : UserControl
 
         Grid.SetColumn(TuneToggle, side ? 1 : 0);
         // The volume sliders: a fixed width below, the panel's width at the side.
-        AfMain.Width = AfSliceA.Width = AfSliceB.Width = RxPanRow.Width = side ? double.NaN : 150;
+        AfMain.Width = RxPanRow.Width = side ? double.NaN : 150;
 
         // Step, lock, RIT and XIT: stacked beside the frequency, or in a row under it.
         var flow = side ? Avalonia.Layout.Orientation.Horizontal : Avalonia.Layout.Orientation.Vertical;
@@ -454,6 +491,7 @@ public partial class DesktopMainView : UserControl
         Arrange(vm.SidePanel);
         FitSideRail();
         LayoutPanadapters();
+        RefreshMiniVfos();
     }
 
     private void Unwire()
@@ -467,7 +505,7 @@ public partial class DesktopMainView : UserControl
     }
 
     private double? FindSignalHz(int rx, long lo, long hi, double db) =>
-        (rx == 1 && _wired is { ShowPanadapterB: true } ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
+        (rx == 2 && _wired is { ShowPanadapterB: true } ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
 
     private void OnDisplay(DisplayFrame f)
     {
@@ -486,7 +524,7 @@ public partial class DesktopMainView : UserControl
             FilterScope.ColouredFill = vm.CloseUpColoured;
             FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric, vm.CwPitchHz);
         }
-        if (f.RxId == 1)
+        if (f.RxId == 2)
         {
             if (!vm.ShowPanadapterB) return;
             SpectrumB.Slices = vm.PanMarks(1);
@@ -494,6 +532,7 @@ public partial class DesktopMainView : UserControl
             (SpectrumB.SpecMinDb, SpectrumB.SpecMaxDb) = vm.SliceBRange(SpectrumB.NoiseFloorDb);
             return;
         }
+        if (f.RxId != 0) return;
         Spectrum.Slices = vm.PanMarks(0);
         Spectrum.PushFrame(f);
         vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
@@ -519,11 +558,24 @@ public partial class DesktopMainView : UserControl
         Spectrum.TargetSpanHz = vm.ZoomTargetSpanFor(0);
         Spectrum.DialRx = vm.ShowPanadapterB ? 0 : -1;
         SpectrumB.TargetSpanHz = vm.ZoomTargetSpanFor(1);
-        SpectrumB.DialRx = 1;
+        SpectrumB.DialRx = 2;
         SpectrumB.DialAt = vm.Rx2DialAt;
     }
 
     private void OnDisplayReset() { Spectrum.Clear(); SpectrumB.Clear(); FilterScope.Clear(); }
+
+    // The panadapter chips show by slice state: A1's chip while any other
+    // slice is on (alone, the main VFO covers it), A2/B2 when that slice is
+    // on, B1 always (its pan only renders when shown). The chips draw their
+    // own contents.
+    private void RefreshMiniVfos()
+    {
+        if (Vm is not { } vm) return;
+        MiniA1.IsVisible = vm.SliceCount > 1;
+        MiniA2.IsVisible = vm.SliceOn(1);
+        MiniB1.IsVisible = true;
+        MiniB2.IsVisible = vm.SliceOn(3);
+    }
 
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -541,5 +593,8 @@ public partial class DesktopMainView : UserControl
             Spectrum.InvalidateVisual();
             SpectrumB.InvalidateVisual();
         }
+        if (e.PropertyName is nameof(MainViewModel.SliceCount) or nameof(MainViewModel.ShowPanadapterB)
+            or nameof(MainViewModel.ActiveRx) or nameof(MainViewModel.TxRx))
+            RefreshMiniVfos();
     }
 }

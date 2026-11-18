@@ -152,14 +152,9 @@
                       </Flyout>
                     </Button.Flyout>
                   </Button>
-                  <Button Classes="seg t" IsVisible="{Binding ShowSliceBInput}">
-                    <StackPanel><TextBlock Text="B input" HorizontalAlignment="Center" /><TextBlock Text="{Binding SliceBInputLabel}" Classes="sub" /></StackPanel>
-                    <Button.Flyout>
-                      <Flyout Placement="RightEdgeAlignedTop">
-                        <ItemsControl ItemsSource="{Binding SliceBInputs}" ItemTemplate="{StaticResource ChoiceTile}"
-                                      ItemsPanel="{StaticResource Grid3}" Width="300" />
-                      </Flyout>
-                    </Button.Flyout>
+                  <Button Classes="seg t" IsVisible="{Binding ShowB1Input}" Click="ToggleB1Input"
+                          ToolTip.Tip="B1's antenna input">
+                    <StackPanel><TextBlock Text="B1 input" HorizontalAlignment="Center" /><TextBlock Text="{Binding B1InputLabel}" Classes="sub" /></StackPanel>
                   </Button>
                 </WrapPanel>
 
@@ -289,18 +284,20 @@
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
                   <Button Classes="seg t" Classes.lit="{Binding Rx1Active}" Content="RX1" Click="SelectRx1" />
                   <Button Classes="seg t" Classes.lit="{Binding Rx2Active}" Content="RX2" Click="SelectRx2" />
-                  <Button Classes="seg t" Content="RX2 off" Click="Rx2Off" IsEnabled="{Binding ShowPanadapterB}" />
+                  <Button Classes="seg t" Content="RX2 off" Click="Rx2Off" IsVisible="{Binding ShowPanadapterB}" IsEnabled="{Binding ShowPanadapterB}" />
                 </WrapPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
-                           Text="RX2 is a second receiver in its own panadapter. RX1 and RX2 pick the one the frequency and the controls act on; a tap on a panadapter does the same. A right-click or long press on the spectrum turns RX2 on or off too." />
+                           Text="RX1's panadapter holds slices A1 and A2, RX2's (the second panadapter) B1 and B2. RX1 and RX2 pick the panadapter the frequency and the controls act on; a tap on a panadapter does the same. Slices come on in order — A2, then B1, which opens RX2's panadapter, then B2 — and go off in reverse; the engine adds and removes the receivers below as needed. A right-click or long press on the spectrum turns slices and RX2 on or off too." />
                 <TextBlock Text="SLICES" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
-                  <Button Classes="seg t" Content="A⇄B" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding HasSliceB}" />
+                  <Button Classes="seg t" Content="A1⇄A2" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding HasSliceB}"
+                          ToolTip.Tip="Swap slices A1 and A2 (the engine's VFO A/B swap)" />
                   <Button Classes="seg t" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}" />
+                  <Button Name="AddSliceButton" Classes="seg t" Content="+" Click="AddSlice" IsEnabled="{Binding CanAddSlice}" />
                   <Button Classes="seg t" Classes.lit="{Binding VfoLocked}" Content="Lock VFO" Command="{Binding ToggleVfoLockCommand}" />
                 </WrapPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
-                           Text="With RX2 off, slice B can share RX1's panadapter: to add, move or remove it, right-click the spectrum (long-press on a touch screen)." />
+                           Text="+ adds the next slice at the VFO frequency (A2, then B1, which opens RX2's panadapter, then B2). Slices can also be added, tuned, muted and removed from a right-click or long press on the spectrum." />
               </StackPanel>
             </ScrollViewer>
           </TabItem>
@@ -411,9 +408,8 @@
                 Cursor="SizeWestEast" ToolTip.Tip="Drag sideways or use the wheel to tune by the step. Click to type a frequency.">
           <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center">
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Border CornerRadius="4" Padding="6,0" VerticalAlignment="Center" IsVisible="{Binding HasSliceB}"
-                      Classes.sliceA="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=A}"
-                      Classes.sliceB="{Binding ActiveSliceLabel, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=B}">
+              <!-- The active slice's chip, coloured by the code from the slice's colour -->
+              <Border Name="ActiveSliceBorder" CornerRadius="4" Padding="6,0" VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
                 <TextBlock Text="{Binding ActiveName}" FontSize="16" FontWeight="Bold" Foreground="White" />
               </Border>
               <TextBlock FontFamily="{StaticResource MonoFont}" Classes.tx="{Binding IsTransmitting}"
@@ -506,24 +502,25 @@
             </Flyout>
           </Button.ContextFlyout>
         </Button>
-        <!-- One receiver: the main AF. Two: each one's own volume, one over
-             the other in the slice colours, and Pan takes the left of DRV's space. -->
+        <!-- One slice: the main AF. More: a trim row per slice in its slice
+             colour, one over the other, and Pan takes the left of DRV's space. -->
         <Grid Grid.Column="1" ColumnDefinitions="*,46" ColumnSpacing="6" IsVisible="{Binding !HasSliceB}">
           <Slider Minimum="-50" Maximum="20" Value="{Binding AfGainDb}" VerticalAlignment="Center" ToolTip.Tip="Volume" />
           <TextBlock Grid.Column="1" Text="{Binding AfGainText}" VerticalAlignment="Center" />
         </Grid>
-        <Grid Grid.Column="1" ColumnDefinitions="Auto,*,46" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="2"
-              VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
-          <TextBlock Text="{Binding AfLabelA}" FontSize="12" FontWeight="Bold" Foreground="#F25F5C" VerticalAlignment="Center" />
-          <c:AfSlider Grid.Column="1" Value="{Binding SliceAfA}" Minimum="-40" Maximum="20"
-                      BallBrush="#F25F5C" ToolTip.Tip="RX1 (slice A) volume" />
-          <TextBlock Grid.Column="2" Text="{Binding SliceAfAText}" FontSize="12" VerticalAlignment="Center" />
-          <TextBlock Grid.Row="1" Text="{Binding AfLabelB}" FontSize="12" FontWeight="Bold" Foreground="#F5A524" VerticalAlignment="Center" />
-          <c:AfSlider Grid.Row="1" Grid.Column="1" Value="{Binding SliceAfB}" Minimum="-40" Maximum="20"
-                      BallBrush="#F5A524" ToolTip.Tip="RX2 (slice B) volume" />
-          <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding SliceAfBText}" FontSize="12" VerticalAlignment="Center" />
-        </Grid>
-        <!-- Two receivers: Pan has this space and the drive is set from the
+        <ItemsControl Grid.Column="1" ItemsSource="{Binding SliceAfs}" VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Spacing="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:SliceAfRow">
+              <Grid ColumnDefinitions="Auto,*,46" ColumnSpacing="6">
+                <TextBlock Text="{Binding Label}" FontSize="12" FontWeight="Bold" Foreground="{Binding Color}" VerticalAlignment="Center" />
+                <c:AfSlider Grid.Column="1" Value="{Binding Value}" Minimum="-40" Maximum="20" />
+                <TextBlock Grid.Column="2" Text="{Binding Text}" FontSize="12" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <!-- Two panadapters: Pan has this space and the drive is set from the
              DRV button's slider. One: the drive slider is here as well. -->
         <Grid Grid.Column="3" ColumnDefinitions="*,Auto" ColumnSpacing="6">
           <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6" Margin="6,0,0,0" IsVisible="{Binding HasSliceB}">
@@ -624,15 +621,18 @@
         </Button>
       </Grid>
 
-      <!-- Spectrum and waterfall, with zoom buttons in the corner; slice B's
-           own below while it has one (the code sizes the second row). -->
+      <!-- Spectrum and waterfall, with zoom buttons in the corner; RX2's
+           panadapter below while it's on (the code sizes the second row). -->
       <Grid Name="PanGrid" RowDefinitions="*,0">
       <Border Name="PanBorderA" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
           <c:SpectrumView Name="Spectrum" Fling="True" SpecMinDb="{Binding SpecMinDb}" SpecMaxDb="{Binding SpecMaxDb}" FloorLiftDb="{Binding TraceFloorLiftDb}"
                           PopMode="{Binding WaterfallPop}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" />
           <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
-            <c:MiniVfo Name="MiniVfoA" Rx="0" Touch="True" VerticalAlignment="Center" IsVisible="{Binding ShowPanadapterB}" />
+            <StackPanel Orientation="Vertical" Spacing="4" VerticalAlignment="Center">
+              <c:MiniVfo Name="MiniA1" Slice="0" Touch="True" VerticalAlignment="Center" IsVisible="False" />
+              <c:MiniVfo Name="MiniA2" Slice="1" Touch="True" VerticalAlignment="Center" IsVisible="False" />
+            </StackPanel>
             <TextBlock Text="{Binding ZoomLabel}" Foreground="White" Opacity="0.8" VerticalAlignment="Center" FontSize="12" />
             <Button Classes="seg t" Content="−" FontSize="20" MinWidth="48" Click="ZoomOut" ToolTip.Tip="Zoom out (Ctrl+wheel or ⌘+wheel, or pinch)" />
             <Button Classes="seg t" Content="+" FontSize="20" MinWidth="48" Click="ZoomIn" ToolTip.Tip="Zoom in (Ctrl+wheel or ⌘+wheel, or pinch)" />
@@ -655,8 +655,11 @@
       <Border Grid.Row="1" Name="PanBorderB" CornerRadius="8" ClipToBounds="True" BorderThickness="1" BorderBrush="Transparent">
         <Panel>
           <c:SpectrumView Name="SpectrumB" Fling="True" FloorLiftDb="{Binding TraceFloorLiftDb}" PanFraction="{Binding PanFraction}" ScaleFraction="{Binding SpecScaleFraction}" PopMode="{Binding WaterfallPop}" />
-          <c:MiniVfo Name="MiniVfoB" Rx="1" Touch="True" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
-                     IsVisible="{Binding ShowPanadapterB}" />
+          <StackPanel Orientation="Vertical" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
+                      IsVisible="{Binding ShowPanadapterB}">
+            <c:MiniVfo Name="MiniB1" Slice="2" Touch="True" />
+            <c:MiniVfo Name="MiniB2" Slice="3" Touch="True" IsVisible="False" />
+          </StackPanel>
         </Panel>
       </Border>
       <!-- Voice keyer: over the bottom of the waterfall, when turned on in REC's settings.

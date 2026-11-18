@@ -68,8 +68,8 @@ Nearly everything on a front panel is here under a different name. This is where
 - Preamp and attenuator: RFG.
 - IF width or filter: the filter buttons, or drag the edges in the close-up.
 - Noise blanker: NB. Noise reduction: NR. Notch: ANF, with manual notches on its right-click.
-- Second receiver: RX2. Second VFO on the same band: slice B.
-- Split: put RX2 or slice B on the transmit frequency and transmit on it.
+- Second receiver: RX2. Second frequency on RX1's panadapter: slice A2.
+- Split: put RX2 (or a second slice) on the transmit frequency and transmit on it.
 - RIT and XIT: the same names, beside the frequency.
 - RF power: DRIVE, in the TX popup.
 - Mic gain: MIC, in the TX popup.
@@ -107,7 +107,7 @@ CTUN changes what a click does. With it on, the display stays still and only the
 
 ## Seeing more or less of the band
 - Span sets the full width the radio takes in, from its sample rate. A wider span shows more of the band and uses more computer power.
-- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the span, from full at the left end of the slider, and Center, which sets where the dial sits across the display (left, center or right). Center works with CTUN on or off. Ctrl+wheel over the spectrum (⌘+wheel on a Mac) or a trackpad pinch zooms too; the dial stays where it is while you zoom. With RX2 on, each receiver has its own span and Center: the Zoom button and its sliders show and set those of the receiver that has the controls, and Ctrl+wheel zooms the panadapter the pointer is over. RX2's Center takes effect once RX2 is zoomed in.
+- Zoom spreads part of that span across the display. Click it to go between full span and zoomed. Right-click to set the span, from full at the left end of the slider, and Center, which sets where the dial sits across the display (left, center or right). Center works with CTUN on or off. Ctrl+wheel over the spectrum (⌘+wheel on a Mac) or a trackpad pinch zooms too; the dial stays where it is while you zoom. With RX2's pan on, each panadapter has its own span and Center: the Zoom button and its sliders show and set those of the panadapter the controls are on, and Ctrl+wheel zooms the panadapter the pointer is over. RX2's Center takes effect once RX2 is zoomed in.
 """),
 
         ("Mini window", """
@@ -128,7 +128,7 @@ To change layout without opening Config, use the view button. In the touch layou
 
 ## On screen
 - Top: the drawer (☰), the view button, band, mode, the frequency, the meter, MOX and TUNE.
-- Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT. Tap the DRV button for a larger drive slider. With RX2 or slice B on, the volume becomes one slider for each receiver, Pan takes the drive slider's place, and the drive is set from the DRV button.
+- Bottom: volume (AF), drive (DRV), Mute, filter, NB, NR, step and RIT. Tap the DRV button for a larger drive slider. With more than one slice on, the volume becomes one slider per slice, Pan takes the drive slider's place, and the drive is set from the DRV button.
 - ☰ opens a drawer with everything else, in four tabs: Receive, Transmit, Slices and Station. Station has Config, the station guide, the CW window, the antenna analyser and Full screen. Quit is at the top of the drawer, beside ✕: tap it, then tap again within 4 seconds.
 
 ## Tuning
@@ -153,7 +153,7 @@ The upper graph shows signal strength across the band, with frequency left to ri
 The lower part shows the same thing over time, with new rows arriving at the top. Brighter colours are stronger. SSB looks like wandering streaks, CW like dashes, and AM like a bright line with sidebands either side. Steady vertical lines are usually carriers or birdies.
 
 ## On the display
-- The red line is slice A's frequency; slice B has its own colour.
+- The red line is slice A1's frequency; every other slice has its own colour.
 - The shaded band is your receive filter: what you can hear.
 - The yellow line is the AGC threshold.
 - A red band is a manual notch.
@@ -263,7 +263,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
 
         ("Receiving", """
 ## Volume
-- AF sets the overall level. With RX2 or slice B on, it becomes two sliders, one over the other, each setting that receiver's own level on top of the overall level, which stays where you left it.
+- AF sets the overall level. With more than one slice on, it becomes one slider per slice, each setting that slice's own level on top of the overall level, which stays where you left it.
 - Pan, the third slider under those two, puts the receivers in different ears on stereo speakers or headphones. In the middle both are in both ears. Slide it left and the first receiver moves to the left ear and the second to the right, all the way for a full split; slide it right for the other way round. It works on this computer's sound output, not on the radio's own speaker or headphone jack.
 - Mute silences the receiver.
 - REC and the voice keyer: see Recording and the voice keyer.
@@ -271,7 +271,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
 - RX Lev brings weak stations up to a steady listening level. Right-click it for its settings. Auto uses the engine's own values. Custom lets you set the target level, the most boost it may add, how fast it comes up (attack), how fast it backs down (release), and how long it holds before backing down (hang).
 
 ## Receive EQ
-The AF button beside the volume slider is the receive EQ. Click it for on or off (blue = on). Right-click it (long press on touch) for ten sliders from 60 Hz to 5 kHz, ±20 dB, that shape what you hear on both slices: cut the low end to make a weak SSB signal clearer, or lift the treble on a muffled station. Flat puts them all back to 0 dB. The EQ stays out of DIGU and DIGL so decoding programs get plain audio, and it's remembered between sessions.
+The AF button beside the volume slider is the receive EQ. Click it for on or off (blue = on). Right-click it (long press on touch) for ten sliders from 60 Hz to 5 kHz, ±20 dB, that shape what you hear on every slice: cut the low end to make a weak SSB signal clearer, or lift the treble on a muffled station. Flat puts them all back to 0 dB. The EQ stays out of DIGU and DIGL so decoding programs get plain audio, and it's remembered between sessions.
 
 ## RFG: preamp and attenuator
 Click RFG to open the front end. Each click steps through preamp, 0 dB and 10 to 30 dB of attenuation. Auto ATT adds attenuation by itself if the receiver overloads, and is best left on. On a noisy band, attenuation can improve what you hear: if the noise drops and the signal doesn't, keep it.
@@ -293,39 +293,32 @@ ANF hunts for tones by itself, and a manual notch stays exactly where you put it
 """),
 
         ("Two receivers and split", """
-SimpleHPSDR has two receivers, RX1 and RX2. Each has its own panadapter, and you hear both at once.
+SimpleHPSDR has two panadapters, RX1 and RX2, and each can carry two slices: A1 and A2 on RX1, B1 and B2 on RX2. You hear every slice that's on at once. Each slice is a full receiver of its own — mode, filter, noise blanker and reduction, ANF and AGC are all independent per slice, and the controls always act on the slice that's blue.
 
-## Turning RX2 on
-Click RX2, left of the frequency. A second panadapter opens on RX1's frequency and mode, and RX2 has the controls. Change its band or tune it wherever you like.
+## Slices
+Slices come on in order — A2 first, then B1 (which opens RX2's panadapter), then B2 — because the radio enables its receivers that way, and they go off in reverse. To add one, click + in the touch drawer's Slices section or right-click a panadapter and choose Add slice; the new slice opens on the frequency you're tuned to, in the active slice's mode and filter, and takes the controls. The ✕ on a slice's small frequency display turns that slice off again (only the most recent slice comes off directly; turning RX2 off takes B1 and B2 together). Every slice costs a full receiver's worth of processing, so keep an eye on the CPU readout — on a Raspberry Pi two slices is comfortable, four is the most there is.
 
-RX1 and RX2 beside the frequency show which receiver the frequency, band, mode and filter controls act on: blue has the controls. Click the other one to switch; RX2 outlined in blue is on and waiting. A click or the wheel on a panadapter gives that receiver the controls too.
+RX1 and RX2 beside the frequency pick the panadapter: the VFO, band, mode and filter then act on that pan's most recent slice, shown by the A1/A2 (or B1/B2) badges beside them — blue has the controls, red edge transmits. Click a badge to give that slice the controls; right-click it for more (transmit on it, mute it, remove it). RX2's first click turns it on; RX2 outlined in blue is on and waiting. A click or the wheel on a panadapter gives its slice the controls too, and a click on a slice's tag on the panadapter does the same.
 
-Mode, filter, the noise blanker and reduction (NB, NR), ANF and AGC are independent per receiver: switching the controls to the other one brings its own settings back, and changing one never disturbs the other. Squelch, RX Lev and RX EQ are one setting each, shared by both receivers. Each panadapter's small display shows its receiver's filter, NB/NR and AGC at a glance.
+Squelch, RX Lev and RX EQ are one setting each, shared by all slices. Each slice's small display shows its filter, NB/NR and AGC at a glance, so the slices you're not controlling stay readable.
 
-In the touch layout, RX1 and RX2 are in the drawer (☰) under Slices, and a long press or right-click on the spectrum offers "Turn RX2 on".
-
-To turn RX2 off, click the ✕ on its small frequency display, or right-click RX2. It stays on while you're transmitting on it: unkey first. The right-click menu also puts the two panadapters side by side or one above the other, and swaps the two receivers' frequencies.
+In the touch layout, RX1, RX2, the + slice button and A1⇄A2 are in the drawer (☰) under Slices, and a long press or right-click on the spectrum offers the same.
 
 ## The small frequency display on each panadapter
-While RX2 is on, each panadapter shows its receiver's frequency, mode and (in grey) its filter, NB/NR and AGC at the top right. The wheel over it tunes that receiver, and a click lets you type a frequency. The TX mark is red on the receiver that transmits: click the other one's TX mark to transmit there. When both receivers are on the same band, each panadapter also flags where the other one is. RX2's has an antenna button on its left on radios with an Rx2 jack (see below).
+Each slice that's on shows its frequency, mode and (in grey) its filter, NB/NR and AGC at the top right of its panadapter. The wheel over it tunes that slice, and a click lets you type a frequency. The TX mark is red on the slice that transmits: click another slice's TX mark to transmit there. When the two panadapters are on the same band, each also flags where the other pan's slices are.
 
 ## Working split with two receivers
-1. Tune RX1 to the DX station.
-2. Click RX2 and tune it to where they're listening.
-3. Click TX on RX2's small frequency display.
+1. Tune RX1 (slice A1) to the DX station.
+2. Click RX2 and tune B1 to where they're listening.
+3. Click TX on B1's small frequency display.
 
-You now transmit on RX2's frequency while hearing both. Click RX1 to put the controls back on the DX station; transmit stays on RX2 until you click RX1's TX mark.
-
-## Slice B: a second frequency on one panadapter
-With RX2 off, the second receiver can share RX1's panadapter as slice B, which suits split on one band. Right-click the panadapter and choose Add slice B. The same menu makes a slice active, moves slice B, mutes either slice, and removes slice B. Click a slice's tag on the panadapter to make it active.
-
-A and B then appear beside RX1 and RX2: blue is the active slice, red is the one that transmits. Click A or B there to transmit on that slice. Clicking RX2 moves slice B into its own panadapter as RX2.
+You now transmit on B1's frequency while hearing everything. Click A1 to put the controls back on the DX station; transmit stays on B1 until you click another slice's TX mark. Split works on one panadapter the same way, with A2 instead of RX2.
 
 ## RIT and XIT
-These move receive (RIT) or transmit (XIT) a little without moving the dial. Click to turn on or off, use the wheel for 10 Hz a click, and right-click to clear. RIT works on slice A only.
+These move receive (RIT) or transmit (XIT) a little without moving the dial. Click to turn on or off, use the wheel for 10 Hz a click, and right-click to clear. RIT works on slice A1 only.
 
-## RX2 on the Rx2 jack
-Both receivers normally hear the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have RX2 listen on an antenna plugged in there, such as a receive-only antenna, click ANT left of RX2's small frequency display, or open Ant and set B to Rx2 jack (that also works for slice B). The choice is remembered for RX2; a slice B added on RX1's panadapter starts on the main antenna. The Ant button then lights and shows B:Rx2 jack. With nothing in the jack, RX2 goes quiet. The jack is a receive-only input, which the radio grounds while transmitting; either receiver can still be the transmitting one, and transmit always leaves by the TX antenna. While RX2 has the controls, ATT and Pre set the Rx2 jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
+## The Rx2 jack
+Every slice normally hears the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have a slice listen on an antenna plugged in there, such as a receive-only antenna, click ANT on its small frequency display (B1's choice is remembered; the others last the session). The Ant button then lights and shows which slices are on the jack. With nothing in the jack, a slice set to it goes quiet. The jack is a receive-only input, which the radio grounds while transmitting; any slice can still be the transmitting one, and transmit always leaves by the TX antenna. While a slice on the jack has the controls, ATT and Pre set the jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
 
 ## Amp
 The Amp button, with the transmit controls, tells SimpleHPSDR whether your amplifier is in line.

@@ -570,7 +570,7 @@ public sealed class StationClient : IDisposable
         await ThrowIfFailed(r);
     }
 
-    // Receiver 0 is RX1 (slice A), 1 is RX2 (slice B).
+    // Receiver indices are the app's slice indices: 0 = A1, 1 = A2, 2 = B1, 3 = B2.
     public Task SetVfoAsync(long hz, int rx = 0) => PostAsync("api/vfo", new VfoSetRequest(hz, rx));
     public Task SetModeAsync(RxMode mode, int rx = 0) => PostAsync("api/mode", new ModeSetRequest(mode, rx));
     public Task SetReceiverAsync(int rx, ReceiverSetRequest req) => PostAsync($"api/receivers/{rx}", req);
@@ -583,7 +583,7 @@ public sealed class StationClient : IDisposable
     /// <summary>AGC-T: the AGC's maximum gain. The engine takes this as manual
     /// control, so it turns auto AGC off.</summary>
     public Task SetAgcGainAsync(double topDb) => PostAsync("api/agcGain", new AgcGainSetRequest(topDb));
-    /// <summary>AGC mode (speed) for RX1; slice B takes its own via SetReceiverAsync.</summary>
+    /// <summary>AGC mode (speed) for slice A1; the other slices take their own via SetReceiverAsync.</summary>
     public Task SetAgcAsync(AgcConfig agc) => PostAsync("api/rx/agc", new AgcSetRequest(agc));
     /// <summary>Auto AGC: the engine adjusts the AGC gain to conditions.</summary>
     public Task SetAutoAgcAsync(bool on) => PostAsync("api/auto-agc", new AutoAgcSetRequest(on));

@@ -15,7 +15,8 @@ namespace SimpleHPSDR.Views;
 /// The large-target layout for small screens. Mouse first: every action is a
 /// click, a drag or the wheel. The frequency tunes by dragging sideways (one
 /// step per <see cref="DragPixelsPerStep"/> px) or the wheel, and a click opens
-/// a keypad. Slice B gets its own panadapter below while it has one.
+/// a keypad. Slices A1/A2 share RX1's panadapter; B1/B2 get RX2's below while
+/// B1 is on.
 /// </summary>
 public partial class TouchMainView : UserControl
 {
@@ -26,9 +27,11 @@ public partial class TouchMainView : UserControl
     {
         InitializeComponent();
 
-        // A tap on a panadapter's small VFO drops the keypad down from it, for that receiver.
-        MiniVfoA.EntryRequested += v => OpenKeypad(v, v.Rx);
-        MiniVfoB.EntryRequested += v => OpenKeypad(v, v.Rx);
+        // A tap on a panadapter's small VFO drops the keypad down from it, for that slice.
+        MiniA1.EntryRequested += v => OpenKeypad(v, v.Slice);
+        MiniA2.EntryRequested += v => OpenKeypad(v, v.Slice);
+        MiniB1.EntryRequested += v => OpenKeypad(v, v.Slice);
+        MiniB2.EntryRequested += v => OpenKeypad(v, v.Slice);
         VfoBox.PointerPressed += OnVfoPressed;
         VfoBox.PointerMoved += OnVfoMoved;
         VfoBox.PointerReleased += OnVfoReleased;
@@ -41,24 +44,22 @@ public partial class TouchMainView : UserControl
 
         BandButton.ContextRequested += async (_, e) => { e.Handled = true; await MainMenus.ShowBandStackAsync(Vm, BandButton); };
 
-        // With two panadapters the top one is slice A's; with one, a click
-        // tunes whichever slice is active (click a tag to switch).
+        // The top panadapter is RX1's (slices A1/A2); a click on it tunes A1
+        // (click a slice's tag to switch to it first).
         Spectrum.TuneRequested += hz =>
         {
             if (Vm is not { } vm || vm.TryPlaceNotch(hz)) return;
-            hz = vm.ClickFrequency(hz);
-            if (vm.ShowPanadapterB) _ = vm.TuneSliceAsync(0, hz);
-            else vm.TuneTo(hz);
+            _ = vm.TuneSliceAsync(0, vm.ClickFrequency(hz));
         };
         SpectrumB.TuneRequested += hz =>
         {
-            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(1, vm.ClickFrequency(hz));
+            if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(2, vm.ClickFrequency(hz));
         };
         SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
         SpectrumB.PanEnded += () => Vm?.PanEnded();
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB, offerRx2: true);
-        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(1, steps);
+        SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(2, steps);
         SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
         _ = new CloseUpFeed(FilterScope, () => Vm, () => Drawer.IsPaneOpen && FilterScope.IsEffectivelyVisible
@@ -67,12 +68,7 @@ public partial class TouchMainView : UserControl
         Spectrum.PanEnded += () => Vm?.PanEnded();
         Spectrum.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
         Spectrum.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, Spectrum, offerRx2: true);
-        Spectrum.WheelTune += steps =>
-        {
-            if (Vm is not { } vm) return;
-            if (vm.ShowPanadapterB) _ = vm.TuneSliceByStepsAsync(0, steps);
-            else vm.TuneBySteps(steps);
-        };
+        Spectrum.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(0, steps);
         Spectrum.ZoomRequested += dir => Vm?.ZoomStep(0, dir);
         // Ctrl+wheel (⌘+wheel on a Mac) zooms: SpectrumView raises ZoomRequested.
     }
@@ -234,14 +230,30 @@ public partial class TouchMainView : UserControl
 
     private void SelectRx1(object? sender, RoutedEventArgs e) => _ = Vm?.SelectRxAsync(0);
     private void SelectRx2(object? sender, RoutedEventArgs e) => _ = Vm?.SelectRxAsync(1);
-    private void Rx2Off(object? sender, RoutedEventArgs e) => _ = Vm?.RemoveSliceBAsync();
+    private void Rx2Off(object? sender, RoutedEventArgs e) => _ = Vm?.RemovePanBAsync();
+
+    // The + beside DUP: the next slice (A2, B1, B2) at the VFO frequency. At
+    // the radio's receiver ceiling CanAddSlice is false and the click does
+    // nothing (AddSliceAsync puts the reason on the status line anyway).
+    private void AddSlice(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { CanAddSlice: true } vm) return;
+        SetAddSliceTip(vm);
+        _ = vm.AddSliceAsync(vm.VfoHz);
+    }
+
+    private void ToggleB1Input(object? sender, RoutedEventArgs e) => Vm?.ToggleSliceInput(2);
 
     // ---- zoom ----------------------------------------------------------
 
     private void ZoomIn(object? sender, RoutedEventArgs e) => Zoom(1);
     private void ZoomOut(object? sender, RoutedEventArgs e) => Zoom(-1);
 
-    private void Zoom(int dir) => Vm?.ZoomStep(dir);
+    // The zoom buttons act on the panadapter the controls are on.
+    private void Zoom(int dir)
+    {
+        if (Vm is { } vm) vm.ZoomStep(vm.ActivePan, dir);
+    }
 
     // ---- frequency: drag to tune, click for the keypad -----------------
 
@@ -363,6 +375,7 @@ public partial class TouchMainView : UserControl
         vm.DisplayReset += OnDisplayReset;
         vm.PropertyChanged += OnVmPropertyChanged;
         LayoutPanadapters();
+        RefreshSlices();
     }
 
     private void Unwire()
@@ -376,7 +389,7 @@ public partial class TouchMainView : UserControl
     }
 
     private double? FindSignalHz(int rx, long lo, long hi, double db) =>
-        (rx == 1 && _wired is { ShowPanadapterB: true } ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
+        (rx == 2 && _wired is { ShowPanadapterB: true } ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
 
     private void OnDisplay(DisplayFrame f)
     {
@@ -390,10 +403,12 @@ public partial class TouchMainView : UserControl
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
         if (f.RxId == vm.ActiveRx && Drawer.IsPaneOpen)
+        {
             FilterScope.AverageSeconds = vm.CloseUpAverageSec;
             FilterScope.ColouredFill = vm.CloseUpColoured;
             FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric, vm.CwPitchHz);
-        if (f.RxId == 1)
+        }
+        if (f.RxId == 2)
         {
             if (!vm.ShowPanadapterB) return;
             SpectrumB.Slices = vm.PanMarks(1);
@@ -401,44 +416,70 @@ public partial class TouchMainView : UserControl
             (SpectrumB.SpecMinDb, SpectrumB.SpecMaxDb) = vm.SliceBRange(SpectrumB.NoiseFloorDb);
             return;
         }
+        if (f.RxId != 0) return;
         Spectrum.Slices = vm.PanMarks(0);
         Spectrum.PushFrame(f);
         vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
     }
 
-    // Each panadapter has its receiver's own span; RX2's also places its dial
+    // Each panadapter has its own span; RX2's also places its dial
     // by its own Centre (RX1's is placed by the engine).
     private void SetZoomViews(MainViewModel vm)
     {
         Spectrum.TargetSpanHz = vm.ZoomTargetSpanFor(0);
         Spectrum.DialRx = vm.ShowPanadapterB ? 0 : -1;
         SpectrumB.TargetSpanHz = vm.ZoomTargetSpanFor(1);
-        SpectrumB.DialRx = 1;
+        SpectrumB.DialRx = 2;
         SpectrumB.DialAt = vm.Rx2DialAt;
     }
 
     private void OnDisplayReset() { Spectrum.Clear(); SpectrumB.Clear(); FilterScope.Clear(); }
 
     private static readonly IBrush[] ActiveOutline =
-        [new SolidColorBrush(Color.Parse("#80F25F5C")), new SolidColorBrush(Color.Parse("#80F5A524"))];
+    [
+        new SolidColorBrush(Color.Parse("#80F25F5C")), new SolidColorBrush(Color.Parse("#80F5A524")),
+        new SolidColorBrush(Color.Parse("#80C084FC")), new SolidColorBrush(Color.Parse("#8038BDF8")),
+    ];
 
-    // Two panadapters while slice B has its own, the active one outlined in
-    // its slice colour; one, unoutlined, otherwise.
+    // Two panadapters while B1 is on, the active one outlined in its slice
+    // colour; one, unoutlined, otherwise.
     private void LayoutPanadapters()
     {
         if (Vm is not { } vm) return;
         bool two = vm.ShowPanadapterB;
         PanGrid.RowDefinitions[1].Height = two ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         PanGrid.RowSpacing = two ? 6 : 0;
-        PanBorderA.BorderBrush = two && vm.ActiveRx == 0 ? ActiveOutline[0] : Brushes.Transparent;
-        PanBorderB.BorderBrush = two && vm.ActiveRx == 1 ? ActiveOutline[1] : Brushes.Transparent;
+        PanBorderA.BorderBrush = two && vm.ActivePan == 0 ? ActiveOutline[vm.ActiveRx] : Brushes.Transparent;
+        PanBorderB.BorderBrush = two && vm.ActivePan == 1 ? ActiveOutline[vm.ActiveRx] : Brushes.Transparent;
         if (!two) SpectrumB.Clear();
     }
 
+    // The second slice's chip shows when that slice is on; the VFO's slice
+    // chip wears the active slice's colour; the + button's tooltip names the
+    // slice it would add.
+    private void RefreshSlices()
+    {
+        if (Vm is not { } vm) return;
+        MiniA1.IsVisible = vm.SliceCount > 1;
+        MiniA2.IsVisible = vm.SliceOn(1);
+        MiniB1.IsVisible = true;
+        MiniB2.IsVisible = vm.SliceOn(3);
+        ActiveSliceBorder.Background = new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(vm.ActiveRx)));
+        SetAddSliceTip(vm);
+    }
+
+    private void SetAddSliceTip(MainViewModel vm) =>
+        ToolTip.SetTip(AddSliceButton,
+            $"Add slice {vm.NextSliceLabel} at the VFO frequency. Each slice is a full receiver — watch CPU ({vm.CpuText}).");
+
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.ActiveRx))
+        if (e.PropertyName is nameof(MainViewModel.ShowPanadapterB) or nameof(MainViewModel.SliceCount) or nameof(MainViewModel.ActiveRx))
+        {
             LayoutPanadapters();
+            RefreshSlices();
+        }
+        else if (e.PropertyName is nameof(MainViewModel.TxRx)) RefreshSlices();
         // Zooming: redraw now with the new span instead of waiting for the next
         // frame. At each whole zoom level the engine sends no frames for about
         // 130 ms while it rebuilds its analyser, and the picture froze then leapt.
