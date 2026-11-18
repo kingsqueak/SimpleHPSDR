@@ -774,7 +774,7 @@
             </Grid>
             <Grid ColumnDefinitions="Auto,*,44" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="2"
                   VerticalAlignment="Center" IsVisible="{Binding HasSliceB}">
-              <ItemsControl ItemsSource="{Binding SliceAfs}">
+              <ItemsControl Grid.Row="0" Grid.ColumnSpan="3" ItemsSource="{Binding SliceAfs}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:SliceAfRow">
                     <Grid ColumnDefinitions="Auto,*,44" ColumnSpacing="4">

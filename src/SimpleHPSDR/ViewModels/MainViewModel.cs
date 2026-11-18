@@ -1282,7 +1282,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task ChangeModeAsync(RxMode mode)
     {
         if (!IsConnected) return;
-        await Try(() => _client!.SetModeAsync(mode, ActiveRx));
+        await Try(() => SendModeAsync(mode));
         var s = await _client!.GetStateAsync();
         UpdateSlices(s);
         var a = ActiveOf(s);
@@ -1291,6 +1291,19 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         await SetModeLocalAsync(a.Mode, a.Preset);
         await Try(() => FollowRxFilterAsync());
     }
+
+    /// <summary>The flat mode endpoint serves slices 0 and 1 (it 400s above
+    /// that); slices 2+ exist only on the receiver endpoint.</summary>
+    private Task SendModeAsync(RxMode mode) => ActiveRx >= 2
+        ? _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(Mode: mode))
+        : _client!.SetModeAsync(mode, ActiveRx);
+
+    /// <summary>The flat filter endpoint serves slices 0 and 1 (it 400s above
+    /// that); slices 2+ exist only on the receiver endpoint.</summary>
+    private Task SendFilterAsync(int low, int high, string? preset) => ActiveRx >= 2
+        ? _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(
+            FilterLowHz: low, FilterHighHz: high, FilterPresetName: preset))
+        : _client!.SetFilterAsync(low, high, preset, ActiveRx);
 
     private async Task SetModeLocalAsync(RxMode mode, string? presetName)
     {
@@ -1331,7 +1344,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         (FilterLowHz, FilterHighHz) = FreeDvEdges(slot.Mode, VfoHz, p.LowHz, p.HighHz);
         await Try(async () =>
         {
-            await _client!.SetFilterAsync(p.LowHz, p.HighHz, p.SlotName, ActiveRx);
+            await SendFilterAsync(p.LowHz, p.HighHz, p.SlotName);
             NoteFilterSent(ActiveRx, p.LowHz, p.HighHz, p.SlotName);
             await FollowRxFilterAsync();
         });
@@ -1349,7 +1362,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var f in Filters) f.IsSelected = false;
         _filterDragSender ??= new Latest<(int Low, int High)>(async e =>
         {
-            await _client!.SetFilterAsync(e.Low, e.High, null, ActiveRx);
+            await SendFilterAsync(e.Low, e.High, null);
             NoteFilterSent(ActiveRx, e.Low, e.High, null);
             await FollowRxFilterAsync();
         });
