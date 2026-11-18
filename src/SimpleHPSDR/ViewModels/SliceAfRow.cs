@@ -1,11 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace SimpleHPSDR.ViewModels;
 
-/// <summary>One slice's AF trim row: the label in the slice colour, a slider
-/// (-40..20 dB) and its dB text. The MainViewModel owns the collection and
-/// adds/removes rows as slices come on/off; the row sends to the engine
-/// through the VM, which keeps the "operator just moved it" timestamp.</summary>
+/// <summary>One slice's AF trim row: the label in the slice colour (click it
+/// to mute the slice), a slider (-40..20 dB) and its dB text. The
+/// MainViewModel owns the collection and adds/removes rows as slices come
+/// on/off; the row sends to the engine through the VM, which keeps the
+/// "operator just moved it" timestamp.</summary>
 public sealed partial class SliceAfRow : ObservableObject
 {
     private readonly MainViewModel _vm;
@@ -25,6 +27,17 @@ public sealed partial class SliceAfRow : ObservableObject
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(Text))] private double _value;
 
     public string Text => $"{Value:0} dB";
+
+    /// <summary>The slice is muted: the label dims as its switch.</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(LabelOpacity))] private bool _muted;
+
+    public double LabelOpacity => Muted ? 0.35 : 1.0;
+
+    /// <summary>The VM's poll or the engine's own change: show it.</summary>
+    public void SetMuted(bool muted) => Muted = muted;
+
+    [RelayCommand]
+    private async Task ToggleMute() => await _vm.SetSliceMuteAsync(Index, !Muted);
 
     /// <summary>The engine's value (or a new slice's 0 dB): show it without
     /// sending it back. The VM guards with its own flag around this too.</summary>

@@ -392,6 +392,7 @@ public sealed partial class MainViewModel
             if (_slices[i] is { } r)
             {
                 _mute[i] = r.Muted;
+                _sliceAfRows[i]?.SetMuted(r.Muted);
                 if (r.Enabled && i < MaxSlicesAllowed) count = i + 1;
             }
         }
@@ -641,7 +642,11 @@ public sealed partial class MainViewModel
         await Try(async () =>
         {
             await _client!.SetReceiverMuteAsync(rx, muted);
-            if ((uint)rx < MaxSlices) _mute[rx] = muted;
+            if ((uint)rx < MaxSlices)
+            {
+                _mute[rx] = muted;
+                _sliceAfRows[rx]?.SetMuted(muted);
+            }
         });
     }
 

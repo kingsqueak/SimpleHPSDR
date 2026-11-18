@@ -778,7 +778,11 @@
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:SliceAfRow">
                     <Grid ColumnDefinitions="Auto,*,44" ColumnSpacing="4">
-                      <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="Bold" Foreground="{Binding Color}" VerticalAlignment="Center" />
+                      <Button Classes="flat" MinWidth="0" Padding="2,0" Opacity="{Binding LabelOpacity}" Cursor="Hand"
+                              Command="{Binding ToggleMuteCommand}"
+                              ToolTip.Tip="Click to mute or unmute this slice">
+                        <TextBlock Text="{Binding Label}" FontSize="11" FontWeight="Bold" Foreground="{Binding Color}" VerticalAlignment="Center" />
+                      </Button>
                       <c:AfSlider Grid.Column="1" Width="150" Value="{Binding Value}" Minimum="-40" Maximum="20" Compact="True"
                                   ToolTip.Tip="Slice volume: the main AF is the master, this is a trim" />
                       <TextBlock Grid.Column="2" Text="{Binding Text}" FontSize="11" VerticalAlignment="Center" />

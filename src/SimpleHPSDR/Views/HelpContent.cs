@@ -263,7 +263,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
 
         ("Receiving", """
 ## Volume
-- AF sets the overall level. With more than one slice on, it becomes one slider per slice, each setting that slice's own level on top of the overall level, which stays where you left it.
+- AF sets the overall level. With more than one slice on, it becomes one slider per slice, each setting that slice's own level on top of the overall level, which stays where you left it. Click a slice's label to mute just that slice; the label dims while it's muted.
 - Pan, the third slider under those two, puts the receivers in different ears on stereo speakers or headphones. In the middle both are in both ears. Slide it left and the first receiver moves to the left ear and the second to the right, all the way for a full split; slide it right for the other way round. It works on this computer's sound output, not on the radio's own speaker or headphone jack.
 - Mute silences the receiver.
 - REC and the voice keyer: see Recording and the voice keyer.
