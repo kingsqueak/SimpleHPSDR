@@ -7,9 +7,10 @@ namespace SimpleHPSDR.ViewModels;
 
 /// <summary>IMD meter, in the PS panel. While 2-TONE transmits, the main
 /// panadapter's spectrum (averaged, as the engine sends it, not stretched) goes
-/// to the engine's IMD calculator twice a second. Starting 2-TONE from the
-/// button zooms in so the tones and products are far enough apart, with the
-/// dial centred; stopping it puts the zoom and dial position back. The last
+/// to the engine's IMD calculator twice a second. Starting 2-TONE (or PS CAL)
+/// zooms in so the tones and products are far enough apart, with the dial
+/// centred — which takes CTUN off for the run, since a frozen NCO can't
+/// centre; stopping puts the zoom, dial position and CTUN back. The last
 /// IMD3 with PureSignal off and with it correcting are kept for comparison.</summary>
 public sealed partial class MainViewModel
 {
@@ -37,6 +38,7 @@ public sealed partial class MainViewModel
     private double _twoToneF1 = 700, _twoToneF2 = 1900;
     private const double MinToneSpacingPixels = 16;
     private double? _zoomBeforeImd;
+    private bool? _ctunBeforeImd;
 
     partial void OnImdTextChanged(string value) => OnPropertyChanged(nameof(ImdShown));
 
@@ -165,8 +167,11 @@ public sealed partial class MainViewModel
                (on >= off ? $"improves it by {on - off:0} dB." : $"makes it {off - on:0} dB worse.");
     }
 
-    /// <summary>Operator starts 2-TONE: zoom in so the tones are well apart and
-    /// the 5th-order products are on screen, with the dial in the middle.</summary>
+    /// <summary>Operator starts 2-TONE or PS CAL: zoom in so the tones are well
+    /// apart and the 5th-order products are on screen, with the dial centred.
+    /// Centring needs CTUN off — with it on the NCO stays frozen and the zoomed
+    /// display sits off to one side — so CTUN goes for the run and comes back
+    /// in RestoreAfterImd.</summary>
     private async Task ZoomForImdAsync()
     {
         if (_sampleRateHz <= 0 || _client is null) return;
@@ -175,19 +180,28 @@ public sealed partial class MainViewModel
         double span = Math.Max(2.4 * outer, 10_000);
         double zoom = Math.Clamp(_sampleRateHz / span, 1, MaxZoom);
         _zoomBeforeImd ??= _zoomFine[0];
-        ImdText = "IMD: measuring…";
+        _ctunBeforeImd ??= CtunOn;
+        if (CtunOn) CtunOn = false;
         if (Math.Abs(EffectiveDialPositionOf(0)) >= 0.5) await Try(() => _client.SetDialPositionAsync(0));
         SetZoomFine(0, zoom, persist: false);
     }
 
-    /// <summary>2-TONE stopped, however: zoom and dial position as they were.</summary>
+    /// <summary>2-TONE / PS CAL stopped, however: zoom, dial position and CTUN
+    /// as they were.</summary>
     private void RestoreAfterImd()
     {
         _imdAvg = null;
         _imdRunStart = null;              // the summary stays on screen
-        if (_zoomBeforeImd is not { } z) return;
-        _zoomBeforeImd = null;
-        SetZoomFine(0, z, persist: false);
+        if (_zoomBeforeImd is { } z)
+        {
+            _zoomBeforeImd = null;
+            SetZoomFine(0, z, persist: false);
+        }
+        if (_ctunBeforeImd is { } ctun)
+        {
+            _ctunBeforeImd = null;
+            CtunOn = ctun;
+        }
         if (Math.Abs(EffectiveDialPositionOf(0)) >= 0.5) SendDialPosition();
     }
 }
