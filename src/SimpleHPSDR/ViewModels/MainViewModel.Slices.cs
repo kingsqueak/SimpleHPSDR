@@ -49,6 +49,7 @@ public sealed partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(AbLabel1))] [NotifyPropertyChangedFor(nameof(AbLabel2))]
     [NotifyPropertyChangedFor(nameof(AbActive1))] [NotifyPropertyChangedFor(nameof(AbActive2))]
     [NotifyPropertyChangedFor(nameof(AbTx1))] [NotifyPropertyChangedFor(nameof(AbTx2))]
+    [NotifyPropertyChangedFor(nameof(AbOn2))] [NotifyPropertyChangedFor(nameof(ActivePan))]
     private int _activeRx;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SplitText))]
     [NotifyPropertyChangedFor(nameof(AbTx1))] [NotifyPropertyChangedFor(nameof(AbTx2))]
@@ -158,8 +159,12 @@ public sealed partial class MainViewModel
     {
         if (!IsConnected) return;
         int first = PanPrimary(pan);
-        while (SliceCount <= first && SliceCount < MaxSlicesAllowed)
+        while (IsConnected && SliceCount <= first && SliceCount < MaxSlicesAllowed)
+        {
+            int before = SliceCount;
             await AddSliceAsync(VfoHz);
+            if (SliceCount == before) return;   // refused: the status line says why
+        }
         if (!SliceOn(first)) return;   // the radio refused (its ceiling)
         int want = SliceOn(_lastActive[pan]) && SlicePan(_lastActive[pan]) == pan ? _lastActive[pan] : first;
         if (want != ActiveRx) await MakeActiveAsync(want);
@@ -541,6 +546,10 @@ public sealed partial class MainViewModel
                 ZoomLevel: zoom, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto, AdcSource: adc));
             _slices[i] = (_slices[i] ?? new ReceiverDto(i, true, adc, hz, Mode, FilterLowHz, FilterHighHz,
                 Filters.FirstOrDefault(f => f.IsSelected)?.SlotName, 0, _sampleRateHz)) with { Enabled = true, VfoHz = hz };
+            // The engine has it on now: count it here rather than waiting for
+            // the poll, or MakeActiveAsync would refuse a slice it doesn't know.
+            SliceCount = i + 1;
+            SyncSliceAfRows();
             SetSliceAfLocal(i, 0);
             await MakeActiveAsync(i);
             Status = $"{SliceLabel(i)} on, {hz / 1e6:0.000000} MHz.";
@@ -764,6 +773,13 @@ public sealed partial class MainViewModel
     /// of view. Each panadapter centres on its first slice.</summary>
     private async Task CenterOnDialAsync(int pan)
     {
+        // 2-TONE / PS CAL on a pan's second slice (A2, B2): the picture stays
+        // centred on that slice's TX frequency for the run, zoom steps included.
+        if (_imdPan == pan && _imdCentreHz is { } txHz)
+        {
+            await _client!.SetReceiverLoAsync(PanPrimary(pan), txHz);
+            return;
+        }
         // RX1's display keeps the dial where its Centre slider puts it (centred
         // with CTUN off — the offset only means something with CTUN on).
         if (pan == 0) await _client!.SetDialPositionAsync(EffectiveDialPositionOf(0) / 100.0);

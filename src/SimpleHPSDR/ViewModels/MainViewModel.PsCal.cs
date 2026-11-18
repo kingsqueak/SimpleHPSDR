@@ -50,10 +50,11 @@ public sealed partial class MainViewModel
         // PS CAL's bursts don't measure IMD (see FeedImd): clear an old reading.
         ImdText = ImdCompareText = ImdSourceText = "";
         // Centre and zoom like 2-TONE so the bursts land in the middle of the
-        // display; RestoreAfterImd in the finally puts it all back.
-        await ZoomForImdAsync();
+        // display; RestoreAfterImd in the finally puts it all back. (While
+        // PsCalibrating, the poll seeing each burst's 2-TONE go off doesn't.)
         try
         {
+            await ZoomForImdAsync();
             if (!PsOn)
             {
                 await client.SetPsAsync(true);

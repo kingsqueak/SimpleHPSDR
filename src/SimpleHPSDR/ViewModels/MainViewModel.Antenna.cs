@@ -24,7 +24,11 @@ public sealed partial class MainViewModel
     public bool AntennasDiffer => TxAntLabel != RxAntLabel || JackSlices().Count > 0;
     partial void OnTxAntLabelChanged(string value) => NotifyAntennaText();
     partial void OnRxAntLabelChanged(string value) => NotifyAntennaText();
-    partial void OnHasRx2JackChanged(bool value) => NotifyAntennaText();
+    partial void OnHasRx2JackChanged(bool value)
+    {
+        NotifyAntennaText();
+        CheckAttSource();   // WantsJack depends on the jack being there
+    }
 
     /// <summary>The on-slices (past A1) listening on the Rx2 jack.</summary>
     private List<int> JackSlices() =>
@@ -56,7 +60,7 @@ public sealed partial class MainViewModel
 
     /// <summary>Slice i listens on the Rx2 jack (ADC1) rather than the main
     /// antenna.</summary>
-    internal bool WantsJack(int i) => i > 0 && i < MaxSlices && _wantsJack[i];
+    internal bool WantsJack(int i) => HasRx2Jack && i > 0 && i < MaxSlices && _wantsJack[i];
 
     /// <summary>Slice i's input button shows: the radio has the jack and the
     /// slice is on. A1 has no button; it is always the main antenna.</summary>

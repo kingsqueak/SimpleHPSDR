@@ -105,11 +105,13 @@ public static class MainMenus
             if (vm.CanAddSlice) items.Add(Item($"Add slice {vm.NextSliceLabel} at {where}", () => vm.AddSliceAsync(hz)));
             int top = vm.SliceCount - 1;
             if (top > 0) items.Add(Item($"Turn {MainViewModel.SliceLabel(top)} off", () => vm.RemoveSliceAsync(top)));
-            if (vm.ShowPanadapterB || offerRx2)
+            if (vm.ShowPanadapterB)
             {
                 items.Add(SideBySideItem(vm));
                 items.Add(Item("Turn RX2 off", () => vm.RemovePanBAsync()));
             }
+            else if (offerRx2 && vm.CanAddSlice)
+                items.Add(Item("Turn RX2 on (second panadapter)", () => vm.SelectRxAsync(1)));
         }
         new ContextMenu { ItemsSource = items }.Open(at);
     }

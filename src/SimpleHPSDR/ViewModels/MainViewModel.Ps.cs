@@ -226,7 +226,9 @@ public sealed partial class MainViewModel
     {
         OnPropertyChanged(nameof(ImdShown));
         HoldPopups();
-        if (!value) RestoreAfterImd();
+        // PS CAL keys 2-TONE per burst and the poll follows it; its finally
+        // restores the display once the whole run ends.
+        if (!value && !PsCalibrating) RestoreAfterImd();
         if (_applyingTx || !IsConnected) return;
         CancelPsCalForOperatorKey();
         _ = value ? StartTwoToneAsync() : KeyAsync(() => _client!.SetTwoToneAsync(false), false);

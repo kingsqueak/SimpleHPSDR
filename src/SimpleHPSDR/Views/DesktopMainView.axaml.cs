@@ -506,7 +506,7 @@ public partial class DesktopMainView : UserControl
     }
 
     private double? FindSignalHz(int rx, long lo, long hi, double db) =>
-        (rx == 2 && _wired is { ShowPanadapterB: true } ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
+        (MainViewModel.SlicePan(rx) == 1 && _wired is { ShowPanadapterB: true } ? SpectrumB : Spectrum).PeakHz(lo, hi, db);
 
     private void OnDisplay(DisplayFrame f)
     {
@@ -557,9 +557,9 @@ public partial class DesktopMainView : UserControl
     private void SetZoomViews(MainViewModel vm)
     {
         Spectrum.TargetSpanHz = vm.ZoomTargetSpanFor(0);
-        Spectrum.DialRx = vm.ShowPanadapterB ? 0 : -1;
+        Spectrum.DialRx = vm.PanDialSlice(0);
         SpectrumB.TargetSpanHz = vm.ZoomTargetSpanFor(1);
-        SpectrumB.DialRx = 2;
+        SpectrumB.DialRx = vm.PanDialSlice(1);
         SpectrumB.DialAt = vm.Rx2DialAt;
     }
 

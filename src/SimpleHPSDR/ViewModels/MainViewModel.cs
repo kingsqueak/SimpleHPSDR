@@ -880,8 +880,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var radio = _radio;
         // A new engine starts from what it last saved, so carry these across.
         // Connecting makes slice A1 active, so it's A1's dial that's kept.
-        long hz = _slices[0]?.VfoHz ?? VfoHz;
-        var (nb, anf) = (NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Value as NbMode?, AnfOn);
+        // The control bank is A1's only while A1 is active (it's live, the
+        // cached copy can be a poll behind); otherwise A1's cached state.
+        bool a1 = ActiveRx == 0;
+        long hz = a1 ? VfoHz : _slices[0]?.VfoHz ?? VfoHz;
+        var (nb, anf) = a1
+            ? (NoiseBlankers.FirstOrDefault(c => c.IsSelected)?.Value as NbMode?, AnfOn)
+            : (_slices[0]?.Nr?.NbMode, _slices[0]?.Nr?.AnfEnabled ?? AnfOn);
         Status = "Restarting the engine…";
         if (!await StartEngineAgainAsync()) return;
         if (radio is null)
@@ -1280,6 +1285,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnCtunOnChanged(bool value)
     {
+        // RX2's Centre offset applies only with CTUN on, and an off-centre
+        // dial needs a wider engine picture: re-pick pan B's level, whichever
+        // side changed CTUN.
+        if (IsConnected && ShowPanadapterB) SettleZoomSoon(1, afterMs: 50);
         if (_applyingState || !IsConnected) return;
         _ = Try(async () =>
         {
