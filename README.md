@@ -89,6 +89,13 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.15.2
+
+- **No echo of your own voice after unkeying on another slice.** With
+  PureSignal on and transmit on A2, B1 or B2, the last syllables of the
+  transmission played back after unkey. Every receiver is now paused and
+  cleared while you transmit, as it already was with PureSignal off.
+
 ### 0.15.1
 
 - **CAT and TCI follow the transmitting slice.** With transmit on A2, B1 or
