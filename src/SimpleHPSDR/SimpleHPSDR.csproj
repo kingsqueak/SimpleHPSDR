@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>0.15.0-dev-00d6e15</Version>
+    <Version>0.15.0</Version>
     <Product>SimpleHPSDR</Product>
     <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
   </PropertyGroup>

@@ -431,7 +431,7 @@ Every amplifier distorts a little, which splatters onto nearby frequencies. Pure
 ## Setting it up
 The first time you turn on PS, a guided setup opens. It asks where the sample comes from, reminds you to connect a dummy load and set your usual power, then calibrates. You can run it again any time from the PS right-click or Config > PureSignal.
 
-To recalibrate by hand: connect a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts until PS turns green.
+To recalibrate by hand: connect a dummy load, right-click PS and press PS CAL. It keys the radio in short two-tone bursts until PS turns green. While it runs the display centres on the transmitting slice and zooms in on the tones, and your zoom, CTUN and Center come back when it finishes.
 
 After that you rarely need PS CAL again. While you transmit, PureSignal keeps adjusting the correction from your own speech, about once a second, so it follows changes in power and band by itself. The PS right-click shows when it last did.
 
@@ -450,7 +450,7 @@ PureSignal isn't used in CW. A CW signal is sent straight to the radio and doesn
 
 ## Also on the right-click
 - 2-TONE transmits a test signal.
-- IMD: while 2-TONE transmits, the PS panel shows how far the 3rd- and 5th-order intermodulation products sit below the tones (IMD3, IMD5, in dBc; more negative is cleaner). With PureSignal on it measures your amplifier's real output (the PS sample) and starts PureSignal from a reset: leave 2-TONE on about 15 seconds and the panel shows the uncorrected and corrected IMD3 and the difference. 2-TONE zooms in to measure and puts your zoom back when it stops. PS CAL doesn't measure IMD: its bursts are too short, and PureSignal is still learning during them. Use 2-TONE from its button after PS CAL to see the result. If the panel says to zoom in, the tones are too close together on screen to measure; the 2-TONE button zooms for you.
+- IMD: while 2-TONE transmits, the PS panel shows how far the 3rd- and 5th-order intermodulation products sit below the tones (IMD3, IMD5, in dBc; more negative is cleaner). With PureSignal on it measures your amplifier's real output (the PS sample) and starts PureSignal from a reset: leave 2-TONE on about 15 seconds and the panel shows the uncorrected and corrected IMD3 and the difference. 2-TONE centres the transmitting slice's panadapter, zooms in to measure and puts your zoom, CTUN and Center back when it stops. PS CAL doesn't measure IMD: its bursts are too short, and PureSignal is still learning during them. Use 2-TONE from its button after PS CAL to see the result. If the panel says to zoom in, the tones are too close together on screen to measure; the 2-TONE button zooms for you.
 - "Correction updated" shows the last time PureSignal adjusted the correction, or that it started from the one saved for this band.
 - "Remember the correction for each band": see above.
 - The status box shows the feedback level (FB), which is best around 128 to 181.

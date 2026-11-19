@@ -38,10 +38,11 @@ Not affiliated with or endorsed by the Zeus SDR project.
   your licence lets you transmit, red where it doesn't, grey for broadcast bands,
   CB and WWV.
 - **Filter close-up:** 0 to 6000 Hz of received audio with draggable filter edges.
-- **Two receivers:** RX1 and RX2 buttons beside the frequency; RX2 opens its own
-  panadapter with a small VFO on each, cross-band and split included. Or slice B
-  on RX1's panadapter. With two on, the AF slider becomes two sliders, and Pan
-  puts the receivers in different ears.
+- **Two receivers, four slices:** RX1 and RX2 beside the frequency, each with
+  its own panadapter and two slices (A1 and A2 on RX1, B1 and B2 on RX2). Every
+  slice keeps its own mode, filter, noise settings and AGC; split and cross-band
+  included. With more than one on, AF becomes a slider per slice (click a
+  slice's label to mute it), and Pan puts them in different ears.
 - **Band and mode memory:** each pair, such as 40 m DIGU, keeps its own
   frequency, filter, AGC, drive, mic gain and noise settings.
 - **Memories:** 48 under Mem in three tabs, the same on every band, plus each band's own
@@ -87,6 +88,24 @@ Most controls have more behind a right-click. See **Help** in the menu.
 <img src="docs/mini.png" alt="The mini window" width="485">
 
 ## What's New
+
+### 0.15.0
+
+- **Each receiver is its own:** RX1 and RX2 keep their own mode, filter, noise
+  blanker and reduction, ANF and AGC. Before, they shared the filter and the
+  noise and AGC settings. Squelch, RX Lev, RX EQ and the AM/FM options stay
+  shared.
+- **Two slices per receiver:** A1 and A2 on RX1's panadapter, B1 and B2 on
+  RX2's. Add one from + in the touch drawer or the panadapter's right-click;
+  they come on in order (A2, B1, B2). Each slice's small display shows its
+  filter, NB/NR and AGC; click it to give that slice the controls. The old
+  "slice B on RX1's panadapter" is now slice A2, and RX2 always has its own
+  panadapter.
+- **Per-slice mute:** click A1, A2, B1 or B2 beside the volume sliders.
+- **PS CAL and 2-TONE** centre the transmitting slice and zoom to fit the tones,
+  then put the display back.
+- **With CTUN off the dial is always centred;** Center applies only with CTUN on
+  and its slider is greyed out otherwise.
 
 ### 0.14.0
 
