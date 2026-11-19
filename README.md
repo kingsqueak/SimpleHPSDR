@@ -89,6 +89,15 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.15.1
+
+- **CAT and TCI follow the transmitting slice.** With transmit on A2, B1 or
+  B2, CAT and TCI programs now see split, with VFO B (TCI `vfo:0,1`,
+  `tx_frequency`) on that slice's frequency. Amplifiers and tuners that follow
+  the TX frequency over TCI or CAT now track it; before, they stayed on A1.
+- The active slice's badge turns blue again when transmit moves to another
+  slice.
+
 ### 0.15.0
 
 - **Each receiver is its own:** RX1 and RX2 keep their own mode, filter, noise
