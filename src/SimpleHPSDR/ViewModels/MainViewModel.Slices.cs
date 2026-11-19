@@ -53,6 +53,8 @@ public sealed partial class MainViewModel
     private int _activeRx;
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(SplitText))]
     [NotifyPropertyChangedFor(nameof(AbTx1))] [NotifyPropertyChangedFor(nameof(AbTx2))]
+    // The badges' blue depends on TX too: the transmitting slice shows red instead.
+    [NotifyPropertyChangedFor(nameof(AbActive1))] [NotifyPropertyChangedFor(nameof(AbActive2))]
     private int _txRx;
 
     /// <summary>The panadapter the controls act on: the active slice's.</summary>
