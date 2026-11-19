@@ -149,7 +149,7 @@ public sealed partial class MainViewModel
     {
         // The active slice's own values are fresher than its last state record.
         if (TxRx == ActiveRx) return (VfoHz, Mode);
-        return (TxRx == 0 ? _sliceA : _sliceB) is { } r ? (r.VfoHz, r.Mode) : (VfoHz, Mode);
+        return _slices[Math.Clamp(TxRx, 0, MaxSlices - 1)] is { } r ? (r.VfoHz, r.Mode) : (VfoHz, Mode);
     }
 
     /// <summary>The TX slice moved, changed mode, or another slice took over

@@ -7,7 +7,7 @@ using SimpleHPSDR.Contracts;
 namespace SimpleHPSDR.ViewModels;
 
 /// <summary>Everyday operating controls: RIT, XIT, VFO lock, A/B swap,
-/// squelch, RX leveler, manual notches and band stacking. RIT is on slice A
+/// squelch, RX leveler, manual notches and band stacking. RIT is on slice A1
 /// only (the engine's limit); XIT moves the transmit frequency.</summary>
 public sealed partial class MainViewModel
 {
@@ -32,7 +32,7 @@ public sealed partial class MainViewModel
     private List<NotchDto> _notches = [];
 
     public string RitText => FormatOffset(RitHz);
-    /// <summary>The engine's RIT is on slice A only.</summary>
+    /// <summary>The engine's RIT is on slice A1 only.</summary>
     public bool RitUsable => ActiveRx == 0;
     public string XitText => FormatOffset(XitHz);
     public string SquelchText => $"{SquelchLevel:0}";
@@ -84,6 +84,7 @@ public sealed partial class MainViewModel
         if (_xitSender is not { Busy: true }) XitHz = s.XitHz;
         VfoLocked = s.VfoLocked;
         RxLevelerOn = s.RxLevelerEnabled;
+        _agcOffsetDb = s.AgcOffsetDb;
         _squelch = s.Squelch ?? new SquelchConfig();
         SquelchOn = _squelch.Enabled;
         SquelchAdaptive = _squelch.Adaptive;

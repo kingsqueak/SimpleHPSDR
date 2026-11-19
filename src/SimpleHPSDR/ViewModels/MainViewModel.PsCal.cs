@@ -49,8 +49,12 @@ public sealed partial class MainViewModel
         PsCalibrating = true;
         // PS CAL's bursts don't measure IMD (see FeedImd): clear an old reading.
         ImdText = ImdCompareText = ImdSourceText = "";
+        // Centre and zoom like 2-TONE so the bursts land in the middle of the
+        // display; RestoreAfterImd in the finally puts it all back. (While
+        // PsCalibrating, the poll seeing each burst's 2-TONE go off doesn't.)
         try
         {
+            await ZoomForImdAsync();
             if (!PsOn)
             {
                 await client.SetPsAsync(true);
@@ -117,8 +121,9 @@ public sealed partial class MainViewModel
         }
         finally
         {
-            // Whatever happened, leave the radio unkeyed.
+            // Whatever happened, leave the radio unkeyed and the display as it was.
             try { await client.SetTwoToneAsync(false); } catch (Exception) { }
+            RestoreAfterImd();
             _psCalCts = null;
             PsCalibrating = false;
             UpdatePsStatus();

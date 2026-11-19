@@ -39,7 +39,7 @@ public sealed partial class MainViewModel
     // A poll that left before a change could bring back the old curve.
     private DateTime _rxEqChangedUtc;
 
-    public string RxEqTip => "AF: click to turn the receive EQ on or off (blue = on). Right-click to shape it.";
+    public string RxEqTip => "AF: click to turn the receive EQ on or off (blue = on). Right-click to shape it. One curve, shared by both receivers.";
 
     private void UpdateRxEq(StateDto s)
     {

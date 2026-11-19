@@ -60,6 +60,7 @@
     <Panel Width="340" Margin="4">
       <StackPanel Spacing="8" IsVisible="{Binding ModeIsAm}">
         <TextBlock Text="AM transmit" FontWeight="SemiBold" />
+        <TextBlock Classes="label" FontSize="11" Text="One setting, shared by both receivers." />
         <CheckBox Content="Broadcast-style AM (asymmetric peaks)" IsChecked="{Binding AmBroadcastOn}" />
         <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
                    Text="Makes your AM sound like a broadcast station: louder and with more punch. Voice peaks may push the signal up past 100% (Positive peak), but the downward swings stop short of 100% (Negative peak), so the carrier never cuts out and splatters. The carrier level is set for you, and the audio is kept within your TX filter. Leave it off for plain AM with a carrier level you choose." />
@@ -85,6 +86,7 @@
       </StackPanel>
       <StackPanel Spacing="8" IsVisible="{Binding ModeIsFm}">
         <TextBlock Text="FM" FontWeight="SemiBold" />
+        <TextBlock Classes="label" FontSize="11" Text="One setting, shared by both receivers." />
         <CheckBox Content="Narrow (2.5 kHz deviation, otherwise 5 kHz)" IsChecked="{Binding FmNarrow}" />
         <Grid ColumnDefinitions="110,*">
           <CheckBox Content="CTCSS" IsChecked="{Binding FmCtcssOn}" />

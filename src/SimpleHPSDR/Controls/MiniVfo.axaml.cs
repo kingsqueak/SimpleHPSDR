@@ -8,17 +8,19 @@ using SimpleHPSDR.ViewModels;
 namespace SimpleHPSDR.Controls;
 
 /// <summary>
-/// A receiver's small VFO on its panadapter, shown while RX2 is on: the
-/// receiver's name, a TX mark (click to transmit there), its frequency (wheel
-/// to tune, click to type one) and mode. RX2's also has the antenna switch on
-/// its left and a ✕ that turns RX2 off. Tuning here gives that receiver the
-/// controls first, as a click on its panadapter does.
+/// A slice's small VFO on its panadapter: the slice's name, a TX mark (click
+/// to transmit there), its frequency (wheel to tune, click to type one), its
+/// mode, and a readout of its filter, noise blanker/reduction and AGC. A B
+/// slice also has the antenna switch on its left, and the top slice has a ✕
+/// that turns it off (slices come off in reverse order). A click anywhere
+/// else on the chip gives that slice the controls; tuning the frequency
+/// does too.
 /// </summary>
 public partial class MiniVfo : UserControl
 {
-    public static readonly StyledProperty<int> RxProperty = AvaloniaProperty.Register<MiniVfo, int>(nameof(Rx));
-    /// <summary>0 = RX1, 1 = RX2.</summary>
-    public int Rx { get => GetValue(RxProperty); set => SetValue(RxProperty, value); }
+    public static readonly StyledProperty<int> SliceProperty = AvaloniaProperty.Register<MiniVfo, int>(nameof(Slice));
+    /// <summary>0..3: A1 and A2 on RX1's panadapter, B1 and B2 on RX2's.</summary>
+    public int Slice { get => GetValue(SliceProperty); set => SetValue(SliceProperty, value); }
 
     public static readonly StyledProperty<bool> TouchProperty = AvaloniaProperty.Register<MiniVfo, bool>(nameof(Touch));
     /// <summary>Touch layout: larger, and a tap on the frequency asks the
@@ -26,7 +28,8 @@ public partial class MiniVfo : UserControl
     public bool Touch { get => GetValue(TouchProperty); set => SetValue(TouchProperty, value); }
 
     private static readonly IBrush[] SliceBrush =
-        [new SolidColorBrush(Color.Parse("#F25F5C")), new SolidColorBrush(Color.Parse("#F5A524"))];
+        [new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(0))), new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(1))),
+         new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(2))), new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(3)))];
     private static readonly IBrush Idle = new SolidColorBrush(Color.Parse("#40FFFFFF"));
     private static readonly IBrush TxRed = new SolidColorBrush(Color.Parse("#A8232A"));
     private static readonly IBrush Dim = new SolidColorBrush(Color.Parse("#8A93A3"));
@@ -43,10 +46,16 @@ public partial class MiniVfo : UserControl
         {
             e.Handled = true;
             int clicks = SliderWheel.Clicks(Box, e);
-            if (clicks != 0) _ = Vm?.TuneSliceByStepsAsync(Rx, clicks);
+            if (clicks != 0) _ = Vm?.TuneSliceByStepsAsync(Slice, clicks);
         };
         // Presses stop here, so they don't tune the panadapter underneath.
-        Box.PointerPressed += (_, e) => e.Handled = true;
+        // A press on the chip itself (not one of its own controls) gives
+        // this slice the controls, like a click on its panadapter.
+        Box.PointerPressed += (_, e) =>
+        {
+            e.Handled = true;
+            if (Vm is { IsConnected: true } vm && vm.ActiveRx != Slice) _ = vm.MakeActiveAsync(Slice);
+        };
         FreqHost.PointerPressed += (_, e) =>
         {
             e.Handled = true;
@@ -65,14 +74,14 @@ public partial class MiniVfo : UserControl
                 e.Handled = true;
                 string text = Entry.Text ?? "";
                 EndEntry();
-                _ = Vm?.EnterRxFrequencyAsync(Rx, text);
+                _ = Vm?.EnterRxFrequencyAsync(Slice, text);
             }
             else if (e.Key == Key.Escape) { e.Handled = true; EndEntry(); }
         };
         Entry.LostFocus += (_, _) => EndEntry();
-        TxChip.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(Rx); };
-        CloseChip.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.RemoveSliceBAsync(); };
-        AntChip.PointerPressed += (_, e) => { e.Handled = true; Vm?.ToggleSliceBInput(); };
+        TxChip.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.TransmitOnAsync(Slice); };
+        CloseChip.PointerPressed += (_, e) => { e.Handled = true; _ = Vm?.RemoveSliceAsync(Slice); };
+        AntChip.PointerPressed += (_, e) => { e.Handled = true; Vm?.ToggleSliceInput(Slice); };
     }
 
     private MainViewModel? Vm => DataContext as MainViewModel;
@@ -86,7 +95,7 @@ public partial class MiniVfo : UserControl
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == RxProperty || change.Property == TouchProperty) Refresh();
+        if (change.Property == SliceProperty || change.Property == TouchProperty) Refresh();
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -128,31 +137,33 @@ public partial class MiniVfo : UserControl
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName is MainViewModel.RxReadouts or nameof(MainViewModel.ActiveRx) or nameof(MainViewModel.TxRx)
-            or nameof(MainViewModel.Mode) or nameof(MainViewModel.ShowPanadapterB)
-            or nameof(MainViewModel.ShowSliceBInput) or nameof(MainViewModel.SliceBInputLabel))
+            or nameof(MainViewModel.Mode) or nameof(MainViewModel.SliceCount))
             Refresh();
     }
 
     private void Refresh()
     {
         if (_wired is not { } vm) return;
-        int rx = Math.Clamp(Rx, 0, 1);
+        int rx = Math.Clamp(Slice, 0, MainViewModel.MaxSlices - 1);
         bool active = vm.ActiveRx == rx, tx = vm.TxRx == rx;
-        NameText.Text = rx == 0 ? "RX1" : "RX2";
+        NameText.Text = MainViewModel.SliceLabel(rx);
         NameText.Foreground = SliceBrush[rx];
         Box.BorderBrush = active ? SliceBrush[rx] : Idle;
         long hz = vm.RxHz(rx);
         Freq.Text = hz > 0 ? hz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.') : "";
         ModeText.Text = vm.RxModeLabel(rx);
+        SettingsText.Text = vm.RxSettingsLabel(rx);
+        SettingsText.IsVisible = SettingsText.Text.Length > 0;
         TxChip.Background = tx ? TxRed : Brushes.Transparent;
         TxChip.BorderBrush = tx ? TxRed : Dim;
         TxText.Foreground = tx ? Brushes.White : Dim;
-        CloseChip.IsVisible = rx == 1;
-        AntChip.IsVisible = rx == 1 && vm.ShowSliceBInput;
-        AntText.Text = vm.SliceBInputLabel;
+        // Slices come off in reverse order, so only the top one offers a ✕.
+        CloseChip.IsVisible = rx > 0 && vm.SliceCount - 1 == rx;
+        AntChip.IsVisible = rx > 0 && vm.ShowSliceInput(rx);
+        AntText.Text = vm.SliceInputLabel(rx);
 
         Freq.FontSize = Touch ? 24 : 18;
-        NameText.FontSize = ModeText.FontSize = Touch ? 14 : 11;
+        NameText.FontSize = ModeText.FontSize = SettingsText.FontSize = Touch ? 14 : 11;
         TxText.FontSize = Touch ? 14 : 10;
         TxChip.Padding = Touch ? new Thickness(8, 4) : new Thickness(4, 0);
         CloseChip.Padding = Touch ? new Thickness(10, 4) : new Thickness(3, 0);

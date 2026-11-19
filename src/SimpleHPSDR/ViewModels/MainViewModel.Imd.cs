@@ -7,9 +7,10 @@ namespace SimpleHPSDR.ViewModels;
 
 /// <summary>IMD meter, in the PS panel. While 2-TONE transmits, the main
 /// panadapter's spectrum (averaged, as the engine sends it, not stretched) goes
-/// to the engine's IMD calculator twice a second. Starting 2-TONE from the
-/// button zooms in so the tones and products are far enough apart, with the
-/// dial centred; stopping it puts the zoom and dial position back. The last
+/// to the engine's IMD calculator twice a second. Starting 2-TONE (or PS CAL)
+/// zooms in so the tones and products are far enough apart, with the dial
+/// centred — which takes CTUN off for the run, since a frozen NCO can't
+/// centre; stopping puts the zoom, dial position and CTUN back. The last
 /// IMD3 with PureSignal off and with it correcting are kept for comparison.</summary>
 public sealed partial class MainViewModel
 {
@@ -37,6 +38,7 @@ public sealed partial class MainViewModel
     private double _twoToneF1 = 700, _twoToneF2 = 1900;
     private const double MinToneSpacingPixels = 16;
     private double? _zoomBeforeImd;
+    private bool? _ctunBeforeImd;
 
     partial void OnImdTextChanged(string value) => OnPropertyChanged(nameof(ImdShown));
 
@@ -46,11 +48,11 @@ public sealed partial class MainViewModel
         if (s.TwoToneFreq2 > 0) _twoToneF2 = s.TwoToneFreq2;
     }
 
-    /// <summary>Every main-panadapter frame: average it while a two-tone is on
+    /// <summary>Every frame of the TX slice's stream (ImdStream): average it while a two-tone is on
     /// the air, and send the average for measuring every half second.</summary>
     private void FeedImd(DisplayFrame f)
     {
-        if (f.RxId != 0 || !TwoToneOn || !IsTransmitting || !f.BodyFlags.HasFlag(DisplayBodyFlags.PanValid)) return;
+        if (f.RxId != ImdStream || !TwoToneOn || !IsTransmitting || !f.BodyFlags.HasFlag(DisplayBodyFlags.PanValid)) return;
         // PS CAL's 3-5 s bursts run at whatever span is on screen while PS is
         // still adapting: no meaningful IMD there (it once read IMD3 -3 dBc at
         // the full 384 kHz span).
@@ -79,7 +81,7 @@ public sealed partial class MainViewModel
         _imdBusy = true;
         var rxView = _imdAvg.Select(d => (double?)d).ToArray();
         double hzPerPixel = _imdHzPerPixel, spacing = Math.Abs(_twoToneF2 - _twoToneF1);
-        long rxCenter = _imdCenterHz, dial = VfoHz;
+        long rxCenter = _imdCenterHz, dial = TxSlice().Hz;   // the TX slice's, not the active one's
         bool psArmed = PsOn, psCorrecting = PsLocked;
         var client = _client;
         _ = Task.Run(async () =>
@@ -165,8 +167,11 @@ public sealed partial class MainViewModel
                (on >= off ? $"improves it by {on - off:0} dB." : $"makes it {off - on:0} dB worse.");
     }
 
-    /// <summary>Operator starts 2-TONE: zoom in so the tones are well apart and
-    /// the 5th-order products are on screen, with the dial in the middle.</summary>
+    /// <summary>Operator starts 2-TONE or PS CAL: zoom in so the tones are well
+    /// apart and the 5th-order products are on screen, with the dial centred.
+    /// Centring needs CTUN off — with it on the NCO stays frozen and the zoomed
+    /// display sits off to one side — so CTUN goes for the run and comes back
+    /// in RestoreAfterImd.</summary>
     private async Task ZoomForImdAsync()
     {
         if (_sampleRateHz <= 0 || _client is null) return;
@@ -174,20 +179,67 @@ public sealed partial class MainViewModel
         double outer = Math.Max(Math.Abs(_twoToneF1), Math.Abs(_twoToneF2)) + 2 * spacing;
         double span = Math.Max(2.4 * outer, 10_000);
         double zoom = Math.Clamp(_sampleRateHz / span, 1, MaxZoom);
-        _zoomBeforeImd ??= _zoomFine[0];
-        ImdText = "IMD: measuring…";
-        if (Math.Abs(DialPositionOf(0)) >= 0.5) await Try(() => _client.SetDialPositionAsync(0));
-        SetZoomFine(0, zoom, persist: false);
+        // The panadapter the transmitting slice is on: RX2's for B1/B2.
+        int pan = _imdPan ??= SlicePan(TxRx) == 1 && ShowPanadapterB ? 1 : 0;
+        _zoomBeforeImd ??= _zoomFine[pan];
+        _ctunBeforeImd ??= CtunOn;
+        if (CtunOn) CtunOn = false;
+        // A TX slice that isn't its pan's first (A2, B2): the pan's picture is
+        // the first slice's capture, so centre that on the TX frequency, if it
+        // reaches. Otherwise the meter reads the TX slice's own receiver.
+        int primary = PanPrimary(pan);
+        if (TxRx != primary)
+        {
+            long txHz = TxSlice().Hz;
+            if (Math.Abs(txHz - RxHz(primary)) <= (long)(_sampleRateHz * 0.43)) _imdCentreHz = txHz;
+            else Status = $"{SliceLabel(TxRx)} is outside {SliceLabel(primary)}'s panadapter: IMD reads {SliceLabel(TxRx)}'s own receiver.";
+        }
+        await Try(() => CenterOnDialAsync(pan));
+        // Stopped while that was in flight: RestoreAfterImd has already put
+        // things back, so don't zoom in over it.
+        if (_zoomBeforeImd is null) return;
+        SetZoomFine(pan, zoom, persist: false);
     }
 
-    /// <summary>2-TONE stopped, however: zoom and dial position as they were.</summary>
+    /// <summary>The pan zoomed and centred for 2-TONE / PS CAL, while it runs.</summary>
+    private int? _imdPan;
+    /// <summary>A second-slice TX frequency that pan's picture is centred on
+    /// for the run (CenterOnDialAsync honours it).</summary>
+    private long? _imdCentreHz;
+
+    /// <summary>The receiver stream the IMD meter reads: the TX pan's picture
+    /// when the tones are centred in it, else the TX slice's own receiver.</summary>
+    private int ImdStream => _imdPan is { } p && (TxRx == PanPrimary(p) || _imdCentreHz is not null)
+        ? PanPrimary(p) : TxRx;
+
+    /// <summary>The slice a pan's view places its window around (the views
+    /// read it every frame): the TX slice during 2-TONE / PS CAL on that pan,
+    /// otherwise the pan's first slice (-1 = the active one, single pan).</summary>
+    public int PanDialSlice(int pan) => _imdPan == pan ? TxRx
+        : pan == 0 ? (ShowPanadapterB ? 0 : -1) : PanPrimary(1);
+
+    /// <summary>2-TONE / PS CAL stopped, however: zoom, centre, dial position
+    /// and CTUN as they were.</summary>
     private void RestoreAfterImd()
     {
         _imdAvg = null;
         _imdRunStart = null;              // the summary stays on screen
-        if (_zoomBeforeImd is not { } z) return;
-        _zoomBeforeImd = null;
-        SetZoomFine(0, z, persist: false);
-        if (Math.Abs(DialPositionOf(0)) >= 0.5) SendDialPosition();
+        int pan = _imdPan ?? 0;
+        bool recentre = _imdCentreHz is not null;
+        // Cleared first, so the zoom's own re-centring goes back to normal.
+        _imdPan = null;
+        _imdCentreHz = null;
+        if (_zoomBeforeImd is { } z)
+        {
+            _zoomBeforeImd = null;
+            SetZoomFine(pan, z, persist: false);
+        }
+        if (_ctunBeforeImd is { } ctun)
+        {
+            _ctunBeforeImd = null;
+            CtunOn = ctun;
+        }
+        if (recentre && IsConnected) _ = Try(() => CenterOnDialAsync(pan));
+        if (Math.Abs(EffectiveDialPositionOf(0)) >= 0.5) SendDialPosition();
     }
 }

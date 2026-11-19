@@ -102,7 +102,7 @@ public sealed partial class MainViewModel
                 int s = 0;
                 if (RitOn) s |= 0x01;
                 if (VfoLocked) s |= 0x06;                       // A and B lock
-                if (SliceBEnabled && TxRx != ActiveRx) s |= 0x08; // split
+                if (SliceCount > 1 && TxRx != ActiveRx) s |= 0x08; // split
                 if (CtunOn) s |= 0x10;
                 if (MoxOn) s |= 0x40;
                 if (TunOn) s |= 0x80;
@@ -110,7 +110,8 @@ public sealed partial class MainViewModel
                 return $"ZZXV{s:D4};";
             }
             case "ZZUT": return $"ZZUT{(TwoToneOn ? 1 : 0)};";
-            case "ZZYR": return $"ZZYR{ActiveRx};";
+            // The panel knows VFO A and B: answer with the panadapter.
+            case "ZZYR": return $"ZZYR{ActivePan};";
             default: return null;
         }
     }
@@ -148,8 +149,8 @@ public sealed partial class MainViewModel
         switch (KnobAction(product, code))
         {
             case PanelKnobAction.AfGain: AfGainDb = Math.Clamp(AfGainDb + steps, -50, 20); break;
-            case PanelKnobAction.AfA: SliceAfA = Math.Clamp(SliceAfA + steps, -40, 20); break;
-            case PanelKnobAction.AfB: if (SliceBEnabled) SliceAfB = Math.Clamp(SliceAfB + steps, -40, 20); break;
+            case PanelKnobAction.AfA: NudgeSliceAf(0, steps); break;
+            case PanelKnobAction.AfB: if (SliceOn(1)) NudgeSliceAf(1, steps); break;
             case PanelKnobAction.AgcTop: AgcTopDb = Math.Clamp(AgcTopDb + steps, 0, 120); break;
             case PanelKnobAction.Drive: DrivePct = Math.Clamp(DrivePct + steps, 0, DriveCeilingPct); break;
             case PanelKnobAction.MicGain: MicGainDb = Math.Clamp(MicGainDb + steps, -20, 40); break;
@@ -158,7 +159,7 @@ public sealed partial class MainViewModel
             case PanelKnobAction.FilterHigh: DragFilter(FilterLowHz, FilterHighHz + steps * 50); break;
             case PanelKnobAction.FilterLow: DragFilter(FilterLowHz + steps * 50, FilterHighHz); break;
             case PanelKnobAction.Attenuation: if (AttOnRx2Jack || !PreampOn) AttenDb = Math.Clamp(AttenDb + steps, 0, 31); break;
-            case PanelKnobAction.TuneB: if (SliceBEnabled) _ = TuneSliceByStepsAsync(1, steps); break;
+            case PanelKnobAction.TuneB: if (SliceOn(1)) _ = TuneSliceByStepsAsync(1, steps); break;
             case PanelKnobAction.Tune: if (!VfoLocked) TuneBySteps(steps); break;
             case PanelKnobAction.TuneFast: if (!VfoLocked) TuneBySteps(steps * 10); break;
             case PanelKnobAction.Zoom: ZoomStep(steps); break;
@@ -204,7 +205,12 @@ public sealed partial class MainViewModel
                 break;
             case PanelButtonAction.AToB: _ = CopySliceAsync(0, 1); break;
             case PanelButtonAction.BToA: _ = CopySliceAsync(1, 0); break;
-            case PanelButtonAction.SwapAB: if (SliceBEnabled) _ = MakeActiveAsync(ActiveRx == 0 ? 1 : 0); break;
+            case PanelButtonAction.SwapAB:
+            {
+                int other = ActiveRx % 2 == 0 ? ActiveRx + 1 : ActiveRx - 1;   // the active pan's other slice
+                if (SliceOn(other)) _ = MakeActiveAsync(other);
+                break;
+            }
             case PanelButtonAction.Split: _ = SplitAsync(); break;
             case PanelButtonAction.Rit: ToggleRitCommand.Execute(null); break;
             case PanelButtonAction.Xit: ToggleXitCommand.Execute(null); break;
@@ -247,7 +253,7 @@ public sealed partial class MainViewModel
 
     private async Task MuteSliceAsync(int rx)
     {
-        if (!SliceBEnabled) { Muted = !Muted; return; }
+        if (SliceCount < 2) { Muted = !Muted; return; }
         await SetSliceMuteAsync(rx, !IsSliceMuted(rx));
     }
 
@@ -258,26 +264,29 @@ public sealed partial class MainViewModel
     {
         long hz = SliceHz(from);
         int was = ActiveRx;
-        if (!SliceBEnabled)
+        if (!SliceOn(to))
         {
-            if (to == 1) { await AddSliceBAsync(hz, ownPanadapter: false); await MakeActiveAsync(was); }
+            await AddSliceAsync(hz);
+            await MakeActiveAsync(was);
             return;
         }
         await TuneSliceAsync(to, hz);
         if (ActiveRx != was) await MakeActiveAsync(was);
     }
 
-    /// <summary>Split: transmit on the other slice (adding B on the same frequency if needed).</summary>
+    /// <summary>Split: transmit on the active pan's other slice (adding it on
+    /// the same frequency if needed).</summary>
     private async Task SplitAsync()
     {
-        if (!SliceBEnabled)
+        int other = ActiveRx % 2 == 0 ? ActiveRx + 1 : ActiveRx - 1;   // the active pan's other slice
+        if (!SliceOn(other))
         {
             int was = ActiveRx;
-            await AddSliceBAsync(VfoHz, ownPanadapter: false);
+            await AddSliceAsync(VfoHz);
             await MakeActiveAsync(was);
-            await TransmitOnAsync(1);
+            await TransmitOnAsync(other);
             return;
         }
-        await TransmitOnAsync(TxRx == 0 ? 1 : 0);
+        await TransmitOnAsync(TxRx == ActiveRx ? other : ActiveRx);
     }
 }

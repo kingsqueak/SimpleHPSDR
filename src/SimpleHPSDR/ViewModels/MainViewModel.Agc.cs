@@ -8,8 +8,8 @@ namespace SimpleHPSDR.ViewModels;
 
 /// <summary>AGC: the button turns the engine's auto AGC on (blue) or off;
 /// off is manual, where the speed (Off/Long/Slow/Med/Fast) is chosen; Off
-/// is the engine's Fixed mode, whose gain gets its own slider. Both slices
-/// get the same AGC.</summary>
+/// is the engine's Fixed mode, whose gain gets its own slider. The settings
+/// act on the active receiver; each receiver keeps its own.</summary>
 public sealed partial class MainViewModel
 {
     private static readonly AgcMode[] AgcSpeeds = [AgcMode.Fixed, AgcMode.Long, AgcMode.Slow, AgcMode.Med, AgcMode.Fast];
@@ -106,31 +106,49 @@ public sealed partial class MainViewModel
     public string AgcSubLabel => AgcAuto ? "auto" : "manual";
     public ObservableCollection<Choice> AgcSpeedChoices { get; } = [];
 
-    /// <summary>From engine state (connect and the 1 s poll).</summary>
-    private void UpdateAgc(StateDto s)
+    /// <summary>From engine state (connect and the 1 s poll): the active
+    /// receiver's AGC, restored into the controls.</summary>
+    private void UpdateAgc(RxSettings view)
     {
         if (AgcSpeedChoices.Count == 0)
             foreach (var m in AgcSpeeds)
                 AgcSpeedChoices.Add(new Choice(SpeedName(m), m, c => _ = SelectAgcSpeedAsync((AgcMode)c.Value)));
-        AgcAuto = s.AutoAgcEnabled;
-        _agcMode = s.Agc?.Mode ?? AgcMode.Med;
+        AgcAuto = view.AutoAgcEnabled;
+        _agcMode = view.Agc?.Mode ?? AgcMode.Med;
         AgcSpeedLabel = SpeedName(_agcMode);
         Mark(AgcSpeedChoices, _agcMode);
         OnPropertyChanged(nameof(AgcFixedShown));
         OnPropertyChanged(nameof(AgcTopShown));
-        _agcOffsetDb = s.AgcOffsetDb;
         if (_agcTopSender is null || !_agcTopSender.Busy)
         {
             _applyingAgc = true;
-            AgcTopDb = s.AgcTopDb;
+            AgcTopDb = view.AgcTopDb;
             _applyingAgc = false;
         }
         if (_agcFixedSender is null || !_agcFixedSender.Busy)
         {
             _applyingAgc = true;
-            AgcFixedGainDb = s.Agc?.FixedGainDb ?? 20;
+            AgcFixedGainDb = view.Agc?.FixedGainDb ?? 20;
             _applyingAgc = false;
         }
+    }
+
+    /// <summary>Remember an AGC change this side just sent, so the panadapter
+    /// chips show it before the next poll.</summary>
+    private void NoteAgcSent(int rx, AgcConfig? agc = null, double? topDb = null, bool? auto = null)
+    {
+        int i = Math.Clamp(rx, 0, MaxSlices - 1);
+        if (_slices[i] is { } r)
+            _slices[i] = r with { Agc = agc ?? r.Agc, AgcTopDb = topDb ?? r.AgcTopDb, AutoAgcEnabled = auto ?? r.AutoAgcEnabled };
+        OnPropertyChanged(RxReadouts);
+    }
+
+    /// <summary>Send an AGC mode/speed (or fixed gain) to the active receiver.</summary>
+    private async Task SendAgcAsync(AgcConfig agc)
+    {
+        if (ActiveRx == 0) await _client!.SetAgcAsync(agc);
+        else await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(Agc: agc));
+        NoteAgcSent(ActiveRx, agc: agc);
     }
 
     [RelayCommand]
@@ -140,8 +158,9 @@ public sealed partial class MainViewModel
         bool on = !AgcAuto;
         await Try(async () =>
         {
-            await _client!.SetAutoAgcAsync(on);
-            if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(AutoAgcEnabled: on));
+            if (ActiveRx == 0) await _client!.SetAutoAgcAsync(on);
+            else await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(AutoAgcEnabled: on));
+            NoteAgcSent(ActiveRx, auto: on);
             AgcAuto = on;
             Status = on ? "AGC auto: the engine sets the AGC gain." : $"AGC manual, speed {SpeedName(_agcMode)}.";
         });
@@ -152,9 +171,7 @@ public sealed partial class MainViewModel
         if (!IsConnected) return;
         await Try(async () =>
         {
-            var agc = new AgcConfig(mode, FixedGainDb: Math.Round(AgcFixedGainDb));
-            await _client!.SetAgcAsync(agc);
-            if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(Agc: agc));
+            await SendAgcAsync(new AgcConfig(mode, FixedGainDb: Math.Round(AgcFixedGainDb)));
             _agcMode = mode;
             AgcSpeedLabel = SpeedName(mode);
             Mark(AgcSpeedChoices, mode);
@@ -168,8 +185,9 @@ public sealed partial class MainViewModel
         if (_applyingAgc || !IsConnected) return;
         _agcTopSender ??= new Latest<double>(async db =>
         {
-            await _client!.SetAgcGainAsync(db);
-            if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(AgcTopDb: db));
+            if (ActiveRx == 0) await _client!.SetAgcGainAsync(db);
+            else await _client!.SetReceiverAsync(ActiveRx, new ReceiverSetRequest(AgcTopDb: db));
+            NoteAgcSent(ActiveRx, topDb: db);
         });
         _agcTopSender.Send(Math.Round(value));
     }
@@ -189,11 +207,7 @@ public sealed partial class MainViewModel
     {
         if (_applyingAgc || !IsConnected) return;
         _agcFixedSender ??= new Latest<double>(async db =>
-        {
-            var agc = new AgcConfig(AgcMode.Fixed, FixedGainDb: db);
-            await _client!.SetAgcAsync(agc);
-            if (SliceBEnabled) await _client.SetReceiverAsync(1, new ReceiverSetRequest(Agc: agc));
-        });
+            await SendAgcAsync(new AgcConfig(AgcMode.Fixed, FixedGainDb: db)));
         _agcFixedSender.Send(Math.Round(value));
     }
 }

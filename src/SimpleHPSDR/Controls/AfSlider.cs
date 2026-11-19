@@ -8,7 +8,7 @@ namespace SimpleHPSDR.Controls;
 
 /// <summary>
 /// The AF slider: a ball on a track. Drag it, click the track, or use the
-/// wheel (1 dB a click). With slice B on, the main view swaps the single
+/// wheel (1 dB a click). With more than one slice on, the main view swaps the single
 /// main-AF slider for two compact ones, A over B, each in its slice colour.
 /// </summary>
 public sealed class AfSlider : Control
