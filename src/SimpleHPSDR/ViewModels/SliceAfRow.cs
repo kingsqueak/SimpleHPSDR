@@ -33,6 +33,13 @@ public sealed partial class SliceAfRow : ObservableObject
 
     public double LabelOpacity => Muted ? 0.35 : 1.0;
 
+    /// <summary>The slice layout changed (a two-receiver radio): label and colour again.</summary>
+    public void Relabel()
+    {
+        OnPropertyChanged(nameof(Label));
+        OnPropertyChanged(nameof(Color));
+    }
+
     /// <summary>The VM's poll or the engine's own change: show it.</summary>
     public void SetMuted(bool muted) => Muted = muted;
 

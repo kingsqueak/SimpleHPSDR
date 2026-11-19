@@ -948,6 +948,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private async Task<bool> ConnectAsync(RadioChoice radio)
     {
         var client = _client!;
+        ResetUnusableSlices();
         Status = $"Connecting to {radio.Label}…";
         var deadline = DateTime.UtcNow.AddMinutes(3);
         var preparingDeadline = DateTime.UtcNow.AddMinutes(30);   // far beyond the slowest machine

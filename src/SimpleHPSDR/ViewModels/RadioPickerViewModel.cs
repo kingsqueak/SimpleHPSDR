@@ -6,7 +6,10 @@ using SimpleHPSDR.Contracts;
 
 namespace SimpleHPSDR.ViewModels;
 
-public sealed record RadioChoice(string Ip, bool Protocol2, byte? BoardId, string? Mac, string Label, bool TakeOver = false);
+/// <param name="Ddcs">Protocol 2: the receivers (DDCs) the radio's discovery
+/// reply says it has, PureSignal's included; null when not known (typed IP).</param>
+public sealed record RadioChoice(string Ip, bool Protocol2, byte? BoardId, string? Mac, string Label, bool TakeOver = false,
+    int? Ddcs = null);
 
 /// <summary>The radios that share the OrionMkII board ID and can't be told
 /// apart on the network. Calibration, PA and PureSignal defaults depend on it.</summary>
@@ -47,7 +50,8 @@ public sealed class RadioEntry(RadioInfo info)
 
     private string? Detail(string key) => Info.Details?.GetValueOrDefault(key);
 
-    public RadioChoice ToChoice() => new(Info.IpAddress, Protocol2, RawBoardId, Mac, $"{Name} {Info.IpAddress}");
+    public RadioChoice ToChoice() => new(Info.IpAddress, Protocol2, RawBoardId, Mac, $"{Name} {Info.IpAddress}",
+        Ddcs: Protocol2 && int.TryParse(Detail("numReceivers"), out int n) && n > 0 ? n : null);
 }
 
 public sealed partial class RadioPickerViewModel : ObservableObject

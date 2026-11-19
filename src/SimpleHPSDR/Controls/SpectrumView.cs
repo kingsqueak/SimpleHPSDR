@@ -918,7 +918,7 @@ public sealed class SpectrumView : Control
         // Inactive slice first, so the active one draws on top.
         foreach (var s in Slices.OrderBy(s => s.Active))
         {
-            var color = SliceColors[Math.Clamp(s.Rx, 0, SliceColors.Length - 1)];
+            var color = SliceColors[SimpleHPSDR.ViewModels.MainViewModel.SliceColorIndex(s.Rx)];
             double vx = HzToX(s.Hz, b.Width);
             bool visible = vx >= 0 && vx <= b.Width;
             if (visible)

@@ -408,7 +408,7 @@ public partial class TouchMainView : UserControl
             FilterScope.ColouredFill = vm.CloseUpColoured;
             FilterScope.PushFrame(f, vm.VfoHz, vm.FilterLowHz, vm.FilterHighHz, vm.FilterIsSymmetric, vm.CwPitchHz);
         }
-        if (f.RxId == 2)
+        if (f.RxId == MainViewModel.PanPrimary(1))
         {
             if (!vm.ShowPanadapterB) return;
             SpectrumB.Slices = vm.PanMarks(1);
@@ -449,8 +449,8 @@ public partial class TouchMainView : UserControl
         bool two = vm.ShowPanadapterB;
         PanGrid.RowDefinitions[1].Height = two ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         PanGrid.RowSpacing = two ? 6 : 0;
-        PanBorderA.BorderBrush = two && vm.ActivePan == 0 ? ActiveOutline[vm.ActiveRx] : Brushes.Transparent;
-        PanBorderB.BorderBrush = two && vm.ActivePan == 1 ? ActiveOutline[vm.ActiveRx] : Brushes.Transparent;
+        PanBorderA.BorderBrush = two && vm.ActivePan == 0 ? ActiveOutline[MainViewModel.SliceColorIndex(vm.ActiveRx)] : Brushes.Transparent;
+        PanBorderB.BorderBrush = two && vm.ActivePan == 1 ? ActiveOutline[MainViewModel.SliceColorIndex(vm.ActiveRx)] : Brushes.Transparent;
         if (!two) SpectrumB.Clear();
     }
 
@@ -461,9 +461,10 @@ public partial class TouchMainView : UserControl
     {
         if (Vm is not { } vm) return;
         MiniA1.IsVisible = vm.SliceCount > 1;
-        MiniA2.IsVisible = vm.SliceOn(1);
+        MiniA2.IsVisible = vm.SliceOn(MainViewModel.PanSecondary(0));
+        MiniB1.Slice = MainViewModel.PanPrimary(1);
         MiniB1.IsVisible = true;
-        MiniB2.IsVisible = vm.SliceOn(3);
+        MiniB2.IsVisible = vm.SliceOn(MainViewModel.PanSecondary(1));
         ActiveSliceBorder.Background = new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(vm.ActiveRx)));
         SetAddSliceTip(vm);
     }

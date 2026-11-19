@@ -44,7 +44,7 @@ public static class MainMenus
     {
         if (vm is not { IsConnected: true }) return;
         var items = new List<Control>();
-        if (!vm.ShowPanadapterB) items.Add(Item("Turn RX2 on (second panadapter, slices B1/B2)", () => vm.SelectRxAsync(1)));
+        if (!vm.ShowPanadapterB) items.Add(Item(MainViewModel.TwoReceiversOnly ? "Turn RX2 on (second panadapter)" : "Turn RX2 on (second panadapter, slices B1/B2)", () => vm.SelectRxAsync(1)));
         else
         {
             items.Add(SideBySideItem(vm));
@@ -80,7 +80,7 @@ public static class MainMenus
 
         if (vm.SliceCount < 2)
         {
-            items.Add(Item($"Add slice A2 at {where}", () => vm.AddSliceAsync(hz)));
+            if (!MainViewModel.TwoReceiversOnly) items.Add(Item($"Add slice A2 at {where}", () => vm.AddSliceAsync(hz)));
             if (offerRx2 && !vm.ShowPanadapterB)
                 items.Add(Item("Turn RX2 on (second panadapter)", () => vm.SelectRxAsync(1)));
         }

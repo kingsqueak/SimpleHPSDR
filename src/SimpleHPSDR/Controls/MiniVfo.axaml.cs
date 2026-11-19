@@ -147,8 +147,8 @@ public partial class MiniVfo : UserControl
         int rx = Math.Clamp(Slice, 0, MainViewModel.MaxSlices - 1);
         bool active = vm.ActiveRx == rx, tx = vm.TxRx == rx;
         NameText.Text = MainViewModel.SliceLabel(rx);
-        NameText.Foreground = SliceBrush[rx];
-        Box.BorderBrush = active ? SliceBrush[rx] : Idle;
+        NameText.Foreground = SliceBrush[MainViewModel.SliceColorIndex(rx)];
+        Box.BorderBrush = active ? SliceBrush[MainViewModel.SliceColorIndex(rx)] : Idle;
         long hz = vm.RxHz(rx);
         Freq.Text = hz > 0 ? hz.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.') : "";
         ModeText.Text = vm.RxModeLabel(rx);

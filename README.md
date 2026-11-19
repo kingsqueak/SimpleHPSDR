@@ -89,6 +89,14 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.15.3
+
+- **RX2 works again on radios with only two receivers.** Since 0.15.0, RX2
+  sat on the third receiver, which a Brick 3 (and other radios with two
+  receivers) doesn't have: RX2's panadapter opened but stayed empty and
+  silent. On those radios RX1 and RX2 now get one slice each, A1 and B1, as
+  before 0.15.0.
+
 ### 0.15.2
 
 - **No echo of your own voice after unkeying on another slice.** With

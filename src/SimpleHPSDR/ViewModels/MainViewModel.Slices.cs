@@ -20,27 +20,46 @@ namespace SimpleHPSDR.ViewModels;
 /// panadapter is drawn from its first slice's DDC stream and zooms as one;
 /// the second slice on a pan keeps its own dial, mode, filter, the entire
 /// noise block and AGC. DUP keeps the receivers audible while keyed.
+/// A radio with only two receivers (a Brick 3 with four DDCs, two of them
+/// PureSignal's; Protocol 1) gets one slice per panadapter instead: A1 is
+/// receiver 0 on RX1's pan and B1 is receiver 1 on RX2's, as before 0.15.0.
 /// </summary>
 public sealed partial class MainViewModel
 {
     /// <summary>The most slices the app offers, whatever the radio allows.</summary>
     public const int MaxSlices = 4;
 
+    // The connected radio has only two receivers: one slice per panadapter,
+    // A1 = receiver 0, B1 = receiver 1. Static because the views and controls
+    // ask the static helpers below; there is one radio connection per app.
+    private static volatile bool s_twoReceivers;
+
+    /// <summary>The radio has two receivers only: one slice per panadapter.</summary>
+    public static bool TwoReceiversOnly => s_twoReceivers;
+
+    // Where slice i sits in the four-slice layout (A1, A2, B1, B2): with two
+    // receivers, receiver 1 is B1.
+    private static int LayoutSlot(int i) => s_twoReceivers && i == 1 ? 2 : i;
+
     /// <summary>Slice i's label: A1, A2 on RX1's panadapter, B1, B2 on RX2's.</summary>
-    public static string SliceLabel(int i) => i switch { 0 => "A1", 1 => "A2", 2 => "B1", 3 => "B2", _ => $"RX{i + 1}" };
+    public static string SliceLabel(int i) => LayoutSlot(i) switch { 0 => "A1", 1 => "A2", 2 => "B1", 3 => "B2", _ => $"RX{i + 1}" };
+
+    /// <summary>Which of the four slice colours slice i wears.</summary>
+    public static int SliceColorIndex(int i) => Math.Clamp(LayoutSlot(i), 0, SliceColors.Length - 1);
 
     /// <summary>The colour a slice's chip, flag and volume row wear.</summary>
-    public static string SliceColor(int i) => SliceColors[Math.Clamp(i, 0, SliceColors.Length - 1)];
+    public static string SliceColor(int i) => SliceColors[SliceColorIndex(i)];
     private static readonly string[] SliceColors = ["#F25F5C", "#F5A524", "#C084FC", "#38BDF8"];
 
     /// <summary>Which panadapter a slice sits on: 0 = RX1's, 1 = RX2's.</summary>
-    public static int SlicePan(int i) => Math.Clamp(i, 0, MaxSlices - 1) / 2;
+    public static int SlicePan(int i) => s_twoReceivers ? Math.Clamp(i, 0, 1) : Math.Clamp(i, 0, MaxSlices - 1) / 2;
 
     /// <summary>The receiver whose DDC stream and zoom a panadapter shows.</summary>
-    public static int PanPrimary(int pan) => Math.Clamp(pan, 0, 1) * 2;
+    public static int PanPrimary(int pan) => Math.Clamp(pan, 0, 1) * (s_twoReceivers ? 1 : 2);
 
-    /// <summary>The pan's second slice, if it is on.</summary>
-    public static int PanSecondary(int pan) => PanPrimary(pan) + 1;
+    /// <summary>The pan's second slice, if it is on; -1 when the radio has
+    /// no receivers to spare for one.</summary>
+    public static int PanSecondary(int pan) => s_twoReceivers ? -1 : PanPrimary(pan) + 1;
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ActiveSliceLabel))] [NotifyPropertyChangedFor(nameof(SplitText))]
     [NotifyPropertyChangedFor(nameof(RitUsable))]
@@ -85,7 +104,7 @@ public sealed partial class MainViewModel
     public bool HasSliceB => SliceCount > 1;
 
     /// <summary>Slice B1 is on, so RX2's panadapter shows.</summary>
-    public bool ShowPanadapterB => SliceCount > 2;
+    public bool ShowPanadapterB => SliceCount > PanPrimary(1);
 
     // Two panadapters: RX1's holds A1/A2, RX2's B1/B2, opening when B1 comes
     // on. The RX1 and RX2 buttons beside the frequency pick the pan's slice.
@@ -93,20 +112,21 @@ public sealed partial class MainViewModel
     public bool Rx2Active => ActivePan == 1 && ShowPanadapterB;
     /// <summary>RX2's pan is on but the controls are on RX1's.</summary>
     public bool Rx2Idle => ShowPanadapterB && ActivePan == 0;
-    /// <summary>The slice badges beside the frequency: the active pan's two slices.</summary>
-    public bool ShowAbBadges => SliceCount > 1;
+    /// <summary>The slice badges beside the frequency: the active pan's two
+    /// slices. None with two receivers: RX1 and RX2 pick the slice there.</summary>
+    public bool ShowAbBadges => SliceCount > 1 && !TwoReceiversOnly;
 
     // The A1/A2 (or B1/B2) badges: the active pan's slices. The active one is
     // blue; the transmitting one wears the red edge.
-    public string AbLabel1 => SliceLabel(ActivePan * 2);
-    public string AbLabel2 => SliceLabel(ActivePan * 2 + 1);
-    public bool AbOn2 => SliceOn(ActivePan * 2 + 1);
-    public bool AbActive1 => ActiveRx == ActivePan * 2 && TxRx != ActiveRx;
-    public bool AbActive2 => ActiveRx == ActivePan * 2 + 1 && TxRx != ActiveRx;
-    public bool AbTx1 => TxRx == ActivePan * 2;
-    public bool AbTx2 => TxRx == ActivePan * 2 + 1;
+    public string AbLabel1 => SliceLabel(BadgeSlice(0));
+    public string AbLabel2 => SliceLabel(BadgeSlice(1));
+    public bool AbOn2 => SliceOn(PanSecondary(ActivePan));
+    public bool AbActive1 => ActiveRx == BadgeSlice(0) && TxRx != ActiveRx;
+    public bool AbActive2 => ActiveRx == PanSecondary(ActivePan) && TxRx != ActiveRx;
+    public bool AbTx1 => TxRx == BadgeSlice(0);
+    public bool AbTx2 => TxRx == PanSecondary(ActivePan);
     /// <summary>The badge row's slice for one of its two buttons.</summary>
-    public int BadgeSlice(int n) => Math.Clamp(ActivePan * 2 + n, 0, MaxSlices - 1);
+    public int BadgeSlice(int n) => Math.Clamp(n == 0 ? PanPrimary(ActivePan) : PanSecondary(ActivePan), 0, MaxSlices - 1);
 
     /// <summary>The active slice's label: A1, A2, B1 or B2.</summary>
     public string ActiveName => SliceLabel(ActiveRx);
@@ -391,7 +411,8 @@ public sealed partial class MainViewModel
     /// <summary>From engine state (connect and the 1 s poll).</summary>
     private void UpdateSlices(StateDto s)
     {
-        _maxReceivers = Math.Clamp(s.MaxReceivers, 2, MaxSlices);
+        _maxReceivers = RadioHasTwoReceivers ? 2 : Math.Clamp(s.MaxReceivers, 2, MaxSlices);
+        SetTwoReceivers(s.MaxReceivers <= 2 || RadioHasTwoReceivers);
         int count = 1;
         for (int i = 0; i < MaxSlices; i++)
         {
@@ -404,6 +425,7 @@ public sealed partial class MainViewModel
             }
         }
         SliceCount = Math.Clamp(count, 1, MaxSlicesAllowed);
+        if (TwoReceiversOnly) TurnOffUnusableSlices(s);
         if (ActiveRx >= SliceCount) _ = MakeActiveAsync(0);
         OnPropertyChanged(RxReadouts);
         FullDuplex = s.FullDuplexMultiRxEnabled;
@@ -436,6 +458,60 @@ public sealed partial class MainViewModel
     }
 
     partial void OnTxRxChanged(int value) => FollowTxSliceForPs();
+
+    /// <summary>The radio's discovery reply leaves room for two receivers only.
+    /// The engine's ceiling comes from a table by board and can be higher: a
+    /// Brick 3 is Angelia-class (8 DDCs in the table, the first two reserved
+    /// for PureSignal) but has 4, so receivers 2 and up get no IQ at all.
+    /// Hermes-class boards (Hermes, Hermes II, G2E) reserve none.</summary>
+    private bool RadioHasTwoReceivers =>
+        _radio is { Protocol2: true, Ddcs: int ddcs }
+        && ddcs - (_radio.BoardId is 0x01 or 0x02 or 0x14 ? 0 : 2) <= 2;
+
+    /// <summary>Switch between the four-slice layout and the two-receiver one
+    /// (one slice per panadapter) when the connected radio's ceiling says so.</summary>
+    private void SetTwoReceivers(bool two)
+    {
+        if (s_twoReceivers == two) return;
+        s_twoReceivers = two;
+        _lastActive[0] = 0;
+        _lastActive[1] = PanPrimary(1);
+        LayoutChangedForJack();
+        foreach (string name in (string[])[nameof(SliceCount), nameof(ShowPanadapterB), nameof(HasSliceB),
+                     nameof(ShowAbBadges), nameof(ActivePan), nameof(Rx1Active), nameof(Rx2Active), nameof(Rx2Idle),
+                     nameof(ActiveName), nameof(ActiveSliceLabel), nameof(SplitText), nameof(AbLabel1), nameof(AbLabel2),
+                     nameof(AbOn2), nameof(AbActive1), nameof(AbActive2), nameof(AbTx1), nameof(AbTx2), nameof(NextSliceLabel)])
+            OnPropertyChanged(name);
+        foreach (var row in _sliceAfRows) row?.Relabel();
+        OnPropertyChanged(RxReadouts);
+    }
+
+    // B2 and B1 of the four-slice layout, left on in the engine from an earlier
+    // version or session: on a two-receiver radio they have no DDC, so they
+    // would only cost DSP (and hold transmit, if it was moved there). Off, top
+    // one first, once each per connection.
+    private readonly bool[] _unusableOffSent = new bool[MaxSlices];
+    private void TurnOffUnusableSlices(StateDto s)
+    {
+        // Runs on the connect pass too, before IsConnected is set: the client is there.
+        if (_client is null) return;
+        var on = new List<int>();
+        for (int i = MaxSlices - 1; i >= 2; i--)
+            if (!_unusableOffSent[i] && s.Receivers?.FirstOrDefault(r => r.Index == i) is { Enabled: true })
+            {
+                _unusableOffSent[i] = true;
+                on.Add(i);
+            }
+        if (on.Count == 0) return;
+        _ = Try(async () =>
+        {
+            foreach (int i in on)
+                await _client!.SetReceiverAsync(i, new ReceiverSetRequest(Enabled: false));
+        });
+    }
+
+    /// <summary>A new connection: unusable slices may need turning off again.</summary>
+    private void ResetUnusableSlices() => Array.Clear(_unusableOffSent);
 
     /// <summary>One slice's mode, filter, noise and AGC settings as the engine
     /// reports them. The engine's receiver entries carry everything; an engine
@@ -534,7 +610,9 @@ public sealed partial class MainViewModel
         {
             Status = SliceCount >= MaxSlices
                 ? "Four slices is as many as this app offers."
-                : $"This radio offers {_maxReceivers} receivers, and all are on.";
+                : TwoReceiversOnly
+                    ? "This radio has two receivers, RX1 and RX2: no room for a second slice on either."
+                    : $"This radio offers {_maxReceivers} receivers, and all are on.";
             return;
         }
         // The pan's first slice sets its zoom; a second slice starts there too.

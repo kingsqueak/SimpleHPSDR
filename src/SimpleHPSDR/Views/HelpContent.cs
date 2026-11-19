@@ -298,6 +298,8 @@ SimpleHPSDR has two panadapters, RX1 and RX2, and each can carry two slices: A1 
 ## Slices
 Slices come on in order — A2 first, then B1 (which opens RX2's panadapter), then B2 — because the radio enables its receivers that way, and they go off in reverse. To add one, click + in the touch drawer's Slices section or right-click a panadapter and choose Add slice; the new slice opens on the frequency you're tuned to, in the active slice's mode and filter, and takes the controls. The ✕ on a slice's small frequency display turns that slice off again (only the most recent slice comes off directly; turning RX2 off takes B1 and B2 together). Every slice costs a full receiver's worth of processing, so keep an eye on the CPU readout — on a Raspberry Pi two slices is comfortable, four is the most there is.
 
+Some radios have only two receivers: Protocol 1 radios, and a few Protocol 2 radios such as the Brick 3. There RX1 and RX2 get one slice each, A1 and B1, with no A2 or B2.
+
 RX1 and RX2 beside the frequency pick the panadapter: the VFO, band, mode and filter then act on that pan's most recent slice, shown by the A1/A2 (or B1/B2) badges beside them — blue has the controls, red edge transmits. Click a badge to give that slice the controls; right-click it for more (transmit on it, mute it, remove it). RX2's first click turns it on; RX2 outlined in blue is on and waiting. A click or the wheel on a panadapter gives its slice the controls too, and a click on a slice's tag on the panadapter does the same.
 
 Squelch, RX Lev and RX EQ are one setting each, shared by all slices. Each slice's small display shows its filter, NB/NR and AGC at a glance, so the slices you're not controlling stay readable.

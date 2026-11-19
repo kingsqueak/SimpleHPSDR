@@ -80,9 +80,18 @@ public sealed partial class MainViewModel
             catch (Exception) { }
         HasRx2Jack = has;
         // B1 is RX2's slice: its wanted input is the saved choice.
-        _wantsJack[2] = _settings.SliceBOnRx2Jack;
+        _wantsJack[PanPrimary(1)] = _settings.SliceBOnRx2Jack;
         NotifyAntennaText();
         SyncSliceInputs();
+    }
+
+    /// <summary>The slice layout changed, so B1 is another receiver: it takes
+    /// the saved choice, and the receiver that was B1 starts on the main input.</summary>
+    private void LayoutChangedForJack()
+    {
+        Array.Clear(_wantsJack);
+        _wantsJack[PanPrimary(1)] = _settings.SliceBOnRx2Jack;
+        NotifyAntennaText();
     }
 
     /// <summary>Flip a slice's input between the main antenna and the Rx2 jack.</summary>
@@ -90,7 +99,7 @@ public sealed partial class MainViewModel
     {
         if (i <= 0 || i >= MaxSlices) return;
         _wantsJack[i] = !_wantsJack[i];
-        if (i == 2)
+        if (i == PanPrimary(1))
         {
             _settings.SliceBOnRx2Jack = _wantsJack[i];
             _settings.Save();
