@@ -14,6 +14,13 @@ Starts a throwaway engine (its own data folder, no computer audio), then:
   shared:     no radio needed: shared-stream receivers (receivers 2 and 3 fed by
               receiver 0 or 1) are switched on and off through the HTTP API and
               the state is checked after each step. No transmit route is called.
+  gaps:       no radio needed: extra receivers on their own DDC (receivers 2 and
+              3) are switched on and off in any order through the HTTP API: each
+              changes only itself, receiver 3 needs RX2, RX2 off takes
+              receiver 3 but not receiver 2, and the transmit receiver falls
+              back to 0 when its receiver goes off. No transmit route is called.
+              (The refusal of receiver 3 at a three-receiver ceiling can't be
+              set without a radio, so it is not checked; see check_radio.)
   order:      (only with --order) posts several settings changes at the same
               moment, many times, and checks the DSP side always ends on the
               newest one.
@@ -389,10 +396,10 @@ def check_shared(port, fails):
     codes = {k: post(*v) for k, v in bad.items()}
     rec("invalid_400", all(c == 400 for c in codes.values()), f"statuses {codes}")
 
-    # 10. no source: own DDC, turns RX2 on; then mixing with a sharer is refused
+    # 10. no source: own DDC (RX2 is not forced on); then mixing with a sharer is refused
     st = post("api/receivers/2", {"enabled": True})
     s = state()
-    rec("no_source_own_ddc", on(2, s) and src(2, s) is None and bool(s.get("rx2Enabled")),
+    rec("no_source_own_ddc", on(2, s) and src(2, s) is None and not s.get("rx2Enabled"),
         f"status {st}, {info(2)}")
     st = post("api/receivers/3", {"enabled": True, "sourceReceiver": 0})
     rec("mixing_refused_reverse", not on(3), f"status {st}, {info(2, 3)}")
@@ -418,6 +425,177 @@ def check_shared(port, fails):
     post("api/receivers/2", {"enabled": False})
     post("api/rx2", {"enabled": False})
     post("api/tx/receiver", {"index": 0, "requireIdle": True})
+    s = state()
+    rec("cleanup", not on(2, s) and not on(3, s) and not s.get("rx2Enabled")
+        and s.get("txReceiverIndex") == 0, info(2, 3))
+    return r
+
+
+def check_gaps(port, fails):
+    """Extra receivers on their own DDC (receivers 2 and 3), driven through the
+    HTTP API with no radio: each one switches on and off by itself, receiver 3
+    needs RX2, RX2 off takes receiver 3 but not receiver 2, and the transmit
+    receiver (a state setting; nothing keys) falls back to 0 when its receiver
+    goes off. Each check is recorded as True/False under its name; a False is
+    also a failure."""
+    r = {}
+
+    def state():
+        return get_json(port, "api/state")[1] or {}
+
+    def row(n, s=None):
+        rows = (s or state()).get("receivers") or []
+        return rows[n] if n < len(rows) else None
+
+    def post(path, body):
+        return request(port, "POST", path, body)[0]
+
+    def rec(name, ok, detail):
+        r[name] = bool(ok)
+        if not ok:
+            fails.append(f"gaps: {name}: {detail}")
+
+    def on(n, s=None):
+        x = row(n, s)
+        return bool(x and x.get("enabled"))
+
+    def src(n, s=None):
+        x = row(n, s)
+        return x.get("sourceReceiver") if x else None
+
+    def tx(n):
+        return post("api/tx/receiver", {"index": n, "requireIdle": True})
+
+    def info(*ns):
+        s = state()
+        return {"rx2Enabled": s.get("rx2Enabled"), "txReceiverIndex": s.get("txReceiverIndex"),
+                "rows": {n: row(n, s) for n in ns}}
+
+    def snap():
+        s = state()
+        return {"rx2Enabled": s.get("rx2Enabled"), "txReceiverIndex": s.get("txReceiverIndex"),
+                "receivers": s.get("receivers")}
+
+    def clean():
+        for n in (3, 2):
+            post(f"api/receivers/{n}", {"enabled": False})
+        post("api/rx2", {"enabled": False})
+        post("api/tx/receiver", {"index": 0, "requireIdle": True})
+
+    # 1. start clean
+    clean()
+    s = state()
+    rec("start_clean", not s.get("rx2Enabled") and not on(2, s) and not on(3, s)
+        and s.get("txReceiverIndex") == 0, info(2, 3))
+
+    # 2. receiver 2 on its own DDC with RX2 off: RX2 is not forced on
+    st = post("api/receivers/2", {"enabled": True, "vfoHz": 14_100_000})
+    s = state()
+    rec("own2_rx2_stays_off", on(2, s) and src(2, s) is None and not s.get("rx2Enabled"),
+        f"status {st}, {info(2)}")
+
+    # 3. receiver 3 on its own DDC while RX2 is off: refused, nothing changes
+    #    (not the other fields sent with it either)
+    before = snap()
+    st = post("api/receivers/3", {"enabled": True, "vfoHz": 7_100_000, "afGainDb": -7.0,
+                                  "agcTopDb": 63.0, "autoAgcEnabled": True})
+    after = snap()
+    rec("own3_refused_rx2_off", not on(3, after) and before == after,
+        f"status {st}, before {before}, after {after}")
+
+    # 4. the transmit receiver follows receiver 2 off (RX2 is off the whole time)
+    st = tx(2)
+    got = state().get("txReceiverIndex")
+    post("api/receivers/2", {"enabled": False})
+    s = state()
+    rec("tx_fallback_own2_off", got == 2 and not on(2, s) and s.get("txReceiverIndex") == 0
+        and not s.get("rx2Enabled"),
+        f"tx/receiver answered {st}, txReceiverIndex {got} then {s.get('txReceiverIndex')}, {info(2)}")
+
+    # 5. RX2 on, receiver 3 on with receiver 2 off: row 2 is a disabled row
+    post("api/rx2", {"enabled": True})
+    st = post("api/receivers/3", {"enabled": True, "vfoHz": 7_100_000})
+    s = state()
+    rows = s.get("receivers") or []
+    rec("own3_with_gap", s.get("rx2Enabled") and on(3, s) and src(3, s) is None and not on(2, s)
+        and len(rows) > 3 and rows[2].get("index") == 2 and rows[3].get("index") == 3,
+        f"status {st}, {info(2, 3)}")
+
+    # 6. receiver 2 on in the gap: only receiver 2 changes; then off again, 3 stays on
+    before3 = row(3)
+    st = post("api/receivers/2", {"enabled": True, "vfoHz": 14_100_000})
+    s = state()
+    rec("fill_gap", on(2, s) and src(2, s) is None and on(3, s) and row(3, s) == before3
+        and s.get("rx2Enabled"), f"status {st}, {info(2, 3)}")
+    tx(3)
+    got = state().get("txReceiverIndex")
+    post("api/receivers/2", {"enabled": False})
+    s = state()
+    rec("off2_leaves_3_on", on(3, s) and not on(2, s) and s.get("rx2Enabled")
+        and (s.get("receivers") or [None] * 3)[2].get("index") == 2,
+        f"{info(2, 3)}")
+    rec("tx_stays_on_3_when_2_off", got == 3 and s.get("txReceiverIndex") == 3,
+        f"txReceiverIndex {got} then {s.get('txReceiverIndex')}")
+
+    # 7. mixing: a sharer in the gap below own-DDC receiver 3 is refused
+    st = post("api/receivers/2", {"enabled": True, "sourceReceiver": 0})
+    rec("mixing_refused_sharer_below", not on(2), f"status {st}, {info(2, 3)}")
+
+    # 8. RX2 off takes receiver 3 (and the TX receiver, which was on 3), not receiver 2
+    post("api/receivers/2", {"enabled": True, "vfoHz": 14_100_000})
+    post("api/rx2", {"enabled": False})
+    s = state()
+    rec("rx2_off_takes_3_not_2", not s.get("rx2Enabled") and not on(3, s) and on(2, s)
+        and src(2, s) is None, info(2, 3))
+    rec("tx_fallback_rx2_off_with_3", s.get("txReceiverIndex") == 0, info())
+
+    # 9. RX2 off with the TX receiver on a surviving receiver 2: it stays
+    st = tx(2)
+    got = state().get("txReceiverIndex")
+    post("api/rx2", {"enabled": True})
+    post("api/rx2", {"enabled": False})
+    s = state()
+    rec("tx_stays_on_2_rx2_off", got == 2 and on(2, s) and s.get("txReceiverIndex") == 2,
+        f"tx/receiver answered {st}, {info(2)}")
+
+    # 10. the TX receiver on RX2 itself falls back too
+    post("api/rx2", {"enabled": True})
+    st = tx(1)
+    got = state().get("txReceiverIndex")
+    post("api/rx2", {"enabled": False})
+    s = state()
+    rec("tx_fallback_rx2_off_with_1", got == 1 and s.get("txReceiverIndex") == 0 and on(2, s),
+        f"tx/receiver answered {st}, txReceiverIndex {got} then {s.get('txReceiverIndex')}, {info(2)}")
+
+    # 11. receiver 3 again needs RX2 (receiver 2 is on, RX2 off)
+    st = post("api/receivers/3", {"enabled": True})
+    rec("own3_refused_again", not on(3), f"status {st}, {info(2, 3)}")
+
+    # 12. the sequence older clients send still works
+    clean()
+    post("api/rx2", {"enabled": True})
+    post("api/receivers/2", {"enabled": True, "vfoHz": 14_100_000})
+    post("api/receivers/3", {"enabled": True, "vfoHz": 7_100_000})
+    s = state()
+    rec("old_sequence_up", s.get("rx2Enabled") and on(2, s) and on(3, s)
+        and src(2, s) is None and src(3, s) is None, info(2, 3))
+    post("api/receivers/3", {"enabled": False})
+    s = state()
+    rec("old_sequence_3_off", on(2, s) and not on(3, s) and s.get("rx2Enabled"), info(2, 3))
+    post("api/receivers/2", {"enabled": False})
+    post("api/rx2", {"enabled": False})
+    s = state()
+    rec("old_sequence_down", not on(2, s) and not on(3, s) and not s.get("rx2Enabled"), info(2, 3))
+
+    # 13. mixing the other way: own-DDC receiver 3 refused while receiver 2 is a sharer
+    post("api/receivers/2", {"enabled": True, "sourceReceiver": 0, "vfoHz": 14_100_000})
+    post("api/rx2", {"enabled": True})
+    st = post("api/receivers/3", {"enabled": True})
+    rec("mixing_refused_own3_over_sharer", not on(3) and on(2) and src(2) == 0,
+        f"status {st}, {info(2, 3)}")
+
+    # 14. clean up
+    clean()
     s = state()
     rec("cleanup", not on(2, s) and not on(3, s) and not s.get("rx2Enabled")
         and s.get("txReceiverIndex") == 0, info(2, 3))
@@ -558,6 +736,7 @@ def main():
                 fails.append(f"read failed: {p} -> {st}")
         res["stream"] = check_stream(port, 3)
         res["shared"] = check_shared(port, fails)
+        res["gaps"] = check_gaps(port, fails)
         if args.order:
             res["order"] = check_order(port, args.order, fails)
         if args.radio is not None:
@@ -581,6 +760,8 @@ def main():
           f"{len(res['reads'])} reads; stream {res['stream']}")
     bad_shared = [k for k, v in res.get("shared", {}).items() if not v]
     print(f"shared: {len(res.get('shared', {})) - len(bad_shared)} of {len(res.get('shared', {}))} checks passed")
+    bad_gaps = [k for k, v in res.get("gaps", {}).items() if not v]
+    print(f"gaps: {len(res.get('gaps', {})) - len(bad_gaps)} of {len(res.get('gaps', {}))} checks passed")
     if "order" in res:
         print(f"order: {res['order']['stale']} stale of {res['order']['rounds']} rounds")
     if "radio" in res:

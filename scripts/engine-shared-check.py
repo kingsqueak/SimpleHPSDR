@@ -13,10 +13,15 @@ connects to the app's last radio, finds a steady carrier, and checks that:
   - receiver 2 works with RX2 off, and receiver 3 from RX2's stream;
   - the shared receivers are fed and nothing is dropped;
   - what a shared receiver costs in engine CPU, beside a receiver with a DDC.
+With --gaps it also checks receivers on their own DDC that leave an idle DDC
+(RX2 on, receiver 3 on, receiver 2 off; receiver 2 on, RX2 off): the live
+receivers still receive, the receive preselector (the engine's receive-filter
+decision, GET api/radio/rf-filters) is not bypassed because of the idle DDC,
+the idle slot is routed but not fed, and what the idle DDC costs in CPU.
 With --retune it also measures the audio a shared receiver loses each time its
 source's centre is moved (what dragging the spectrum does).
 
-Usage: scripts/engine-shared-check.py [--carrier HZ] [--retune [STEPS]]
+Usage: scripts/engine-shared-check.py [--carrier HZ] [--retune [STEPS]] [--gaps]
 Quit SimpleHPSDR first: only one engine can own the radio.
 """
 import argparse, importlib.util, json, math, os, socket, struct, subprocess, sys, tempfile, threading, time
@@ -147,6 +152,8 @@ def main():
     ap.add_argument("--carrier", type=int, help="carrier frequency in Hz (default: try WWV, CHU)")
     ap.add_argument("--retune", type=int, nargs="?", const=60, default=0, metavar="STEPS",
                     help="also measure the audio a shared receiver loses per source retune")
+    ap.add_argument("--gaps", action="store_true",
+                    help="also check own-DDC receivers with an idle DDC (RX2 off or receiver 2 off), receive only")
     ap.add_argument("--engine")
     args = ap.parse_args()
 
@@ -329,6 +336,125 @@ def main():
               f"receiver 3 enabled {row(port, 3).get('enabled')}")
         print(f"CPU, engine process: receiver 0 alone {idle_cpu:.0f}%, plus one shared receiver {shared_cpu:.0f}%, "
               f"plus RX2 on its own DDC {ddc_cpu:.0f}%")
+
+
+        if args.gaps:
+            # Own-DDC receivers with an idle DDC in the run. Every receiver is
+            # tuned to the same dial, so they compare with receiver 0 and with
+            # the all-on case. The idle DDC is parked on RX1's centre, so the
+            # receive preselector must stay on the band's filter.
+            usb1 = {"mode": "USB", "filterLowHz": 300, "filterHighHz": 2700}
+            FAR_HZ = 3_600_000 if dial > 8_000_000 else 14_200_000
+
+            def bank_info():
+                banks = (((ec.get_json(port, "api/radio/rf-filters")[1] or {}).get("active") or {}).get("banks")) or []
+                return [{"adc": b.get("physicalAdcSource"), "key": b.get("filterKey"), "reason": b.get("reason"),
+                         "demands": sorted((d.get("role"), d.get("receiverIndex")) for d in b.get("demands") or [])}
+                        for b in banks]
+
+            def ingest(i):
+                _, h = ec.get_json(port, "api/diagnostics/rx-ingest-health")
+                return next((e for e in (h or {}).get("secondaryRxChannelIds", []) if e.get("receiverIndex") == i), {})
+
+            def settle():
+                post(port, "api/vfo", {"hz": dial, "receiver": 0})
+                post(port, "api/vfo", {"hz": dial, "receiver": 1})
+                time.sleep(1.0)
+
+            def gap_case(label, live, idle, want_key):
+                """live: receivers expected to receive; idle: the idle slot (or None)."""
+                for i in live:
+                    if i >= 2:
+                        post(port, f"api/receivers/{i}", {"enabled": True, "vfoHz": dial, **usb1})
+                if idle is not None:
+                    # While still on, the receiver about to idle goes to another
+                    # band: the preselector must then be in bypass (two filters
+                    # asked of one ADC), which shows the check can see it. Off,
+                    # its DDC is parked on RX1's centre and the filter comes back.
+                    if idle >= 2:
+                        post(port, f"api/receivers/{idle}", {"vfoHz": FAR_HZ})
+                    else:
+                        post(port, "api/rx2", {"enabled": True})
+                        post(port, "api/vfo", {"hz": FAR_HZ, "receiver": 1})
+                    time.sleep(1.0)
+                    far = bank_info()
+                    check(f"{label}: other band while on puts the preselector in bypass",
+                          any(b["adc"] == 0 and b["reason"] == "conflicting-centers-bypass" for b in far), f"banks {far}")
+                    post(port, f"api/receivers/{idle}", {"enabled": False}) if idle >= 2 else post(port, "api/rx2", {"enabled": False})
+                    post(port, "api/vfo", {"hz": dial, "receiver": 0})
+                    time.sleep(1.0)
+                else:
+                    settle()
+                banks = bank_info()
+                keys = {b["key"] for b in banks if b["adc"] == 0}
+                reasons = {b["reason"] for b in banks if b["adc"] == 0}
+                check(f"{label}: preselector not bypassed by the idle DDC",
+                      "conflicting-centers-bypass" not in reasons and "bypass" not in keys
+                      and (want_key is None or keys == {want_key}),
+                      f"banks {banks}, all-on key {want_key}")
+                before = {i: ingest(i) for i in range(1, 4)}
+                m = meters.average(2.5)
+                after = {i: ingest(i) for i in range(1, 4)}
+                st = state(port)
+                # Printed, not checked: off the air, receiver 0's S-meter and the
+                # others' can differ by several dB with every receiver on the
+                # same dial, on engines from before idle DDCs too.
+                print(f"{label}: S-meters {({k: round(v, 1) for k, v in sorted(m.items())})}, attenuator "
+                      f"{({k: v for k, v in st.items() if 'att' in k.lower() and not isinstance(v, (dict, list))})}")
+                for i in live:
+                    if i == 0:
+                        continue
+                    check(f"{label}: receiver {i} fed",
+                          after[i].get("fedFrames", 0) > before[i].get("fedFrames", 0),
+                          f"fedFrames {before[i].get('fedFrames')} -> {after[i].get('fedFrames')}")
+                    only(port, i)
+                    got = listen(tap)
+                    check(f"{label}: receiver {i} audio", got[0] > 0.6 * ref[0] and abs(got[2] - ref[2]) <= 4,
+                          f"tone {got[0] * 100:.0f}%, {got[2]:.0f} Hz")
+                if idle is not None:
+                    a, b = before[idle if idle else 1], after[idle if idle else 1]
+                    print(f"idle slot {idle if idle >= 2 else 1}: routedFrames {a.get('routedFrames')} -> "
+                          f"{b.get('routedFrames')}, fedFrames {a.get('fedFrames')} -> {b.get('fedFrames')}")
+                    check(f"{label}: idle slot routed, not fed",
+                          b.get("routedFrames", 0) > a.get("routedFrames", 0)
+                          and b.get("fedFrames", 0) == a.get("fedFrames", 0),
+                          f"routedFrames {a.get('routedFrames')} -> {b.get('routedFrames')}, "
+                          f"fedFrames {a.get('fedFrames')} -> {b.get('fedFrames')}")
+                only(port, 0)
+                return cpu_percent(proc.pid)
+
+            # Reference: RX2, receiver 2 and receiver 3 all on, no idle DDC.
+            for i in (3, 2):
+                post(port, f"api/receivers/{i}", {"enabled": False})
+            post(port, "api/rx2", {"enabled": True})
+            post(port, "api/mode", {"mode": "USB", "receiver": 1})
+            post(port, "api/filter", {"lowHz": 300, "highHz": 2700, "receiver": 1})
+            for i in (2, 3):
+                post(port, f"api/receivers/{i}", {"enabled": True, "vfoHz": dial, **usb1})
+            settle()
+            all_banks = bank_info()
+            all_keys = {b["key"] for b in all_banks if b["adc"] == 0}
+            print(f"all receivers on: banks {all_banks}")
+            want = next(iter(all_keys)) if len(all_keys) == 1 and "bypass" not in all_keys else None
+            check("all on: preselector not bypassed", want is not None
+                  and not any(b["reason"] == "conflicting-centers-bypass" for b in all_banks), f"banks {all_banks}")
+            m_all = meters.average(2.5)
+            cpu_all = cpu_percent(proc.pid)
+            # (a) RX2 on, receiver 3 on, receiver 2 off: an idle slot at 2.
+            cpu_a = gap_case("gap at receiver 2", [0, 1, 3], 2, want)
+            for i in (3, 2):
+                post(port, f"api/receivers/{i}", {"enabled": False})
+            post(port, "api/rx2", {"enabled": False})
+            # (b) receiver 2 on, RX2 off: RX2's DDC idles.
+            post(port, "api/receivers/2", {"enabled": True, "vfoHz": dial, **usb1})
+            cpu_b = gap_case("RX2 off, receiver 2 on", [0, 2], 0, want)
+            post(port, "api/receivers/2", {"enabled": False})
+            time.sleep(0.5)
+            cpu_0 = cpu_percent(proc.pid)
+            print(f"CPU, engine process: receiver 0 alone {cpu_0:.0f}%, RX2 + receivers 2 and 3 {cpu_all:.0f}%, "
+                  f"RX2 + receiver 3 with an idle DDC {cpu_a:.0f}%, receiver 2 with an idle RX2 DDC {cpu_b:.0f}%")
+            print("S-meter, all on: " + ", ".join(f"receiver {k} {v:.1f} dBm" for k, v in sorted(m_all.items())))
+            post(port, "api/rx2", {"enabled": False})
 
         only(port, 0)
         post(port, "api/receivers/0/mute", {"muted": False})
