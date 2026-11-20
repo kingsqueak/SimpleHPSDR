@@ -267,6 +267,21 @@ public sealed partial class MainViewModel
     /// <summary>A wideband view of the connected radio.</summary>
     public WidebandViewModel NewWideband() => new(() => IsConnected ? _client : null, () => VfoHz);
 
+    public SignalAnalyzerViewModel NewSignalAnalyzer() => new(() => IsConnected ? _client : null, SignalTargetNow);
+
+    /// <summary>What the signal analyser looks at: the transmitting slice while keyed (with its
+    /// TX filter's high cut), otherwise the active slice (with its RX filter's outer edge).</summary>
+    private SignalTarget SignalTargetNow()
+    {
+        int rxHigh = Math.Max(Math.Abs(FilterLowHz), Math.Abs(FilterHighHz));
+        if (!IsTransmitting)
+            return new(false, VfoHz, Mode, rxHigh, SliceLabel(ActiveRx), false, double.NaN, double.NaN);
+        var (hz, mode) = TxSlice();
+        if (XitOn) hz += XitHz;
+        int high = Math.Abs(_cutsSent?.High ?? ProfileCuts()?.High ?? rxHigh);
+        return new(true, hz, mode, high, SliceLabel(TxRx), TunOn || TwoToneOn, MicLevelDbfs, _latestTx.AlcGr);
+    }
+
     public AnalyzerViewModel NewAnalyzer() =>
         new(() => IsConnected ? _client : null, VfoHz, TxAntLabel is "—" or "" ? "ANT1" : TxAntLabel);
 }

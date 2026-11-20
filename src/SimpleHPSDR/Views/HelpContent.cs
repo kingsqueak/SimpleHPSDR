@@ -33,7 +33,7 @@ If no radio appears, check that it's on and on the same network, or type its add
 - Under the panadapter: its display controls on the left; the antenna, the radio's name, Config and the view button on the right.
 - Bottom row: volume, transmit, the voice keyer and the clock.
 - The view button, at the right end of the line under the panadapter, changes the arrangement: controls above and below the panadapter, then all the controls in a panel at its side (the panadapter gets the window's full height), then the small window. Right-click it to pick one; the menu also has the touch layout, with large buttons, whose own view button (beside ☰) brings this one back. Your choice is remembered. With the panel at the side, drag the bar between it and the panadapter to set the panel's width, or double-click the bar for the usual width. In a window too narrow for that width the panel gives way, and comes back when the window is wide again.
-- The Tools menu has the antenna analyser and the wideband view; the Help menu has this window and update checks.
+- The Tools menu has the antenna analyser, the signal analyser and the wideband view; the Help menu has this window and update checks.
 
 ## The most useful tip
 A small mark in a button's bottom right corner means it has more behind a right-click. A ▾ means a click opens a list or a popup. Hover over anything for a short explanation. Blue means a control is on.
@@ -548,6 +548,40 @@ Plug the NanoVNA in by USB, choose NanoVNA, pick its serial port and press Conne
 
 ## Saved sweeps and calibration
 Every sweep is saved in the list on the right: click one to show it again, or delete it. Calibration (open, short, load, thru) appears only for sources that need it.
+"""),
+
+        ("Signal analyser", """
+Tools > Signal Analyser (touch: ☰ > Station > Signal) shows how good an SSB or AM signal is: the one you are listening to, or your own while you transmit. It only listens: nothing on the radio changes, and it needs the TCI server on (Config > CAT & TCI).
+
+## What it looks at
+- In receive: the signal on the active slice's dial. Tune it in as you would to listen.
+- While you transmit: your own signal, as RX1 hears it. It is taken off the air side of the radio, so it includes what the radio's amplifier does to it. An external amplifier comes after that point and isn't seen.
+- The line at the top says which. The signal has to be inside RX1's span: with the transmit slice on another band, put A1 there for the check.
+
+## The envelope scope
+The top picture is the signal's strength from moment to moment, mirrored about the centre line as a modulation monitor shows it, newest on the right. Scope sets how much time it shows; Hold freezes everything to study it.
+- SSB speech should be a row of peaks of different heights with rounded tops. Tops cut off level at the yellow peak line are flat-topping.
+- AM is a band about the green carrier line. The outer, dimmer shape is the upward peaks; the bright inner band is the downward ones. The bright band closing to the centre line means the carrier is being cut off: over-modulation. The red line is 100% upward.
+
+## The spectrum
+The lower picture is the spectrum round the dial (the red line), averaged while the signal is there, with its peak hold in grey. The green shading is the channel the signal belongs in: your TX filter when it is your own signal. Energy outside the shading is splatter. Move the pointer over it to read frequency and level.
+
+## The readings
+Each has a mark: green is good, blue is worth knowing, amber is worth a look, red is a problem, grey can't be judged. The text under each says what it means and what to change.
+- Signal: whether it is strong enough to measure. A received signal needs about 20 dB over the noise.
+- Peaks and Density (SSB): whether the peaks are clipped, and how much average power there is for the peak power. Peaks held level with a clean spectrum are ALC or a speech processor at work; with splatter they are clipping.
+- Modulation, Loudness and Carrier (AM): the upward and downward peaks in percent, the average between them, and whether the carrier holds its level while you talk. The depth is measured against the carrier itself, inside your RX filter (4 kHz at most, so a station 5 kHz away doesn't count), and only while the carrier is steady. Downward peaks past 100% mean the carrier is being cut off.
+- Loudness is the average modulation while there is speech. The target for voice is 40 to 55%: loud without sounding squashed. Under that is natural but quieter (add leveler or compression, not drive); over 65% takes heavy processing and is tiring to listen to. Ten points is under 2 dB to the listener.
+- Noise reads as modulation, so its share is taken out. "about" in front of the figures means noise is a good part of them; "too noisy to measure" means noise alone would read over 30%, which happens below roughly 20 dB over the noise. A narrower RX filter helps. Weak amateur AM signals often can't be measured; a strong broadcast station can.
+- Impulses: shown when very short spikes (static, electrical noise nearby) are reaching the receiver. They are counted and left out of every reading, as a noise blanker would, because a spike a few millionths of a second long can be twenty times the signal and would set every peak figure. If they show while you transmit into a dummy load, they come from inside the station.
+- Bandwidth and Tone: the audio range the signal carries, and the balance of highs and lows.
+- Splatter: how far below the signal the energy outside its channel is. Below about -35 dB is clean.
+
+## Getting a fair reading
+- Talk normally for five seconds or so: the readings cover the last few seconds.
+- On a received signal, fading and neighbouring stations upset the readings; they are a guide, not a verdict. Your own signal is free of both.
+- TUNE and 2-TONE are steady tones, so the speech readings are left out; the splatter reading still works.
+- If the Receiver reading says overloaded, the receiver is distorting and nothing else can be trusted: add attenuation.
 """),
 
         ("Wideband view", """

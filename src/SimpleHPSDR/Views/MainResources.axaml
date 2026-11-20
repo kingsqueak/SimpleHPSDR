@@ -63,7 +63,7 @@
         <TextBlock Classes="label" FontSize="11" Text="One setting, shared by both receivers." />
         <CheckBox Content="Broadcast-style AM (asymmetric peaks)" IsChecked="{Binding AmBroadcastOn}" />
         <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
-                   Text="Makes your AM sound like a broadcast station: louder and with more punch. Voice peaks may push the signal up past 100% (Positive peak), but the downward swings stop short of 100% (Negative peak), so the carrier never cuts out and splatters. The carrier level is set for you, and the audio is kept within your TX filter. Leave it off for plain AM with a carrier level you choose." />
+                   Text="Makes your AM sound like a broadcast station: louder and with more punch. Voice peaks may push the signal up past 100% (Positive peak), but the downward swings stop short of 100% (Negative peak), so the carrier never cuts out and splatters. A limiter turns the audio down ahead of any peak that would pass either limit, without clipping, so audio set up for SSB needs no change. The carrier level is set for you, and the audio is kept within your TX filter. Leave it off for plain AM with a carrier level you choose." />
         <Grid ColumnDefinitions="110,*,50" IsVisible="{Binding AmBroadcastOn}">
           <TextBlock Text="Positive peak" Classes="label" FontSize="12" VerticalAlignment="Center" />
           <Slider Grid.Column="1" Minimum="100" Maximum="150" Value="{Binding AmPositivePeak}" VerticalAlignment="Center" />

@@ -96,9 +96,11 @@ public partial class MainWindow : Window
         analyzer.Click += (_, _) => OpenAnalyzer();
         var wideband = new NativeMenuItem("Wideband View…");
         wideband.Click += (_, _) => OpenWideband();
+        var signal = new NativeMenuItem("Signal Analyser…");
+        signal.Click += (_, _) => OpenSignalAnalyzer();
         NativeMenu.SetMenu(this, new NativeMenu
         {
-            new NativeMenuItem("Tools") { Menu = new NativeMenu { analyzer, wideband } },
+            new NativeMenuItem("Tools") { Menu = new NativeMenu { analyzer, signal, wideband } },
             new NativeMenuItem("Help") { Menu = items },
         });
     }
@@ -156,6 +158,18 @@ public partial class MainWindow : Window
         _wideband = new WidebandWindow { DataContext = vm.NewWideband() };
         _wideband.Closed += (_, _) => _wideband = null;
         _wideband.Show(this);
+    }
+
+    // One signal analyser, in its own window; it only listens.
+    private SignalAnalyzerWindow? _signalAnalyzer;
+
+    public void OpenSignalAnalyzer()
+    {
+        if (_signalAnalyzer is not null) { _signalAnalyzer.Activate(); return; }
+        if (Vm is not { } vm) return;
+        _signalAnalyzer = new SignalAnalyzerWindow { DataContext = vm.NewSignalAnalyzer() };
+        _signalAnalyzer.Closed += (_, _) => _signalAnalyzer = null;
+        _signalAnalyzer.Show(this);
     }
 
     // One CW window, which stays open beside this one.

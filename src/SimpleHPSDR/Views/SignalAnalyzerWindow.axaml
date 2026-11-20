@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        xmlns:c="using:SimpleHPSDR.Controls"
+        x:Class="SimpleHPSDR.Views.SignalAnalyzerWindow"
+        x:DataType="vm:SignalAnalyzerViewModel"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        Title="Signal Analyser" Width="1100" Height="640" MinWidth="720" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="10">
+    <!-- What is being looked at, and the scope's time base -->
+    <DockPanel DockPanel.Dock="Top" Margin="2,0,0,8">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="Scope" Classes="label" VerticalAlignment="Center" />
+        <ComboBox ItemsSource="{Binding TimeBases}" SelectedIndex="{Binding TimeBaseIndex}" Width="100"
+                  ToolTip.Tip="How much time the envelope scope shows" />
+        <Button Classes="seg" Classes.lit="{Binding Frozen}" Content="Hold" Command="{Binding ToggleFrozenCommand}" MinWidth="60"
+                ToolTip.Tip="Freeze the picture and the readings to study them" />
+      </StackPanel>
+      <StackPanel Spacing="2">
+        <TextBlock Text="{Binding SourceText}" FontSize="13" TextTrimming="CharacterEllipsis" />
+        <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{DynamicResource WarnText}" TextWrapping="Wrap"
+                   IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </DockPanel>
+
+    <!-- The verdict and the readings -->
+    <Border DockPanel.Dock="Right" Width="350" Margin="10,0,0,0">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding Headline}" Foreground="{Binding HeadlineBrush}"
+                   FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8" />
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding Findings}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:FindingRow">
+                <Grid ColumnDefinitions="18,*" RowDefinitions="Auto,Auto" Margin="0,0,8,12">
+                  <Ellipse Width="10" Height="10" Fill="{Binding Brush}" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
+                    <TextBlock Text="{Binding Value}" FontSize="13" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Advice}" FontSize="12" Classes="label"
+                             TextWrapping="Wrap" Margin="0,2,0,0" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <Grid RowDefinitions="*,6,*">
+      <c:EnvelopeScope Report="{Binding Report}" ClipToBounds="True" />
+      <c:SignalSpectrum Grid.Row="2" Report="{Binding Report}" ClipToBounds="True" />
+    </Grid>
+  </DockPanel>
+</Window>

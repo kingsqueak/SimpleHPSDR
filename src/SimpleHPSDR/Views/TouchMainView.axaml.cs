@@ -205,6 +205,12 @@ public partial class TouchMainView : UserControl
         (TopLevel.GetTopLevel(this) as MainWindow)?.OpenAnalyzer();
     }
 
+    private void OnOpenSignalAnalyzer(object? sender, RoutedEventArgs e)
+    {
+        Drawer.IsPaneOpen = false;
+        (TopLevel.GetTopLevel(this) as MainWindow)?.OpenSignalAnalyzer();
+    }
+
     private void OnOpenWideband(object? sender, RoutedEventArgs e)
     {
         Drawer.IsPaneOpen = false;
