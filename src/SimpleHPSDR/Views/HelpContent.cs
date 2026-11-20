@@ -298,7 +298,17 @@ SimpleHPSDR has two panadapters, RX1 and RX2, and each can carry two slices: A1 
 ## Slices
 Slices come on in order — A2 first, then B1 (which opens RX2's panadapter), then B2 — because the radio enables its receivers that way, and they go off in reverse. To add one, click + in the touch drawer's Slices section or right-click a panadapter and choose Add slice; the new slice opens on the frequency you're tuned to, in the active slice's mode and filter, and takes the controls. The ✕ on a slice's small frequency display turns that slice off again (only the most recent slice comes off directly; turning RX2 off takes B1 and B2 together). Every slice costs a full receiver's worth of processing, so keep an eye on the CPU readout — on a Raspberry Pi two slices is comfortable, four is the most there is.
 
-Some radios have only two receivers: Protocol 1 radios, and a few Protocol 2 radios such as the Brick 3. There RX1 and RX2 get one slice each, A1 and B1, with no A2 or B2.
+Some radios have only two receivers. Protocol 1 radios get one slice on each panadapter, A1 and B1, with no A2 or B2.
+
+## Radios with two receivers: A2 and B2 on a shared span
+A few Protocol 2 radios, such as the Brick 3, also have only two receivers, and those go to A1 and B1. There A2 and B2 still work, a different way: each listens inside the stretch of band its panadapter's first slice has already captured, so A2 lives inside RX1's span and B2 inside RX2's. They are full slices otherwise, with their own mode, filter, noise controls, AGC and volume, and either can transmit.
+
+- They come on and off in any order: A2 doesn't need RX2, and B2 only needs B1. Right-click RX1's panadapter for Add slice A2, RX2's for Add slice B2; the + button adds A2, then B1, then B2. B1 comes off after B2, and turning RX2 off takes both.
+- A2 and B2 can be tuned anywhere inside their panadapter's span (how wide that is depends on the Span setting: about 80 kHz either side of the centre at 192 kHz). At the edge they stop, and the status line says so. To take one further, tune or drag its panadapter's first slice.
+- When A1 (or B1) is tuned away, or the panadapter is dragged, so that the second slice is left outside the span, it keeps its frequency and goes silent. Its tag and its small frequency display read "out of span", and it comes back by itself when the span covers it again.
+- With CTUN off, the span follows A1 as you tune it. Turn CTUN on to hold the span still while both slices move inside it, which suits working split.
+- A2 and B2 hear the same antenna as their panadapter's first slice, so they have no ANT button of their own.
+- On the G2 panel and the Dial, the B controls act on A2 on these radios, as they do on radios with four receivers.
 
 RX1 and RX2 beside the frequency pick the panadapter: the VFO, band, mode and filter then act on that pan's most recent slice, shown by the A1/A2 (or B1/B2) badges beside them — blue has the controls, red edge transmits. Click a badge to give that slice the controls; right-click it for more (transmit on it, mute it, remove it). RX2's first click turns it on; RX2 outlined in blue is on and waiting. A click or the wheel on a panadapter gives its slice the controls too, and a click on a slice's tag on the panadapter does the same.
 
