@@ -1031,7 +1031,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             LoadPureSignal(state);
             ForgetPsCorrectionState();
             await LoadMonitorAsync();
-            await Try(() => client.SetRxPanAsync(EngineRxPan));
+            await Try(() => client.SetRxPanAsync(EngineRxPan, RxPanSides()));
             await LoadNotchesAsync();
             if (firstFilters && Filters.FirstOrDefault(f => f.SlotName == DefaultFilterSlot) is { } start)
                 await SelectFilterAsync(start);

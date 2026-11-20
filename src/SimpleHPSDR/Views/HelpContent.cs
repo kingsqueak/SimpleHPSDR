@@ -264,7 +264,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
         ("Receiving", """
 ## Volume
 - AF sets the overall level. With more than one slice on, it becomes one slider per slice, each setting that slice's own level on top of the overall level, which stays where you left it. Click a slice's label to mute just that slice; the label dims while it's muted.
-- Pan, the third slider under those two, puts the receivers in different ears on stereo speakers or headphones. In the middle both are in both ears. Slide it left and the first receiver moves to the left ear and the second to the right, all the way for a full split; slide it right for the other way round. It works on this computer's sound output, not on the radio's own speaker or headphone jack.
+- Pan, the third slider under those two, puts the receivers in different ears on stereo speakers or headphones. In the middle all are in both ears. With RX2 on, it sets RX1's slices (A1, A2) against RX2's (B1, B2): slide it left and RX1 moves to the left ear and RX2 to the right, all the way for a full split; slide it right for the other way round. With RX2 off it sets A1 against A2 the same way. It works on this computer's sound output, not on the radio's own speaker or headphone jack.
 - Mute silences the receiver.
 - REC and the voice keyer: see Recording and the voice keyer.
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.

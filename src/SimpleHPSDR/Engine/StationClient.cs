@@ -232,10 +232,13 @@ public sealed class StationClient : IDisposable
         await ThrowIfFailed(r);
     }
 
-    /// <summary>Receive pan: -1 = RX1 left and RX2 right, 0 = both centred, +1 the other way.</summary>
-    public async Task SetRxPanAsync(double pan)
+    /// <summary>Receive pan: -1 = A1's side left and the opposite side right,
+    /// 0 = all centred, +1 the other way. sides: each receiver's side by index
+    /// (+1 with A1, -1 opposite, 0 centred). An engine that doesn't know
+    /// sides ignores them and pans receiver 0 against receiver 1.</summary>
+    public async Task SetRxPanAsync(double pan, int[] sides)
     {
-        using var r = await _http.PutAsJsonAsync("api/rx/pan", new { pan }, Json);
+        using var r = await _http.PutAsJsonAsync("api/rx/pan", new { pan, sides }, Json);
         await ThrowIfFailed(r);
     }
 

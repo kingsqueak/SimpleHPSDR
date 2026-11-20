@@ -188,6 +188,12 @@ public sealed partial class MainViewModel
         bool sameCount = count == SliceCount, moved = mask != _sliceMask;
         _sliceMask = mask;
         SliceCount = count;
+        if (moved)
+        {
+            // Which slices the pan sets against each other goes by what is on.
+            SendRxPan();
+            OnPropertyChanged(nameof(RxPanTip));
+        }
         if (sameCount && moved)
             foreach (string name in (string[])[nameof(SliceCount), nameof(HasSliceB), nameof(ShowPanadapterB),
                          nameof(ShowAbBadges), nameof(Rx2Active), nameof(Rx2Idle), nameof(ActiveName), nameof(AbOn2),
@@ -401,13 +407,29 @@ public sealed partial class MainViewModel
         row.Value = Math.Clamp(row.Value + delta, -40, 20);
     }
 
-    // The pan under the volume sliders: RX1's panadapter towards one ear,
-    // RX2's towards the other. The engine keeps it only while it runs, so
-    // it's sent on every connect.
-    private Latest<double>? _rxPanSender;
+    // The pan under the volume sliders: RX1's panadapter (A1, A2) towards
+    // one ear and RX2's (B1, B2) towards the other; with RX2 off, A1 towards
+    // one ear and A2 towards the other. The engine keeps it only while it
+    // runs, so it's sent on every connect, and again when the slices that
+    // are on change, since the sides go with it.
+    private Latest<PanOrder>? _rxPanSender;
+    private readonly record struct PanOrder(double Pan, int S1, int S2, int S3);
 
-    /// <summary>-100 = RX1 in the left ear and RX2 in the right, 0 = both in
-    /// both ears, +100 = RX1 right and RX2 left.</summary>
+    /// <summary>Each receiver's side of the pan: +1 with A1, -1 opposite, 0 centred.</summary>
+    private int[] RxPanSides()
+    {
+        var sides = new int[MaxSlices];
+        sides[0] = 1;
+        bool panB = ShowPanadapterB;
+        for (int i = 1; i < MaxSlices; i++)
+            sides[i] = !SliceOn(i) ? 0
+                : panB ? (SlicePan(i) == 0 ? 1 : -1)
+                : -1;   // RX2 off: whatever is on besides A1 is A2
+        return sides;
+    }
+
+    /// <summary>-100 = RX1 (or A1) in the left ear and RX2 (or A2) in the
+    /// right, 0 = all in both ears, +100 the other way round.</summary>
     public double RxPan
     {
         get => _settings.RxPan;
@@ -430,19 +452,24 @@ public sealed partial class MainViewModel
         get
         {
             double pan = EngineRxPan;
-            if (pan == 0) return "Pan: RX1 and RX2 in both ears. Slide to split them left and right.";
+            // RX1's slices against RX2's; with RX2 off, A1 against A2.
+            bool panB = ShowPanadapterB || SliceCount < 2;
+            string one = panB ? "RX1" : SliceLabel(PanPrimary(0)), other = panB ? "RX2" : SliceLabel(PanSecondary(0));
+            if (pan == 0) return $"Pan: {one} and {other} in both ears. Slide to split them left and right.";
             string where = Math.Abs(pan) >= 1 ? "" : $" ({Math.Abs(pan) * 100:0}%)";
             return pan < 0
-                ? $"Pan: RX1 left, RX2 right{where}"
-                : $"Pan: RX1 right, RX2 left{where}";
+                ? $"Pan: {one} left, {other} right{where}"
+                : $"Pan: {one} right, {other} left{where}";
         }
     }
 
     private void SendRxPan()
     {
         if (!IsConnected) return;
-        _rxPanSender ??= new Latest<double>(pan => _client?.SetRxPanAsync(pan) ?? Task.CompletedTask);
-        _rxPanSender.Send(EngineRxPan);
+        _rxPanSender ??= new Latest<PanOrder>(o =>
+            _client?.SetRxPanAsync(o.Pan, [1, o.S1, o.S2, o.S3]) ?? Task.CompletedTask);
+        int[] sides = RxPanSides();
+        _rxPanSender.Send(new PanOrder(EngineRxPan, sides[1], sides[2], sides[3]));
     }
 
     // ---- marks for the panadapters ---------------------------------------

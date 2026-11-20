@@ -42,7 +42,8 @@ Not affiliated with or endorsed by the Zeus SDR project.
   its own panadapter and two slices (A1 and A2 on RX1, B1 and B2 on RX2). Every
   slice keeps its own mode, filter, noise settings and AGC; split and cross-band
   included. With more than one on, AF becomes a slider per slice (click a
-  slice's label to mute it), and Pan puts them in different ears.
+  slice's label to mute it), and Pan puts RX1's slices in one ear and RX2's in
+  the other (A1 and A2, while RX2 is off).
 - **Band and mode memory:** each pair, such as 40 m DIGU, keeps its own
   frequency, filter, AGC, drive, mic gain and noise settings.
 - **Memories:** 48 under Mem in three tabs, the same on every band, plus each band's own
