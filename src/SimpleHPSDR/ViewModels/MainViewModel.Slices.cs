@@ -612,13 +612,19 @@ public sealed partial class MainViewModel
     // shared layout, would also block the right kind from coming on. Off, top
     // one first, once each per connection.
     private readonly bool[] _unusableOffSent = new bool[MaxSlices];
+    // The slice TurnOnSliceAsync is turning on right now, or -1. Its own
+    // check decides whether the engine took it; the poll's clean-up keeps
+    // its hands off meanwhile, or an engine that can't share streams would
+    // look like one that merely refused.
+    private int _sliceComingOn = -1;
+
     private void TurnOffMisfitSlices(StateDto s)
     {
         // Runs on the connect pass too, before IsConnected is set: the client is there.
         if (_client is null) return;
         var on = new List<int>();
         for (int i = MaxSlices - 1; i >= 2; i--)
-            if (!_unusableOffSent[i] && s.Receivers?.FirstOrDefault(r => r.Index == i) is { Enabled: true } r && !FitsLayout(r))
+            if (i != _sliceComingOn && !_unusableOffSent[i] && s.Receivers?.FirstOrDefault(r => r.Index == i) is { Enabled: true } r && !FitsLayout(r))
             {
                 _unusableOffSent[i] = true;
                 on.Add(i);
@@ -827,12 +833,17 @@ public sealed partial class MainViewModel
         await Try(async () =>
         {
             bool rx2WasOn = SliceOn(PanPrimary(1));
-            await _client!.SetReceiverAsync(i, new ReceiverSetRequest(
-                Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
-                AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
-                ZoomLevel: zoom, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto, AdcSource: adc,
-                SourceReceiver: shares ? source : null));
-            if (shares && !await SharingTookAsync(i, source, rx2WasOn)) return;
+            if (shares) _sliceComingOn = i;
+            try
+            {
+                await _client!.SetReceiverAsync(i, new ReceiverSetRequest(
+                    Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
+                    AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
+                    ZoomLevel: zoom, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto, AdcSource: adc,
+                    SourceReceiver: shares ? source : null));
+                if (shares && !await SharingTookAsync(i, source, rx2WasOn)) return;
+            }
+            finally { _sliceComingOn = -1; }
             _slices[i] = (_slices[i] ?? new ReceiverDto(i, true, adc ?? 0, hz, Mode, FilterLowHz, FilterHighHz,
                 Filters.FirstOrDefault(f => f.IsSelected)?.SlotName, 0, _sampleRateHz))
                 with { Enabled = true, VfoHz = hz, SourceReceiver = shares ? source : null };

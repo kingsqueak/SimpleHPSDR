@@ -137,7 +137,17 @@ public sealed partial class MainViewModel
     [RelayCommand]
     private Task SwapSlicesAsync() => Try(async () =>
     {
-        await _client!.SwapVfosAsync();
+        // The engine's swap exchanges receivers 0 and 1. With shared streams
+        // receiver 1 is B1, so A1 and A2 are exchanged here instead.
+        if (SharedSlices)
+        {
+            int a2 = PanSecondary(0);
+            if (!SliceOn(a2)) return;
+            long a = RxHz(0), b = RxHz(a2);
+            await _client!.SetVfoAsync(b, 0);
+            await _client.SetVfoAsync(a, a2);
+        }
+        else await _client!.SwapVfosAsync();
         await MakeActiveAsync(ActiveRx);
     });
 
