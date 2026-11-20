@@ -68,8 +68,8 @@ public sealed partial class MainViewModel
     public string SliceInputLabel(int i) => WantsJack(i) ? "Rx2 jack" : "Main";
 
     /// <summary>The desktop view's B1 button.</summary>
-    public bool ShowB1Input => ShowSliceInput(2);
-    public string B1InputLabel => SliceInputLabel(2);
+    public bool ShowB1Input => ShowSliceInput(PanPrimary(1));
+    public string B1InputLabel => SliceInputLabel(PanPrimary(1));
     private bool _sendingSliceInput;
 
     private async Task LoadRx2JackAsync()

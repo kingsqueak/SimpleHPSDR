@@ -242,7 +242,7 @@ public partial class TouchMainView : UserControl
         _ = vm.AddSliceAsync(vm.VfoHz);
     }
 
-    private void ToggleB1Input(object? sender, RoutedEventArgs e) => Vm?.ToggleSliceInput(2);
+    private void ToggleB1Input(object? sender, RoutedEventArgs e) => Vm?.ToggleSliceInput(MainViewModel.PanPrimary(1));
 
     // ---- zoom ----------------------------------------------------------
 

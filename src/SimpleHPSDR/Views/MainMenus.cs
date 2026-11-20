@@ -57,9 +57,10 @@ public static class MainMenus
         // it active as it goes, which is acceptable for a menu action.
         async Task SwapPansAsync()
         {
-            long a = vm.RxHz(0), b = vm.RxHz(2);
-            await vm.TuneSliceAsync(0, b);
-            await vm.TuneSliceAsync(2, a);
+            int first = MainViewModel.PanPrimary(0), second = MainViewModel.PanPrimary(1);
+            long a = vm.RxHz(first), b = vm.RxHz(second);
+            await vm.TuneSliceAsync(first, b);
+            await vm.TuneSliceAsync(second, a);
         }
     }
 

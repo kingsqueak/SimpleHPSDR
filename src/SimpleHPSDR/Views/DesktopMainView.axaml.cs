@@ -162,7 +162,7 @@ public partial class DesktopMainView : UserControl
         new() { Header = header, Command = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(act) };
 
     // The B1 antenna button toggles B1 between the main antenna and the Rx2 jack.
-    private void ToggleB1Input(object? sender, RoutedEventArgs e) => Vm?.ToggleSliceInput(2);
+    private void ToggleB1Input(object? sender, RoutedEventArgs e) => Vm?.ToggleSliceInput(MainViewModel.PanPrimary(1));
 
     // Mem's popup closed: put the memories in frequency order.
     private void OnMemoriesClosed(object? sender, EventArgs e) => Vm?.SortMemories();
