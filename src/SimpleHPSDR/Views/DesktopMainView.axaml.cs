@@ -113,7 +113,7 @@ public partial class DesktopMainView : UserControl
             if (Vm is { } vm && !vm.TryPlaceNotch(hz)) _ = vm.TuneSliceAsync(vm.TuneTargetFor(1), vm.ClickFrequency(hz));
         };
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
-        SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB);
+        SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB, pan: 1);
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(Vm.TuneTargetFor(1), steps);
         // Pinch (trackpad or fingers) zooms both panadapters, as the Zoom button does.
         Spectrum.ZoomRequested += dir => Vm?.ZoomStep(0, dir);
@@ -520,7 +520,9 @@ public partial class DesktopMainView : UserControl
         Spectrum.HoldView = SpectrumB.HoldView = vm.CtunOn;
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
-        if (f.RxId == vm.ActiveRx)
+        // A slice on another's stream gets that stream's frames: no use to
+        // the close-up while its dial is outside them.
+        if (f.RxId == vm.ActiveRx && !vm.SliceOutOfSpan(f.RxId))
         {
             FilterScope.AverageSeconds = vm.CloseUpAverageSec;
             FilterScope.ColouredFill = vm.CloseUpColoured;

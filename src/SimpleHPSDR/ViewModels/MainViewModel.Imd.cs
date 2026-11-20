@@ -180,7 +180,15 @@ public sealed partial class MainViewModel
         double span = Math.Max(2.4 * outer, 10_000);
         double zoom = Math.Clamp(_sampleRateHz / span, 1, MaxZoom);
         // The panadapter the transmitting slice is on: RX2's for B1/B2.
-        int pan = _imdPan ??= SlicePan(TxRx) == 1 && ShowPanadapterB ? 1 : 0;
+        int pan = _imdPan ?? (SlicePan(TxRx) == 1 && ShowPanadapterB ? 1 : 0);
+        // A TX slice on its pan's first slice's stream is only seen in that
+        // stream: out of its reach there is nothing to zoom to or measure.
+        if (SharesStream(TxRx) && Math.Abs(TxSlice().Hz - RxHz(PanPrimary(pan))) > SpanReach)
+        {
+            Status = $"{SliceLabel(TxRx)} is outside RX{pan + 1}'s span: no IMD reading there.";
+            return;
+        }
+        _imdPan = pan;
         _zoomBeforeImd ??= _zoomFine[pan];
         _ctunBeforeImd ??= CtunOn;
         if (CtunOn) CtunOn = false;
@@ -191,7 +199,7 @@ public sealed partial class MainViewModel
         if (TxRx != primary)
         {
             long txHz = TxSlice().Hz;
-            if (Math.Abs(txHz - RxHz(primary)) <= (long)(_sampleRateHz * 0.43)) _imdCentreHz = txHz;
+            if (Math.Abs(txHz - RxHz(primary)) <= SpanReach) _imdCentreHz = txHz;
             else Status = $"{SliceLabel(TxRx)} is outside {SliceLabel(primary)}'s panadapter: IMD reads {SliceLabel(TxRx)}'s own receiver.";
         }
         await Try(() => CenterOnDialAsync(pan));
@@ -208,9 +216,11 @@ public sealed partial class MainViewModel
     private long? _imdCentreHz;
 
     /// <summary>The receiver stream the IMD meter reads: the TX pan's picture
-    /// when the tones are centred in it, else the TX slice's own receiver.</summary>
+    /// when the tones are centred in it, else the TX slice's own receiver.
+    /// None (-1) for a slice on another's stream that isn't centred: its
+    /// frames are that stream's picture, not centred on the tones.</summary>
     private int ImdStream => _imdPan is { } p && (TxRx == PanPrimary(p) || _imdCentreHz is not null)
-        ? PanPrimary(p) : TxRx;
+        ? PanPrimary(p) : SharesStream(TxRx) ? -1 : TxRx;
 
     /// <summary>The slice a pan's view places its window around (the views
     /// read it every frame): the TX slice during 2-TONE / PS CAL on that pan,

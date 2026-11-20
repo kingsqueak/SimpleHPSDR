@@ -58,7 +58,7 @@ public partial class TouchMainView : UserControl
         SpectrumB.PanRequested += hz => Vm?.PanTo(1, hz);
         SpectrumB.PanEnded += () => Vm?.PanEnded();
         SpectrumB.SliceClicked += rx => _ = Vm?.MakeActiveAsync(rx);
-        SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB, offerRx2: true);
+        SpectrumB.MenuRequested += hz => MainMenus.ShowSliceMenu(Vm, hz, SpectrumB, offerRx2: true, pan: 1);
         SpectrumB.WheelTune += steps => _ = Vm?.TuneSliceByStepsAsync(Vm.TuneTargetFor(1), steps);
         SpectrumB.ZoomRequested += dir => Vm?.ZoomStep(1, dir);
         FilterScope.FilterDragged += (low, high) => Vm?.DragFilter(low, high);
@@ -402,7 +402,9 @@ public partial class TouchMainView : UserControl
         Spectrum.HoldView = SpectrumB.HoldView = vm.CtunOn;
         Spectrum.TxRangeDb = SpectrumB.TxRangeDb = vm.TxWaterfallRangeDb;
         Spectrum.Transmitting = SpectrumB.Transmitting = vm.IsTransmitting;
-        if (f.RxId == vm.ActiveRx && Drawer.IsPaneOpen)
+        // A slice on another's stream gets that stream's frames: no use to
+        // the close-up while its dial is outside them.
+        if (f.RxId == vm.ActiveRx && Drawer.IsPaneOpen && !vm.SliceOutOfSpan(f.RxId))
         {
             FilterScope.AverageSeconds = vm.CloseUpAverageSec;
             FilterScope.ColouredFill = vm.CloseUpColoured;

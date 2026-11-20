@@ -802,11 +802,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         WireAlerts(_client);
         _client.Vfo += v => Dispatcher.UIThread.Post(() =>
         {
+            NoteStreamCentre(v.Receiver, v.RadioLoHz);
             if (v.Receiver == ActiveRx) { if (!_vfoSenders[ActiveRx].Busy) SetVfoLocal(v.VfoHz); }
             else if ((uint)v.Receiver < MaxSlices && _slices[v.Receiver] is { } r)
                 _slices[v.Receiver] = r with { VfoHz = v.VfoHz };
             // The TX slice in split: PureSignal follows its band.
             if (v.Receiver != ActiveRx && v.Receiver == TxRx) LoadPsCorrectionForBand();
+            CheckOutOfSpan();
         });
         _client.CwStatus += f => Dispatcher.UIThread.Post(() => OnCwStatus(f));
         _client.CwDecoded += f => Dispatcher.UIThread.Post(() => OnCwDecoded(f));
@@ -1137,6 +1139,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
         if (!SimpleHPSDR.Band.Tunable(hz)) hz = Math.Clamp(hz, SimpleHPSDR.Band.MinHfHz, SimpleHPSDR.Band.MaxHfHz);
+        hz = KeepInsideSpan(hz);
         SetVfoLocal(hz);
         if (SimpleHPSDR.Band.Find(hz) is { } band) _settings.BandMemory[band.Name] = hz;
         _vfoSenders[ActiveRx].Send(hz);
@@ -1610,9 +1613,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         while (_frames.TryDequeue(out var f))
         {
             UiStats.FrameApplied();
+            // RX2's frames are centred on its stream, which B2 shares.
+            if (f.RxId == 1) NoteStreamCentre(1, f.CenterHz);
             Display?.Invoke(f);
             FeedImd(f);
         }
+        CheckOutOfSpan();
     }
 
     // Auto-ATT, the overload flag and engine-side mode changes have no

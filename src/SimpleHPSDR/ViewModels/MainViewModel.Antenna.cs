@@ -59,12 +59,13 @@ public sealed partial class MainViewModel
     private readonly bool[] _wantsJack = new bool[MaxSlices];
 
     /// <summary>Slice i listens on the Rx2 jack (ADC1) rather than the main
-    /// antenna.</summary>
-    internal bool WantsJack(int i) => HasRx2Jack && i > 0 && i < MaxSlices && _wantsJack[i];
+    /// antenna. A slice on another slice's stream has no input of its own.</summary>
+    internal bool WantsJack(int i) => HasRx2Jack && i > 0 && i < MaxSlices && !SharesStream(i) && _wantsJack[i];
 
     /// <summary>Slice i's input button shows: the radio has the jack and the
-    /// slice is on. A1 has no button; it is always the main antenna.</summary>
-    public bool ShowSliceInput(int i) => HasRx2Jack && SliceOn(i) && i > 0;
+    /// slice is on. A1 has no button; it is always the main antenna. Nor has
+    /// a slice on another slice's stream: it hears that slice's input.</summary>
+    public bool ShowSliceInput(int i) => HasRx2Jack && SliceOn(i) && i > 0 && !SharesStream(i);
     public string SliceInputLabel(int i) => WantsJack(i) ? "Rx2 jack" : "Main";
 
     /// <summary>The desktop view's B1 button.</summary>
@@ -97,7 +98,7 @@ public sealed partial class MainViewModel
     /// <summary>Flip a slice's input between the main antenna and the Rx2 jack.</summary>
     public void ToggleSliceInput(int i)
     {
-        if (i <= 0 || i >= MaxSlices) return;
+        if (i <= 0 || i >= MaxSlices || SharesStream(i)) return;
         _wantsJack[i] = !_wantsJack[i];
         if (i == PanPrimary(1))
         {
@@ -114,8 +115,9 @@ public sealed partial class MainViewModel
     // set the second ADC's attenuator; otherwise the main input's, as before.
     // The engine's auto ATT already protects each ADC.
 
-    /// <summary>ATT is acting on the Rx2 jack (ADC1).</summary>
-    public bool AttOnRx2Jack => ActiveRx > 0 && WantsJack(ActiveRx);
+    /// <summary>ATT is acting on the Rx2 jack (ADC1). A slice on another
+    /// slice's stream follows that slice's input.</summary>
+    public bool AttOnRx2Jack => StreamOf(ActiveRx) is > 0 and int input && WantsJack(input);
     private bool _attWasRx2;
 
     private void CheckAttSource()
@@ -179,7 +181,7 @@ public sealed partial class MainViewModel
         if (!IsConnected || !HasRx2Jack || _sendingSliceInput) return;
         for (int i = 1; i < MaxSlices; i++)
         {
-            if (!SliceOn(i) || _slices[i] is not { } r) continue;
+            if (!SliceOn(i) || SharesStream(i) || _slices[i] is not { } r) continue;
             byte want = WantsJack(i) ? (byte)1 : (byte)0;
             if (r.AdcSource == want) continue;
             _ = SendSliceInputAsync(i, want);

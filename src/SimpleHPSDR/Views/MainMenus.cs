@@ -73,7 +73,7 @@ public static class MainMenus
     // transmit, mute, add the next slice, and turn the top slice — or RX2
     // itself — off. The second panadapter opens from the RX2 button; the touch
     // layout has that button in its drawer, so there the menu offers RX2 as well.
-    public static void ShowSliceMenu(MainViewModel? vm, long hz, Control at, bool offerRx2 = false)
+    public static void ShowSliceMenu(MainViewModel? vm, long hz, Control at, bool offerRx2 = false, int pan = 0)
     {
         if (vm is not { IsConnected: true }) return;
         string where = $"{hz / 1e6:0.000000} MHz";
@@ -105,7 +105,14 @@ public static class MainMenus
                 items.Add(Item(muted ? $"Unmute {label}" : $"Mute {label}", () => vm.SetSliceMuteAsync(s, !muted)));
             }
             items.Add(new Separator());
-            if (vm.CanAddSlice) items.Add(Item($"Add slice {vm.NextSliceLabel} at {where}", () => vm.AddSliceAsync(hz)));
+            // With shared streams, this pan's second slice (A2 here, B2 on
+            // RX2's), whatever else is on; RX2 itself comes on below.
+            if (MainViewModel.SharedSlices)
+            {
+                if (vm.SecondSliceToAdd(pan) is >= 0 and int second)
+                    items.Add(Item($"Add slice {MainViewModel.SliceLabel(second)} at {where}", () => vm.AddSliceAsync(second, hz)));
+            }
+            else if (vm.CanAddSlice) items.Add(Item($"Add slice {vm.NextSliceLabel} at {where}", () => vm.AddSliceAsync(hz)));
             foreach (int s in on)
                 if (vm.MayRemoveSlice(s)) items.Add(Item($"Turn {MainViewModel.SliceLabel(s)} off", () => vm.RemoveSliceAsync(s)));
             if (vm.ShowPanadapterB)
@@ -113,7 +120,7 @@ public static class MainMenus
                 items.Add(SideBySideItem(vm));
                 items.Add(Item("Turn RX2 off", () => vm.RemovePanBAsync()));
             }
-            else if (offerRx2 && vm.CanAddSlice)
+            else if (offerRx2 && vm.CanTurnOnPanB)
                 items.Add(Item("Turn RX2 on (second panadapter)", () => vm.SelectRxAsync(1)));
         }
         new ContextMenu { ItemsSource = items }.Open(at);

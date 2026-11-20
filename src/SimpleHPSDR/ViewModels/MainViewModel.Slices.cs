@@ -12,17 +12,22 @@ namespace SimpleHPSDR.ViewModels;
 /// <summary>
 /// Slices on the panadapters: up to four, numbered by the engine's receiver
 /// index — A1 and A2 on RX1's panadapter (receivers 0 and 1), B1 and B2 on
-/// RX2's (receivers 2 and 3). Receivers must be contiguous, so slices come on
-/// in that order and go off in reverse. The active slice is the one the VFO,
+/// RX2's (receivers 2 and 3). Receivers with DDCs of their own must be
+/// contiguous, so slices come on in that order and go off in reverse. The active slice is the one the VFO,
 /// band, mode, filter, AF and tuning act on; the TX slice is the engine's TX
 /// receiver, whose frequency, mode and filter transmit (TX on B1 while
 /// listening on A1 is split). All slices play mixed, each can be muted. Each
 /// panadapter is drawn from its first slice's DDC stream and zooms as one;
 /// the second slice on a pan keeps its own dial, mode, filter, the entire
 /// noise block and AGC. DUP keeps the receivers audible while keyed.
-/// A radio with only two receivers (a Brick 3 with four DDCs, two of them
-/// PureSignal's; Protocol 1) gets one slice per panadapter instead: A1 is
-/// receiver 0 on RX1's pan and B1 is receiver 1 on RX2's, as before 0.15.0.
+/// A Protocol 1 radio with only two receivers gets one slice per panadapter
+/// instead: A1 is receiver 0 on RX1's pan and B1 is receiver 1 on RX2's, as
+/// before 0.15.0. A Protocol 2 radio with only two receivers (a Brick 3 with
+/// four DDCs, two of them PureSignal's) keeps A1 and B1 there and adds the
+/// second slices without DDCs of their own: A2 (receiver 2) on A1's stream and
+/// B2 (receiver 3) on B1's. Those come and go in any order (B2 needs B1), can
+/// only be tuned inside their stream's span, and fall silent, keeping their
+/// frequency, when the first slice or a drag moves the span away from them.
 /// </summary>
 public sealed partial class MainViewModel
 {
@@ -42,6 +47,14 @@ public sealed partial class MainViewModel
     // 0, B1 = receiver 1, A2 = receiver 2 (on receiver 0's stream), B2 =
     // receiver 3 (on receiver 1's). Never set together with s_twoReceivers.
     private static volatile bool s_sharedSlices;
+
+    // SIMPLEHPSDR_SHARED_SLICES=1: the shared-stream layout on any Protocol 2
+    // radio, for testing it on one with receivers to spare.
+    private static readonly bool SharedSlicesForced = Environment.GetEnvironmentVariable("SIMPLEHPSDR_SHARED_SLICES") == "1";
+
+    // This connection's engine turned on a receiver with a DDC of its own when
+    // asked for a shared one: it predates shared streams.
+    private bool _sharingUnsupported;
 
     /// <summary>The second slices share their pan's first slice's stream:
     /// A1 and B1 are receivers 0 and 1, A2 and B2 receivers 2 and 3.</summary>
@@ -68,6 +81,9 @@ public sealed partial class MainViewModel
     /// <summary>The colour a slice's chip, flag and volume row wear.</summary>
     public static string SliceColor(int i) => SliceColors[SliceColorIndex(i)];
     private static readonly string[] SliceColors = ["#F25F5C", "#F5A524", "#C084FC", "#38BDF8"];
+
+    /// <summary>The slice colour at a colour index (what SliceColorIndex gives).</summary>
+    public static string SliceColorAt(int colorIndex) => SliceColors[Math.Clamp(colorIndex, 0, SliceColors.Length - 1)];
 
     /// <summary>Which panadapter a slice sits on: 0 = RX1's, 1 = RX2's.</summary>
     public static int SlicePan(int i) =>
@@ -228,7 +244,8 @@ public sealed partial class MainViewModel
     {
         if (!SliceOn(rx)) return "";
         if (_slices[rx] is not { } r) return "";
-        var parts = new List<string>(4);
+        var parts = new List<string>(5);
+        if (SliceOutOfSpan(rx)) parts.Add("out of span");
         if (r.FilterPresetName is { } slot && _filterLabels.TryGetValue(r.Mode, out var labels)
             && labels.TryGetValue(slot, out string? label))
             parts.Add(label);
@@ -461,7 +478,7 @@ public sealed partial class MainViewModel
                 (hz, low, high) = (r.VfoHz, r.FilterLowHz + s, r.FilterHighHz + s);
             }
             else continue;
-            marks.Add(new SliceMark(i, hz, low, high, SliceLabel(i), i == ActiveRx, TxRx == i, _mute[i]));
+            marks.Add(new SliceMark(i, hz, low, high, SliceLabel(i), i == ActiveRx, TxRx == i, _mute[i], SliceOutOfSpan(i)));
         }
         if (marks.Count == 0)
             marks.Add(new SliceMark(0, VfoHz, FilterLowHz + shift, FilterHighHz + shift, SliceLabel(0), true, true, false));
@@ -491,8 +508,14 @@ public sealed partial class MainViewModel
     /// <summary>From engine state (connect and the 1 s poll).</summary>
     private void UpdateSlices(StateDto s)
     {
-        _maxReceivers = RadioHasTwoReceivers ? 2 : Math.Clamp(s.MaxReceivers, 2, MaxSlices);
-        SetLayout(two: s.MaxReceivers <= 2 || RadioHasTwoReceivers, shared: false);
+        // Shared streams on a Protocol 2 radio with two receivers (or any
+        // Protocol 2 radio, with the test switch), unless this engine can't.
+        // The engine only offers receivers 2 and 3 below its ceiling for the board.
+        bool shared = _radio is { Protocol2: true } && (RadioHasTwoReceivers || SharedSlicesForced)
+            && s.MaxReceivers >= MaxSlices && !_sharingUnsupported;
+        _maxReceivers = shared ? MaxSlices : RadioHasTwoReceivers ? 2 : Math.Clamp(s.MaxReceivers, 2, MaxSlices);
+        SetLayout(two: s.MaxReceivers <= 2 || RadioHasTwoReceivers, shared: shared);
+        if (s.RadioLoHz > 0) _streamCentre[0] = s.RadioLoHz;
         for (int i = 0; i < MaxSlices; i++)
         {
             _slices[i] = s.Receivers?.FirstOrDefault(r => r.Index == i);
@@ -500,10 +523,12 @@ public sealed partial class MainViewModel
             {
                 _mute[i] = r.Muted;
                 _sliceAfRows[i]?.SetMuted(r.Muted);
+                // One that doesn't fit the layout is on its way off: not counted.
+                if (r.Enabled && !FitsLayout(r)) _slices[i] = r with { Enabled = false };
             }
         }
         RecountSlices();
-        if (TwoReceiversOnly) TurnOffUnusableSlices(s);
+        TurnOffMisfitSlices(s);
         if (ActiveRx != 0 && !SliceOn(ActiveRx)) _ = MakeActiveAsync(0);
         OnPropertyChanged(RxReadouts);
         FullDuplex = s.FullDuplexMultiRxEnabled;
@@ -536,6 +561,7 @@ public sealed partial class MainViewModel
         if (TxRx != ActiveRx) FollowTxSliceForPs();
         SyncSliceInputs();
         CheckAttSource();
+        CheckOutOfSpan();
     }
 
     partial void OnTxRxChanged(int value) => FollowTxSliceForPs();
@@ -570,18 +596,29 @@ public sealed partial class MainViewModel
         OnPropertyChanged(RxReadouts);
     }
 
-    // B2 and B1 of the four-slice layout, left on in the engine from an earlier
-    // version or session: on a two-receiver radio they have no DDC, so they
-    // would only cost DSP (and hold transmit, if it was moved there). Off, top
+    /// <summary>A receiver the engine has on fits the layout: with one slice
+    /// per panadapter only receivers 0 and 1; in the four-slice layout
+    /// receivers with DDCs of their own; with shared streams A2 and B2 only on
+    /// A1's and B1's streams.</summary>
+    private static bool FitsLayout(ReceiverDto r) =>
+        r.Index < 2 || (SharedSlices ? r.SourceReceiver == StreamOf(r.Index) && SharesStream(r.Index)
+            : !TwoReceiversOnly && r.SourceReceiver is null);
+
+    // Receivers left on in the engine from an earlier version, session or
+    // layout that don't fit this one: B2 and B1 of the four-slice layout on a
+    // two-receiver radio have no DDC, so they would only cost DSP (and hold
+    // transmit, if it was moved there); a shared-stream receiver in the
+    // four-slice layout, or one with its own DDC (or the wrong stream) in the
+    // shared layout, would also block the right kind from coming on. Off, top
     // one first, once each per connection.
     private readonly bool[] _unusableOffSent = new bool[MaxSlices];
-    private void TurnOffUnusableSlices(StateDto s)
+    private void TurnOffMisfitSlices(StateDto s)
     {
         // Runs on the connect pass too, before IsConnected is set: the client is there.
         if (_client is null) return;
         var on = new List<int>();
         for (int i = MaxSlices - 1; i >= 2; i--)
-            if (!_unusableOffSent[i] && s.Receivers?.FirstOrDefault(r => r.Index == i) is { Enabled: true })
+            if (!_unusableOffSent[i] && s.Receivers?.FirstOrDefault(r => r.Index == i) is { Enabled: true } r && !FitsLayout(r))
             {
                 _unusableOffSent[i] = true;
                 on.Add(i);
@@ -595,7 +632,12 @@ public sealed partial class MainViewModel
     }
 
     /// <summary>A new connection: unusable slices may need turning off again.</summary>
-    private void ResetUnusableSlices() => Array.Clear(_unusableOffSent);
+    private void ResetUnusableSlices()
+    {
+        Array.Clear(_unusableOffSent);
+        _sharingUnsupported = false;
+        Array.Clear(_streamCentre);
+    }
 
     /// <summary>One slice's mode, filter, noise and AGC settings as the engine
     /// reports them. The engine's receiver entries carry everything; an engine
@@ -680,30 +722,65 @@ public sealed partial class MainViewModel
     // The layout's rules for which slice comes on and off next. The four-slice
     // and two-receiver layouts follow the engine's contiguous receivers: the
     // lowest one that is off comes on next, and only the top one comes off.
+    // With shared streams the second slices need no DDC, so they come and go
+    // in any order; only B2 needs B1 (RX2's stream) on.
 
-    /// <summary>The slice Add Slice would turn on: the lowest one that is off
-    /// (A2, then B1 which opens RX2's panadapter, then B2), or -1 at the ceiling.</summary>
+    /// <summary>The slice Add Slice would turn on, or -1 at the ceiling: the
+    /// lowest one that is off (A2, then B1 which opens RX2's panadapter, then
+    /// B2); with shared streams the first that is off of A2, B1, B2.</summary>
     public int NextSlice()
     {
+        if (SharedSlices)
+        {
+            foreach (int i in LayoutOrder)
+                if (i != 0 && i < MaxSlicesAllowed && !SliceOn(i) && SliceMayComeOn(i)) return i;
+            return -1;
+        }
         for (int i = 1; i < MaxSlicesAllowed; i++)
             if (!SliceOn(i)) return i;
         return -1;
     }
 
-    /// <summary>The next slice to turn on on the way to slice target (which is
-    /// off): the slices below it come first. -1 at the ceiling.</summary>
-    private int SliceTowards(int target) => NextSlice();
+    /// <summary>With shared streams: a second slice needs its pan's first
+    /// slice on (B2 needs B1; A1 is always on).</summary>
+    private bool SliceMayComeOn(int i)
+    {
+        int first = PanPrimary(SlicePan(i));
+        return !IsSecondSlice(i) || first == 0 || SliceOn(first);
+    }
 
-    /// <summary>The slice that has to come off before rx can (the top one), or
-    /// -1 when rx itself may come off now.</summary>
+    /// <summary>The next slice to turn on on the way to slice target (which is
+    /// off): in the four-slice layout the slices below it come first; with
+    /// shared streams the target itself. -1 at the ceiling.</summary>
+    private int SliceTowards(int target) => SharedSlices
+        ? target < MaxSlicesAllowed && SliceMayComeOn(target) ? target : -1
+        : NextSlice();
+
+    /// <summary>The slice that has to come off before rx can, or -1 when rx
+    /// itself may come off now: the top one, or with shared streams B2
+    /// before B1.</summary>
     private int SliceOffBefore(int rx)
     {
+        if (SharedSlices)
+            return rx == PanPrimary(1) && SliceOn(PanSecondary(1)) ? PanSecondary(1) : -1;
         int top = TopSlice;
         return rx == top ? -1 : top;
     }
 
     /// <summary>Slice rx is on and may come off now (A1 never does).</summary>
     public bool MayRemoveSlice(int rx) => rx > 0 && SliceOn(rx) && SliceOffBefore(rx) < 0;
+
+    /// <summary>With shared streams: the second slice of a pan the panadapter
+    /// menu can add there (A2, or B2 while B1 is on), or -1.</summary>
+    public int SecondSliceToAdd(int pan)
+    {
+        int i = PanSecondary(pan);
+        return SharedSlices && i >= 0 && !SliceOn(i) && SliceMayComeOn(i) ? i : -1;
+    }
+
+    /// <summary>RX2's panadapter can be turned on (its first slice, and in
+    /// the four-slice layout whatever has to come on below it).</summary>
+    public bool CanTurnOnPanB => SliceTowards(PanPrimary(1)) >= 0;
 
     /// <summary>The label of the slice Add Slice would turn on, or "" at the ceiling.</summary>
     public string NextSliceLabel => NextSlice() is >= 0 and int next ? SliceLabel(next) : "";
@@ -713,6 +790,15 @@ public sealed partial class MainViewModel
     /// and filter, and make it active. The radio's receiver ceiling wins over
     /// the ask: the status line says so.</summary>
     public Task AddSliceAsync(long hz) => TurnOnSliceAsync(NextSlice(), hz);
+
+    /// <summary>Add a particular slice (the panadapter menu's A2 or B2).</summary>
+    public Task AddSliceAsync(int slice, long hz) => TurnOnSliceAsync(slice, hz);
+
+    /// <summary>Slice i runs on its pan's first slice's stream, with no DDC of its own.</summary>
+    public static bool SharesStream(int i) => SharedSlices && IsSecondSlice(i);
+
+    /// <summary>The slice whose stream (and so input) slice i hears.</summary>
+    private static int StreamOf(int i) => SharesStream(i) ? PanPrimary(SlicePan(i)) : i;
 
     /// <summary>Turn slice i on at a frequency, in the active slice's mode and
     /// filter, and make it active; -1 or a slice past the radio's ceiling puts
@@ -732,15 +818,24 @@ public sealed partial class MainViewModel
         if (SliceOn(i)) return;
         // The pan's first slice sets its zoom; a second slice starts there too.
         int zoom = EngineZoom(SlicePan(i));
-        byte adc = WantsJack(i) ? (byte)1 : (byte)0;
+        bool shares = SharesStream(i);
+        int source = StreamOf(i);
+        // A slice on another's stream has no input of its own, and has to
+        // start inside that stream's span: else on the pan's first slice.
+        byte? adc = shares ? null : WantsJack(i) ? (byte)1 : (byte)0;
+        if (shares && !InsideSpan(source, hz)) hz = RxHz(source);
         await Try(async () =>
         {
+            bool rx2WasOn = SliceOn(PanPrimary(1));
             await _client!.SetReceiverAsync(i, new ReceiverSetRequest(
                 Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
                 AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
-                ZoomLevel: zoom, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto, AdcSource: adc));
-            _slices[i] = (_slices[i] ?? new ReceiverDto(i, true, adc, hz, Mode, FilterLowHz, FilterHighHz,
-                Filters.FirstOrDefault(f => f.IsSelected)?.SlotName, 0, _sampleRateHz)) with { Enabled = true, VfoHz = hz };
+                ZoomLevel: zoom, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto, AdcSource: adc,
+                SourceReceiver: shares ? source : null));
+            if (shares && !await SharingTookAsync(i, source, rx2WasOn)) return;
+            _slices[i] = (_slices[i] ?? new ReceiverDto(i, true, adc ?? 0, hz, Mode, FilterLowHz, FilterHighHz,
+                Filters.FirstOrDefault(f => f.IsSelected)?.SlotName, 0, _sampleRateHz))
+                with { Enabled = true, VfoHz = hz, SourceReceiver = shares ? source : null };
             // The engine has it on now: count it here rather than waiting for
             // the poll, so the views and MakeActiveAsync know it at once.
             RecountSlices();
@@ -749,6 +844,35 @@ public sealed partial class MainViewModel
             await MakeActiveAsync(i);
             Status = $"{SliceLabel(i)} on, {hz / 1e6:0.000000} MHz.";
         });
+    }
+
+    /// <summary>After asking for slice i on source's stream: did the engine
+    /// do that? An engine without shared streams turns on a receiver with a
+    /// DDC of its own instead (and RX2 with it): that is undone, and this
+    /// connection goes back to one slice per panadapter. A refusal leaves
+    /// things as they were. Either way the status line says so.</summary>
+    private async Task<bool> SharingTookAsync(int i, int source, bool rx2WasOn)
+    {
+        var s = await _client!.GetStateAsync();
+        var row = s.Receivers?.FirstOrDefault(r => r.Index == i);
+        if (row is { Enabled: true, SourceReceiver: int got } && got == source) return true;
+        if (row is { Enabled: true })
+        {
+            await _client.SetReceiverAsync(i, new ReceiverSetRequest(Enabled: false));
+            if (row.SourceReceiver is null)
+            {
+                if (!rx2WasOn) await _client.SetReceiverAsync(PanPrimary(1), new ReceiverSetRequest(Enabled: false));
+                _sharingUnsupported = true;
+                s = await _client.GetStateAsync();
+                UpdateSlices(s);
+                Status = $"This engine can't feed a slice from another receiver's stream, so {SliceLabel(i)} stays off.";
+                return false;
+            }
+            s = await _client.GetStateAsync();
+        }
+        UpdateSlices(s);
+        Status = $"{SliceLabel(i)} couldn't be turned on: the engine refused it.";
+        return false;
     }
 
     /// <summary>Remove a slice, if the layout lets it come off now (in the
@@ -782,6 +906,13 @@ public sealed partial class MainViewModel
             if (ActiveRx == rx) await MakeActiveAsync(0);
             await _client!.SetReceiverAsync(rx, new ReceiverSetRequest(Enabled: false));
             _slices[rx] = _slices[rx] is { } old ? old with { Enabled = false } : null;
+            // RX2 off takes the slice on its stream with it, in the engine too.
+            if (SharedSlices && rx == PanPrimary(1) && PanSecondary(1) is int b2 && _slices[b2] is { Enabled: true } on)
+            {
+                _slices[b2] = on with { Enabled = false };
+                if (ActiveRx == b2) await MakeActiveAsync(0);
+                if (TxRx == b2) TxRx = 0;
+            }
             RecountSlices();
             if (TxRx == rx) TxRx = 0;
             Status = $"{SliceLabel(rx)} off.";
@@ -864,6 +995,94 @@ public sealed partial class MainViewModel
 
     // ---- panadapter zoom and LO -------------------------------------------
 
+    // ---- staying inside the span (shared streams) --------------------------
+
+    // Each pan's stream centre (receiver 0's and 1's DDC), 0 until known: from
+    // the engine's VFO messages, receiver 0's from the state poll as well, and
+    // receiver 1's from its display frames, which are centred on it.
+    private readonly long[] _streamCentre = new long[2];
+
+    /// <summary>How far from its stream's centre a dial can be tuned and still
+    /// be received well, and how far a pan's picture can be dragged.</summary>
+    private long SpanReach => (long)(_sampleRateHz * 0.43);
+
+    // The engine silences a shared-stream slice past this, so the mark agrees with the audio.
+    private long EngineSpanLimit => (long)(_sampleRateHz * 0.45);
+
+    /// <summary>A stream's centre has moved (or is known for the first time).</summary>
+    private void NoteStreamCentre(int rx, long hz)
+    {
+        if ((uint)rx < 2 && hz > 0) _streamCentre[rx] = hz;
+    }
+
+    /// <summary>A frequency a slice on stream's stream can be tuned to: inside
+    /// the reach, or anywhere while the centre isn't known yet.</summary>
+    private bool InsideSpan(int stream, long hz) =>
+        (uint)stream >= 2 || _streamCentre[stream] <= 0 || _sampleRateHz <= 0
+        || Math.Abs(hz - _streamCentre[stream]) <= SpanReach;
+
+    /// <summary>A shared-stream slice whose dial is outside its stream's span:
+    /// the engine keeps it silent there.</summary>
+    public bool SliceOutOfSpan(int rx)
+    {
+        if (!SharesStream(rx) || !SliceOn(rx) || _slices[rx] is not { } r) return false;
+        if (r.OutOfSpan) return true;
+        long centre = _streamCentre[StreamOf(rx)];
+        if (centre <= 0 || _sampleRateHz <= 0) return false;
+        // The engine measures from the dial's carrier side in CW, as the panadapter does.
+        long dial = RxHz(rx) + CwShift(rx == ActiveRx ? Mode : r.Mode);
+        return Math.Abs(dial - centre) > EngineSpanLimit;
+    }
+
+    private readonly bool[] _outOfSpanShown = new bool[MaxSlices];
+
+    private string OutOfSpanText(int rx) =>
+        $"{SliceLabel(rx)} is outside RX{SlicePan(rx) + 1}'s span: silent until RX{SlicePan(rx) + 1} covers it again.";
+
+    /// <summary>Say once when a shared-stream slice leaves its span, and take
+    /// that back when it returns; the chips and panadapter tags follow.</summary>
+    private void CheckOutOfSpan()
+    {
+        bool changed = false;
+        for (int i = 0; i < MaxSlices; i++)
+        {
+            bool now = SliceOutOfSpan(i);
+            if (now == _outOfSpanShown[i]) continue;
+            _outOfSpanShown[i] = now;
+            changed = true;
+            string text = OutOfSpanText(i);
+            if (now) Status = text;
+            else if (Status == text) Status = "";
+        }
+        if (changed) OnPropertyChanged(RxReadouts);
+    }
+
+    // The status line said the active slice is pinned at its span's edge:
+    // not again while it stays there.
+    private bool _pinnedSaid;
+
+    /// <summary>Keep a tuning request for the active slice inside its stream's
+    /// span when it runs on another slice's stream; the first time it stops
+    /// at the edge the status line says why.</summary>
+    private long KeepInsideSpan(long hz)
+    {
+        int stream = StreamOf(ActiveRx);
+        if (!SharesStream(ActiveRx) || InsideSpan(stream, hz))
+        {
+            _pinnedSaid = false;
+            return hz;
+        }
+        long centre = _streamCentre[stream];
+        long kept = Math.Clamp(hz, centre - SpanReach, centre + SpanReach);
+        if (!_pinnedSaid)
+        {
+            _pinnedSaid = true;
+            string pan = $"RX{SlicePan(ActiveRx) + 1}";
+            Status = $"{SliceLabel(ActiveRx)} stays inside {pan}'s span: tune {pan} to go further.";
+        }
+        return kept;
+    }
+
     private Task SyncSecondaryZoom(int pan)
     {
         int secondary = PanSecondary(pan);
@@ -930,7 +1149,7 @@ public sealed partial class MainViewModel
         _panReleased = false;
         int primary = PanPrimary(pan);
         long dial = primary == ActiveRx ? VfoHz : _slices[primary]?.VfoHz ?? VfoHz;
-        long reach = (long)(_sampleRateHz * 0.43);
+        long reach = SpanReach;
         long shown = Math.Clamp(centerHz, dial - reach, dial + reach);
         // At most one move per engine tick (33 ms): the radio retunes at once but
         // the engine re-aligns the audio only on its tick, so a fast drag sending

@@ -14,7 +14,7 @@ namespace SimpleHPSDR.Controls;
 /// (offsets from the dial), tag, and whether it's the active, transmitting or
 /// muted one.</summary>
 public sealed record SliceMark(int Rx, long Hz, int LowHz, int HighHz, string Tag,
-    bool Active, bool Transmit, bool Muted);
+    bool Active, bool Transmit, bool Muted, bool OutOfSpan = false);
 
 /// <summary>A manual notch to draw: its RF centre and width.</summary>
 public sealed record NotchMark(long Hz, double WidthHz, bool Active);
@@ -935,12 +935,13 @@ public sealed class SpectrumView : Control
         }
     }
 
-    // A tag at the top of the slice's line: "A1".."B2", "TX" on the
-    // transmitting slice, filled when active, "M" when muted. Off-screen
-    // slices get their tag at the edge with an arrow.
+    // A tag at the top of the slice's line: "A1".."B2", "out of span" on a
+    // slice its stream no longer covers, "TX" on the transmitting slice,
+    // filled when active, "M" when muted. Off-screen slices get their tag at
+    // the edge with an arrow.
     private void DrawTag(DrawingContext ctx, Rect b, SliceMark s, Color color, double vx)
     {
-        string text = s.Tag + (s.Transmit ? " TX" : "") + (s.Muted ? " M" : "");
+        string text = s.Tag + (s.OutOfSpan ? " out of span" : "") + (s.Transmit ? " TX" : "") + (s.Muted ? " M" : "");
         bool left = false, right = false;
         if (vx < 0)
         {

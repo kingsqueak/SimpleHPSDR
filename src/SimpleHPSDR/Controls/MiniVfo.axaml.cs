@@ -10,9 +10,10 @@ namespace SimpleHPSDR.Controls;
 /// <summary>
 /// A slice's small VFO on its panadapter: the slice's name, a TX mark (click
 /// to transmit there), its frequency (wheel to tune, click to type one), its
-/// mode, and a readout of its filter, noise blanker/reduction and AGC. A B
-/// slice also has the antenna switch on its left, and the top slice has a ✕
-/// that turns it off (slices come off in reverse order). A click anywhere
+/// mode, and a readout of its filter, noise blanker/reduction and AGC ("out
+/// of span" first while a shared-stream slice is outside its stream). A
+/// slice with an input of its own also has the antenna switch on its left,
+/// and a slice that may come off now has a ✕ that turns it off. A click anywhere
 /// else on the chip gives that slice the controls; tuning the frequency
 /// does too.
 /// </summary>
@@ -27,9 +28,9 @@ public partial class MiniVfo : UserControl
     /// layout for its keypad (EntryRequested) instead of a text box.</summary>
     public bool Touch { get => GetValue(TouchProperty); set => SetValue(TouchProperty, value); }
 
+    // By colour index (SliceColorIndex), whatever the slice layout is.
     private static readonly IBrush[] SliceBrush =
-        [new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(0))), new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(1))),
-         new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(2))), new SolidColorBrush(Color.Parse(MainViewModel.SliceColor(3)))];
+        [.. Enumerable.Range(0, MainViewModel.MaxSlices).Select(c => new SolidColorBrush(Color.Parse(MainViewModel.SliceColorAt(c))))];
     private static readonly IBrush Idle = new SolidColorBrush(Color.Parse("#40FFFFFF"));
     private static readonly IBrush TxRed = new SolidColorBrush(Color.Parse("#A8232A"));
     private static readonly IBrush Dim = new SolidColorBrush(Color.Parse("#8A93A3"));
