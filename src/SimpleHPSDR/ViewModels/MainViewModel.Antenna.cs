@@ -86,8 +86,8 @@ public sealed partial class MainViewModel
         SyncSliceInputs();
     }
 
-    /// <summary>The slice layout changed, so B1 is another receiver: it takes
-    /// the saved choice, and the receiver that was B1 starts on the main input.</summary>
+    /// <summary>The slice layout changed: B1 takes the saved choice, and the
+    /// other slices start on the main input.</summary>
     private void LayoutChangedForJack()
     {
         Array.Clear(_wantsJack);

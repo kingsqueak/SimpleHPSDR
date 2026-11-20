@@ -287,7 +287,7 @@
                   <Button Classes="seg t" Content="RX2 off" Click="Rx2Off" IsVisible="{Binding ShowPanadapterB}" IsEnabled="{Binding ShowPanadapterB}" />
                 </WrapPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
-                           Text="RX1's panadapter holds slices A1 and A2, RX2's (the second panadapter) B1 and B2. RX1 and RX2 pick the panadapter the frequency and the controls act on; a tap on a panadapter does the same. Slices come on in order — A2, then B1, which opens RX2's panadapter, then B2 — and go off in reverse; the engine adds and removes the receivers below as needed. A right-click or long press on the spectrum turns slices and RX2 on or off too." />
+                           Text="RX1's panadapter holds slices A1 and A2, RX2's (the second panadapter) B1 and B2. RX1 and RX2 pick the panadapter the frequency and the controls act on; a tap on a panadapter does the same. A2 and B1 (which opens RX2's panadapter) come and go in any order; B2 needs B1, and turning RX2 off takes B2 with it. A right-click or long press on the spectrum turns slices and RX2 on or off too." />
                 <TextBlock Text="SLICES" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
                   <Button Classes="seg t" Content="A1⇄A2" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding HasSliceB}"

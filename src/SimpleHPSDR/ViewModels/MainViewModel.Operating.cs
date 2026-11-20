@@ -137,9 +137,9 @@ public sealed partial class MainViewModel
     [RelayCommand]
     private Task SwapSlicesAsync() => Try(async () =>
     {
-        // The engine's swap exchanges receivers 0 and 1. With shared streams
-        // receiver 1 is B1, so A1 and A2 are exchanged here instead.
-        if (SharedSlices)
+        // The engine's swap exchanges receivers 0 and 1. With two slices per
+        // panadapter receiver 1 is B1, so A1 and A2 are exchanged here instead.
+        if (!TwoReceiversOnly)
         {
             int a2 = PanSecondary(0);
             if (!SliceOn(a2)) return;

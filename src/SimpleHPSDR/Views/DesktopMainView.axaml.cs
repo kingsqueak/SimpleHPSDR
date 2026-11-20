@@ -151,8 +151,7 @@ public partial class DesktopMainView : UserControl
                 () => vm.SetSliceMuteAsync(slice, !vm.IsSliceMuted(slice))),
             new Separator(),
         };
-        // Only a slice that may come off now can be removed (in the four-slice
-        // layout slices go off in reverse, so the top one).
+        // Only a slice that may come off now can be removed (B1 only once B2 is off).
         var remove = MenuItem($"Remove {label}", () => vm.RemoveSliceAsync(slice));
         remove.IsEnabled = vm.MayRemoveSlice(slice);
         items.Add(remove);

@@ -70,7 +70,7 @@ public static class MainMenus
 
     // Right-click on a panadapter. With one slice: add the next one (A2) here,
     // or turn RX2's panadapter on. With more: make a slice active, move
-    // transmit, mute, add the next slice, and turn the top slice — or RX2
+    // transmit, mute, add this pan's second slice, and turn a slice — or RX2
     // itself — off. The second panadapter opens from the RX2 button; the touch
     // layout has that button in its drawer, so there the menu offers RX2 as well.
     public static void ShowSliceMenu(MainViewModel? vm, long hz, Control at, bool offerRx2 = false, int pan = 0)
@@ -105,14 +105,10 @@ public static class MainMenus
                 items.Add(Item(muted ? $"Unmute {label}" : $"Mute {label}", () => vm.SetSliceMuteAsync(s, !muted)));
             }
             items.Add(new Separator());
-            // With shared streams, this pan's second slice (A2 here, B2 on
-            // RX2's), whatever else is on; RX2 itself comes on below.
-            if (MainViewModel.SharedSlices)
-            {
-                if (vm.SecondSliceToAdd(pan) is >= 0 and int second)
-                    items.Add(Item($"Add slice {MainViewModel.SliceLabel(second)} at {where}", () => vm.AddSliceAsync(second, hz)));
-            }
-            else if (vm.CanAddSlice) items.Add(Item($"Add slice {vm.NextSliceLabel} at {where}", () => vm.AddSliceAsync(hz)));
+            // This pan's second slice (A2 here, B2 on RX2's), whatever else
+            // is on; RX2 itself comes on below.
+            if (vm.SecondSliceToAdd(pan) is >= 0 and int second)
+                items.Add(Item($"Add slice {MainViewModel.SliceLabel(second)} at {where}", () => vm.AddSliceAsync(second, hz)));
             foreach (int s in on)
                 if (vm.MayRemoveSlice(s)) items.Add(Item($"Turn {MainViewModel.SliceLabel(s)} off", () => vm.RemoveSliceAsync(s)));
             if (vm.ShowPanadapterB)

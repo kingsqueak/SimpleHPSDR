@@ -149,8 +149,7 @@
         <Grid Name="VfoGrid" ColumnDefinitions="Auto,Auto,Auto" HorizontalAlignment="Center">
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
           <!-- RX1 over RX2: click one to give that panadapter the controls;
-               RX2 turns on (B1 comes on; the engine adds the slices below it
-               that it needs) on its first click. Beside them, only with more
+               RX2 turns on (B1 comes on) on its first click. Beside them, only with more
                than one slice, the active panadapter's two slices: the active
                one blue, the one that transmits with the red edge; click one to
                give it the controls, right-click for more. -->
@@ -161,7 +160,7 @@
               <TextBlock Text="RX1" />
             </Border>
             <Border Name="RxBadge2" Classes="slicebadge rx" Classes.active="{Binding Rx2Active}" Classes.on="{Binding Rx2Idle}"
-                    ToolTip.Tip="RX2, the second panadapter (slices B1/B2). Click to turn it on (B1 comes on; the engine adds the slices below it that it needs) and give it the controls; click RX1 to go back. Right-click to turn RX2 off.">
+                    ToolTip.Tip="RX2, the second panadapter (slices B1/B2). Click to turn it on (B1 comes on) and give it the controls; click RX1 to go back. Right-click to turn RX2 off.">
               <TextBlock Text="RX2" />
             </Border>
           </StackPanel>
