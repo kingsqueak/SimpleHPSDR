@@ -151,9 +151,10 @@ public partial class DesktopMainView : UserControl
                 () => vm.SetSliceMuteAsync(slice, !vm.IsSliceMuted(slice))),
             new Separator(),
         };
-        // Slices come off in reverse, so only the top one can be removed.
+        // Only a slice that may come off now can be removed (in the four-slice
+        // layout slices go off in reverse, so the top one).
         var remove = MenuItem($"Remove {label}", () => vm.RemoveSliceAsync(slice));
-        remove.IsEnabled = slice == vm.SliceCount - 1 && slice > 0;
+        remove.IsEnabled = vm.MayRemoveSlice(slice);
         items.Add(remove);
         new ContextMenu { ItemsSource = items }.Open(at);
     }
@@ -533,7 +534,7 @@ public partial class DesktopMainView : UserControl
             (SpectrumB.SpecMinDb, SpectrumB.SpecMaxDb) = vm.SliceBRange(SpectrumB.NoiseFloorDb);
             return;
         }
-        if (f.RxId != 0) return;
+        if (f.RxId != MainViewModel.PanPrimary(0)) return;
         Spectrum.Slices = vm.PanMarks(0);
         Spectrum.PushFrame(f);
         vm.FollowNoiseFloor(Spectrum.NoiseFloorDb);
@@ -572,9 +573,14 @@ public partial class DesktopMainView : UserControl
     private void RefreshMiniVfos()
     {
         if (Vm is not { } vm) return;
+        // Which receiver each chip shows follows the layout; a pan with no
+        // second slice keeps its hidden chip as it is.
+        MiniA1.Slice = MainViewModel.PanPrimary(0);
+        if (MainViewModel.PanSecondary(0) is >= 0 and int a2) MiniA2.Slice = a2;
+        MiniB1.Slice = MainViewModel.PanPrimary(1);
+        if (MainViewModel.PanSecondary(1) is >= 0 and int b2) MiniB2.Slice = b2;
         MiniA1.IsVisible = vm.SliceCount > 1;
         MiniA2.IsVisible = vm.SliceOn(MainViewModel.PanSecondary(0));
-        MiniB1.Slice = MainViewModel.PanPrimary(1);
         MiniB1.IsVisible = true;
         MiniB2.IsVisible = vm.SliceOn(MainViewModel.PanSecondary(1));
     }

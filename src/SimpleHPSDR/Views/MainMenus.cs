@@ -81,31 +81,33 @@ public static class MainMenus
 
         if (vm.SliceCount < 2)
         {
-            if (!MainViewModel.TwoReceiversOnly) items.Add(Item($"Add slice A2 at {where}", () => vm.AddSliceAsync(hz)));
+            // The next slice, when it sits on this pan (A2). With one slice
+            // per panadapter it is B1, offered as RX2 below.
+            if (vm.NextSlice() is >= 0 and int next && MainViewModel.SlicePan(next) == 0)
+                items.Add(Item($"Add slice {MainViewModel.SliceLabel(next)} at {where}", () => vm.AddSliceAsync(hz)));
             if (offerRx2 && !vm.ShowPanadapterB)
                 items.Add(Item("Turn RX2 on (second panadapter)", () => vm.SelectRxAsync(1)));
         }
         else
         {
-            for (int i = 0; i < vm.SliceCount; i++)
+            var on = vm.SlicesOn();
+            foreach (int s in on)
             {
-                int s = i;
                 string label = MainViewModel.SliceLabel(s);
                 if (s != vm.ActiveRx) items.Add(Item($"Make {label} active", () => vm.MakeActiveAsync(s)));
                 if (vm.TxRx != s) items.Add(Item($"Transmit on {label}", () => vm.TransmitOnAsync(s)));
             }
             items.Add(new Separator());
-            for (int i = 0; i < vm.SliceCount; i++)
+            foreach (int s in on)
             {
-                int s = i;
                 string label = MainViewModel.SliceLabel(s);
                 bool muted = vm.IsSliceMuted(s);
                 items.Add(Item(muted ? $"Unmute {label}" : $"Mute {label}", () => vm.SetSliceMuteAsync(s, !muted)));
             }
             items.Add(new Separator());
             if (vm.CanAddSlice) items.Add(Item($"Add slice {vm.NextSliceLabel} at {where}", () => vm.AddSliceAsync(hz)));
-            int top = vm.SliceCount - 1;
-            if (top > 0) items.Add(Item($"Turn {MainViewModel.SliceLabel(top)} off", () => vm.RemoveSliceAsync(top)));
+            foreach (int s in on)
+                if (vm.MayRemoveSlice(s)) items.Add(Item($"Turn {MainViewModel.SliceLabel(s)} off", () => vm.RemoveSliceAsync(s)));
             if (vm.ShowPanadapterB)
             {
                 items.Add(SideBySideItem(vm));

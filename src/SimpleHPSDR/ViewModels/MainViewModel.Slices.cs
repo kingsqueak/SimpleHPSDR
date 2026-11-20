@@ -37,9 +37,27 @@ public sealed partial class MainViewModel
     /// <summary>The radio has two receivers only: one slice per panadapter.</summary>
     public static bool TwoReceiversOnly => s_twoReceivers;
 
+    // The connected radio has two receivers, but the second slices run
+    // without a DDC of their own on the first slices' streams: A1 = receiver
+    // 0, B1 = receiver 1, A2 = receiver 2 (on receiver 0's stream), B2 =
+    // receiver 3 (on receiver 1's). Never set together with s_twoReceivers.
+    private static volatile bool s_sharedSlices;
+
+    /// <summary>The second slices share their pan's first slice's stream:
+    /// A1 and B1 are receivers 0 and 1, A2 and B2 receivers 2 and 3.</summary>
+    public static bool SharedSlices => s_sharedSlices;
+
     // Where slice i sits in the four-slice layout (A1, A2, B1, B2): with two
-    // receivers, receiver 1 is B1.
-    private static int LayoutSlot(int i) => s_twoReceivers && i == 1 ? 2 : i;
+    // receivers, receiver 1 is B1; with shared streams, receivers 1 and 2
+    // swap places.
+    private static int LayoutSlot(int i) => s_sharedSlices
+        ? i switch { 1 => 2, 2 => 1, _ => i }
+        : s_twoReceivers && i == 1 ? 2 : i;
+
+    // The receivers in layout order (A1, A2, B1, B2). With two receivers only
+    // 0 and 1 are ever on, and those are A1 then B1 either way.
+    private static readonly int[] IndexOrder = [0, 1, 2, 3], SharedOrder = [0, 2, 1, 3];
+    private static int[] LayoutOrder => s_sharedSlices ? SharedOrder : IndexOrder;
 
     /// <summary>Slice i's label: A1, A2 on RX1's panadapter, B1, B2 on RX2's.</summary>
     public static string SliceLabel(int i) => LayoutSlot(i) switch { 0 => "A1", 1 => "A2", 2 => "B1", 3 => "B2", _ => $"RX{i + 1}" };
@@ -52,14 +70,50 @@ public sealed partial class MainViewModel
     private static readonly string[] SliceColors = ["#F25F5C", "#F5A524", "#C084FC", "#38BDF8"];
 
     /// <summary>Which panadapter a slice sits on: 0 = RX1's, 1 = RX2's.</summary>
-    public static int SlicePan(int i) => s_twoReceivers ? Math.Clamp(i, 0, 1) : Math.Clamp(i, 0, MaxSlices - 1) / 2;
+    public static int SlicePan(int i) =>
+        s_sharedSlices ? Math.Clamp(i, 0, MaxSlices - 1) % 2
+        : s_twoReceivers ? Math.Clamp(i, 0, 1) : Math.Clamp(i, 0, MaxSlices - 1) / 2;
 
     /// <summary>The receiver whose DDC stream and zoom a panadapter shows.</summary>
-    public static int PanPrimary(int pan) => Math.Clamp(pan, 0, 1) * (s_twoReceivers ? 1 : 2);
+    public static int PanPrimary(int pan) => Math.Clamp(pan, 0, 1) * (s_twoReceivers || s_sharedSlices ? 1 : 2);
 
     /// <summary>The pan's second slice, if it is on; -1 when the radio has
     /// no receivers to spare for one.</summary>
-    public static int PanSecondary(int pan) => s_twoReceivers ? -1 : PanPrimary(pan) + 1;
+    public static int PanSecondary(int pan) =>
+        s_sharedSlices ? PanPrimary(pan) + 2 : s_twoReceivers ? -1 : PanPrimary(pan) + 1;
+
+    /// <summary>The other slice on rx's panadapter, or -1 when its pan holds
+    /// one slice only.</summary>
+    public static int PanOther(int rx)
+    {
+        int pan = SlicePan(rx), first = PanPrimary(pan), second = PanSecondary(pan);
+        if (second < 0) return -1;
+        return rx == first ? second : rx == second ? first : -1;
+    }
+
+    /// <summary>Slice rx is its pan's second slice (A2 or B2).</summary>
+    public static bool IsSecondSlice(int rx) => rx is >= 0 and < MaxSlices && rx == PanSecondary(SlicePan(rx));
+
+    /// <summary>The slices that are on, in layout order (A1, A2, B1, B2). A1
+    /// is always there: the engine never turns receiver 0 off.</summary>
+    public List<int> SlicesOn()
+    {
+        var on = new List<int>(MaxSlices);
+        foreach (int i in LayoutOrder)
+            if (i == 0 || SliceOn(i)) on.Add(i);
+        return on;
+    }
+
+    /// <summary>The highest receiver that is on (0 when only A1 is).</summary>
+    private int TopSlice
+    {
+        get
+        {
+            for (int i = MaxSlices - 1; i > 0; i--)
+                if (SliceOn(i)) return i;
+            return 0;
+        }
+    }
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(ActiveSliceLabel))] [NotifyPropertyChangedFor(nameof(SplitText))]
     [NotifyPropertyChangedFor(nameof(RitUsable))]
@@ -83,7 +137,7 @@ public sealed partial class MainViewModel
     private readonly ReceiverDto?[] _slices = new ReceiverDto?[MaxSlices];
     private readonly bool[] _mute = new bool[MaxSlices];
     // The last slice made active on each pan, so its RX badge returns to it.
-    private readonly int[] _lastActive = [0, 2];
+    private readonly int[] _lastActive = [PanPrimary(0), PanPrimary(1)];
 
     public bool SliceOn(int i) => i >= 0 && i < MaxSlices && (_slices[i]?.Enabled ?? false) && i < MaxSlicesAllowed;
 
@@ -100,11 +154,36 @@ public sealed partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(AbOn2))]
     private int _sliceCount = 1;
 
+    // Which slices were on at the last count, one bit per receiver: with
+    // shared streams a different set can be on with the same count, and the
+    // views still have to hear of it.
+    private int _sliceMask = 1;
+
+    /// <summary>Count the slices that are on (A1 always), after _slices changed.</summary>
+    private void RecountSlices()
+    {
+        int mask = 1, count = 1;
+        for (int i = 1; i < MaxSlices; i++)
+            if (SliceOn(i))
+            {
+                mask |= 1 << i;
+                count++;
+            }
+        bool sameCount = count == SliceCount, moved = mask != _sliceMask;
+        _sliceMask = mask;
+        SliceCount = count;
+        if (sameCount && moved)
+            foreach (string name in (string[])[nameof(SliceCount), nameof(HasSliceB), nameof(ShowPanadapterB),
+                         nameof(ShowAbBadges), nameof(Rx2Active), nameof(Rx2Idle), nameof(ActiveName), nameof(AbOn2),
+                         nameof(NextSliceLabel)])
+                OnPropertyChanged(name);
+    }
+
     /// <summary>Any slice beyond A1.</summary>
     public bool HasSliceB => SliceCount > 1;
 
     /// <summary>Slice B1 is on, so RX2's panadapter shows.</summary>
-    public bool ShowPanadapterB => SliceCount > PanPrimary(1);
+    public bool ShowPanadapterB => SliceOn(PanPrimary(1));
 
     // Two panadapters: RX1's holds A1/A2, RX2's B1/B2, opening when B1 comes
     // on. The RX1 and RX2 buttons beside the frequency pick the pan's slice.
@@ -181,11 +260,12 @@ public sealed partial class MainViewModel
     {
         if (!IsConnected) return;
         int first = PanPrimary(pan);
-        while (IsConnected && SliceCount <= first && SliceCount < MaxSlicesAllowed)
+        while (IsConnected && !SliceOn(first))
         {
-            int before = SliceCount;
-            await AddSliceAsync(VfoHz);
-            if (SliceCount == before) return;   // refused: the status line says why
+            int next = SliceTowards(first);
+            if (next < 0) break;   // at the ceiling
+            await TurnOnSliceAsync(next, VfoHz);
+            if (!SliceOn(next)) return;   // refused: the status line says why
         }
         if (!SliceOn(first)) return;   // the radio refused (its ceiling)
         int want = SliceOn(_lastActive[pan]) && SlicePan(_lastActive[pan]) == pan ? _lastActive[pan] : first;
@@ -367,7 +447,7 @@ public sealed partial class MainViewModel
     {
         var marks = new List<SliceMark>(SliceCount);
         int shift = CwShift(Mode);
-        for (int i = 0; i < SliceCount; i++)
+        foreach (int i in SlicesOn())
         {
             long hz;
             int low, high;
@@ -412,8 +492,7 @@ public sealed partial class MainViewModel
     private void UpdateSlices(StateDto s)
     {
         _maxReceivers = RadioHasTwoReceivers ? 2 : Math.Clamp(s.MaxReceivers, 2, MaxSlices);
-        SetTwoReceivers(s.MaxReceivers <= 2 || RadioHasTwoReceivers);
-        int count = 1;
+        SetLayout(two: s.MaxReceivers <= 2 || RadioHasTwoReceivers, shared: false);
         for (int i = 0; i < MaxSlices; i++)
         {
             _slices[i] = s.Receivers?.FirstOrDefault(r => r.Index == i);
@@ -421,12 +500,11 @@ public sealed partial class MainViewModel
             {
                 _mute[i] = r.Muted;
                 _sliceAfRows[i]?.SetMuted(r.Muted);
-                if (r.Enabled && i < MaxSlicesAllowed) count = i + 1;
             }
         }
-        SliceCount = Math.Clamp(count, 1, MaxSlicesAllowed);
+        RecountSlices();
         if (TwoReceiversOnly) TurnOffUnusableSlices(s);
-        if (ActiveRx >= SliceCount) _ = MakeActiveAsync(0);
+        if (ActiveRx != 0 && !SliceOn(ActiveRx)) _ = MakeActiveAsync(0);
         OnPropertyChanged(RxReadouts);
         FullDuplex = s.FullDuplexMultiRxEnabled;
         // The control bank shows the active slice's AGC and noise block;
@@ -435,12 +513,13 @@ public sealed partial class MainViewModel
         UpdateAgc(view);
         UpdateNoise(view);
         UpdateOperating(s);
-        for (int i = 0; i < SliceCount; i++)
+        var on = SlicesOn();
+        foreach (int i in on)
             if (_slices[i] is { } r) EnsureFilterLabels(r.Mode);
         _ = FollowRxFilterAsync(s);
         // Follow the engine's slice AF unless the operator just moved a slider.
         if (DateTime.UtcNow - _sliceAfMovedAt > TimeSpan.FromSeconds(2))
-            for (int i = 0; i < SliceCount; i++)
+            foreach (int i in on)
                 if (_slices[i] is { } r) SetSliceAfLocal(i, r.AfGainDb);
         SyncSliceAfRows();
         // Each panadapter zooms as one: the second slice on a pan is kept at
@@ -448,7 +527,9 @@ public sealed partial class MainViewModel
         if (SliceOn(PanSecondary(0))) SyncSecondaryZoom(0);
         if (ShowPanadapterB) FollowEngineZoomB(_slices[PanPrimary(1)]?.ZoomLevel ?? 1);
         if (SliceOn(PanSecondary(1))) SyncSecondaryZoom(1);
-        TxRx = SliceCount > 1 ? Math.Clamp(s.TxReceiverIndex, 0, SliceCount - 1) : 0;
+        // Transmit on a slice the app doesn't count as on goes back to A1.
+        int tx = Math.Clamp(s.TxReceiverIndex, 0, TopSlice);
+        TxRx = SliceOn(tx) ? tx : 0;
         // A TX slice that isn't the active one is only seen here: follow its
         // band and mode. The active slice's own changes come through VfoHz and
         // Mode, and while it's being switched VfoHz can still be the other's.
@@ -468,12 +549,15 @@ public sealed partial class MainViewModel
         _radio is { Protocol2: true, Ddcs: int ddcs }
         && ddcs - (_radio.BoardId is 0x01 or 0x02 or 0x14 ? 0 : 2) <= 2;
 
-    /// <summary>Switch between the four-slice layout and the two-receiver one
-    /// (one slice per panadapter) when the connected radio's ceiling says so.</summary>
-    private void SetTwoReceivers(bool two)
+    /// <summary>Switch between the four-slice layout, the two-receiver one
+    /// (one slice per panadapter) and the shared-stream one (two receivers,
+    /// the second slices on their streams) when the connected radio says so.</summary>
+    private void SetLayout(bool two, bool shared)
     {
-        if (s_twoReceivers == two) return;
+        two &= !shared;
+        if (s_twoReceivers == two && s_sharedSlices == shared) return;
         s_twoReceivers = two;
+        s_sharedSlices = shared;
         _lastActive[0] = 0;
         _lastActive[1] = PanPrimary(1);
         LayoutChangedForJack();
@@ -546,7 +630,7 @@ public sealed partial class MainViewModel
     /// <summary>Point the VFO, band, mode, filter and AF at a slice (0..3).</summary>
     public async Task MakeActiveAsync(int rx)
     {
-        if (!IsConnected || rx >= SliceCount || rx < 0) return;
+        if (!IsConnected || rx < 0 || (rx != 0 && !SliceOn(rx))) return;
         // Until the engine's state arrives, mode and filter are still the other
         // slice's: wheel tuning on a panadapter waits for this to finish.
         _switchingRx++;
@@ -593,20 +677,50 @@ public sealed partial class MainViewModel
 
     // ---- adding and removing slices ---------------------------------------
 
+    // The layout's rules for which slice comes on and off next. The four-slice
+    // and two-receiver layouts follow the engine's contiguous receivers: the
+    // lowest one that is off comes on next, and only the top one comes off.
+
+    /// <summary>The slice Add Slice would turn on: the lowest one that is off
+    /// (A2, then B1 which opens RX2's panadapter, then B2), or -1 at the ceiling.</summary>
+    public int NextSlice()
+    {
+        for (int i = 1; i < MaxSlicesAllowed; i++)
+            if (!SliceOn(i)) return i;
+        return -1;
+    }
+
+    /// <summary>The next slice to turn on on the way to slice target (which is
+    /// off): the slices below it come first. -1 at the ceiling.</summary>
+    private int SliceTowards(int target) => NextSlice();
+
+    /// <summary>The slice that has to come off before rx can (the top one), or
+    /// -1 when rx itself may come off now.</summary>
+    private int SliceOffBefore(int rx)
+    {
+        int top = TopSlice;
+        return rx == top ? -1 : top;
+    }
+
+    /// <summary>Slice rx is on and may come off now (A1 never does).</summary>
+    public bool MayRemoveSlice(int rx) => rx > 0 && SliceOn(rx) && SliceOffBefore(rx) < 0;
+
     /// <summary>The label of the slice Add Slice would turn on, or "" at the ceiling.</summary>
-    public string NextSliceLabel => SliceCount < MaxSlicesAllowed ? SliceLabel(SliceCount) : "";
-    public bool CanAddSlice => IsConnected && SliceCount < MaxSlicesAllowed;
+    public string NextSliceLabel => NextSlice() is >= 0 and int next ? SliceLabel(next) : "";
+    public bool CanAddSlice => IsConnected && NextSlice() >= 0;
 
     /// <summary>Add the next slice at a frequency, in the active slice's mode
-    /// and filter, and make it active. Slices come on in order (A2, then B1
-    /// which opens RX2's panadapter, then B2) because the engine enables
-    /// receivers contiguously. The radio's receiver ceiling wins over the ask:
-    /// the status line says so.</summary>
-    public async Task AddSliceAsync(long hz)
+    /// and filter, and make it active. The radio's receiver ceiling wins over
+    /// the ask: the status line says so.</summary>
+    public Task AddSliceAsync(long hz) => TurnOnSliceAsync(NextSlice(), hz);
+
+    /// <summary>Turn slice i on at a frequency, in the active slice's mode and
+    /// filter, and make it active; -1 or a slice past the radio's ceiling puts
+    /// the reason on the status line instead.</summary>
+    private async Task TurnOnSliceAsync(int i, long hz)
     {
         if (!IsConnected) return;
-        int i = SliceCount;
-        if (i >= MaxSlicesAllowed)
+        if (i < 0 || i >= MaxSlicesAllowed)
         {
             Status = SliceCount >= MaxSlices
                 ? "Four slices is as many as this app offers."
@@ -615,6 +729,7 @@ public sealed partial class MainViewModel
                     : $"This radio offers {_maxReceivers} receivers, and all are on.";
             return;
         }
+        if (SliceOn(i)) return;
         // The pan's first slice sets its zoom; a second slice starts there too.
         int zoom = EngineZoom(SlicePan(i));
         byte adc = WantsJack(i) ? (byte)1 : (byte)0;
@@ -627,8 +742,8 @@ public sealed partial class MainViewModel
             _slices[i] = (_slices[i] ?? new ReceiverDto(i, true, adc, hz, Mode, FilterLowHz, FilterHighHz,
                 Filters.FirstOrDefault(f => f.IsSelected)?.SlotName, 0, _sampleRateHz)) with { Enabled = true, VfoHz = hz };
             // The engine has it on now: count it here rather than waiting for
-            // the poll, or MakeActiveAsync would refuse a slice it doesn't know.
-            SliceCount = i + 1;
+            // the poll, so the views and MakeActiveAsync know it at once.
+            RecountSlices();
             SyncSliceAfRows();
             SetSliceAfLocal(i, 0);
             await MakeActiveAsync(i);
@@ -636,16 +751,23 @@ public sealed partial class MainViewModel
         });
     }
 
-    /// <summary>Remove a slice. Slices go off in reverse order, so only the
-    /// top one comes off; turning RX2 off takes its pan's slices with it.</summary>
+    /// <summary>Remove a slice, if the layout lets it come off now (in the
+    /// four-slice layout only the top one does); turning RX2 off takes its
+    /// pan's slices with it.</summary>
     public async Task RemoveSliceAsync(int rx)
     {
-        if (!IsConnected || rx <= 0 || rx >= SliceCount) return;
-        if (rx != SliceCount - 1)
+        if (!IsConnected || rx <= 0 || !SliceOn(rx)) return;
+        if (SliceOffBefore(rx) is >= 0 and int first)
         {
-            Status = $"{SliceLabel(SliceCount - 1)} came on after {SliceLabel(rx)}: it comes off first.";
+            Status = $"{SliceLabel(first)} came on after {SliceLabel(rx)}: it comes off first.";
             return;
         }
+        await TurnOffSliceAsync(rx);
+    }
+
+    /// <summary>Turn slice rx off, moving transmit and the controls to A1 first.</summary>
+    private async Task TurnOffSliceAsync(int rx)
+    {
         // Turning a receiver off makes the engine move transmit to RX1 at
         // once, even mid-transmission, so this has to be checked first.
         if (IsTransmitting && TxRx == rx)
@@ -660,7 +782,7 @@ public sealed partial class MainViewModel
             if (ActiveRx == rx) await MakeActiveAsync(0);
             await _client!.SetReceiverAsync(rx, new ReceiverSetRequest(Enabled: false));
             _slices[rx] = _slices[rx] is { } old ? old with { Enabled = false } : null;
-            SliceCount = rx;
+            RecountSlices();
             if (TxRx == rx) TxRx = 0;
             Status = $"{SliceLabel(rx)} off.";
         });
@@ -672,17 +794,16 @@ public sealed partial class MainViewModel
         if (!IsConnected || !ShowPanadapterB) return;
         while (ShowPanadapterB)
         {
-            int before = SliceCount;
-            await RemoveSliceAsync(SliceCount - 1);
-            if (SliceCount == before) return;   // refused (keyed): leave the rest on
+            int rx = SliceOn(PanSecondary(1)) ? PanSecondary(1) : PanPrimary(1);
+            await RemoveSliceAsync(rx);
+            if (SliceOn(rx)) return;   // refused (keyed): leave the rest on
         }
     }
 
-    /// <summary>The ✕ on a panadapter chip: the slice itself when it's the top
-    /// one, otherwise the pan's whole stack (only the top slice comes off
-    /// directly).</summary>
+    /// <summary>The ✕ on a panadapter chip: the slice itself when it may come
+    /// off now, otherwise the pan's whole stack.</summary>
     public Task RemoveSliceOrPanAsync(int rx) =>
-        rx == SliceCount - 1 ? RemoveSliceAsync(rx) : RemovePanBAsync();
+        MayRemoveSlice(rx) ? RemoveSliceAsync(rx) : RemovePanBAsync();
 
     /// <summary>Transmit on a slice: its frequency, mode and filter.</summary>
     public async Task TransmitOnAsync(int rx)

@@ -157,8 +157,9 @@ public partial class MiniVfo : UserControl
         TxChip.Background = tx ? TxRed : Brushes.Transparent;
         TxChip.BorderBrush = tx ? TxRed : Dim;
         TxText.Foreground = tx ? Brushes.White : Dim;
-        // Slices come off in reverse order, so only the top one offers a ✕.
-        CloseChip.IsVisible = rx > 0 && vm.SliceCount - 1 == rx;
+        // Only a slice that may come off now offers a ✕ (in the four-slice
+        // layout slices go off in reverse order, so the top one).
+        CloseChip.IsVisible = vm.MayRemoveSlice(rx);
         AntChip.IsVisible = rx > 0 && vm.ShowSliceInput(rx);
         AntText.Text = vm.SliceInputLabel(rx);
 

@@ -216,7 +216,7 @@ public sealed partial class MainViewModel
     /// read it every frame): the TX slice during 2-TONE / PS CAL on that pan,
     /// otherwise the pan's first slice (-1 = the active one, single pan).</summary>
     public int PanDialSlice(int pan) => _imdPan == pan ? TxRx
-        : pan == 0 ? (ShowPanadapterB ? 0 : -1) : PanPrimary(1);
+        : pan == 0 ? (ShowPanadapterB ? PanPrimary(0) : -1) : PanPrimary(1);
 
     /// <summary>2-TONE / PS CAL stopped, however: zoom, centre, dial position
     /// and CTUN as they were.</summary>
