@@ -92,6 +92,25 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.16.1
+
+- **Signal analyser** (Tools > Signal Analyser; touch: ☰ > Station > Signal).
+  Shows how good an SSB or AM signal is: the one you are listening to, or your
+  own while you transmit, as RX1 hears it. An envelope scope, the spectrum
+  round the dial with the channel shaded, and readings marked green to red
+  with a line on what each means and what to change: peaks and density for
+  SSB; modulation depth, loudness (target 40 to 55%) and carrier for AM;
+  bandwidth, tone and splatter for both. It only listens, and needs the TCI
+  server on. An external amplifier comes after the point it measures. On a
+  received signal the readings are a guide: it says so when a signal is too
+  weak or too noisy to measure, and it leaves out very short spikes of static.
+- **Broadcast-style AM no longer clips.** The option used to hard-clip the
+  audio at its Positive and Negative peak settings, so audio set up for SSB
+  was too hot for AM and splattered. A limiter now turns the audio down just
+  ahead of any peak that would pass either setting. Audio levelled for SSB
+  needs no change for AM; it is about 1.5 dB less loud than the clipped
+  signal was, and clean. Plain AM and SSB are unchanged.
+
 ### 0.16.0
 
 - **A2 and B2 on radios with only two receivers.** On a Brick 3 and other
