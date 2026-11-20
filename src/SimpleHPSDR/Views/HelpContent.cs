@@ -296,14 +296,13 @@ ANF hunts for tones by itself, and a manual notch stays exactly where you put it
 SimpleHPSDR has two panadapters, RX1 and RX2, and each can carry two slices: A1 and A2 on RX1, B1 and B2 on RX2. You hear every slice that's on at once. Each slice is a full receiver of its own — mode, filter, noise blanker and reduction, ANF and AGC are all independent per slice, and the controls always act on the slice that's blue.
 
 ## Slices
-Slices come on in order — A2 first, then B1 (which opens RX2's panadapter), then B2 — because the radio enables its receivers that way, and they go off in reverse. To add one, click + in the touch drawer's Slices section or right-click a panadapter and choose Add slice; the new slice opens on the frequency you're tuned to, in the active slice's mode and filter, and takes the controls. The ✕ on a slice's small frequency display turns that slice off again (only the most recent slice comes off directly; turning RX2 off takes B1 and B2 together). Every slice costs a full receiver's worth of processing, so keep an eye on the CPU readout — on a Raspberry Pi two slices is comfortable, four is the most there is.
+RX1 and RX2 are the two panadapters. Clicking RX2 turns on B1 only. A2 and B2 are optional second slices, and they come and go in any order: A2 doesn't need RX2, and B2 needs B1 (RX2 on). B1 comes off after B2, and turning RX2 off takes B2 with it. To add a slice, right-click RX1's panadapter for Add slice A2 or RX2's for Add slice B2, or click + in the touch drawer's Slices section, which adds the first of A2, B1 and B2 that is off. The new slice opens on the frequency you're tuned to, in the active slice's mode and filter, and takes the controls. The ✕ on a slice's small frequency display turns that slice off again (B1 can't come off while B2 is on; turn RX2 off to remove both). Every slice costs a full receiver's worth of processing, so keep an eye on the CPU readout — on a Raspberry Pi two slices is comfortable, four is the most there is.
 
-Some radios have only two receivers. Protocol 1 radios get one slice on each panadapter, A1 and B1, with no A2 or B2.
+On most Protocol 2 radios A2 and B2 have a receiver of their own, so they can tune anywhere, other bands included, and use the Rx2 jack like any slice. Protocol 1 radios get one slice on each panadapter, A1 and B1, with no A2 or B2.
 
 ## Radios with two receivers: A2 and B2 on a shared span
-A few Protocol 2 radios, such as the Brick 3, also have only two receivers, and those go to A1 and B1. There A2 and B2 still work, a different way: each listens inside the stretch of band its panadapter's first slice has already captured, so A2 lives inside RX1's span and B2 inside RX2's. They are full slices otherwise, with their own mode, filter, noise controls, AGC and volume, and either can transmit.
+A few Protocol 2 radios, such as the Brick 3, have only two receivers, and those go to A1 and B1. On them A2 and B2 work a different way: each listens inside the stretch of band its panadapter's first slice has already captured, so A2 lives inside RX1's span and B2 inside RX2's. They are full slices otherwise, with their own mode, filter, noise controls, AGC and volume, and either can transmit.
 
-- They come on and off in any order: A2 doesn't need RX2, and B2 only needs B1. Right-click RX1's panadapter for Add slice A2, RX2's for Add slice B2; the + button adds A2, then B1, then B2. B1 comes off after B2, and turning RX2 off takes both.
 - A2 and B2 can be tuned anywhere inside their panadapter's span (how wide that is depends on the Span setting: about 80 kHz either side of the centre at 192 kHz). At the edge they stop, and the status line says so. To take one further, tune or drag its panadapter's first slice.
 - When A1 (or B1) is tuned away, or the panadapter is dragged, so that the second slice is left outside the span, it keeps its frequency and goes silent. Its tag and its small frequency display read "out of span", and it comes back by itself when the span covers it again.
 - With CTUN off, the span follows A1 as you tune it. Turn CTUN on to hold the span still while both slices move inside it, which suits working split.
@@ -329,8 +328,20 @@ You now transmit on B1's frequency while hearing everything. Click A1 to put the
 ## RIT and XIT
 These move receive (RIT) or transmit (XIT) a little without moving the dial. Click to turn on or off, use the wheel for 10 Hz a click, and right-click to clear. RIT works on slice A1 only.
 
+## ADC assignments
+Radios with two ADCs (ANAN-7000DLE, 8000DLE, G2 and similar) have two receive inputs: the main antenna (ADC0) and the Rx2 jack on the back (ADC1). Radios with one ADC have nothing to assign, and show no input button. If you know Thetis's ADC assignment grid, there isn't one here: you choose an input for each slice instead, and the rest is done for you.
+- Every slice starts on the main antenna. A1 always stays there.
+- To move a slice to the Rx2 jack, click ANT on its small frequency display. The button reads Main or Rx2 jack, and clicking switches between them. B1 also has this button in the desktop's antenna area (B1 input in the touch drawer).
+- A2 and B2 can be moved too, except on radios with only two receivers (see above), where they hear whatever their panadapter's first slice hears and have no ANT button.
+- B1's choice is remembered between sessions. The other slices go back to the main antenna when you restart or change the slice layout.
+- Diversity (Config > Station) combines the two inputs by itself, so it needs no assignment. It needs an antenna on each input.
+- ATT and Pre follow the input, as described under The Rx2 jack.
+- PureSignal's feedback receivers are looked after by the app. There is nothing to assign for them.
+
+Coming from Thetis: the grid's rows are the slices, so each slice's ANT button is its row, and Main and Rx2 jack are ADC0 and ADC1.
+
 ## The Rx2 jack
-Every slice normally hears the main antenna. Radios with two receivers inside (ANAN-7000DLE, 8000DLE, G2 and similar) also have an Rx2 jack on the back. To have a slice listen on an antenna plugged in there, such as a receive-only antenna, click ANT on its small frequency display (B1's choice is remembered; the others last the session). The Ant button then lights and shows which slices are on the jack. With nothing in the jack, a slice set to it goes quiet. The jack is a receive-only input, which the radio grounds while transmitting; any slice can still be the transmitting one, and transmit always leaves by the TX antenna. While a slice on the jack has the controls, ATT and Pre set the jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
+To have a slice listen on an antenna plugged into the Rx2 jack, such as a receive-only antenna, set it to Rx2 jack as above. The Ant button then lights and shows which slices are on the jack. With nothing in the jack, a slice set to it goes quiet. The jack is a receive-only input, which the radio grounds while transmitting; any slice can still be the transmitting one, and transmit always leaves by the TX antenna. While a slice on the jack has the controls, ATT and Pre set the jack's own attenuator (ATT shows Rx2), and Pre steps 0, 10, 20, 30 dB: the preamp belongs to the main antenna. Auto ATT looks after both inputs.
 
 ## Amp
 The Amp button, with the transmit controls, tells SimpleHPSDR whether your amplifier is in line.
