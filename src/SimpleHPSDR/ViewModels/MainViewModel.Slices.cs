@@ -148,7 +148,7 @@ public sealed partial class MainViewModel
 
     [ObservableProperty] private bool _fullDuplex;
 
-    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))] [NotifyPropertyChangedFor(nameof(ShowPanadapterB))]
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasSliceB))] [NotifyPropertyChangedFor(nameof(CanSwapSlices))] [NotifyPropertyChangedFor(nameof(ShowPanadapterB))]
     [NotifyPropertyChangedFor(nameof(ShowAbBadges))] [NotifyPropertyChangedFor(nameof(Rx2Active))]
     [NotifyPropertyChangedFor(nameof(Rx2Idle))] [NotifyPropertyChangedFor(nameof(ActiveName))]
     [NotifyPropertyChangedFor(nameof(AbOn2))]
@@ -179,7 +179,7 @@ public sealed partial class MainViewModel
             OnPropertyChanged(nameof(RxPanTip));
         }
         if (sameCount && moved)
-            foreach (string name in (string[])[nameof(SliceCount), nameof(HasSliceB), nameof(ShowPanadapterB),
+            foreach (string name in (string[])[nameof(SliceCount), nameof(HasSliceB), nameof(CanSwapSlices), nameof(ShowPanadapterB),
                          nameof(ShowAbBadges), nameof(Rx2Active), nameof(Rx2Idle), nameof(ActiveName), nameof(AbOn2),
                          nameof(NextSliceLabel)])
                 OnPropertyChanged(name);
@@ -187,6 +187,9 @@ public sealed partial class MainViewModel
 
     /// <summary>Any slice beyond A1.</summary>
     public bool HasSliceB => SliceCount > 1;
+
+    /// <summary>A1⇄A2 has something to swap: A2 is on, or B1 with one slice per panadapter.</summary>
+    public bool CanSwapSlices => SliceOn(TwoReceiversOnly ? 1 : PanSecondary(0));
 
     /// <summary>Slice B1 is on, so RX2's panadapter shows.</summary>
     public bool ShowPanadapterB => SliceOn(PanPrimary(1));
@@ -590,7 +593,7 @@ public sealed partial class MainViewModel
         _lastActive[0] = 0;
         _lastActive[1] = PanPrimary(1);
         LayoutChangedForJack();
-        foreach (string name in (string[])[nameof(SliceCount), nameof(ShowPanadapterB), nameof(HasSliceB),
+        foreach (string name in (string[])[nameof(SliceCount), nameof(ShowPanadapterB), nameof(HasSliceB), nameof(CanSwapSlices),
                      nameof(ShowAbBadges), nameof(ActivePan), nameof(Rx1Active), nameof(Rx2Active), nameof(Rx2Idle),
                      nameof(ActiveName), nameof(ActiveSliceLabel), nameof(SplitText), nameof(AbLabel1), nameof(AbLabel2),
                      nameof(AbOn2), nameof(AbActive1), nameof(AbActive2), nameof(AbTx1), nameof(AbTx2), nameof(NextSliceLabel)])

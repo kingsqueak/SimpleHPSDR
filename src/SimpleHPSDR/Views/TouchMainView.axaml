@@ -290,14 +290,14 @@
                            Text="RX1's panadapter holds slices A1 and A2, RX2's (the second panadapter) B1 and B2. RX1 and RX2 pick the panadapter the frequency and the controls act on; a tap on a panadapter does the same. A2 and B1 (which opens RX2's panadapter) come and go in any order; B2 needs B1, and turning RX2 off takes B2 with it. A right-click or long press on the spectrum turns slices and RX2 on or off too." />
                 <TextBlock Text="SLICES" Classes="head" />
                 <WrapPanel ItemSpacing="6" LineSpacing="6">
-                  <Button Classes="seg t" Content="A1⇄A2" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding HasSliceB}"
-                          ToolTip.Tip="Swap slices A1 and A2 (the engine's VFO A/B swap)" />
+                  <Button Classes="seg t" Content="A1⇄A2" Command="{Binding SwapSlicesCommand}" IsEnabled="{Binding CanSwapSlices}"
+                          ToolTip.Tip="Swap A1's and A2's frequencies (A1's and B1's on radios with one slice per panadapter)" />
                   <Button Classes="seg t" Classes.lit="{Binding FullDuplex}" Content="DUP" Command="{Binding ToggleFullDuplexCommand}" />
                   <Button Name="AddSliceButton" Classes="seg t" Content="+" Click="AddSlice" IsEnabled="{Binding CanAddSlice}" />
                   <Button Classes="seg t" Classes.lit="{Binding VfoLocked}" Content="Lock VFO" Command="{Binding ToggleVfoLockCommand}" />
                 </WrapPanel>
                 <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
-                           Text="+ adds the next slice at the VFO frequency (A2, then B1, which opens RX2's panadapter, then B2). Slices can also be added, tuned, muted and removed from a right-click or long press on the spectrum." />
+                           Text="+ adds a slice at the VFO frequency: the first that is off of A2, B1 (which opens RX2's panadapter) and B2. Slices can also be added, tuned, muted and removed from a right-click or long press on the spectrum." />
               </StackPanel>
             </ScrollViewer>
           </TabItem>

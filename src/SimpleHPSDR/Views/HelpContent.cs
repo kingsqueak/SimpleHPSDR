@@ -264,7 +264,7 @@ Config > Filters sets how steep the filters are, as a number of filter taps: Sof
         ("Receiving", """
 ## Volume
 - AF sets the overall level. With more than one slice on, it becomes one slider per slice, each setting that slice's own level on top of the overall level, which stays where you left it. Click a slice's label to mute just that slice; the label dims while it's muted.
-- Pan, the third slider under those two, puts the receivers in different ears on stereo speakers or headphones. In the middle all are in both ears. With RX2 on, it sets RX1's slices (A1, A2) against RX2's (B1, B2): slide it left and RX1 moves to the left ear and RX2 to the right, all the way for a full split; slide it right for the other way round. With RX2 off it sets A1 against A2 the same way. It works on this computer's sound output, not on the radio's own speaker or headphone jack.
+- Pan, the slider under the slices' sliders, puts the receivers in different ears on stereo speakers or headphones. In the middle all are in both ears. With RX2 on, it sets RX1's slices (A1, A2) against RX2's (B1, B2): slide it left and RX1 moves to the left ear and RX2 to the right, all the way for a full split; slide it right for the other way round. With RX2 off it sets A1 against A2 the same way. It works on this computer's sound output, not on the radio's own speaker or headphone jack.
 - Mute silences the receiver.
 - REC and the voice keyer: see Recording and the voice keyer.
 - SQL is the squelch. Click for on or off, and right-click for the level. Adaptive follows the band noise, so you don't have to reset it.
@@ -305,7 +305,7 @@ A few Protocol 2 radios, such as the Brick 3, have only two receivers, and those
 
 - A2 and B2 can be tuned anywhere inside their panadapter's span (how wide that is depends on the Span setting: about 80 kHz either side of the centre at 192 kHz). At the edge they stop, and the status line says so. To take one further, tune or drag its panadapter's first slice.
 - When A1 (or B1) is tuned away, or the panadapter is dragged, so that the second slice is left outside the span, it keeps its frequency and goes silent. Its tag and its small frequency display read "out of span", and it comes back by itself when the span covers it again.
-- With CTUN off, the span follows A1 as you tune it. Turn CTUN on to hold the span still while both slices move inside it, which suits working split.
+- With CTUN off, the span follows A1 (or B1) as you tune it. Turn CTUN on to hold the span still while both slices move inside it, which suits working split.
 - A2 and B2 hear the same antenna as their panadapter's first slice, so they have no ANT button of their own.
 - On the G2 panel and the Dial, the B controls act on A2 on these radios, as they do on radios with four receivers.
 
@@ -313,7 +313,7 @@ RX1 and RX2 beside the frequency pick the panadapter: the VFO, band, mode and fi
 
 Squelch, RX Lev and RX EQ are one setting each, shared by all slices. Each slice's small display shows its filter, NB/NR and AGC at a glance, so the slices you're not controlling stay readable.
 
-In the touch layout, RX1, RX2, the + slice button and A1⇄A2 are in the drawer (☰) under Slices, and a long press or right-click on the spectrum offers the same.
+In the touch layout, RX1, RX2, the + slice button and A1⇄A2 are in the drawer (☰) under Slices, and a long press or right-click on the spectrum offers the same. A1⇄A2 swaps A1's and A2's frequencies; on radios with one slice per panadapter it swaps A1's and B1's.
 
 ## The small frequency display on each panadapter
 Each slice that's on shows its frequency, mode and (in grey) its filter, NB/NR and AGC at the top right of its panadapter. The wheel over it tunes that slice, and a click lets you type a frequency. The TX mark is red on the slice that transmits: click another slice's TX mark to transmit there. When the two panadapters are on the same band, each also flags where the other pan's slices are.

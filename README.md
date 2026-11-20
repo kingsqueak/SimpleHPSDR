@@ -39,7 +39,9 @@ Not affiliated with or endorsed by the Zeus SDR project.
   CB and WWV.
 - **Filter close-up:** 0 to 6000 Hz of received audio with draggable filter edges.
 - **Two receivers, four slices:** RX1 and RX2 beside the frequency, each with
-  its own panadapter and two slices (A1 and A2 on RX1, B1 and B2 on RX2). Every
+  its own panadapter and two slices (A1 and A2 on RX1, B1 and B2 on RX2; on
+  radios with two receivers, such as the Brick 3, A2 and B2 stay inside their
+  panadapter's span, and Protocol 1 radios have A1 and B1 only). Every
   slice keeps its own mode, filter, noise settings and AGC; split and cross-band
   included. With more than one on, AF becomes a slider per slice (click a
   slice's label to mute it), and Pan puts RX1's slices in one ear and RX2's in
@@ -89,6 +91,37 @@ Most controls have more behind a right-click. See **Help** in the menu.
 <img src="docs/mini.png" alt="The mini window" width="485">
 
 ## What's New
+
+### 0.16.0
+
+- **A2 and B2 on radios with only two receivers.** On a Brick 3 and other
+  Protocol 2 radios with two receivers, A2 and B2 now work too, each inside the
+  span its panadapter already shows. They have their own mode, filter, noise
+  settings, AGC and volume, and either can transmit. They can't leave that
+  span: tuning stops at its edge, and if A1 (or B1) or a drag moves the span
+  away, the slice keeps its frequency, goes silent and reads "out of span"
+  until the span covers it again. They hear the same antenna as their
+  panadapter's first slice, so they have no ANT button. In 0.15.3 these radios
+  had one slice per panadapter. Not yet tried on a real Brick 3: the shared
+  span was tested on an ANAN-7000DLE made to run that way.
+- **RX2 opens on its own.** On every Protocol 2 radio, clicking RX2 turns on
+  B1 only. A2 and B2 are optional second slices and come and go in any order:
+  B2 needs B1, turning RX2 off takes B2 with it, and B1 comes off after B2.
+  Before, slices came on in a fixed order (A2, B1, B2) and went off in reverse.
+- **Pan** sets RX1's slices against RX2's, or A1 against A2 while RX2 is off.
+- **On the G2 panel and the Ulanzi Dial** the B controls act on A2 wherever
+  A2 exists, on two-receiver radios too.
+- **TCI's second receiver** (`vfo:1,0`) is B1, on RX2's panadapter, on every
+  radio. On radios with receivers to spare it used to be A2.
+- **Help** has a new section, ADC assignments, under Two receivers and split:
+  which input each slice listens on, for those coming from Thetis's grid.
+- **Fixed:** on radios with one slice per panadapter, Swap RX1 ⇄ RX2 pans
+  (RX2's right-click) sent A1 to the wrong frequency, and B1's input button
+  didn't show. Both act on B1 now.
+- **After updating,** on radios with receivers to spare: an RX2 that was on
+  comes back as B1 on RX2's panadapter, at the frequency A2 had, and A2 starts
+  with the AGC and noise settings B1 had. Settings are kept by position, so
+  set them again once.
 
 ### 0.15.3
 
