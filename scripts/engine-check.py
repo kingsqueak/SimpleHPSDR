@@ -11,6 +11,9 @@ Starts a throwaway engine (its own data folder, no computer audio), then:
               spectrum and audio frames, changes mode, filter and frequency
               and reads them back, then disconnects. No transmit route is
               ever called.
+  shared:     no radio needed: shared-stream receivers (receivers 2 and 3 fed by
+              receiver 0 or 1) are switched on and off through the HTTP API and
+              the state is checked after each step. No transmit route is called.
   order:      (only with --order) posts several settings changes at the same
               moment, many times, and checks the DSP side always ends on the
               newest one.
@@ -299,6 +302,128 @@ def check_order(port, rounds, fails, threads=8):
     return {"rounds": rounds, "stale": stale, "examples": examples}
 
 
+def check_shared(port, fails):
+    """Shared-stream receivers (receivers 2 and 3 with no DDC of their own),
+    driven through the HTTP API with no radio. Each check is recorded as
+    True/False under its name; a False is also a failure."""
+    r = {}
+
+    def state():
+        return get_json(port, "api/state")[1] or {}
+
+    def row(n, s=None):
+        rows = (s or state()).get("receivers") or []
+        return rows[n] if n < len(rows) else None
+
+    def post(path, body):
+        return request(port, "POST", path, body)[0]
+
+    def rec(name, ok, detail):
+        r[name] = bool(ok)
+        if not ok:
+            fails.append(f"shared: {name}: {detail}")
+
+    def on(n, s=None):
+        x = row(n, s)
+        return bool(x and x.get("enabled"))
+
+    def src(n, s=None):
+        x = row(n, s)
+        return x.get("sourceReceiver") if x else None
+
+    def info(*ns):
+        s = state()
+        return {"rx2Enabled": s.get("rx2Enabled"), "txReceiverIndex": s.get("txReceiverIndex"),
+                "rows": {n: row(n, s) for n in ns}}
+
+    # 1. start clean
+    post("api/receivers/3", {"enabled": False})
+    post("api/receivers/2", {"enabled": False})
+    post("api/rx2", {"enabled": False})
+    s = state()
+    rec("start_clean", not s.get("rx2Enabled") and not on(2, s) and not on(3, s), info(2, 3))
+
+    # 2. receiver 2 shares receiver 0, RX2 off
+    st = post("api/receivers/2", {"enabled": True, "sourceReceiver": 0, "vfoHz": 14_100_000})
+    s = state()
+    rec("rx2_off_share2", on(2, s) and src(2, s) == 0 and not s.get("rx2Enabled"),
+        f"status {st}, {info(2)}")
+
+    # 3. receiver 3 sharing receiver 1 while RX2 is off: refused
+    st = post("api/receivers/3", {"enabled": True, "sourceReceiver": 1})
+    rec("share3_needs_rx2", not on(3), f"status {st}, {info(3)}")
+
+    # 4. RX2 on, then receiver 3 shares receiver 1
+    post("api/rx2", {"enabled": True})
+    st = post("api/receivers/3", {"enabled": True, "sourceReceiver": 1, "vfoHz": 7_100_000})
+    rec("share3_with_rx2", on(3) and src(3) == 1, f"status {st}, {info(3)}")
+
+    # 5. receiver 2 off: no cascade, rows keep their positions
+    post("api/receivers/2", {"enabled": False})
+    s = state()
+    rows = s.get("receivers") or []
+    rec("no_cascade", on(3, s) and len(rows) > 3 and rows[2].get("index") == 2
+        and not rows[2].get("enabled") and rows[3].get("index") == 3, info(2, 3))
+
+    # 6. enabling again without a source keeps the kind
+    st = post("api/receivers/3", {"enabled": True})
+    rec("repeat_enable_keeps_kind", on(3) and src(3) == 1, f"status {st}, {info(3)}")
+
+    # 7. mixing: own-DDC receiver 2 refused while 3 is a sharer
+    st = post("api/receivers/2", {"enabled": True})
+    s = state()
+    rec("mixing_refused", not on(2, s) and on(3, s) and src(3, s) == 1, f"status {st}, {info(2, 3)}")
+
+    # 8. transmit receiver falls back to 0 when its receiver goes away
+    st = post("api/tx/receiver", {"index": 3, "requireIdle": True})
+    got = state().get("txReceiverIndex")
+    post("api/rx2", {"enabled": False})
+    s = state()
+    rec("tx_receiver_fallback", got == 3 and not on(3, s) and s.get("txReceiverIndex") == 0,
+        f"tx/receiver answered {st}, txReceiverIndex {got} then {s.get('txReceiverIndex')}, {info(3)}")
+
+    # 9. invalid requests answer 400
+    bad = {"source2": ("api/receivers/2", {"enabled": True, "sourceReceiver": 2}),
+           "rx1_shared": ("api/receivers/1", {"enabled": True, "sourceReceiver": 0}),
+           "index4": ("api/receivers/4", {"enabled": True, "sourceReceiver": 0})}
+    codes = {k: post(*v) for k, v in bad.items()}
+    rec("invalid_400", all(c == 400 for c in codes.values()), f"statuses {codes}")
+
+    # 10. no source: own DDC, turns RX2 on; then mixing with a sharer is refused
+    st = post("api/receivers/2", {"enabled": True})
+    s = state()
+    rec("no_source_own_ddc", on(2, s) and src(2, s) is None and bool(s.get("rx2Enabled")),
+        f"status {st}, {info(2)}")
+    st = post("api/receivers/3", {"enabled": True, "sourceReceiver": 0})
+    rec("mixing_refused_reverse", not on(3), f"status {st}, {info(2, 3)}")
+    post("api/receivers/2", {"enabled": False})
+
+    # 11. out of span (as far as observable with no radio)
+    rx0 = state().get("vfoHz")
+    post("api/receivers/2", {"enabled": True, "sourceReceiver": 0, "vfoHz": rx0})
+    time.sleep(0.3)
+    inside = row(2) and row(2).get("outOfSpan")
+    rec("span_in", inside is False, f"outOfSpan {inside!r} at rx0 {rx0}, {info(2)}")
+    post("api/receivers/2", {"vfoHz": rx0 + 5_000_000})
+    time.sleep(0.3)
+    far = row(2) and row(2).get("outOfSpan")
+    rec("span_out", far is True, f"outOfSpan {far!r} at rx0+5 MHz (rx0 {rx0}), {info(2)}")
+    post("api/receivers/2", {"vfoHz": rx0})
+    time.sleep(0.3)
+    back = row(2) and row(2).get("outOfSpan")
+    rec("span_back", back is False, f"outOfSpan {back!r} after tuning back, {info(2)}")
+
+    # 12. clean up
+    post("api/receivers/3", {"enabled": False})
+    post("api/receivers/2", {"enabled": False})
+    post("api/rx2", {"enabled": False})
+    post("api/tx/receiver", {"index": 0, "requireIdle": True})
+    s = state()
+    rec("cleanup", not on(2, s) and not on(3, s) and not s.get("rx2Enabled")
+        and s.get("txReceiverIndex") == 0, info(2, 3))
+    return r
+
+
 def check_radio(port, ip, settings, fails):
     """Receive only. Connect, check frames, change mode/filter/VFO, disconnect."""
     r = {}
@@ -432,6 +557,7 @@ def main():
             if not isinstance(st, int) or st >= 500:
                 fails.append(f"read failed: {p} -> {st}")
         res["stream"] = check_stream(port, 3)
+        res["shared"] = check_shared(port, fails)
         if args.order:
             res["order"] = check_order(port, args.order, fails)
         if args.radio is not None:
@@ -453,6 +579,8 @@ def main():
     print(f"engine {ver and ver.get('engine')}: {len(routes)} app routes, "
           f"{sum(1 for s in routes.values() if s != 404)} present; "
           f"{len(res['reads'])} reads; stream {res['stream']}")
+    bad_shared = [k for k, v in res.get("shared", {}).items() if not v]
+    print(f"shared: {len(res.get('shared', {})) - len(bad_shared)} of {len(res.get('shared', {}))} checks passed")
     if "order" in res:
         print(f"order: {res['order']['stale']} stale of {res['order']['rounds']} rounds")
     if "radio" in res:
