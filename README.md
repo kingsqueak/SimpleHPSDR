@@ -92,6 +92,25 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.16.2
+
+- **SimpleExpander, a second mic expander** (Config > TX Audio > Mic expander).
+  It turns the room noise between your words down gradually, by a ratio, to a
+  limit you set, where the existing gate switches between full level and a
+  fixed cut. Its threshold is on the same scale as the mic meter, it adds no
+  delay, and it can be adjusted while you talk without dropping the audio.
+  Choose either type; only one runs at a time. A live level reading for both
+  shows what to set the threshold against.
+- **Mon no longer goes silent between words.** With Mon on and the radio not
+  transmitting, the mic was cut to silence after 1.5 seconds of quiet, which
+  sounded like a gate that could not be turned off and hid the noise an
+  expander is set against. Mon now plays what would go on the air. The old
+  behaviour is a checkbox on the TX Audio page, "Silence Mon when the mic is
+  idle". Transmitted audio was never affected.
+- **TX Audio page in signal order.** The sections now follow the path your
+  audio takes: mic expander, phase rotator, equalizer, leveler and ALC, CFC,
+  speech processor.
+
 ### 0.16.1
 
 - **Signal analyser** (Tools > Signal Analyser; touch: ☰ > Station > Signal).

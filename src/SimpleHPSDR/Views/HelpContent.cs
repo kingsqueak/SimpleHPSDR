@@ -431,6 +431,20 @@ Export… saves the chosen profile to a .shtx file you can send to another Simpl
 ## TX filter
 Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. In AM, SAM and DSB the receive filter covers both sidebands, so your audio goes up to half its width: a 10 kHz AM filter sends audio up to 5 kHz. In AM and SAM the low cut still applies either way, as the modulator's high-pass: to change it, untick follows, set the low cut and save your profile. Otherwise set both by hand: the high cut goes up to 10 kHz (8 kHz of audio in FM). 2.8 kHz is a usual SSB width; wider is for AM and wide-band SSB, where the band and your licence allow it.
 
+## Mic expander
+Turns the room noise down between your words, before anything else works on your voice. Set it up first: the stages after it add gain, and would bring the noise up with the speech.
+
+There are two types, and only one runs at a time:
+- SimpleExpander turns quiet sound down gradually, more the quieter it is. Threshold is the level below which it starts; Ratio is how steeply it turns down (2 is gentle, 10 acts like a gate); Most reduction is the furthest it will ever go. Attack is how fast it opens when you speak, Hold how long it waits after you stop, Release how slowly it closes. It adds no delay.
+- Gate (WDSP) switches between full level and a fixed cut (Reduction). It measures the 500 to 1500 Hz part of your voice before mic gain, so its threshold reads lower than the mic meter.
+
+To set either one: turn on Mon (or transmit into a dummy load), open the section and watch "Level now". Stay silent and note the reading: that is your room. Put the threshold a few dB above it, then speak and check that your quietest words still pass.
+
+"Silence Mon when the mic is idle", at the top of the page, is off to start with. Ticked, Mon goes fully silent after 1.5 seconds of quiet until you speak again. That only affects Mon while you are not transmitting, never what goes on the air, and it hides the room noise you set the expander against, so leave it off while setting up.
+
+## Phase rotator
+Evens out the peaks in a voice, so it's easier to process.
+
 ## Equalizer
 Shapes the tone of your voice. The graphic view has ten sliders. Tick Parametric for six bands instead: drag a numbered point for frequency and gain, and use the wheel over it for Q. Bands 1 and 6 can be a pass filter or a shelf. The dashed line is what the radio actually does; very narrow bands can come out a little shallower.
 
@@ -442,10 +456,8 @@ A compressor working across the whole audio range at once. Compression in dB is 
 
 CFC adds delay: the FFT size sets how much, from about 16 ms at 2048 to about 166 ms at 16384. Config > TX Audio shows the total delay as you change it.
 
-## Other tools
-- Speech processor: Compressor and CESSB add talk power. Use them lightly.
-- Mic expander: quiets the mic between words. Two types: SimpleExpander turns quiet sound down gradually, more the quieter it is; Gate (WDSP) switches between full level and a fixed cut. Only one runs at a time. Set the threshold just above the "Level now" reading taken while you are silent (transmit, or turn on Mon, to get a reading).
-- Phase rotator: evens out the peaks in a voice, so it's easier to process.
+## Speech processor
+Compressor and CESSB add talk power. Use them lightly.
 """),
 
         ("PureSignal", """
