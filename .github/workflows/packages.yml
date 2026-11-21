@@ -16,6 +16,12 @@ on:
 permissions:
   contents: read
 
+# One run per branch and kind (full or Windows only): starting it again
+# replaces the run still going, so two never build the same thing side by side.
+concurrency:
+  group: packages-${{ github.ref }}-${{ inputs.windows_only }}
+  cancel-in-progress: true
+
 # The DRM decoder must build; packages never ship without it by accident.
 env:
   DRM_REQUIRED: '1'
