@@ -444,7 +444,7 @@ CFC adds delay: the FFT size sets how much, from about 16 ms at 2048 to about 16
 
 ## Other tools
 - Speech processor: Compressor and CESSB add talk power. Use them lightly.
-- Noise gate: quiets the mic between words.
+- Mic expander: quiets the mic between words. Two types: SimpleExpander turns quiet sound down gradually, more the quieter it is; Gate (WDSP) switches between full level and a fixed cut. Only one runs at a time. Set the threshold just above the "Level now" reading taken while you are silent (transmit, or turn on Mon, to get a reading).
 - Phase rotator: evens out the peaks in a voice, so it's easier to process.
 """),
 

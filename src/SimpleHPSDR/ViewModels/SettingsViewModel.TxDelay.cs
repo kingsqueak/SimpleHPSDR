@@ -12,7 +12,7 @@ public sealed partial class SettingsViewModel
     private static readonly HashSet<string> TxDelayInputs =
     [
         nameof(TxWindowIndex), nameof(TxPhaseIndex), nameof(CfcEnabled), nameof(CfcFftSize),
-        nameof(CompressorEnabled), nameof(CessbEnabled), nameof(DexpEnabled), nameof(ReleaseDelayMs),
+        nameof(CompressorEnabled), nameof(CessbEnabled), nameof(ExpanderEnabled), nameof(ExpanderTypeIndex), nameof(ReleaseDelayMs),
     ];
 
     public string TxDelayText
@@ -21,7 +21,7 @@ public sealed partial class SettingsViewModel
         {
             var e = TxLatency.Calculate(TxWindowIndex, (FilterPhaseMode)TxPhaseIndex, _txDspRateHz,
                 CompressorEnabled, CessbEnabled, CfcEnabled, CfcFftSize,
-                DexpEnabled && _txLoaded?.Dexp is { LookAheadEnabled: true } dexp ? (int)dexp.LookAheadMs : 0);
+                GateOn && _txLoaded?.Dexp is { LookAheadEnabled: true } dexp ? (int)dexp.LookAheadMs : 0);
             return $"Estimated transmit delay: {e.TotalMs} ms (CFC {e.CfcMs}, TX filter {e.FilterMs}, "
                 + $"other {e.OtherPartMs}). Up to {TxLatency.ReleaseHoldMs(e, ReleaseDelayMs)} ms keyed after release.";
         }

@@ -127,9 +127,93 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _cfcPrePeqDb;
     public ObservableCollection<CfcBandRow> CfcBands { get; } = [];
 
-    // Noise gate (downward expander)
+    // Mic expander: SimpleExpander (type 0) or the WDSP gate (type 1). One
+    // Enabled box for both; the engine runs at most one of them.
+    public const int ExpanderTypeSimple = 0, ExpanderTypeGate = 1;
+    public string[] ExpanderTypeNames { get; } = ["SimpleExpander", "Gate (WDSP)"];
     [ObservableProperty] private bool _hasDexp;
-    [ObservableProperty] private bool _dexpEnabled;
+    // False on an engine from before SimpleExpander: only the gate is offered.
+    [ObservableProperty] private bool _hasSimpleExpander;
+    [ObservableProperty] private bool _expanderEnabled;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ExpanderIsSimple), nameof(ExpanderIsGate))]
+    private int _expanderTypeIndex;
+    public bool ExpanderIsSimple => ExpanderTypeIndex != ExpanderTypeGate;
+    public bool ExpanderIsGate => ExpanderTypeIndex == ExpanderTypeGate;
+    private bool GateOn => ExpanderEnabled && ExpanderIsGate;
+    [ObservableProperty] private double _sxThresholdDb;
+    [ObservableProperty] private double _sxRatio;
+    [ObservableProperty] private double _sxRangeDb;
+    [ObservableProperty] private double _sxAttackMs;
+    [ObservableProperty] private double _sxHoldMs;
+    [ObservableProperty] private double _sxReleaseMs;
+    // Live reading while the section is open (the TX chain only runs while
+    // transmitting or monitoring).
+    [ObservableProperty] private bool _expanderSectionOpen;
+    [ObservableProperty] private double _expanderMeterDb = -80;
+    [ObservableProperty] private string _expanderMeterText = "";
+    private bool _expanderMeterPolling;
+
+    // Mon preview: silence the mic after 1.5 s of quiet (the engine's old
+    // fixed behaviour, now a choice). Null from an engine without the choice.
+    [ObservableProperty] private bool _hasMonIdleSilence;
+    [ObservableProperty] private bool _monIdleSilence;
+    private bool _loadingMonIdleSilence;
+
+    private async Task LoadMonIdleSilenceAsync()
+    {
+        try
+        {
+            var m = await _client.GetMonitorAsync();
+            _loadingMonIdleSilence = true;
+            HasMonIdleSilence = m.IdleSilence is not null;
+            MonIdleSilence = m.IdleSilence ?? true;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException) { }
+        finally { _loadingMonIdleSilence = false; }
+    }
+
+    async partial void OnMonIdleSilenceChanged(bool value)
+    {
+        if (_loadingMonIdleSilence || !HasMonIdleSilence) return;
+        try { await _client.SetMonitorIdleSilenceAsync(value); }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException)
+        {
+            Status = $"Not changed: {ex.Message}";
+        }
+    }
+
+    public async Task RefreshExpanderMeterAsync()
+    {
+        if (!ExpanderSectionOpen || !HasDexp || _expanderMeterPolling) return;
+        _expanderMeterPolling = true;
+        try
+        {
+            const string idle = "No reading: transmit or turn the monitor on (voice modes)";
+            if (ExpanderIsGate)
+            {
+                var m = await _client.GetDexpMeterAsync();
+                ExpanderMeterDb = m is { Active: true, PeakDbv: { } peak } ? Math.Clamp(peak, -80, 0) : -80;
+                ExpanderMeterText = m is { Active: true, PeakDbv: { } p }
+                    ? $"{p:0} dBV, gate {(m.GateOpen ? "open" : "closed")}" : idle;
+            }
+            else
+            {
+                var m = await _client.GetSimpleExpanderMeterAsync();
+                ExpanderMeterDb = m is { Active: true, LevelDb: { } level } ? Math.Clamp(level, -80, 0) : -80;
+                ExpanderMeterText = m is { Active: true, LevelDb: { } l }
+                    ? $"{l:0} dB, reduced by {m.GainReductionDb:0} dB" : idle;
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or StationException
+            or System.Text.Json.JsonException)
+        {
+            ExpanderMeterDb = -80;
+            ExpanderMeterText = "";
+        }
+        finally { _expanderMeterPolling = false; }
+    }
+
     [ObservableProperty] private double _dexpThresholdDbv;
     [ObservableProperty] private double _dexpExpansionDb;
     [ObservableProperty] private double _dexpHoldMs;
@@ -182,7 +266,18 @@ public sealed partial class SettingsViewModel
         HasDexp = s.Dexp is not null;
         if (s.Dexp is { } dx)
         {
-            DexpEnabled = dx.Enabled;
+            var sx = s.SimpleExpander ?? SimpleExpanderConfig.Default;
+            HasSimpleExpander = s.SimpleExpander is not null;
+            ExpanderTypeIndex = dx.Enabled || !HasSimpleExpander ? ExpanderTypeGate
+                : sx.Enabled ? ExpanderTypeSimple
+                : AppSettings?.TxExpanderType == ExpanderTypeGate ? ExpanderTypeGate : ExpanderTypeSimple;
+            ExpanderEnabled = dx.Enabled || sx.Enabled;
+            SxThresholdDb = sx.ThresholdDb;
+            SxRatio = sx.Ratio;
+            SxRangeDb = sx.RangeDb;
+            SxAttackMs = sx.AttackMs;
+            SxHoldMs = sx.HoldMs;
+            SxReleaseMs = sx.ReleaseMs;
             DexpThresholdDbv = dx.ThresholdDbv;
             DexpExpansionDb = dx.ExpansionDb;
             DexpHoldMs = dx.HoldMs;
@@ -230,12 +325,24 @@ public sealed partial class SettingsViewModel
 
     private DexpConfig BuildDexp(StateDto was) => (was.Dexp ?? DexpConfig.Default) with
     {
-        Enabled = DexpEnabled,
+        Enabled = GateOn,
         ThresholdDbv = Math.Round(DexpThresholdDbv, 1),
         ExpansionDb = Math.Round(DexpExpansionDb, 1),
         HoldMs = Math.Round(DexpHoldMs),
         ReleaseMs = Math.Round(DexpReleaseMs),
     };
+
+    private SimpleExpanderConfig BuildSimpleExpander(StateDto was) =>
+        (was.SimpleExpander ?? SimpleExpanderConfig.Default) with
+        {
+            Enabled = ExpanderEnabled && ExpanderIsSimple,
+            ThresholdDb = Math.Round(SxThresholdDb),
+            Ratio = Math.Round(SxRatio, 1),
+            RangeDb = Math.Round(SxRangeDb),
+            AttackMs = Math.Round(SxAttackMs, 1),
+            HoldMs = Math.Round(SxHoldMs),
+            ReleaseMs = Math.Round(SxReleaseMs),
+        };
 
     private TxPhaseRotatorConfig BuildPhaseRotator(StateDto was) => (was.TxPhaseRotator ?? new TxPhaseRotatorConfig()) with
     {
@@ -341,8 +448,22 @@ public sealed partial class SettingsViewModel
                 await _client.SetCfcAsync(cfc);
         }
 
-        if (was.Dexp is { } dxWas && BuildDexp(was) is var dx && dx != dxWas)
-            await _client.SetDexpAsync(dx);
+        if (was.Dexp is { } dxWas)
+        {
+            // The one being switched off goes first, so both are never on.
+            var dx = BuildDexp(was);
+            var sx = BuildSimpleExpander(was);
+            bool sxChanged = sx != (was.SimpleExpander ?? SimpleExpanderConfig.Default);
+            sxChanged &= HasSimpleExpander;
+            if (sxChanged && !sx.Enabled) await _client.SetSimpleExpanderAsync(sx);
+            if (dx != dxWas) await _client.SetDexpAsync(dx);
+            if (sxChanged && sx.Enabled) await _client.SetSimpleExpanderAsync(sx);
+            if (AppSettings is { } app && app.TxExpanderType != ExpanderTypeIndex)
+            {
+                app.TxExpanderType = ExpanderTypeIndex;
+                app.Save();
+            }
+        }
 
         var pr = BuildPhaseRotator(was);
         if (pr != (was.TxPhaseRotator ?? new TxPhaseRotatorConfig()))

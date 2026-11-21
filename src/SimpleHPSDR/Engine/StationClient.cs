@@ -9,7 +9,7 @@ namespace SimpleHPSDR.Engine;
 
 public sealed record FilterPreset(string SlotName, string Label, int LowHz, int HighHz, bool IsCustomized = false);
 public sealed record AudioDevice(string Id, string Name, bool IsDefault);
-public sealed record MonitorState(bool Enabled, bool MonitorOnTransmit, double VolumeDb);
+public sealed record MonitorState(bool Enabled, bool MonitorOnTransmit, double VolumeDb, bool? IdleSilence = null);
 public sealed record AsioDriver(string Id, string Name);
 public sealed record AsioChannel(int Index, string Name);
 public sealed record AudioDevices(
@@ -209,6 +209,13 @@ public sealed class StationClient : IDisposable
     public Task<RecorderStatus> StopPlaybackAsync() => PostForAsync<RecorderStatus>("api/recorder/play/stop", new { });
     public Task SetCfcAsync(CfcConfig cfg) => PostAsync("api/tx/cfc", new CfcSetRequest(cfg));
     public Task SetDexpAsync(DexpConfig cfg) => PostAsync("api/tx/dexp", new DexpSetRequest(cfg));
+    public Task SetSimpleExpanderAsync(SimpleExpanderConfig cfg) =>
+        PostAsync("api/tx/simple-expander", new SimpleExpanderSetRequest(cfg));
+    public async Task<DexpMeterDto> GetDexpMeterAsync() =>
+        await _http.GetFromJsonAsync<DexpMeterDto>("api/tx/dexp/meter", Json) ?? DexpMeterDto.Inactive;
+    public async Task<SimpleExpanderMeterDto> GetSimpleExpanderMeterAsync() =>
+        await _http.GetFromJsonAsync<SimpleExpanderMeterDto>("api/tx/simple-expander/meter", Json)
+        ?? SimpleExpanderMeterDto.Inactive;
     public Task SetPhaseRotatorAsync(TxPhaseRotatorConfig cfg) =>
         PostAsync("api/tx/phase-rotator", new TxPhaseRotatorSetRequest(cfg));
 
@@ -223,6 +230,12 @@ public sealed class StationClient : IDisposable
     {
         using var r = await _http.PutAsJsonAsync("api/tx-audio-suite/preview",
             new { enabled = preview, monitorOnTransmit = onTransmit }, Json);
+        await ThrowIfFailed(r);
+    }
+
+    public async Task SetMonitorIdleSilenceAsync(bool on)
+    {
+        using var r = await _http.PutAsJsonAsync("api/tx-audio-suite/monitor-idle-silence", new { enabled = on }, Json);
         await ThrowIfFailed(r);
     }
 

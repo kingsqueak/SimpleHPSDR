@@ -16,6 +16,10 @@ public partial class SettingsWindow : Window
         supply.Tick += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshSupplyAsync();
         Opened += (_, _) => supply.Start();
         Closed += (_, _) => supply.Stop();
+        var expanderMeter = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+        expanderMeter.Tick += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshExpanderMeterAsync();
+        Opened += (_, _) => expanderMeter.Start();
+        Closed += (_, _) => expanderMeter.Stop();
         // The radio can be used while this is open: catch up on coming back.
         Activated += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshLiveAsync();
     }

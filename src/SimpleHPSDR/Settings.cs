@@ -169,6 +169,9 @@ public sealed class Settings
     public double RadeRxHoldMs { get; set; } = 250;
     public double RadeRxMinSnrDb { get; set; } = -10;
     public bool RadeMicGate { get; set; } = true;
+    /// <summary>Mic expander shown on the TX Audio page while neither is on:
+    /// 0 = SimpleExpander, 1 = the WDSP gate.</summary>
+    public int TxExpanderType { get; set; }
     public double RadeMicGateOpenDb { get; set; } = 14;
     public double RadeMicGateHangMs { get; set; } = 250;
     public double RadeTxLevelDb { get; set; } = -6;

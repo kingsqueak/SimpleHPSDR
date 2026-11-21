@@ -232,6 +232,19 @@ for (int i = 0; i < tabs.ItemCount; i++)
     Shot(sw, $"settings-1024x535-tab{i:00}-{new string(hdr.Where(char.IsLetterOrDigit).ToArray())}");
 }
 
+// The mic expander section, both types, with every other section as it opens.
+svm.HasDexp = true;
+svm.HasSimpleExpander = true;
+svm.HasMonIdleSilence = true;
+svm.ExpanderSectionOpen = true;
+svm.ExpanderMeterDb = -32;
+svm.ExpanderMeterText = "-32 dB, reduced by 0 dB";
+tabs.SelectedIndex = Enumerable.Range(0, tabs.ItemCount).First(i => (tabs.Items[i] as TabItem)?.Header?.ToString() == "TX Audio");
+Make(sw, 1040, 1500);
+Shot(sw, "settings-txaudio-expander-simple");
+svm.ExpanderTypeIndex = SettingsViewModel.ExpanderTypeGate;
+Shot(sw, "settings-txaudio-expander-gate");
+
 // ---- Does Holding raise ContextRequested (long-press opens context menus)? ----
 var probe = new Button { Content = "probe" };
 bool ctx = false; probe.ContextRequested += (_, _) => ctx = true;

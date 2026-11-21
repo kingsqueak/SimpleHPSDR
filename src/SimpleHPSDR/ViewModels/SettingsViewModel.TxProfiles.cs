@@ -72,6 +72,8 @@ public sealed partial class SettingsViewModel
             await _client.SetTxEqAsync(p.Equalizer);
             await _client.SetCfcAsync(p.Cfc);
             await _client.SetDexpAsync(p.NoiseGate);
+            if (p.SimpleExpander is { } expander)
+                await _client.SetSimpleExpanderAsync(expander);
             await _client.SetPhaseRotatorAsync(p.PhaseRotator);
             if (p.ReleaseDelayMs is int tail)
                 await _client.SetTxTailDelayAsync(tail);
@@ -133,7 +135,7 @@ public sealed partial class SettingsViewModel
             (int)Math.Round(TxLowCutHz), (int)Math.Round(TxHighCutHz),
             BuildLeveling(was), Math.Round(LevelerMaxGainDb, 1), BuildEq(),
             BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was), (int)Math.Round(ReleaseDelayMs),
-            ParametricEqOn ? SnapshotParametric() : null, TxFilterFollowsRx);
+            ParametricEqOn ? SnapshotParametric() : null, TxFilterFollowsRx, BuildSimpleExpander(was));
     }
 
     [RelayCommand]

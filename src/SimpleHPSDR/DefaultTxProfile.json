@@ -122,5 +122,14 @@
     "reverse": false,
     "autoMode": false
   },
-  "releaseDelayMs": 60
+  "releaseDelayMs": 60,
+  "simpleExpander": {
+    "enabled": false,
+    "thresholdDb": -34,
+    "ratio": 3,
+    "rangeDb": 30,
+    "attackMs": 3,
+    "holdMs": 225,
+    "releaseMs": 225
+  }
 }

@@ -147,7 +147,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         [nameof(AlcDecayMs)] = Group.TxAudio, [nameof(EqEnabled)] = Group.TxAudio,
         [nameof(EqPreampDb)] = Group.TxAudio, [nameof(ParametricEqOn)] = Group.TxAudio, [nameof(CfcEnabled)] = Group.TxAudio,
         [nameof(CfcPostEqEnabled)] = Group.TxAudio, [nameof(CfcPreCompDb)] = Group.TxAudio,
-        [nameof(CfcPrePeqDb)] = Group.TxAudio, [nameof(DexpEnabled)] = Group.TxAudio,
+        [nameof(CfcPrePeqDb)] = Group.TxAudio, [nameof(ExpanderEnabled)] = Group.TxAudio,
+        [nameof(ExpanderTypeIndex)] = Group.TxAudio, [nameof(SxThresholdDb)] = Group.TxAudio,
+        [nameof(SxRatio)] = Group.TxAudio, [nameof(SxRangeDb)] = Group.TxAudio,
+        [nameof(SxAttackMs)] = Group.TxAudio, [nameof(SxHoldMs)] = Group.TxAudio,
+        [nameof(SxReleaseMs)] = Group.TxAudio,
         [nameof(DexpThresholdDbv)] = Group.TxAudio, [nameof(DexpExpansionDb)] = Group.TxAudio,
         [nameof(DexpHoldMs)] = Group.TxAudio, [nameof(DexpReleaseMs)] = Group.TxAudio,
         [nameof(PhrotEnabled)] = Group.TxAudio, [nameof(PhrotCornerHz)] = Group.TxAudio,
@@ -206,6 +210,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 await LoadHfAutoAsync();
                 await LoadOperatorAsync();
                 await LoadTxDelayAsync();
+                await LoadMonIdleSilenceAsync();
             }
             finally { _populating = false; }
             Status = "Changes apply as you make them.";
