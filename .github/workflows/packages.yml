@@ -2,11 +2,10 @@ name: Packages
 
 # Builds the macOS DMGs, deb, RPM and Arch packages for x86-64 and arm64, and
 # the Windows installer. The debs are also checked on Debian 13 (Trixie), which is
-# what Raspberry Pi OS is based on. Runs on a version tag (v*) or by hand; the packages are the
-# run's artifacts.
+# what Raspberry Pi OS is based on. Runs by hand only; the packages are the run's artifacts.
+# A release is made from a run on main, checked, and tagged afterwards, so a version tag
+# does not start a run: it would only build the same commit a second time.
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
     inputs:
       windows_only:
