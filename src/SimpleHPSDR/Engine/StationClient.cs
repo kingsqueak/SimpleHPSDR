@@ -968,6 +968,7 @@ public sealed class StationClient : IDisposable
                     Display?.Invoke(DisplayFrame.Deserialize(msg));
                     break;
                 case MsgType.RxMetersV2:
+                case MsgType.RxMetersV2Secondary: // receivers 1 and up (B1, A2, B2)
                     var m = RxMetersV2Frame.Deserialize(msg);
                     SignalDbm?.Invoke(m.RxId, m.SignalAv);
                     break;

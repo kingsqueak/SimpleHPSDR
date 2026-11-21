@@ -693,6 +693,8 @@ public sealed partial class MainViewModel
             bool changing = rx != ActiveRx;
             ActiveRx = rx;
             _lastActive[SlicePan(rx)] = rx;
+            // The meter follows the active slice: drop the other one's reading and peak.
+            if (changing) (SignalDbm, PeakDbm, SUnits) = (-140, -140, "S0");
             // Show the new slice's last known frequency straight away, so
             // nothing reads the other one's under the new slice's name.
             if (changing && _slices[rx] is { } known)
