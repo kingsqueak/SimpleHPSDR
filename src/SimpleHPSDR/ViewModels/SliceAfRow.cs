@@ -46,7 +46,7 @@ public sealed partial class SliceAfRow : ObservableObject
     [RelayCommand]
     private async Task ToggleMute() => await _vm.SetSliceMuteAsync(Index, !Muted);
 
-    /// <summary>The engine's value (or a new slice's 0 dB): show it without
+    /// <summary>The engine's value (or a new slice's starting level): show it without
     /// sending it back. The VM guards with its own flag around this too.</summary>
     public void SetLocal(double db)
     {

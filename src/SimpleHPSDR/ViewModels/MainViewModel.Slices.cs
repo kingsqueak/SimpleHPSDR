@@ -820,6 +820,9 @@ public sealed partial class MainViewModel
         // start inside that stream's span: else on the pan's first slice.
         byte? adc = shares ? null : WantsJack(i) ? (byte)1 : (byte)0;
         if (shares && !InsideSpan(source, hz)) hz = RxHz(source);
+        // The new slice comes on as loud as the one being listened to, not at
+        // 0 dB whatever the others are set to.
+        double af = _sliceAfRows[ActiveRx]?.Value ?? _slices[ActiveRx]?.AfGainDb ?? 0;
         await Try(async () =>
         {
             bool rx2WasOn = SliceOn(PanPrimary(1));
@@ -828,20 +831,20 @@ public sealed partial class MainViewModel
             {
                 await _client!.SetReceiverAsync(i, new ReceiverSetRequest(
                     Enabled: true, VfoHz: hz, Mode: Mode, FilterLowHz: FilterLowHz, FilterHighHz: FilterHighHz,
-                    AfGainDb: 0, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
+                    AfGainDb: af, FilterPresetName: Filters.FirstOrDefault(f => f.IsSelected)?.SlotName,
                     ZoomLevel: zoom, Agc: new AgcConfig(_agcMode), AutoAgcEnabled: AgcAuto, AdcSource: adc,
                     SourceReceiver: shares ? source : null));
                 if (shares && !await SharingTookAsync(i, source, rx2WasOn)) return;
             }
             finally { _sliceComingOn = -1; }
             _slices[i] = (_slices[i] ?? new ReceiverDto(i, true, adc ?? 0, hz, Mode, FilterLowHz, FilterHighHz,
-                Filters.FirstOrDefault(f => f.IsSelected)?.SlotName, 0, _sampleRateHz))
-                with { Enabled = true, VfoHz = hz, SourceReceiver = shares ? source : null };
+                Filters.FirstOrDefault(f => f.IsSelected)?.SlotName, af, _sampleRateHz))
+                with { Enabled = true, VfoHz = hz, AfGainDb = af, SourceReceiver = shares ? source : null };
             // The engine has it on now: count it here rather than waiting for
             // the poll, so the views and MakeActiveAsync know it at once.
             RecountSlices();
             SyncSliceAfRows();
-            SetSliceAfLocal(i, 0);
+            SetSliceAfLocal(i, af);
             await MakeActiveAsync(i);
             Status = $"{SliceLabel(i)} on, {hz / 1e6:0.000000} MHz.";
         });
