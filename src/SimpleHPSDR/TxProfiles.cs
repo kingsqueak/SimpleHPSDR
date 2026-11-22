@@ -21,7 +21,8 @@ public sealed record TxAudioProfile(
     int? ReleaseDelayMs = null,   // null in profiles saved before it existed: leave as is
     ParametricEqSettings? ParametricEq = null, // null: the graphic EQ
     bool? TxFilterFollowsRx = null,            // null in older profiles: leave as is
-    SimpleExpanderConfig? SimpleExpander = null) // null in older profiles: leave as is
+    SimpleExpanderConfig? SimpleExpander = null, // null in older profiles: leave as is
+    SimpleStudioConfig? SimpleStudio = null)     // null in older profiles: leave the chain as is
 {
     public const string DefaultName = "Default";
 

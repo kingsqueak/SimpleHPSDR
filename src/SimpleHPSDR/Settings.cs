@@ -132,6 +132,11 @@ public sealed class Settings
     /// <summary>Mini window position; null until it has been used.</summary>
     public int? MiniX { get; set; }
     public int? MiniY { get; set; }
+    /// <summary>SimpleStudio window size and position; null until it has been closed once.</summary>
+    public double? StudioWidth { get; set; }
+    public double? StudioHeight { get; set; }
+    public int? StudioX { get; set; }
+    public int? StudioY { get; set; }
     /// <summary>VOX: mic level that keys, and how long it holds after you stop.</summary>
     public double VoxThresholdDb { get; set; } = -30;
     public double VoxDelayMs { get; set; } = TimingDefaults.VoxDelayMs;

@@ -96,8 +96,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     private static readonly string[] EditableBands =
         ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"];
     private static readonly TimeSpan ApplyDelay = TimeSpan.FromMilliseconds(250);
+    // SimpleStudio edits are heard live (with Mon), so they go sooner; a
+    // slider drag still becomes one call per pause.
+    private static readonly TimeSpan StudioApplyDelay = TimeSpan.FromMilliseconds(60);
 
-    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas, Tci, Cat, Serial, Amp, Calibration, Filters, Station, Transverter, Diversity }
+    private enum Group { Pa, Audio, PureSignal, TxAudio, Antennas, Tci, Cat, Serial, Amp, Calibration, Filters, Station, Transverter, Diversity, SimpleStudio }
 
     private static readonly Dictionary<string, Group> GroupOf = new()
     {
@@ -181,7 +184,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     public ObservableCollection<PaBandRow> PaBands { get; } = [];
     public event Action<int>? PaMaxPowerSaved;
 
-    public SettingsViewModel(Func<StationClient> client) => _clientOf = client;
+    public SettingsViewModel(Func<StationClient> client)
+    {
+        _clientOf = client;
+        Studio = new SimpleStudioViewModel { FetchMeters = () => _client.GetSimpleStudioMetersAsync() };
+        Studio.Changed += () => { if (!_populating) Schedule(Group.SimpleStudio); };
+    }
 
     public async Task LoadAsync()
     {
@@ -299,7 +307,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private async Task ApplyLaterAsync(Group group, CancellationToken ct)
     {
-        try { await Task.Delay(ApplyDelay, ct); }
+        try { await Task.Delay(group == Group.SimpleStudio ? StudioApplyDelay : ApplyDelay, ct); }
         catch (OperationCanceledException) { return; }
         await ApplyAsync(group);
         if (_pending.TryGetValue(group, out var current) && current.Token == ct) _pending.Remove(group);
@@ -327,6 +335,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 case Group.Station: await ApplyStationAsync(); break;
                 case Group.Transverter: await ApplyTransverterAsync(); break;
                 case Group.Diversity: await ApplyDiversityAsync(); break;
+                case Group.SimpleStudio: await ApplySimpleStudioAsync(); break;
             }
             Status = "Applied.";
         }

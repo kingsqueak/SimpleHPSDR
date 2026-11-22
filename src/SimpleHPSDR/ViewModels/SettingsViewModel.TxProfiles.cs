@@ -55,6 +55,7 @@ public sealed partial class SettingsViewModel
             return;
         }
         if (_pending.Remove(Group.TxAudio, out var cts)) cts.Cancel();
+        if (_pending.Remove(Group.SimpleStudio, out var studioCts)) studioCts.Cancel();
         await _applyGate.WaitAsync();
         try
         {
@@ -75,6 +76,9 @@ public sealed partial class SettingsViewModel
             if (p.SimpleExpander is { } expander)
                 await _client.SetSimpleExpanderAsync(expander);
             await _client.SetPhaseRotatorAsync(p.PhaseRotator);
+            // Older profiles have no chain: it stays as it is. Loading never opens its window.
+            if (p.SimpleStudio is { } studio && HasSimpleStudio)
+                await _client.SetSimpleStudioAsync(studio);
             if (p.ReleaseDelayMs is int tail)
                 await _client.SetTxTailDelayAsync(tail);
 
@@ -135,7 +139,8 @@ public sealed partial class SettingsViewModel
             (int)Math.Round(TxLowCutHz), (int)Math.Round(TxHighCutHz),
             BuildLeveling(was), Math.Round(LevelerMaxGainDb, 1), BuildEq(),
             BuildCfc(was), BuildDexp(was), BuildPhaseRotator(was), (int)Math.Round(ReleaseDelayMs),
-            ParametricEqOn ? SnapshotParametric() : null, TxFilterFollowsRx, BuildSimpleExpander(was));
+            ParametricEqOn ? SnapshotParametric() : null, TxFilterFollowsRx, BuildSimpleExpander(was),
+            HasSimpleStudio ? Studio.ToConfig() : null);
     }
 
     [RelayCommand]

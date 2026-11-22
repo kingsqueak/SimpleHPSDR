@@ -80,7 +80,8 @@ Inside the flyouts every slider, check box and drop-down is 20-32 px tall.
 
 `Width="1040"` is wider than the 1024 screen. At 1024 the tab strip wraps to
 two rows (about 70 px), and the pages scroll. Pages are long (the Station page
-is about 1,040 px of content, TX Audio about 820), so on a touch screen the
+is about 1,040 px of content; TX Audio, with every section open since 0.17.0,
+is about 2,300), so on a touch screen the
 user scrolls a lot, which works (Avalonia's scroll areas pan with a finger).
 
 ![Settings, TX Audio at 1024×535](touch-plan/settings-1024x535-tab05-TXAudio.png)

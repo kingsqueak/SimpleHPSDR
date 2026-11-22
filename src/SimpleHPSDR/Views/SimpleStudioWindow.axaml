@@ -1,0 +1,377 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SimpleHPSDR.ViewModels"
+        xmlns:c="using:SimpleHPSDR.Controls"
+        Icon="avares://SimpleHPSDR/Assets/icon.png"
+        x:Class="SimpleHPSDR.Views.SimpleStudioWindow"
+        x:DataType="vm:SimpleStudioViewModel"
+        Title="SimpleStudio" Width="1120" Height="760" MinWidth="880" MinHeight="640"
+        WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <ControlTheme x:Key="StudioMenuItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:Choice">
+      <Setter Property="Header" Value="{Binding Label}" />
+      <Setter Property="Command" Value="{Binding Select}" />
+    </ControlTheme>
+
+    <!-- One parameter: label, slider, number and unit; a tick box for an
+         on/off one; a list for a choice. -->
+    <DataTemplate x:Key="ParamRow" x:DataType="vm:StudioParamRow">
+      <Grid ColumnDefinitions="150,*,130,44" ColumnSpacing="10" MinHeight="38" MaxWidth="780" HorizontalAlignment="Stretch">
+        <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsToggle}" />
+        <Slider Grid.Column="1" Minimum="{Binding SliderMin}" Maximum="{Binding SliderMax}" Value="{Binding SliderValue}"
+                IsVisible="{Binding IsSlider}" VerticalAlignment="Center" MinWidth="100"
+                ToolTip.Tip="Drag, or use the mouse wheel. Double-click to go back to the default." />
+        <NumericUpDown Grid.Column="2" Value="{Binding Value}" Minimum="{Binding Min}" Maximum="{Binding Max}"
+                       Increment="{Binding Step}" FormatString="{Binding Format}" IsVisible="{Binding IsSlider}"
+                       VerticalAlignment="Center" />
+        <TextBlock Grid.Column="3" Text="{Binding UnitText}" Classes="label" FontSize="12" IsVisible="{Binding IsSlider}" />
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Options}" SelectedIndex="{Binding ChoiceIndex}"
+                  IsVisible="{Binding IsChoice}" MinWidth="160" VerticalAlignment="Center" />
+        <CheckBox Grid.ColumnSpan="4" Content="{Binding Label}" IsChecked="{Binding IsOn}" IsVisible="{Binding IsToggle}" />
+      </Grid>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Window.Styles>
+    <Style Selector="Border.tile">
+      <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="6,4,4,2" />
+      <Setter Property="Width" Value="136" />
+      <Setter Property="Height" Value="70" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.tile:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ControlHover}" />
+    </Style>
+    <Style Selector="Border.tile.selected">
+      <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
+    </Style>
+    <Style Selector="Border.tile.bypassed">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
+    <Style Selector="Border.chip">
+      <Setter Property="Background" Value="{DynamicResource ControlBg}" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.chip > TextBlock">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    </Style>
+    <Style Selector="TextBlock.arrow">
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="Margin" Value="4,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="LetterSpacing" Value="0.5" />
+    </Style>
+    <Style Selector="Button.tilebtn">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="Button.tilebtn:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBlock.cell">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Padding" Value="0,8,0,0" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.scale">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*" Margin="16" RowSpacing="10">
+    <!-- Header -->
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+      <Button Classes="flat" ToolTip.Tip="Replace the chain with a ready-made one">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="Presets" VerticalAlignment="Center" />
+          <TextBlock Text="▾" VerticalAlignment="Center" Foreground="{DynamicResource TextMuted}" />
+        </StackPanel>
+        <Button.Flyout>
+          <MenuFlyout ItemsSource="{Binding PresetChoices}" Placement="BottomEdgeAlignedLeft"
+                      ItemContainerTheme="{StaticResource StudioMenuItem}" />
+        </Button.Flyout>
+      </Button>
+      <TextBlock Grid.Column="1" Classes="label" FontSize="12" TextWrapping="Wrap"
+                 Text="Effects run left to right, before the mic expander and the rest of TX Audio. Turn on Mon to hear the result without transmitting." />
+    </Grid>
+
+    <!-- The chain, in signal order -->
+    <Border Grid.Row="1" Classes="panel" Padding="10">
+      <ItemsControl ItemsSource="{Binding Strip}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.DataTemplates>
+          <DataTemplate DataType="{x:Type vm:StudioStripMic}" x:DataType="vm:StudioStripMic">
+            <StackPanel Orientation="Horizontal" Height="76">
+              <Border Classes="chip"><TextBlock Text="MIC" /></Border>
+              <TextBlock Classes="arrow" Text="→" />
+            </StackPanel>
+          </DataTemplate>
+          <DataTemplate DataType="{x:Type vm:StudioEffectViewModel}" x:DataType="vm:StudioEffectViewModel">
+            <StackPanel Orientation="Horizontal" Height="76">
+              <Border Classes="tile" Classes.selected="{Binding IsSelected}" Classes.bypassed="{Binding !Enabled}"
+                      PointerPressed="OnTilePressed" ToolTip.Tip="Click to show its controls below">
+                <Grid RowDefinitions="*,Auto">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="2">
+                    <CheckBox IsChecked="{Binding Enabled}" MinWidth="0" MinHeight="0" Padding="0" VerticalAlignment="Top"
+                              ToolTip.Tip="On, or bypassed (kept in the chain but doing nothing)" />
+                    <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="12" TextWrapping="Wrap"
+                               MaxLines="2" TextTrimming="CharacterEllipsis" VerticalAlignment="Top" Margin="0,6,0,0" />
+                  </Grid>
+                  <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+                    <c:StudioMeterBar Kind="Reduction" Horizontal="True" Height="4" VerticalAlignment="Center"
+                                      Value="{Binding ReductionDb}" Margin="2,0,0,0"
+                                      Scale="{Binding ReductionScaleDb}" IsVisible="{Binding HasReduction}"
+                                      ToolTip.Tip="How much it is turning the sound down now" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="0">
+                      <Button Classes="tilebtn" Content="◀" Command="{Binding MoveLeftCommand}" IsEnabled="{Binding CanMoveLeft}"
+                              ToolTip.Tip="Move one place earlier" />
+                      <Button Classes="tilebtn" Content="▶" Command="{Binding MoveRightCommand}" IsEnabled="{Binding CanMoveRight}"
+                              ToolTip.Tip="Move one place later" />
+                      <Button Classes="tilebtn" Content="✕" Command="{Binding RemoveCommand}"
+                              ToolTip.Tip="Remove from the chain" />
+                    </StackPanel>
+                  </Grid>
+                </Grid>
+              </Border>
+              <TextBlock Classes="arrow" Text="→" />
+            </StackPanel>
+          </DataTemplate>
+          <DataTemplate DataType="{x:Type vm:StudioStripAdd}" x:DataType="vm:StudioStripAdd">
+            <StackPanel Orientation="Horizontal" Height="76">
+              <Button Classes="flat" Content="+ Add effect" IsEnabled="{Binding Owner.CanAdd}" VerticalAlignment="Center"
+                      ToolTip.Tip="{Binding Owner.AddTip}" ToolTip.ShowOnDisabled="True">
+                <Button.Flyout>
+                  <MenuFlyout ItemsSource="{Binding Owner.AddChoices}" Placement="BottomEdgeAlignedLeft"
+                              ItemContainerTheme="{StaticResource StudioMenuItem}" />
+                </Button.Flyout>
+              </Button>
+              <TextBlock Classes="arrow" Text="→" />
+            </StackPanel>
+          </DataTemplate>
+          <DataTemplate DataType="{x:Type vm:StudioStripTx}" x:DataType="vm:StudioStripTx">
+            <StackPanel Orientation="Horizontal" Height="76">
+              <Border Classes="chip"><TextBlock Text="TX AUDIO" /></Border>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.DataTemplates>
+      </ItemsControl>
+    </Border>
+
+    <!-- The selected effect, and its meters -->
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+      <Border Classes="panel" Padding="16,12">
+        <Panel>
+          <TextBlock IsVisible="{Binding IsEmpty}" Classes="label" FontSize="14" TextWrapping="Wrap"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                     Text="No effects yet. Add one with + Add effect, or pick a preset." />
+          <ScrollViewer IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
+            <ContentControl Content="{Binding Selected}">
+              <ContentControl.ContentTemplate>
+                <DataTemplate x:DataType="vm:StudioEffectViewModel">
+                  <StackPanel Spacing="12" Margin="0,0,14,8">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                      <TextBlock Text="{Binding Label}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      <CheckBox Content="On" IsChecked="{Binding Enabled}" VerticalAlignment="Center"
+                                ToolTip.Tip="Off keeps it in the chain but lets the sound through untouched" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" IsVisible="{Binding IsCompressor}">
+                      <Button Classes="seg" Classes.lit="{Binding IsOneKnob}" Content="One knob"
+                              Command="{Binding UseOneKnobCommand}"
+                              ToolTip.Tip="One Amount control sets everything for speech" />
+                      <Button Classes="seg" Classes.lit="{Binding IsFullControls}" Content="Full controls"
+                              Command="{Binding UseFullControlsCommand}"
+                              ToolTip.Tip="Threshold, ratio, timing and makeup gain, set by hand" />
+                    </StackPanel>
+
+                    <!-- Parametric EQ: the curve, then a column per band -->
+                    <StackPanel Spacing="10" IsVisible="{Binding IsEq}">
+                      <c:StudioEqCurve Height="200" CurveDb="{Binding CurveDb}" Markers="{Binding Markers}" Bands="{Binding EqBands}"
+                                       ToolTip.Tip="Drag a numbered point for frequency and gain. Wheel over it for Q. Double-click to put its gain back to 0." />
+                      <Grid ColumnDefinitions="110,*" ColumnSpacing="6">
+                        <StackPanel Spacing="4">
+                          <TextBlock Classes="cell" Text="" Height="20" />
+                          <TextBlock Classes="cell" Text="On" Height="32" />
+                          <TextBlock Classes="cell" Text="Type" Height="32" />
+                          <TextBlock Classes="cell" Text="Frequency (Hz)" Height="32" />
+                          <TextBlock Classes="cell" Text="Gain (dB)" Height="32" />
+                          <TextBlock Classes="cell" Text="Q (width)" Height="32" />
+                        </StackPanel>
+                        <ItemsControl Grid.Column="1" ItemsSource="{Binding EqBands}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:StudioEqBandColumn">
+                              <StackPanel Spacing="4" Margin="3,0">
+                                <TextBlock Text="{Binding Title}" Classes="heading" Height="20" HorizontalAlignment="Center" />
+                                <CheckBox IsChecked="{Binding On.IsOn}" Height="32" HorizontalAlignment="Center" MinWidth="0"
+                                          ToolTip.Tip="This band on or off" />
+                                <ComboBox ItemsSource="{Binding Type.Options}" SelectedIndex="{Binding Type.ChoiceIndex}"
+                                          Height="32" HorizontalAlignment="Stretch" MinWidth="0" FontSize="12" />
+                                <NumericUpDown Value="{Binding Freq.Value}" Minimum="{Binding Freq.Min}" Maximum="{Binding Freq.Max}"
+                                               Increment="{Binding Freq.Step}" FormatString="{Binding Freq.Format}" Height="32"
+                                               ShowButtonSpinner="False" FontSize="12" ToolTip.Tip="Type a frequency, or use the up and down keys" />
+                                <NumericUpDown Value="{Binding Gain.Value}" Minimum="{Binding Gain.Min}" Maximum="{Binding Gain.Max}"
+                                               Increment="{Binding Gain.Step}" FormatString="{Binding Gain.Format}" Height="32"
+                                               ShowButtonSpinner="False" FontSize="12" IsEnabled="{Binding HasGain}"
+                                               ToolTip.Tip="Boost or cut. The low and high cuts have none." ToolTip.ShowOnDisabled="True" />
+                                <NumericUpDown Value="{Binding Q.Value}" Minimum="{Binding Q.Min}" Maximum="{Binding Q.Max}"
+                                               Increment="{Binding Q.Step}" FormatString="{Binding Q.Format}" Height="32"
+                                               ShowButtonSpinner="False" FontSize="12"
+                                               ToolTip.Tip="How wide: a small Q is broad, a large one narrow" />
+                              </StackPanel>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </Grid>
+                    </StackPanel>
+
+                    <!-- Grouped rows (every effect but the EQ) -->
+                    <ItemsControl ItemsSource="{Binding Groups}" IsVisible="{Binding HasGroups}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:StudioParamGroup">
+                          <StackPanel Spacing="2" Margin="0,0,0,10" IsVisible="{Binding IsVisible}">
+                            <TextBlock Text="{Binding Title}" Classes="heading" Margin="0,0,0,2" />
+                            <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource ParamRow}" />
+                            <TextBlock Text="{Binding Note}" IsVisible="{Binding HasNote}" Classes="label" FontSize="12"
+                                       TextWrapping="Wrap" Margin="160,0,0,0" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Multiband compressor: a column per band -->
+                    <Grid ColumnDefinitions="110,*" ColumnSpacing="6" IsVisible="{Binding IsMultiband}">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="cell" Text="" Height="20" />
+                        <TextBlock Classes="cell" Text="On" Height="32" />
+                        <TextBlock Classes="cell" Text="Solo" Height="32" />
+                        <TextBlock Classes="cell" Text="Threshold (dB)" Height="32" />
+                        <TextBlock Classes="cell" Text="Ratio (: 1)" Height="32" />
+                        <TextBlock Classes="cell" Text="Attack (ms)" Height="32" />
+                        <TextBlock Classes="cell" Text="Release (ms)" Height="32" />
+                        <TextBlock Classes="cell" Text="Makeup (dB)" Height="32" />
+                        <TextBlock Classes="cell" Text="Reduction" Height="32" />
+                      </StackPanel>
+                      <ItemsControl Grid.Column="1" ItemsSource="{Binding MbBands}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:StudioMbBandColumn">
+                            <StackPanel Spacing="4" Margin="4,0">
+                              <TextBlock Text="{Binding Title}" Classes="heading" Height="20" HorizontalAlignment="Center" />
+                              <CheckBox IsChecked="{Binding On.IsOn}" Height="32" HorizontalAlignment="Center" MinWidth="0"
+                                        ToolTip.Tip="This band compressed, or passed untouched" />
+                              <CheckBox IsChecked="{Binding Solo.IsOn}" Height="32" HorizontalAlignment="Center" MinWidth="0"
+                                        ToolTip.Tip="Hear only this band (and any other soloed ones)" />
+                              <NumericUpDown Value="{Binding Threshold.Value}" Minimum="{Binding Threshold.Min}" Maximum="{Binding Threshold.Max}"
+                                             Increment="{Binding Threshold.Step}" FormatString="{Binding Threshold.Format}" Height="32" FontSize="12" />
+                              <NumericUpDown Value="{Binding Ratio.Value}" Minimum="{Binding Ratio.Min}" Maximum="{Binding Ratio.Max}"
+                                             Increment="{Binding Ratio.Step}" FormatString="{Binding Ratio.Format}" Height="32" FontSize="12" />
+                              <NumericUpDown Value="{Binding Attack.Value}" Minimum="{Binding Attack.Min}" Maximum="{Binding Attack.Max}"
+                                             Increment="{Binding Attack.Step}" FormatString="{Binding Attack.Format}" Height="32" FontSize="12" />
+                              <NumericUpDown Value="{Binding Release.Value}" Minimum="{Binding Release.Min}" Maximum="{Binding Release.Max}"
+                                             Increment="{Binding Release.Step}" FormatString="{Binding Release.Format}" Height="32" FontSize="12" />
+                              <NumericUpDown Value="{Binding Makeup.Value}" Minimum="{Binding Makeup.Min}" Maximum="{Binding Makeup.Max}"
+                                             Increment="{Binding Makeup.Step}" FormatString="{Binding Makeup.Format}" Height="32" FontSize="12" />
+                              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" Height="32">
+                                <c:StudioMeterBar Kind="Reduction" Horizontal="True" Height="6" Value="{Binding ReductionDb}" Scale="24"
+                                                  VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding ReductionText}" Classes="cell" FontSize="11" />
+                              </Grid>
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Grid>
+                  </StackPanel>
+                </DataTemplate>
+              </ContentControl.ContentTemplate>
+            </ContentControl>
+          </ScrollViewer>
+        </Panel>
+      </Border>
+
+      <!-- Meter bridge for the selected effect -->
+      <Border Grid.Column="1" Classes="panel" Width="232" Padding="12,10" IsVisible="{Binding HasSelection}">
+        <Grid RowDefinitions="Auto,Auto,*">
+          <TextBlock Text="METERS" Classes="heading" />
+          <ContentControl Grid.Row="1" Content="{Binding Selected}" Margin="0,10,0,0">
+            <ContentControl.ContentTemplate>
+              <DataTemplate x:DataType="vm:StudioEffectViewModel">
+                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                  <!-- dB scale beside the level bars (240 px = 60 dB) -->
+                  <Grid Width="22" Height="252" Margin="0,20,0,0" VerticalAlignment="Top">
+                    <TextBlock Classes="scale" Text="0" Margin="0,-6,0,0" />
+                    <TextBlock Classes="scale" Text="-10" Margin="0,34,0,0" />
+                    <TextBlock Classes="scale" Text="-20" Margin="0,74,0,0" />
+                    <TextBlock Classes="scale" Text="-30" Margin="0,114,0,0" />
+                    <TextBlock Classes="scale" Text="-40" Margin="0,154,0,0" />
+                    <TextBlock Classes="scale" Text="-50" Margin="0,194,0,0" />
+                    <TextBlock Classes="scale" Text="-60" Margin="0,234,0,0" />
+                  </Grid>
+                  <StackPanel Spacing="4" Width="50">
+                    <TextBlock Text="IN" Classes="heading" HorizontalAlignment="Center" Height="16" />
+                    <c:StudioMeterBar Kind="Level" Width="16" Height="240" Peak="{Binding InPeakDb}" Value="{Binding InRmsDb}"
+                                      Threshold="{Binding ThresholdLineDb}" ShowScale="True"
+                                      ToolTip.Tip="Level going in: light is the peak, solid the average (RMS). The blue line is the threshold." />
+                    <TextBlock Text="{Binding InText}" FontSize="11" TextAlignment="Center" HorizontalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Spacing="4" Width="50">
+                    <TextBlock Text="OUT" Classes="heading" HorizontalAlignment="Center" Height="16" />
+                    <c:StudioMeterBar Kind="Level" Width="16" Height="240" Peak="{Binding OutPeakDb}" Value="{Binding OutRmsDb}"
+                                      ShowScale="True" ToolTip.Tip="Level coming out" />
+                    <TextBlock Text="{Binding OutText}" FontSize="11" TextAlignment="Center" HorizontalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Spacing="4" Width="50" IsVisible="{Binding HasReduction}">
+                    <TextBlock Text="GR" Classes="heading" HorizontalAlignment="Center" Height="16" />
+                    <c:StudioMeterBar Kind="Reduction" Width="16" Height="240" Value="{Binding ReductionDb}"
+                                      Scale="{Binding ReductionScaleDb}" ShowScale="True"
+                                      ToolTip.Tip="Gain reduction: how far it is turning the sound down" />
+                    <TextBlock Text="{Binding ReductionText}" FontSize="11" TextAlignment="Center" HorizontalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Spacing="4" Width="64" IsVisible="{Binding IsLeveler}">
+                    <TextBlock Text="GAIN" Classes="heading" HorizontalAlignment="Center" Height="16" />
+                    <c:StudioMeterBar Kind="Bipolar" Width="16" Height="240" Value="{Binding LevelerGainDb}" Scale="24"
+                                      ToolTip.Tip="Gain now: up is boost, down is cut (±24 dB). Below, the loudness it measures." />
+                    <TextBlock Text="{Binding LevelerText}" FontSize="11" TextAlignment="Center" HorizontalAlignment="Center" />
+                  </StackPanel>
+                </StackPanel>
+              </DataTemplate>
+            </ContentControl.ContentTemplate>
+          </ContentControl>
+          <TextBlock Grid.Row="2" Classes="label" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Top" Margin="0,12,0,0"
+                     TextAlignment="Center" IsVisible="{Binding !MetersActive}"
+                     Text="No transmit audio (key up, or turn on Mon)" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>

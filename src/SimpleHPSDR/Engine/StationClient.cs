@@ -216,6 +216,14 @@ public sealed class StationClient : IDisposable
     public async Task<SimpleExpanderMeterDto> GetSimpleExpanderMeterAsync() =>
         await _http.GetFromJsonAsync<SimpleExpanderMeterDto>("api/tx/simple-expander/meter", Json)
         ?? SimpleExpanderMeterDto.Inactive;
+    /// <summary>SimpleStudio: the whole chain each time; the engine returns its
+    /// state with the chain as it made it valid. Parameter names go as they
+    /// are (the Web defaults leave dictionary keys alone).</summary>
+    public Task<StateDto> SetSimpleStudioAsync(SimpleStudioConfig cfg) =>
+        PostForAsync<StateDto>("api/tx/simple-studio", new SimpleStudioSetRequest(cfg));
+    public async Task<SimpleStudioMetersDto> GetSimpleStudioMetersAsync() =>
+        await _http.GetFromJsonAsync<SimpleStudioMetersDto>("api/tx/simple-studio/meters", Json)
+        ?? SimpleStudioMetersDto.Inactive;
     public Task SetPhaseRotatorAsync(TxPhaseRotatorConfig cfg) =>
         PostAsync("api/tx/phase-rotator", new TxPhaseRotatorSetRequest(cfg));
 

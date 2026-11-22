@@ -420,7 +420,7 @@ Config > Amp has a transmit timeout that drops transmit if you stay keyed too lo
 """),
 
         ("Transmit audio", """
-Config > TX Audio holds everything that shapes your voice, in the order it's processed. All of it is optional.
+Config > TX Audio holds everything that shapes your voice, in the order it's processed. All of it is optional. Every section is open on the page: scroll down to follow your audio from the microphone to the transmitter.
 
 ## Profiles
 Save your settings under a name and load them later: one for DX, one for ragchewing. Default is built in and can't be overwritten. A profile holds only what's on this TX Audio page, and it applies in every mode, so make a separate profile if you want different settings for AM, say. CW and FreeDV don't use the TX filter. PureSignal settings aren't part of a profile, so the internal or external coupler stays as set in Config on every band and mode.
@@ -431,8 +431,29 @@ Export… saves the chosen profile to a .shtx file you can send to another Simpl
 ## TX filter
 Sets how wide your signal is. "TX filter follows the RX filter" ties it to your receive filter. In AM, SAM and DSB the receive filter covers both sidebands, so your audio goes up to half its width: a 10 kHz AM filter sends audio up to 5 kHz. In AM and SAM the low cut still applies either way, as the modulator's high-pass: to change it, untick follows, set the low cut and save your profile. Otherwise set both by hand: the high cut goes up to 10 kHz (8 kHz of audio in FM). 2.8 kHz is a usual SSB width; wider is for AM and wide-band SSB, where the band and your licence allow it.
 
+## SimpleStudio
+A set of studio effects for your microphone that you put in any order you like. It works on your voice first, before everything else on this page. Tick SimpleStudio at the top of the page to switch it on and open its window; untick it and your audio goes straight through, as if it weren't there. Show brings the window back if you closed it.
+
+Across the top of the window is the chain: your mic on the left, the rest of TX Audio on the right, and your effects in between, in the order they work. "+ Add effect" puts a new one at the end. On each effect, the tick box switches just that one in or out (it fades, so it never clicks), the arrows move it earlier or later, and ✕ removes it. Click an effect to see all its controls below. You can have up to eight, and the same effect twice.
+
+The effects:
+- Parametric EQ: six bands, each a bell, a shelf or a cut. The curve shows the result, and its numbered points are handles: drag one for that band's frequency and gain, turn the wheel over it for Q (width), double-click it to put its gain back to 0. The grid below shows the same values to type in.
+- Compressor: evens out loud and quiet. One knob does it all; Full controls gives threshold, ratio, attack, release and makeup gain.
+- De-esser: softens harsh "s" sounds. Listen plays only what it is watching, to find the frequency.
+- Multiband compressor: four compressors, one for each part of the voice, with crossovers you set.
+- Noise gate: shuts off the room between words.
+- Expander: turns the room down between words more gently than a gate.
+- Broadcast leveler: slowly rides your level to a target loudness, and holds still in silence.
+- Safety limiter: nothing leaves above its ceiling. A good last effect.
+- Reverb: a room around your voice. A little goes a long way on the air.
+- Gain: a plain level trim.
+
+The meters beside the controls show the level going into and out of the chosen effect, and how much it is turning down. They move only while audio is flowing: turn on Mon to hear and see your chain without transmitting.
+
+SimpleStudio sits before the mic gain, so its meters read your microphone as it arrives. Everything after it (expander, equalizer, leveler, CFC, speech processor) still works as before; if SimpleStudio does a job, turn the same job off further down, or the two will add up. The Presets menu has ready-made voice chains to start from. The chain is saved in your TX profile. Digital modes, CW and tones bypass it.
+
 ## Mic expander
-Turns the room noise down between your words, before anything else works on your voice. Set it up first: the stages after it add gain, and would bring the noise up with the speech.
+Turns the room noise down between your words, before the rest of TX Audio works on your voice. Set it up first: the stages after it add gain, and would bring the noise up with the speech.
 
 There are two types, and only one runs at a time:
 - SimpleExpander turns quiet sound down gradually, more the quieter it is. Threshold is the level below which it starts; Ratio is how steeply it turns down (2 is gentle, 10 acts like a gate); Most reduction is the furthest it will ever go. Attack is how fast it opens when you speak, Hold how long it waits after you stop, Release how slowly it closes. It adds no delay.

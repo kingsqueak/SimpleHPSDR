@@ -131,5 +131,9 @@
     "attackMs": 3,
     "holdMs": 225,
     "releaseMs": 225
+  },
+  "simpleStudio": {
+    "enabled": false,
+    "effects": []
   }
 }

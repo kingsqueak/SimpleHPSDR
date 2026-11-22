@@ -1,6 +1,7 @@
 using SimpleHPSDR.Engine;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using SimpleHPSDR.Dsp;
 using SimpleHPSDR.Contracts;
 
@@ -147,12 +148,61 @@ public sealed partial class SettingsViewModel
     [ObservableProperty] private double _sxAttackMs;
     [ObservableProperty] private double _sxHoldMs;
     [ObservableProperty] private double _sxReleaseMs;
-    // Live reading while the section is open (the TX chain only runs while
-    // transmitting or monitoring).
-    [ObservableProperty] private bool _expanderSectionOpen;
+    // Live reading while the TX Audio page is showing (set by the window; the
+    // TX chain only runs while transmitting or monitoring).
+    [ObservableProperty] private bool _txAudioPageShown;
     [ObservableProperty] private double _expanderMeterDb = -80;
     [ObservableProperty] private string _expanderMeterText = "";
     private bool _expanderMeterPolling;
+
+    // SimpleStudio: the operator's chain of mic effects, first on the TX mic
+    // block. Its own window edits the chain; the tick box here turns the whole
+    // chain on or off (and opens or closes the window). False HasSimpleStudio:
+    // an engine from before it.
+    public SimpleStudioViewModel Studio { get; }
+    [ObservableProperty] private bool _hasSimpleStudio;
+    [ObservableProperty] private bool _simpleStudioOn;
+    public string SimpleStudioTip => HasSimpleStudio
+        ? "A chain of mic effects you arrange (EQ, compressor, de-esser and more). Ticking it opens its window."
+        : "This engine has no SimpleStudio. Update SimpleHPSDR to use it.";
+    public string SimpleStudioShowTip => HasSimpleStudio
+        ? "Open the SimpleStudio window (tick SimpleStudio first)"
+        : "This engine has no SimpleStudio. Update SimpleHPSDR to use it.";
+    partial void OnHasSimpleStudioChanged(bool value)
+    {
+        OnPropertyChanged(nameof(SimpleStudioTip));
+        OnPropertyChanged(nameof(SimpleStudioShowTip));
+    }
+
+    /// <summary>For the window: true to show (or raise) the SimpleStudio
+    /// window, false to close it. Only a tick or Show opens it, never a load.</summary>
+    public event Action<bool>? SimpleStudioWindow;
+
+    partial void OnSimpleStudioOnChanged(bool value)
+    {
+        if (!_populating)
+        {
+            Studio.Enabled = value;   // sent through Studio.Changed
+            if (value) SimpleStudioWindow?.Invoke(true);
+        }
+        if (!value) SimpleStudioWindow?.Invoke(false);
+    }
+
+    [RelayCommand]
+    private void ShowSimpleStudio()
+    {
+        if (HasSimpleStudio && SimpleStudioOn) SimpleStudioWindow?.Invoke(true);
+    }
+
+    private async Task ApplySimpleStudioAsync()
+    {
+        if (!HasSimpleStudio || _txLoaded is not { } was) return;
+        var cfg = Studio.ToConfig();
+        if (SimpleStudioViewModel.Same(cfg, was.SimpleStudio)) return;
+        var s = await _client.SetSimpleStudioAsync(cfg);
+        if (_txLoaded is { } now) _txLoaded = now with { SimpleStudio = s.SimpleStudio ?? cfg };
+        TxProfileModified = true;
+    }
 
     // Mon preview: silence the mic after 1.5 s of quiet (the engine's old
     // fixed behaviour, now a choice). Null from an engine without the choice.
@@ -185,7 +235,7 @@ public sealed partial class SettingsViewModel
 
     public async Task RefreshExpanderMeterAsync()
     {
-        if (!ExpanderSectionOpen || !HasDexp || _expanderMeterPolling) return;
+        if (!TxAudioPageShown || !HasDexp || _expanderMeterPolling) return;
         _expanderMeterPolling = true;
         try
         {
@@ -283,6 +333,10 @@ public sealed partial class SettingsViewModel
             DexpHoldMs = dx.HoldMs;
             DexpReleaseMs = dx.ReleaseMs;
         }
+
+        HasSimpleStudio = s.SimpleStudio is not null;
+        Studio.Load(s.SimpleStudio);
+        SimpleStudioOn = HasSimpleStudio && Studio.Enabled;
 
         var pr = s.TxPhaseRotator ?? new TxPhaseRotatorConfig();
         PhrotEnabled = pr.Enabled;

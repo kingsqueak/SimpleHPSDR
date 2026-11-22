@@ -42,7 +42,7 @@ void Shot(Window w, string name)
 {
     Pump();
     var frame = w.CaptureRenderedFrame();
-    frame?.Save(Path.Combine(outDir, name + ".png"));
+    frame?.Save(Path.Combine(outDir, name + ".png"), new Avalonia.Media.Imaging.PngBitmapEncoderOptions());
     Audit(w, name);
 }
 
@@ -99,6 +99,15 @@ Window Make(Window w, double width, double height)
     w.MinWidth = 0; w.MinHeight = 0;
     w.Width = width; w.Height = height;
     return w;
+}
+
+// --studio: only the SimpleStudio window and the TX Audio page.
+if (args.Contains("--studio"))
+{
+    StudioShots();
+    File.WriteAllText(Path.Combine(outDir, "audit.md"), report.ToString());
+    Console.WriteLine("done");
+    return 0;
 }
 
 // ---- Main window ----
@@ -236,7 +245,7 @@ for (int i = 0; i < tabs.ItemCount; i++)
 svm.HasDexp = true;
 svm.HasSimpleExpander = true;
 svm.HasMonIdleSilence = true;
-svm.ExpanderSectionOpen = true;
+svm.TxAudioPageShown = true;
 svm.ExpanderMeterDb = -32;
 svm.ExpanderMeterText = "-32 dB, reduced by 0 dB";
 tabs.SelectedIndex = Enumerable.Range(0, tabs.ItemCount).First(i => (tabs.Items[i] as TabItem)?.Header?.ToString() == "TX Audio");
@@ -244,6 +253,8 @@ Make(sw, 1040, 1500);
 Shot(sw, "settings-txaudio-expander-simple");
 svm.ExpanderTypeIndex = SettingsViewModel.ExpanderTypeGate;
 Shot(sw, "settings-txaudio-expander-gate");
+
+StudioShots();
 
 // ---- Does Holding raise ContextRequested (long-press opens context menus)? ----
 var probe = new Button { Content = "probe" };
@@ -387,3 +398,122 @@ foreach (var w in new[] { 800.0, 1024, 1079, 1080, 1512, 1920 })
 File.WriteAllText(Path.Combine(outDir, "audit.md"), report.ToString());
 Console.WriteLine("done");
 return 0;
+
+// ---- SimpleStudio: its window with sample chains (no engine), and the TX Audio page ----
+void StudioShots()
+{
+    var app = SimpleHPSDR.Settings.Load();
+    var tx = new SettingsViewModel(() => null!) { AppSettings = app };
+    tx.Studio.FetchMeters = null;
+    tx.HasDexp = true;
+    tx.HasSimpleExpander = true;
+    tx.HasMonIdleSilence = true;
+    tx.HasCfc = true;
+    tx.HasSimpleStudio = true;
+    tx.SimpleStudioOn = true;   // before the window exists, so nothing opens
+    tx.ExpanderMeterDb = -32;
+    tx.ExpanderMeterText = "-32 dB, reduced by 0 dB";
+    tx.Loading = false;   // as after a load, so the page is not greyed
+    var txw = Make(new SettingsWindow { DataContext = tx }, 1040, 720);
+    txw.Show();
+    var txTabs = txw.GetVisualDescendants().OfType<TabControl>().First();
+    txTabs.SelectedIndex = Enumerable.Range(0, txTabs.ItemCount).First(i => (txTabs.Items[i] as TabItem)?.Header?.ToString() == "TX Audio");
+    Pump();
+    report.AppendLine($"PROBE TX Audio page shown flag: {tx.TxAudioPageShown}");
+    Shot(txw, "studio-txaudio-top");
+    var scroll = txw.GetVisualDescendants().OfType<ScrollViewer>().First(v => v.IsEffectivelyVisible && v.Extent.Height > 0);
+    double extent = scroll.Extent.Height, view = scroll.Viewport.Height;
+    report.AppendLine($"PROBE TX Audio page height {extent:0} (window shows {view:0})");
+    for (int part = 1; part * (view - 60) < extent - view + 60; part++)
+    {
+        scroll.Offset = new Vector(0, Math.Min(part * (view - 60), extent - view));
+        Shot(txw, $"studio-txaudio-part{part + 1}");
+    }
+    scroll.Offset = default;
+    Make(txw, 1040, extent + (720 - view) + 4);
+    Shot(txw, "studio-txaudio-full");
+    tx.HasSimpleStudio = false;
+    tx.SimpleStudioOn = false;
+    Make(txw, 1040, 720);
+    Shot(txw, "studio-txaudio-old-engine");
+    txw.Close();
+
+    var meter = (string id, double inPk, double inRms, double outPk, double outRms, double[] values) =>
+        new SimpleHPSDR.Contracts.StudioEffectMeterDto(id, inPk, inRms, outPk, outRms, values);
+    SimpleHPSDR.Contracts.StudioEffectInfo Info(string type) => SimpleHPSDR.Contracts.StudioCatalogue.Find(type)!;
+
+    // Closing a window clears its meters, so each shot gets its readings again.
+    var readings = new Dictionary<SimpleStudioViewModel, SimpleHPSDR.Contracts.SimpleStudioMetersDto>();
+    void StudioShot(SimpleStudioViewModel s, string name, double width = 1120, double height = 760)
+    {
+        var w = Make(new SimpleStudioWindow { DataContext = s }, width, height);
+        w.Show();
+        if (readings.TryGetValue(s, out var r)) s.ApplyMeters(r);
+        Shot(w, name);
+        w.Close();
+    }
+
+    // (a) empty
+    StudioShot(new SimpleStudioViewModel { Enabled = true }, "studio-a-empty");
+
+    // (b) five effects, the compressor in full controls, with readings
+    var b = new SimpleStudioViewModel { Enabled = true };
+    var eq = b.Add(Info("eq"), SimpleHPSDR.StudioPresets.Find("Radio voice")!.Effects[0].Params)!;
+    var ex = b.Add(Info("expander"))!;
+    var comp = b.Add(Info("compressor"), new Dictionary<string, double> { ["advanced"] = 1, ["threshold"] = -24, ["ratio"] = 4 })!;
+    var de = b.Add(Info("deesser"))!;
+    var lim = b.Add(Info("limiter"))!;
+    de.Enabled = false;
+    b.Select(comp);
+    readings[b] = (new SimpleHPSDR.Contracts.SimpleStudioMetersDto(true,
+    [
+        meter(eq.Id, -14, -24, -12, -22, []),
+        meter(ex.Id, -12, -22, -12, -23, [3]),
+        meter(comp.Id, -12, -23, -9, -16, [6.5, -24]),
+        meter(de.Id, -9, -16, -9, -16, [0]),
+        meter(lim.Id, -9, -16, -1.2, -14, [1.5]),
+    ]));
+    StudioShot(b, "studio-b-compressor-full");
+    comp.IsOneKnob = true;
+    StudioShot(b, "studio-b2-compressor-oneknob");
+
+    // (c) the EQ selected, curve not flat
+    b.Select(eq);
+    StudioShot(b, "studio-c-eq");
+
+    // (d) the multiband, with band readings
+    var d = new SimpleStudioViewModel { Enabled = true };
+    d.Add(Info("gate"));
+    var mb = d.Add(Info("multiband"))!;
+    readings[d] = (new SimpleHPSDR.Contracts.SimpleStudioMetersDto(true,
+        [meter(mb.Id, -10, -20, -8, -17, [2, 5.5, 3, 0.5, 40, 52, 45, 30])]));
+    StudioShot(d, "studio-d-multiband");
+
+    // (e) a full chain of eight (wrapping), the leveler selected, no audio
+    var e8 = new SimpleStudioViewModel { Enabled = true };
+    foreach (var t in new[] { "gate", "eq", "deesser", "compressor", "multiband", "leveler", "reverb", "limiter" })
+        e8.Add(Info(t));
+    e8.Select(e8.Effects[5]);
+    StudioShot(e8, "studio-e-eight-inactive");
+    readings[e8] = (new SimpleHPSDR.Contracts.SimpleStudioMetersDto(true,
+        [meter(e8.Effects[5].Id, -20, -28, -12, -19, [7.5, -24.3])]));
+    StudioShot(e8, "studio-e2-eight-leveler");
+    StudioShot(e8, "studio-e3-eight-at-minimum-size", 880, 640);
+
+    // (f) dark theme (the shots above are in the light one)
+    Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+    b.Select(comp);
+    comp.IsFullControls = true;
+    StudioShot(b, "studio-f-dark");
+    Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Default;
+
+    // Presets: each one loads
+    foreach (var p in SimpleHPSDR.StudioPresets.All)
+    {
+        b.ApplyPreset(p);
+        report.AppendLine($"PROBE preset {p.Name}: {string.Join(", ", b.Effects.Select(x => x.Type))}");
+    }
+    var json = System.Text.Json.JsonSerializer.Serialize(new SimpleHPSDR.Contracts.SimpleStudioSetRequest(b.ToConfig()),
+        new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+    report.AppendLine($"PROBE wire: {json[..Math.Min(json.Length, 300)]}");
+}

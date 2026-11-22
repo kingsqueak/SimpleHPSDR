@@ -56,6 +56,9 @@ Not affiliated with or endorsed by the Zeus SDR project.
   leveler, and preamp and attenuator steps with automatic attenuation.
 - **Transmit:** PureSignal with one-button calibration and an IMD readout on
   two-tone, CFC, leveler, EQ, phase rotator, monitor and TX audio profiles.
+  SimpleStudio adds a chain of studio mic effects in any order you like:
+  parametric EQ, compressor, multiband compressor, de-esser, gate, expander,
+  broadcast leveler, limiter and reverb.
 - **Recorder and voice keyer:** REC, beside TX, records what you hear or your
   microphone, plays it back on the speakers or on the air, and four voice keyer
   buttons (also on the touch layout) each send a recording.
@@ -91,6 +94,22 @@ Most controls have more behind a right-click. See **Help** in the menu.
 <img src="docs/mini.png" alt="The mini window" width="485">
 
 ## What's New
+
+### 0.17.0
+
+- **SimpleStudio, a chain of studio effects for your microphone** (Config > TX
+  Audio, tick SimpleStudio). Ten effects you put in any order: parametric EQ,
+  compressor, de-esser, multiband compressor, noise gate, expander, broadcast
+  leveler, safety limiter, reverb and gain; up to eight at once, and the same
+  one twice if you like. It works on your voice first, before the rest of TX
+  Audio. Its own window shows the chain from mic to transmitter across the
+  top and the chosen effect's controls and meters below, nothing folded away.
+  Each effect switches in and out without a click, and moving one does not
+  interrupt the audio. On the EQ, drag the numbered points on the curve.
+  Presets give ready-made voice chains, and the chain is saved in your TX
+  profile. Switched off, it costs nothing. The effects come from Patch Prime.
+- **TX Audio page no longer folds.** Every section is open on the page, in the
+  order your audio passes through them; scroll to follow it.
 
 ### 0.16.2
 

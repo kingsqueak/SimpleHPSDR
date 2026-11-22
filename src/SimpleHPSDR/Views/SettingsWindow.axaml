@@ -23,6 +23,15 @@
       <Setter Property="Padding" Value="8,4" />
       <Setter Property="MinHeight" Value="36" />
     </Style>
+    <!-- TX Audio: every section open, as a card with its heading -->
+    <Style Selector="Border.txsection">
+      <Setter Property="Padding" Value="14,10,14,12" />
+    </Style>
+    <Style Selector="TextBlock.txhead">
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,2" />
+    </Style>
   </Window.Styles>
   <Grid RowDefinitions="*,Auto" Margin="16">
     <TabControl IsEnabled="{Binding !Loading}">
@@ -151,7 +160,7 @@
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="TX Audio">
+      <TabItem Header="TX Audio" x:Name="TxAudioTab">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="0,12,0,0">
             <Border Classes="panel">
@@ -181,11 +190,22 @@
 
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
                        Text="Changes apply at once. To hear yourself without transmitting, turn on Mon in the main window." />
-            <CheckBox Content="Silence Mon when the mic is idle" IsChecked="{Binding MonIdleSilence}"
-                      IsVisible="{Binding HasMonIdleSilence}"
-                      ToolTip.Tip="Only for Mon while not transmitting: after 1.5 seconds of quiet the mic is cut to silence until you speak. Off, Mon plays what would go on the air, room noise included, which is what you need to set the mic expander." />
+            <WrapPanel Orientation="Horizontal">
+              <CheckBox Content="Silence Mon when the mic is idle" IsChecked="{Binding MonIdleSilence}"
+                        IsVisible="{Binding HasMonIdleSilence}" Margin="0,0,28,0"
+                        ToolTip.Tip="Only for Mon while not transmitting: after 1.5 seconds of quiet the mic is cut to silence until you speak. Off, Mon plays what would go on the air, room noise included, which is what you need to set the mic expander." />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <CheckBox Content="SimpleStudio" IsChecked="{Binding SimpleStudioOn}" IsEnabled="{Binding HasSimpleStudio}"
+                          ToolTip.Tip="{Binding SimpleStudioTip}" ToolTip.ShowOnDisabled="True" />
+                <Button Classes="flat" Content="Show" Command="{Binding ShowSimpleStudioCommand}"
+                        IsEnabled="{Binding SimpleStudioOn}" VerticalAlignment="Center"
+                        ToolTip.Tip="{Binding SimpleStudioShowTip}" ToolTip.ShowOnDisabled="True" />
+              </StackPanel>
+            </WrapPanel>
 
-            <Expander Header="PTT release delay" IsExpanded="True" HorizontalAlignment="Stretch">
+            <Border Classes="panel txsection">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="PTT release delay" />
               <StackPanel Spacing="6">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <NumericUpDown Value="{Binding ReleaseDelayMs}" Minimum="20" Maximum="1000" Increment="10"
@@ -196,9 +216,12 @@
                            Text="The radio stays on the air until your last words have gone out. This adds a little extra time after that." />
                 <TextBlock Text="{Binding TxDelayText}" FontSize="12" TextWrapping="Wrap" />
               </StackPanel>
-            </Expander>
+            </StackPanel>
+            </Border>
 
-            <Expander Header="TX filter" IsExpanded="True" HorizontalAlignment="Stretch">
+            <Border Classes="panel txsection">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="TX filter" />
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
                 <StackPanel Grid.ColumnSpan="2" Spacing="2">
                   <CheckBox Content="TX filter follows the RX filter"
@@ -220,13 +243,15 @@
                   <TextBlock Text="Hz" Classes="label" />
                 </StackPanel>
               </Grid>
-            </Expander>
+            </StackPanel>
+            </Border>
 
             <TextBlock TextWrapping="Wrap" Classes="label" FontSize="12"
-                       Text="The sections below are in the order your audio passes through them. (The ALC is the last stage; the TX filter sits after the CFC.)" />
+                       Text="The sections below are in the order your audio passes through them. (The ALC is the last stage; the TX filter sits after the CFC.)&#10;SimpleStudio, when on, runs first, before the mic expander." />
 
-            <Expander Header="Mic expander (noise reduction between words)" HorizontalAlignment="Stretch"
-                      IsVisible="{Binding HasDexp}" IsExpanded="{Binding ExpanderSectionOpen, Mode=TwoWay}">
+            <Border Classes="panel txsection" IsVisible="{Binding HasDexp}">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="Mic expander (noise reduction between words)" />
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
                   <CheckBox Content="Enabled" IsChecked="{Binding ExpanderEnabled}"
@@ -307,9 +332,12 @@
                   </StackPanel>
                 </Grid>
               </StackPanel>
-            </Expander>
+            </StackPanel>
+            </Border>
 
-            <Expander Header="Phase rotator" HorizontalAlignment="Stretch">
+            <Border Classes="panel txsection">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="Phase rotator" />
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
                 <CheckBox Content="Enabled" IsChecked="{Binding PhrotEnabled}"
                           ToolTip.Tip="Evens out the lopsided peaks of a voice so more average power fits under the same peak" />
@@ -323,9 +351,12 @@
                 <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding PhrotStages}" Minimum="1" Maximum="16" Increment="1"
                                FormatString="0" Width="140" HorizontalAlignment="Left" />
               </Grid>
-            </Expander>
+            </StackPanel>
+            </Border>
 
-            <Expander Header="Equalizer" HorizontalAlignment="Stretch">
+            <Border Classes="panel txsection">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="Equalizer" />
               <StackPanel Spacing="8">
                 <StackPanel Orientation="Horizontal" Spacing="16">
                   <CheckBox Content="Enabled" IsChecked="{Binding EqEnabled}" />
@@ -373,9 +404,12 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
               </StackPanel>
-            </Expander>
+            </StackPanel>
+            </Border>
 
-            <Expander Header="Leveler and ALC" HorizontalAlignment="Stretch">
+            <Border Classes="panel txsection">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="Leveler and ALC" />
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
                 <CheckBox Content="Leveler" IsChecked="{Binding LevelerEnabled}"
                           ToolTip.Tip="Slow automatic gain that evens out your voice level" />
@@ -400,7 +434,8 @@
                   <TextBlock Text="ms" Classes="label" />
                 </StackPanel>
               </Grid>
-            </Expander>
+            </StackPanel>
+            </Border>
 
             <Border Classes="panel" IsVisible="{Binding HasCfc}">
               <StackPanel Orientation="Horizontal" Spacing="8">
@@ -411,7 +446,9 @@
                 <Button Classes="flat" Content="Delete" Command="{Binding DeleteCfcPresetCommand}" />
               </StackPanel>
             </Border>
-            <Expander Header="CFC (continuous frequency compressor)" HorizontalAlignment="Stretch" IsVisible="{Binding HasCfc}">
+            <Border Classes="panel txsection" IsVisible="{Binding HasCfc}">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="CFC (continuous frequency compressor)" />
               <StackPanel Spacing="8">
                 <StackPanel Orientation="Horizontal" Spacing="16">
                   <CheckBox Content="Enabled" IsChecked="{Binding CfcEnabled}" />
@@ -451,9 +488,12 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
               </StackPanel>
-            </Expander>
+            </StackPanel>
+            </Border>
 
-            <Expander Header="Speech processor" HorizontalAlignment="Stretch">
+            <Border Classes="panel txsection">
+              <StackPanel Spacing="8">
+              <TextBlock Classes="txhead" Text="Speech processor" />
               <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="8">
                 <CheckBox Content="Compressor" IsChecked="{Binding CompressorEnabled}" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
@@ -465,7 +505,8 @@
                 <CheckBox Grid.Row="1" Grid.Column="1" Content="Wide (4 kHz)" IsChecked="{Binding CessbWide}"
                           IsEnabled="{Binding CessbEnabled}" />
               </Grid>
-            </Expander>
+            </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -16,12 +17,84 @@ public partial class SettingsWindow : Window
         supply.Tick += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshSupplyAsync();
         Opened += (_, _) => supply.Start();
         Closed += (_, _) => supply.Stop();
+        // The mic expander's level, read only while the TX Audio page is showing.
         var expanderMeter = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
-        expanderMeter.Tick += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshExpanderMeterAsync();
-        Opened += (_, _) => expanderMeter.Start();
-        Closed += (_, _) => expanderMeter.Stop();
+        expanderMeter.Tick += (_, _) =>
+        {
+            if (WindowState != WindowState.Minimized)
+                _ = (DataContext as SettingsViewModel)?.RefreshExpanderMeterAsync();
+        };
+        Opened += (_, _) => { expanderMeter.Start(); NoteTxAudioPage(); };
+        Closed += (_, _) =>
+        {
+            expanderMeter.Stop();
+            if (_vm is { } vm)
+            {
+                vm.TxAudioPageShown = false;
+                vm.SimpleStudioWindow -= OnSimpleStudioWindow;
+            }
+            _studio?.Close();
+        };
+        TxAudioTab.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == TabItem.IsSelectedProperty) NoteTxAudioPage();
+        };
         // The radio can be used while this is open: catch up on coming back.
         Activated += (_, _) => _ = (DataContext as SettingsViewModel)?.RefreshLiveAsync();
+    }
+
+    private SettingsViewModel? _vm;
+    private SimpleStudioWindow? _studio;
+
+    private void NoteTxAudioPage()
+    {
+        if (_vm is { } vm) vm.TxAudioPageShown = IsVisible && TxAudioTab.IsSelected;
+    }
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        if (_vm is { } old) old.SimpleStudioWindow -= OnSimpleStudioWindow;
+        _vm = DataContext as SettingsViewModel;
+        if (_vm is { } vm) vm.SimpleStudioWindow += OnSimpleStudioWindow;
+        NoteTxAudioPage();
+    }
+
+    // SimpleStudio: opened by its tick box or Show, closed by unticking it
+    // (or a load that turns the chain off) and with this window. Owned by
+    // the main window, like this one; it keeps its size and place.
+    private void OnSimpleStudioWindow(bool show)
+    {
+        if (!show)
+        {
+            _studio?.Close();
+            return;
+        }
+        if (_studio is { IsVisible: true })
+        {
+            _studio.Activate();
+            return;
+        }
+        if (_vm is not { } vm) return;
+        var app = vm.AppSettings;
+        var window = new SimpleStudioWindow { DataContext = vm.Studio };
+        if (app is { StudioWidth: double w, StudioHeight: double h })
+            (window.Width, window.Height) = (w, h);
+        if (app is { StudioX: int x, StudioY: int y } && Screens.ScreenFromPoint(new PixelPoint(x, y)) is not null)
+        {
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Position = new PixelPoint(x, y);
+        }
+        window.Closing += (_, _) =>
+        {
+            if (app is null) return;
+            (app.StudioWidth, app.StudioHeight) = (window.Width, window.Height);
+            (app.StudioX, app.StudioY) = (window.Position.X, window.Position.Y);
+            app.Save();
+        };
+        window.Closed += (_, _) => { if (_studio == window) _studio = null; };
+        _studio = window;
+        window.Show(Owner as Window ?? this);
     }
 
     // Config shows PureSignal values from when it opened, so it closes before
