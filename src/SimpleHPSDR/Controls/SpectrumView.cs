@@ -83,8 +83,8 @@ public sealed class SpectrumView : Control
     private static IBrush LabelBrush => SpectrumLook.Current.GridLabel;
     private static IBrush TraceFill => SpectrumLook.Current.Fill;
     private static IPen TracePen => SpectrumLook.Current.LinePen;
-    private static readonly IBrush PassbandBrush = new SolidColorBrush(Color.Parse("#26FFFFFF"));
-    private static readonly IBrush PassbandInactive = new SolidColorBrush(Color.Parse("#14FFFFFF"));
+    private static IBrush PassbandBrush => SpectrumLook.Current.Passband;
+    private static IBrush PassbandInactive => SpectrumLook.Current.PassbandInactive;
     // Slice colours: A1 red, A2 amber, B1 purple, B2 sky blue.
     private static readonly Color[] SliceColors = [Color.Parse("#F25F5C"), Color.Parse("#F5A524"), Color.Parse("#C084FC"), Color.Parse("#38BDF8")];
     private static readonly IBrush TxBrush = new SolidColorBrush(Color.Parse("#E5484D"));

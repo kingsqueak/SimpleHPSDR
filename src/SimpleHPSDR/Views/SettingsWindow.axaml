@@ -748,7 +748,7 @@
             <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
                        Text="Colours for the spectrum and the waterfall. Changes show at once." />
             <Border Classes="panel">
-              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
                 <TextBlock Text="Spectrum line" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding LineColors}" SelectedItem="{Binding SpecLine}" Width="220"
@@ -832,8 +832,30 @@
                           ToolTip.Tip="How solid the grid lines are. At 100 % they are as plain as the AGC line; 0 hides them." />
                   <TextBlock Text="{Binding SpecGridOpacityText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock Grid.Row="6" Text="Waterfall" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="6" Grid.Column="1" ItemsSource="{Binding WaterfallPalettes}" SelectedItem="{Binding SelectedPalette}" Width="320">
+                <TextBlock Grid.Row="6" Text="Filter shading" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <ComboBox ItemsSource="{Binding PassbandColors}" SelectedItem="{Binding SpecPassband}" Width="220"
+                          ItemTemplate="{StaticResource ColorItem}"
+                          ToolTip.Tip="The band over the receive filter on the spectrum, the waterfall and the filter close-up." />
+                  <Button Classes="flat" Content="Custom…" ToolTip.Tip="Pick any colour">
+                    <Button.Flyout>
+                      <Flyout Placement="RightEdgeAlignedTop">
+                        <StackPanel Spacing="8">
+                          <ColorView Color="{Binding SpecPassbandCustom, Mode=TwoWay}" IsAlphaEnabled="False" IsAlphaVisible="False" Width="300" />
+                          <Button Classes="flat" Content="Done" HorizontalAlignment="Right" c:FlyoutClose.OnClick="True" />
+                        </StackPanel>
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                </StackPanel>
+                <TextBlock Grid.Row="7" Text="Filter strength" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <Slider Minimum="0" Maximum="100" Value="{Binding SpecPassbandOpacity}" Width="220"
+                          ToolTip.Tip="How solid the filter shading is. An inactive slice's is half as solid; 0 hides it." />
+                  <TextBlock Text="{Binding SpecPassbandOpacityText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="8" Text="Waterfall" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding WaterfallPalettes}" SelectedItem="{Binding SelectedPalette}" Width="320">
                   <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="local:WaterfallPalette">
                       <StackPanel Orientation="Horizontal" Spacing="10">

@@ -258,6 +258,8 @@ Most controls have more behind a right-click. See **Help** in the menu.
   narrower; double-click for the standard width.
 - **Spectrum grid:** its colour and strength are in Config > Colors, and the dB
   lines get finer when you zoom in.
+- **Filter shading:** the band over the receive filter on the spectrum,
+  waterfall and filter close-up takes its colour and strength from Config > Colors.
 - **Filter close-up:** a line follows the mouse, with a flag showing the audio
   frequency.
 - **Touch layout:** a View button for the desktop layout and the mini window,

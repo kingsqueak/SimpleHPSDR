@@ -79,6 +79,9 @@ public sealed class SpectrumLook
         new("Grey", Color.Parse("#A3ADBF")), .. LineColors,
     ];
     public const int DefaultGridOpacity = 12;
+    /// <summary>The shading over the receive filter.</summary>
+    public static readonly NamedColor[] PassbandColors = LineColors;
+    public const int DefaultPassbandOpacity = 15;
     // The labels take the grid's colour but stay readable when the lines are faint.
     private const double MinLabelOpacity = 0.75;
 
@@ -107,6 +110,8 @@ public sealed class SpectrumLook
     public uint[] Palette { get; }
     public IPen GridPen { get; }
     public IBrush GridLabel { get; }
+    public IBrush Passband { get; }
+    public IBrush PassbandInactive { get; }
 
     private SpectrumLook(Settings? s)
     {
@@ -128,6 +133,10 @@ public sealed class SpectrumLook
         double solid = Math.Clamp(s?.SpecGridOpacity ?? DefaultGridOpacity, 0, 100) / 100.0;
         GridPen = new Pen(new SolidColorBrush(grid, solid), 1);
         GridLabel = new SolidColorBrush(grid, Math.Max(solid, MinLabelOpacity));
+        var pass = Find(PassbandColors, s?.SpecPassbandColor, "White").Color;
+        double shade = Math.Clamp(s?.SpecPassbandOpacity ?? DefaultPassbandOpacity, 0, 100) / 100.0;
+        Passband = new SolidColorBrush(pass, shade);
+        PassbandInactive = new SolidColorBrush(pass, shade / 2);
         Palette = Array.Find(Palettes, p => p.Name == s?.WaterfallPalette)?.Build() ?? Palettes[0].Build();
     }
 

@@ -48,7 +48,7 @@ public sealed class FilterScope : Control
     // Colours from Config > Colors, as on the spectrum.
     private static IBrush Background => SpectrumLook.Current.Background;
     private static IPen TracePen => SpectrumLook.Current.LinePen;
-    private static readonly IBrush PassBrush = new SolidColorBrush(Color.Parse("#2E3B82F6"));
+    private static IBrush PassBrush => SpectrumLook.Current.Passband;
     private static readonly IPen EdgePen = new Pen(new SolidColorBrush(Color.Parse("#3B82F6")), 1.5);
     private static readonly IBrush HandleBrush = new SolidColorBrush(Color.Parse("#E6E8EB"));
     private static readonly IPen TickPen = new Pen(new SolidColorBrush(Color.Parse("#3A404C")), 1);

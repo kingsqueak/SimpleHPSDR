@@ -51,12 +51,13 @@ public sealed partial class SettingsViewModel
         }
     }
 
-    private ColorRow? _lineRow, _fillRow, _backRow, _fadeRow, _gridRow;
+    private ColorRow? _lineRow, _fillRow, _backRow, _fadeRow, _gridRow, _passRow;
     private ColorRow LineRow => _lineRow ??= new(SpectrumLook.LineColors, s => s.SpecLineColor, (s, v) => s.SpecLineColor = v, "Blue");
     private ColorRow FillRow => _fillRow ??= new(SpectrumLook.FillColors, s => s.SpecFillColor, (s, v) => s.SpecFillColor = v, "Blue");
     private ColorRow BackRow => _backRow ??= new(SpectrumLook.BackgroundColors, s => s.SpecBackground, (s, v) => s.SpecBackground = v, "Black");
     private ColorRow FadeRow => _fadeRow ??= new(SpectrumLook.FadeColors, s => s.SpecBackgroundFade, (s, v) => s.SpecBackgroundFade = v, "None");
     private ColorRow GridRow => _gridRow ??= new(SpectrumLook.GridColors, s => s.SpecGridColor, (s, v) => s.SpecGridColor = v, "Grey");
+    private ColorRow PassRow => _passRow ??= new(SpectrumLook.PassbandColors, s => s.SpecPassbandColor, (s, v) => s.SpecPassbandColor = v, "White");
 
     public NamedColor[] GridColors => GridRow.List;
     public NamedColor? SpecGrid { get => GridRow.Selected(AppSettings); set => Pick(GridRow, value); }
@@ -77,6 +78,26 @@ public sealed partial class SettingsViewModel
         }
     }
     public string SpecGridOpacityText => $"{SpecGridOpacity:0} %";
+
+    public NamedColor[] PassbandColors => PassRow.List;
+    public NamedColor? SpecPassband { get => PassRow.Selected(AppSettings); set => Pick(PassRow, value); }
+    public Color SpecPassbandCustom { get => PassRow.Current(AppSettings); set => SetCustom(PassRow, value); }
+    /// <summary>How solid the receive filter's shading is, 0 to 100 %.</summary>
+    public double SpecPassbandOpacity
+    {
+        get => AppSettings?.SpecPassbandOpacity ?? SpectrumLook.DefaultPassbandOpacity;
+        set
+        {
+            int v = (int)Math.Round(Math.Clamp(value, 0, 100));
+            if (AppSettings is not { } s || s.SpecPassbandOpacity == v) return;
+            s.SpecPassbandOpacity = v;
+            s.Save();
+            SpectrumLook.Apply(s);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SpecPassbandOpacityText));
+        }
+    }
+    public string SpecPassbandOpacityText => $"{SpecPassbandOpacity:0} %";
 
     public NamedColor[] LineColors => LineRow.List;
     public NamedColor[] FillColors => FillRow.List;
@@ -157,6 +178,10 @@ public sealed partial class SettingsViewModel
         OnPropertyChanged(nameof(SpecGridCustom));
         OnPropertyChanged(nameof(SpecGridOpacity));
         OnPropertyChanged(nameof(SpecGridOpacityText));
+        OnPropertyChanged(nameof(SpecPassband));
+        OnPropertyChanged(nameof(SpecPassbandCustom));
+        OnPropertyChanged(nameof(SpecPassbandOpacity));
+        OnPropertyChanged(nameof(SpecPassbandOpacityText));
     }
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]
@@ -166,6 +191,7 @@ public sealed partial class SettingsViewModel
         (s.SpecLineColor, s.SpecFillColor, s.SpecBackground, s.SpecBackgroundFade, s.WaterfallPalette) =
             ("Blue", "Blue", "Black", "None", "Classic");
         (s.SpecGridColor, s.SpecGridOpacity) = ("Grey", SpectrumLook.DefaultGridOpacity);
+        (s.SpecPassbandColor, s.SpecPassbandOpacity) = ("White", SpectrumLook.DefaultPassbandOpacity);
         s.Save();
         SpectrumLook.Apply(s);
         RaiseSelections();

@@ -212,6 +212,11 @@ public sealed class Settings
     /// how solid, 0 to 100 %. At 100 they are as plain as the AGC line.</summary>
     public string SpecGridColor { get; set; } = "Grey";
     public int SpecGridOpacity { get; set; } = SpectrumLook.DefaultGridOpacity;
+    /// <summary>The shading over the receive filter on the spectrum, the
+    /// waterfall and the filter close-up: colour and how solid, 0 to 100 %. An inactive slice's is half
+    /// as solid.</summary>
+    public string SpecPassbandColor { get; set; } = "White";
+    public int SpecPassbandOpacity { get; set; } = SpectrumLook.DefaultPassbandOpacity;
     /// <summary>The band strip along the top of the spectrum.</summary>
     public bool BandStrip { get; set; } = true;
     /// <summary>How solid the band strip's colours are, 0.2 to 1.</summary>
