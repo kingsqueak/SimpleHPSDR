@@ -183,6 +183,26 @@ public sealed partial class MainViewModel
                          nameof(ShowAbBadges), nameof(Rx2Active), nameof(Rx2Idle), nameof(ActiveName), nameof(AbOn2),
                          nameof(NextSliceLabel)])
                 OnPropertyChanged(name);
+        if (count == 1 && _mute[0] && IsConnected) _ = MoveLoneSliceMuteAsync();
+    }
+
+    private bool _movingLoneMute;
+
+    /// <summary>A1 is the only slice left and is muted on its own. With one
+    /// slice nothing offers the slice's mute (no AF rows, badges or menu
+    /// item), so it moves to the main Mute: still quiet, and Mute undoes it.</summary>
+    private async Task MoveLoneSliceMuteAsync()
+    {
+        if (_movingLoneMute) return;
+        _movingLoneMute = true;
+        try
+        {
+            await Task.Yield();   // out of any state update, so Mute is sent
+            if (SliceCount != 1 || !_mute[0]) return;
+            Muted = true;
+            await SetSliceMuteAsync(0, false);
+        }
+        finally { _movingLoneMute = false; }
     }
 
     /// <summary>Any slice beyond A1.</summary>
