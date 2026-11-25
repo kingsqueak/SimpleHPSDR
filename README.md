@@ -95,6 +95,19 @@ Most controls have more behind a right-click. See **Help** in the menu.
 
 ## What's New
 
+### 0.17.1
+
+- **Spectrum fill, your way** (Config > Colors). The area under the spectrum
+  line no longer has a fixed faint tint: pick its colour and how solid it is,
+  from 0 to 100 %. Or make it a gradient into a second colour with its own
+  strength, between two heights you choose. A preview shows the result.
+- **Filter shading colour and strength** (Config > Colors). The band over the
+  receive filter, on the spectrum, waterfall and filter close-up, takes any
+  colour and strength; an inactive slice's is half as solid.
+- **A1's mute no longer gets stuck.** Muting A1 and then removing the other
+  slice left A1 muted with nothing to unmute it; the main Mute button now
+  carries it.
+
 ### 0.17.0
 
 - **SimpleStudio, a chain of studio effects for your microphone** (Config > TX
