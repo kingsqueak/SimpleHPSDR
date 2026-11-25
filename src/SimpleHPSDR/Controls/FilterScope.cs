@@ -271,7 +271,7 @@ public sealed class FilterScope : Control
             l.EndFigure(false);
         }
         if (ColouredFill) DrawHeat(ctx, r, g, range);
-        else ctx.DrawGeometry(SpectrumLook.Current.Fill, null, g);
+        else ctx.DrawGeometry(SpectrumLook.Current.FillFor(r), null, g);
         ctx.DrawGeometry(null, TracePen, line);
     }
 

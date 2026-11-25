@@ -256,6 +256,9 @@ Most controls have more behind a right-click. See **Help** in the menu.
   already have are in A.
 - **Side panel width:** drag the panel's left edge to make it wider or
   narrower; double-click for the standard width.
+- **Spectrum fill:** the area under the spectrum line takes its colour and
+  strength from Config > Colors, solid or as a gradient into a second colour,
+  with its own strength, between two heights you pick.
 - **Spectrum grid:** its colour and strength are in Config > Colors, and the dB
   lines get finer when you zoom in.
 - **Filter shading:** the band over the receive filter on the spectrum,

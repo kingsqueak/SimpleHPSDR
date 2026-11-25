@@ -51,13 +51,73 @@ public sealed partial class SettingsViewModel
         }
     }
 
-    private ColorRow? _lineRow, _fillRow, _backRow, _fadeRow, _gridRow, _passRow;
+    private ColorRow? _lineRow, _fillRow, _fillToRow, _backRow, _fadeRow, _gridRow, _passRow;
     private ColorRow LineRow => _lineRow ??= new(SpectrumLook.LineColors, s => s.SpecLineColor, (s, v) => s.SpecLineColor = v, "Blue");
     private ColorRow FillRow => _fillRow ??= new(SpectrumLook.FillColors, s => s.SpecFillColor, (s, v) => s.SpecFillColor = v, "Blue");
+    private ColorRow FillToRow => _fillToRow ??= new(SpectrumLook.FillGradientColors, s => s.SpecFillGradientColor, (s, v) => s.SpecFillGradientColor = v, "Purple");
     private ColorRow BackRow => _backRow ??= new(SpectrumLook.BackgroundColors, s => s.SpecBackground, (s, v) => s.SpecBackground = v, "Black");
     private ColorRow FadeRow => _fadeRow ??= new(SpectrumLook.FadeColors, s => s.SpecBackgroundFade, (s, v) => s.SpecBackgroundFade = v, "None");
     private ColorRow GridRow => _gridRow ??= new(SpectrumLook.GridColors, s => s.SpecGridColor, (s, v) => s.SpecGridColor = v, "Grey");
     private ColorRow PassRow => _passRow ??= new(SpectrumLook.PassbandColors, s => s.SpecPassbandColor, (s, v) => s.SpecPassbandColor = v, "White");
+
+    /// <summary>How solid the fill under the line is, 0 to 100 % (with a gradient, at its top).</summary>
+    public double SpecFillOpacity
+    {
+        get => AppSettings?.SpecFillOpacity ?? SpectrumLook.DefaultFillOpacity;
+        set => SetPercent(value, s => s.SpecFillOpacity, (s, v) => s.SpecFillOpacity = v);
+    }
+    public string SpecFillOpacityText => $"{SpecFillOpacity:0} %";
+
+    public string[] FillStyles { get; } = ["Solid", "Gradient"];
+    public string SpecFillStyle
+    {
+        get => AppSettings?.SpecFillGradient == true ? "Gradient" : "Solid";
+        set
+        {
+            if (AppSettings is not { } s || value is null) return;
+            bool gradient = value == "Gradient";
+            if (s.SpecFillGradient == gradient) return;
+            s.SpecFillGradient = gradient;
+            Changed();
+        }
+    }
+    public bool SpecFillIsGradient => AppSettings?.SpecFillGradient == true;
+
+    public NamedColor[] FillGradientColors => FillToRow.List;
+    public NamedColor? SpecFillTo { get => FillToRow.Selected(AppSettings); set => Pick(FillToRow, value); }
+    public Color SpecFillToCustom { get => FillToRow.Current(AppSettings); set => SetCustom(FillToRow, value); }
+    /// <summary>How solid the gradient's bottom colour is, 0 to 100 %.</summary>
+    public double SpecFillToOpacity
+    {
+        get => AppSettings?.SpecFillGradientOpacity ?? SpectrumLook.DefaultFillGradientOpacity;
+        set => SetPercent(value, s => s.SpecFillGradientOpacity, (s, v) => s.SpecFillGradientOpacity = v);
+    }
+    public string SpecFillToOpacityText => $"{SpecFillToOpacity:0} %";
+    /// <summary>Where the gradient starts and ends, 0 % at the top of the spectrum, 100 % at the bottom.</summary>
+    public double SpecFillStart
+    {
+        get => AppSettings?.SpecFillGradientStart ?? 0;
+        set => SetPercent(value, s => s.SpecFillGradientStart, (s, v) => s.SpecFillGradientStart = v);
+    }
+    public string SpecFillStartText => $"{SpecFillStart:0} % down";
+    public double SpecFillEnd
+    {
+        get => AppSettings?.SpecFillGradientEnd ?? 100;
+        set => SetPercent(value, s => s.SpecFillGradientEnd, (s, v) => s.SpecFillGradientEnd = v);
+    }
+    public string SpecFillEndText => $"{SpecFillEnd:0} % down";
+
+    /// <summary>The fill as it will look, over the spectrum's background.</summary>
+    public IBrush FillPreview => SpectrumLook.Current.FillPreview;
+    public IBrush SpecBackgroundPreview => SpectrumLook.Current.Background;
+
+    private void SetPercent(double value, Func<Settings, int> get, Action<Settings, int> set)
+    {
+        int v = (int)Math.Round(Math.Clamp(value, 0, 100));
+        if (AppSettings is not { } s || get(s) == v) return;
+        set(s, v);
+        Changed();
+    }
 
     public NamedColor[] GridColors => GridRow.List;
     public NamedColor? SpecGrid { get => GridRow.Selected(AppSettings); set => Pick(GridRow, value); }
@@ -182,6 +242,20 @@ public sealed partial class SettingsViewModel
         OnPropertyChanged(nameof(SpecPassbandCustom));
         OnPropertyChanged(nameof(SpecPassbandOpacity));
         OnPropertyChanged(nameof(SpecPassbandOpacityText));
+        OnPropertyChanged(nameof(SpecFillOpacity));
+        OnPropertyChanged(nameof(SpecFillOpacityText));
+        OnPropertyChanged(nameof(SpecFillStyle));
+        OnPropertyChanged(nameof(SpecFillIsGradient));
+        OnPropertyChanged(nameof(SpecFillTo));
+        OnPropertyChanged(nameof(SpecFillToCustom));
+        OnPropertyChanged(nameof(SpecFillToOpacity));
+        OnPropertyChanged(nameof(SpecFillToOpacityText));
+        OnPropertyChanged(nameof(SpecFillStart));
+        OnPropertyChanged(nameof(SpecFillStartText));
+        OnPropertyChanged(nameof(SpecFillEnd));
+        OnPropertyChanged(nameof(SpecFillEndText));
+        OnPropertyChanged(nameof(FillPreview));
+        OnPropertyChanged(nameof(SpecBackgroundPreview));
     }
 
     [CommunityToolkit.Mvvm.Input.RelayCommand]
@@ -192,6 +266,9 @@ public sealed partial class SettingsViewModel
             ("Blue", "Blue", "Black", "None", "Classic");
         (s.SpecGridColor, s.SpecGridOpacity) = ("Grey", SpectrumLook.DefaultGridOpacity);
         (s.SpecPassbandColor, s.SpecPassbandOpacity) = ("White", SpectrumLook.DefaultPassbandOpacity);
+        (s.SpecFillOpacity, s.SpecFillGradient, s.SpecFillGradientColor, s.SpecFillGradientOpacity) =
+            (SpectrumLook.DefaultFillOpacity, false, "Purple", SpectrumLook.DefaultFillGradientOpacity);
+        (s.SpecFillGradientStart, s.SpecFillGradientEnd) = (0, 100);
         s.Save();
         SpectrumLook.Apply(s);
         RaiseSelections();

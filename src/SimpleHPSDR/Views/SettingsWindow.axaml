@@ -748,7 +748,7 @@
             <TextBlock Classes="label" FontSize="12" TextWrapping="Wrap"
                        Text="Colours for the spectrum and the waterfall. Changes show at once." />
             <Border Classes="panel">
-              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+              <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
                 <TextBlock Text="Spectrum line" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding LineColors}" SelectedItem="{Binding SpecLine}" Width="220"
@@ -764,10 +764,11 @@
                     </Button.Flyout>
                   </Button>
                 </StackPanel>
-                <TextBlock Grid.Row="1" Text="Shading under it" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Row="1" Text="Spectrum fill" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding FillColors}" SelectedItem="{Binding SpecFill}" Width="220"
-                          ItemTemplate="{StaticResource ColorItem}" />
+                          ItemTemplate="{StaticResource ColorItem}"
+                          ToolTip.Tip="The colour under the spectrum line; with a gradient, its colour at the top. None leaves it empty." />
                   <Button Classes="flat" Content="Custom…" ToolTip.Tip="Pick any colour">
                     <Button.Flyout>
                       <Flyout Placement="RightEdgeAlignedTop">
@@ -779,8 +780,60 @@
                     </Button.Flyout>
                   </Button>
                 </StackPanel>
-                <TextBlock Grid.Row="2" Text="Background" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <TextBlock Grid.Row="2" Text="Fill strength" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <Slider Minimum="0" Maximum="100" Value="{Binding SpecFillOpacity}" Width="220"
+                          ToolTip.Tip="How solid the fill is. 100 % is the plain colour; 0 hides it. With a gradient, this is its strength at the top." />
+                  <TextBlock Text="{Binding SpecFillOpacityText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="3" Text="Fill style" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <ComboBox ItemsSource="{Binding FillStyles}" SelectedItem="{Binding SpecFillStyle}" Width="220"
+                          ToolTip.Tip="Solid: one colour. Gradient: the fill shades into a second colour towards the bottom." />
+                  <Border Width="120" Height="40" CornerRadius="3" ClipToBounds="True" Background="{Binding SpecBackgroundPreview}"
+                          ToolTip.Tip="How the fill looks, from the top of the spectrum to the bottom.">
+                    <Border Background="{Binding FillPreview}" />
+                  </Border>
+                </StackPanel>
+                <Grid Grid.Row="4" Grid.ColumnSpan="2" ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10"
+                      IsVisible="{Binding SpecFillIsGradient}">
+                  <TextBlock Text="Shading into" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <ComboBox ItemsSource="{Binding FillGradientColors}" SelectedItem="{Binding SpecFillTo}" Width="220"
+                            ItemTemplate="{StaticResource ColorItem}"
+                            ToolTip.Tip="The colour the fill shades into at the bottom of the gradient." />
+                    <Button Classes="flat" Content="Custom…" ToolTip.Tip="Pick any colour">
+                      <Button.Flyout>
+                        <Flyout Placement="RightEdgeAlignedTop">
+                          <StackPanel Spacing="8">
+                            <ColorView Color="{Binding SpecFillToCustom, Mode=TwoWay}" IsAlphaEnabled="False" IsAlphaVisible="False" Width="300" />
+                            <Button Classes="flat" Content="Done" HorizontalAlignment="Right" c:FlyoutClose.OnClick="True" />
+                          </StackPanel>
+                        </Flyout>
+                      </Button.Flyout>
+                    </Button>
+                  </StackPanel>
+                  <TextBlock Grid.Row="1" Text="Its strength" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Slider Minimum="0" Maximum="100" Value="{Binding SpecFillToOpacity}" Width="220"
+                            ToolTip.Tip="How solid the gradient is at its bottom. 0 fades the fill away to nothing." />
+                    <TextBlock Text="{Binding SpecFillToOpacityText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="2" Text="Gradient starts" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Slider Minimum="0" Maximum="100" Value="{Binding SpecFillStart}" Width="220"
+                            ToolTip.Tip="Where the gradient starts: 0 % is the top of the spectrum. Above it the fill is the top colour." />
+                    <TextBlock Text="{Binding SpecFillStartText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="3" Text="Gradient ends" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Slider Minimum="0" Maximum="100" Value="{Binding SpecFillEnd}" Width="220"
+                            ToolTip.Tip="Where the gradient ends: 100 % is the bottom of the spectrum. Below it the fill is the bottom colour." />
+                    <TextBlock Text="{Binding SpecFillEndText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                  </StackPanel>
+                </Grid>
+                <TextBlock Grid.Row="5" Text="Background" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding BackgroundColors}" SelectedItem="{Binding SpecBackground}" Width="220"
                           ItemTemplate="{StaticResource ColorItem}" />
                   <Button Classes="flat" Content="Custom…" ToolTip.Tip="Pick any colour">
@@ -794,8 +847,8 @@
                     </Button.Flyout>
                   </Button>
                 </StackPanel>
-                <TextBlock Grid.Row="3" Text="Fading to" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Grid.Row="6" Text="Fading to" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding FadeColors}" SelectedItem="{Binding SpecFade}" Width="220"
                           ItemTemplate="{StaticResource ColorItem}"
                           ToolTip.Tip="The background shades into this colour towards the bottom. None keeps it plain." />
@@ -810,8 +863,8 @@
                     </Button.Flyout>
                   </Button>
                 </StackPanel>
-                <TextBlock Grid.Row="4" Text="Grid" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Grid.Row="7" Text="Grid" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding GridColors}" SelectedItem="{Binding SpecGrid}" Width="220"
                           ItemTemplate="{StaticResource ColorItem}"
                           ToolTip.Tip="The frequency lines, the dB lines and their numbers." />
@@ -826,14 +879,14 @@
                     </Button.Flyout>
                   </Button>
                 </StackPanel>
-                <TextBlock Grid.Row="5" Text="Grid strength" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Grid.Row="8" Text="Grid strength" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <Slider Minimum="0" Maximum="100" Value="{Binding SpecGridOpacity}" Width="220"
                           ToolTip.Tip="How solid the grid lines are. At 100 % they are as plain as the AGC line; 0 hides them." />
                   <TextBlock Text="{Binding SpecGridOpacityText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock Grid.Row="6" Text="Filter shading" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Grid.Row="9" Text="Filter shading" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="9" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <ComboBox ItemsSource="{Binding PassbandColors}" SelectedItem="{Binding SpecPassband}" Width="220"
                           ItemTemplate="{StaticResource ColorItem}"
                           ToolTip.Tip="The band over the receive filter on the spectrum, the waterfall and the filter close-up." />
@@ -848,14 +901,14 @@
                     </Button.Flyout>
                   </Button>
                 </StackPanel>
-                <TextBlock Grid.Row="7" Text="Filter strength" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <TextBlock Grid.Row="10" Text="Filter strength" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Grid.Row="10" Grid.Column="1" Orientation="Horizontal" Spacing="8">
                   <Slider Minimum="0" Maximum="100" Value="{Binding SpecPassbandOpacity}" Width="220"
                           ToolTip.Tip="How solid the filter shading is. An inactive slice's is half as solid; 0 hides it." />
                   <TextBlock Text="{Binding SpecPassbandOpacityText}" Classes="label" FontSize="12" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock Grid.Row="8" Text="Waterfall" Classes="label" FontSize="12" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding WaterfallPalettes}" SelectedItem="{Binding SelectedPalette}" Width="320">
+                <TextBlock Grid.Row="11" Text="Waterfall" Classes="label" FontSize="12" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="11" Grid.Column="1" ItemsSource="{Binding WaterfallPalettes}" SelectedItem="{Binding SelectedPalette}" Width="320">
                   <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="local:WaterfallPalette">
                       <StackPanel Orientation="Horizontal" Spacing="10">

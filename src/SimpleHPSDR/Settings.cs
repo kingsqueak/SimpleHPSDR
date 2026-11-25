@@ -205,6 +205,17 @@ public sealed class Settings
     /// <summary>Config > Colors: names from SpectrumLook's lists.</summary>
     public string SpecLineColor { get; set; } = "Blue";
     public string SpecFillColor { get; set; } = "Blue";
+    /// <summary>How solid the fill under the spectrum line is, 0 to 100 %
+    /// (with a gradient, at its top).</summary>
+    public int SpecFillOpacity { get; set; } = SpectrumLook.DefaultFillOpacity;
+    /// <summary>The fill shades from its own colour at the top into a second
+    /// colour, with its own strength, between two heights (0 % is the top of
+    /// the spectrum, 100 % the bottom).</summary>
+    public bool SpecFillGradient { get; set; }
+    public string SpecFillGradientColor { get; set; } = "Purple";
+    public int SpecFillGradientOpacity { get; set; } = SpectrumLook.DefaultFillGradientOpacity;
+    public int SpecFillGradientStart { get; set; }
+    public int SpecFillGradientEnd { get; set; } = 100;
     public string SpecBackground { get; set; } = "Black";
     public string SpecBackgroundFade { get; set; } = "None";
     public string WaterfallPalette { get; set; } = "Classic";

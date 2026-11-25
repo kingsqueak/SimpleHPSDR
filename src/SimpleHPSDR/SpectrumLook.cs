@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 
 namespace SimpleHPSDR;
 
@@ -59,6 +60,11 @@ public sealed class SpectrumLook
         new("None", Colors.Transparent), .. LineColors,
     ];
 
+    /// <summary>The colour the fill shades into with a gradient.</summary>
+    public static readonly NamedColor[] FillGradientColors = LineColors;
+    public const int DefaultFillOpacity = 22;
+    public const int DefaultFillGradientOpacity = 0;
+
     public static readonly NamedColor[] BackgroundColors =
     [
         new("Black", Color.Parse("#0B0D11")), new("Charcoal", Color.Parse("#1C1F26")),
@@ -105,7 +111,8 @@ public sealed class SpectrumLook
     public static SpectrumLook Current { get; private set; } = new(null);
 
     public IPen LinePen { get; }
-    public IBrush Fill { get; }
+    /// <summary>The fill under the line drawn as a picture of itself, for Config.</summary>
+    public IBrush FillPreview { get; }
     public IBrush Background { get; }
     public uint[] Palette { get; }
     public IPen GridPen { get; }
@@ -117,10 +124,26 @@ public sealed class SpectrumLook
     {
         var line = Find(LineColors, s?.SpecLineColor, "Blue").Color;
         var fill = Find(FillColors, s?.SpecFillColor, "Blue").Color;
+        double fillSolid = fill.A == 0 ? 0 : Percent(s?.SpecFillOpacity ?? DefaultFillOpacity);
+        if (s?.SpecFillGradient == true)
+        {
+            var to = Find(FillGradientColors, s.SpecFillGradientColor, "Purple").Color;
+            double toSolid = Percent(s.SpecFillGradientOpacity);
+            // "None" at the top fades from nothing, in the bottom colour's hue.
+            var top = fill.A == 0 ? to : fill;
+            double a = Percent(s.SpecFillGradientStart), b = Percent(s.SpecFillGradientEnd);
+            if (a > b) (a, b) = (b, a);
+            // Both at the same height: a hard edge there.
+            if (b - a < 0.001) { if (b < 1) b = a + 0.001; else a = b - 0.001; }
+            _fillStops = [new ImmutableGradientStop(a, WithAlpha(top, fillSolid)),
+                new ImmutableGradientStop(b, WithAlpha(to, toSolid))];
+        }
+        else _fillSolid = new ImmutableSolidColorBrush(WithAlpha(fill, fillSolid));
+        FillPreview = _fillSolid ?? new ImmutableLinearGradientBrush(_fillStops!,
+            startPoint: new RelativePoint(0, 0, RelativeUnit.Relative), endPoint: new RelativePoint(0, 1, RelativeUnit.Relative));
         var back = Find(BackgroundColors, s?.SpecBackground, "Black").Color;
         var fade = Find(FadeColors, s?.SpecBackgroundFade, "None").Color;
         LinePen = new Pen(new SolidColorBrush(line), 1.2);
-        Fill = new SolidColorBrush(fill, fill.A == 0 ? 0 : 0.22);
         Background = fade.A == 0
             ? new SolidColorBrush(back)
             : new LinearGradientBrush
@@ -139,6 +162,20 @@ public sealed class SpectrumLook
         PassbandInactive = new SolidColorBrush(pass, shade / 2);
         Palette = Array.Find(Palettes, p => p.Name == s?.WaterfallPalette)?.Build() ?? Palettes[0].Build();
     }
+
+    private readonly IBrush? _fillSolid;
+    private readonly ImmutableGradientStop[]? _fillStops;
+
+    /// <summary>The fill under the spectrum line in a plot area. A gradient is
+    /// laid against the area, from its top to its bottom, so it stays put
+    /// while the trace moves.</summary>
+    public IBrush FillFor(Rect area) => _fillSolid ?? new ImmutableLinearGradientBrush(_fillStops!,
+        startPoint: new RelativePoint(area.Left, area.Top, RelativeUnit.Absolute),
+        endPoint: new RelativePoint(area.Left, area.Bottom, RelativeUnit.Absolute));
+
+    private static double Percent(int value) => Math.Clamp(value, 0, 100) / 100.0;
+
+    private static Color WithAlpha(Color c, double solid) => Color.FromArgb((byte)Math.Round(solid * 255), c.R, c.G, c.B);
 
     private static NamedColor Find(NamedColor[] list, string? name, string fallback) =>
         Custom(name) ?? Array.Find(list, c => c.Name == name) ?? Array.Find(list, c => c.Name == fallback)!;

@@ -176,7 +176,7 @@ If the engine can't give the high-resolution picture (an older engine, or it sto
 - Auto keeps the display range on the noise floor. It's on by default and needs no attention. Floor lift, in the Display popup, raises the noise up off the waterfall while Auto is on: 0 leaves it at the bottom of the trace.
 - Display sets the range by hand, the resolution, the waterfall speed and POP.
 - POP makes the waterfall follow the noise floor, which lifts weak signals out of it.
-- Config > Colors changes the spectrum line, the shading under it, the background (plain or fading), the grid, the shading over the receive filter (colour and strength) and the waterfall colours. Custom… beside each colour picks any colour you like. "Back to the original colours" undoes it all.
+- Config > Colors changes the spectrum line, the fill under it (colour and strength, solid or a gradient into a second colour with its own strength, starting and ending at heights you pick), the background (plain or fading), the grid, the shading over the receive filter (colour and strength) and the waterfall colours. Custom… beside each colour picks any colour you like. "Back to the original colours" undoes it all.
 - The dotted bar between the panadapter and waterfall drags to change their sizes.
 """),
 

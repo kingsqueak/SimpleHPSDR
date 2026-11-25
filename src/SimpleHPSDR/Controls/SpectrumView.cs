@@ -81,7 +81,6 @@ public sealed class SpectrumView : Control
     private static readonly IBrush WaterfallBase = new SolidColorBrush(Color.Parse("#0B0D11"));
     private static IPen GridPen => SpectrumLook.Current.GridPen;
     private static IBrush LabelBrush => SpectrumLook.Current.GridLabel;
-    private static IBrush TraceFill => SpectrumLook.Current.Fill;
     private static IPen TracePen => SpectrumLook.Current.LinePen;
     private static IBrush PassbandBrush => SpectrumLook.Current.Passband;
     private static IBrush PassbandInactive => SpectrumLook.Current.PassbandInactive;
@@ -868,7 +867,7 @@ public sealed class SpectrumView : Control
             g.LineTo(new Point(X(i1), r.Bottom));
             g.EndFigure(true);
         }
-        ctx.DrawGeometry(TraceFill, null, geo);
+        ctx.DrawGeometry(SpectrumLook.Current.FillFor(r), null, geo);
 
         var line = new StreamGeometry();
         using (var g = line.Open())
